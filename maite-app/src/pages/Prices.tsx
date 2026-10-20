@@ -76,11 +76,10 @@ export default function Prices() {
                 <button key={d} type="button" disabled={past} onClick={() => tap(d)} aria-pressed={on}
                   aria-label={`${day(d, { weekday: 'long', day: 'numeric', month: 'long' })}, ${euro(n.price * 100)}${min ? `, mínim ${nitsTxt(min)}` : ''}${bk ? ', ocupat' : ''}`}
                   className={`relative flex h-16 flex-col justify-between rounded-xl p-1.5 text-left outline-none transition-colors duration-100 focus-visible:ring-2 focus-visible:ring-focus sm:h-[78px] sm:rounded-xl sm:p-2.5
-                    ${past ? 'cursor-default opacity-35' : 'hover:bg-[var(--row-hover)]'} ${on ? '!bg-accent/20 ring-2 ring-accent' : n.special ? 'bg-[color-mix(in_oklab,var(--brand-cava)_20%,transparent)]' : 'bg-default/40'}`}>
+                    ${past ? 'cursor-default opacity-35' : 'hover:bg-[var(--row-hover)]'} ${on ? '!bg-accent/20 ring-2 ring-accent' : bk ? 'booked-night ring-1 ring-inset ring-accent/40' : n.special ? 'bg-[color-mix(in_oklab,var(--brand-cava)_20%,transparent)]' : 'bg-default/40'}`}>
                   <span className="flex items-start justify-between gap-1">
                     <span className="flex items-center gap-1.5">
                       <span className={`text-xs tnum ${d === TODAY ? 'font-bold text-accent' : 'text-muted'}`}>{parse(d).getDate()}</span>
-                      {bk && <span className="size-2 rounded-full bg-accent" aria-hidden="true" />}
                     </span>
                     {min ? <span className="rounded-md bg-foreground/10 px-1 text-xs font-semibold">{min}n</span> : null}
                   </span>
@@ -90,9 +89,9 @@ export default function Prices() {
             })}
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted">
-            <span className="inline-flex items-center gap-2"><span className="size-2.5 rounded-sm bg-[color-mix(in_oklab,var(--brand-cava)_45%,transparent)]" />Preu especial</span>
+            <span className="inline-flex items-center gap-2"><span className="size-3.5 rounded-[4px] bg-[color-mix(in_oklab,var(--brand-cava)_45%,transparent)]" />Preu especial</span>
             <span className="inline-flex items-center gap-2"><span className="rounded bg-foreground/10 px-1 text-xs font-semibold text-foreground">3n</span>Estada mínima</span>
-            <span className="inline-flex items-center gap-2"><span className="size-2 rounded-full bg-accent" />Ocupat</span>
+            <span className="inline-flex items-center gap-2"><span className="booked-night size-3.5 rounded-[4px] ring-1 ring-inset ring-accent/40" />Ocupat</span>
             <span className="ml-auto flex gap-2">
               <Button size="sm" variant="tertiary" onPress={() => quick('weekends')}>Caps de setmana</Button>
               <Button size="sm" variant="tertiary" onPress={() => quick('month')}>Tot el mes</Button>

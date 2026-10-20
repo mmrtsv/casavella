@@ -1629,7 +1629,7 @@ guestForm.addEventListener('submit', async e => {
 });
 
 // ---- Start: default dates, restore a booking in progress, handle the return from Stripe ----
-setDates(addDays(iso(new Date()), 14), addDays(iso(new Date()), 16));
+setDates(iso(new Date()), addDays(iso(new Date()), 1));
 restore();
 {
   const params = new URLSearchParams(location.search), r = params.get('reserva'), sid = params.get('session_id');

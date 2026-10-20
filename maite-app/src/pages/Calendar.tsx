@@ -96,7 +96,7 @@ export function Calendar() {
               const dt = parse(d), we = dt.getDay() === 0 || dt.getDay() === 6, today = d === TODAY;
               return (
                 <div key={d} data-today={today || undefined} className={`border-b border-separator py-2.5 text-center ${we ? 'bg-default/40' : ''}`}>
-                  <div className="text-[11px] font-medium uppercase tracking-wide text-muted">{dt.toLocaleDateString('ca-ES', { weekday: 'short' }).replace('.', '')}</div>
+                  <div className="text-xs font-medium text-muted">{dt.toLocaleDateString('ca-ES', { weekday: 'short' }).replace('.', '')}</div>
                   <div className={`mx-auto mt-1 grid size-7 place-items-center rounded-full text-sm font-semibold tnum ${today ? 'bg-accent text-accent-foreground' : ''}`}>{dt.getDate()}</div>
                 </div>
               );
@@ -162,7 +162,7 @@ function Bar({ b, row, from, span }: { b: Booking; row: number; from: string; sp
       <span className="sticky left-[var(--names)] min-w-0 max-w-full">
         <span className="flex items-center gap-1.5 text-[13px] font-semibold"><span className={`size-2 shrink-0 rounded-full ${bar[k] || bar.block}`} aria-hidden="true" /><span className="truncate">{who(b)}</span></span>
         {guest && (b.guests || b.amount != null) && (
-          <span className="mt-0.5 flex items-center gap-2.5 truncate pl-3.5 text-[11.5px] text-muted tnum">
+          <span className="mt-0.5 flex items-center gap-2.5 truncate pl-3.5 text-xs text-muted tnum">
             {b.guests ? <span className="inline-flex items-center gap-1"><Users size={12} aria-hidden="true" />{b.guests}<span className="sr-only"> {b.guests === 1 ? 'persona' : 'persones'}</span></span> : null}
             {b.amount != null && <span>{euro(b.amount)}</span>}
           </span>

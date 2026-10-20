@@ -7,7 +7,7 @@ export const nightsBetween = (a: string, b: string) => Math.round((parse(b).getT
 export const TODAY = iso(new Date());
 export const day = (s: string, opt: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short' }) => parse(s).toLocaleDateString('ca-ES', opt);
 export const longDay = (s: string) => day(s, { weekday: 'long', day: 'numeric', month: 'long' });
-export const range = (a: string, b: string) => `${day(a)} → ${day(b)}`;
+export const range = (a: string, b: string) => `${day(a)} – ${day(b)}`;
 export const nitsTxt = (n: number) => `${n} ${n === 1 ? 'nit' : 'nits'}`;
 export const stamp = (t: string | number) => new Date(t).toLocaleString('ca-ES', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 export const euro = (c: number | null | undefined) => c == null ? '' : (c / 100).toLocaleString('ca-ES', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 }) + ' €';

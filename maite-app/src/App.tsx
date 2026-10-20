@@ -44,7 +44,7 @@ export function App() {
     const k = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette(!getPalette()); } };
     addEventListener('keydown', k); return () => removeEventListener('keydown', k);
   }, []);
-  useEffect(() => { document.title = `${TITLES[page]} — Maite`; }, [page]);
+  useEffect(() => { document.title = `${TITLES[page]} (Maite)`; }, [page]);
   return (
     <>
       <Shell title={TITLES[page]} actions={page === 'calendar' ? <CalendarActions /> : undefined} onSearch={() => setPalette(true)}>

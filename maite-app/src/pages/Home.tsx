@@ -1,8 +1,8 @@
 // Inici: a greeting that says what happens today, four numbers, what is still to do, this week's calendar and who is here or coming next
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { Glass } from '../lib/glass';
-import { addDays, day, euro, nightsBetween, parse, TODAY } from '../lib/dates';
+import { addDays, day, euro, nightsBetween, parse, range, TODAY } from '../lib/dates';
 import { go } from '../lib/route';
 import { keyOf, shortName, useStore } from '../lib/store';
 import { openBookings, openDetail } from '../lib/ui';
@@ -113,7 +113,7 @@ function Section({ title, action, children }: { title: string; action?: ReactNod
   );
 }
 const Open = ({ to, children }: { to: Parameters<typeof go>[0]; children: ReactNode }) => (
-  <button type="button" onClick={() => go(to)} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-accent outline-none hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-focus">{children}<ArrowRight size={15} aria-hidden="true" /></button>
+  <button type="button" onClick={() => go(to)} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-accent outline-none hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-focus">{children}</button>
 );
 
 // What is still to do for stays from now to 30 days out, grouped by kind; the groups cover everything the count does
@@ -149,7 +149,7 @@ function Todo({ all }: { all: Booking[] }) {
             <span className="min-w-0 flex-1">
               <span className="block text-4xl font-semibold tracking-tight tnum">{open}</span>
               <span className="block text-sm text-muted">{open === 1 ? 'reserva amb coses pendents' : 'reserves amb coses pendents'}</span>
-              <span className="mt-1 flex items-center gap-1 text-xs font-medium text-accent">Veure-les <ArrowRight size={13} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" /></span>
+              <span className="mt-1 flex items-center gap-1 text-xs font-medium text-accent">Veure-les</span>
             </span>
           </button>
           <ul className="divide-y divide-separator">
@@ -162,7 +162,7 @@ function Todo({ all }: { all: Booking[] }) {
                     <span className="block text-sm font-medium">{g.list.length === 1 ? 'Reserva' : 'Reserves'} {g.title}</span>
                     <span className="block truncate text-xs text-muted">{g.list.length === 1 ? '' : 'La més propera: '}{who(g.list[0])}, {day(g.list[0].first)}</span>
                   </span>
-                  <ArrowRight size={16} className="shrink-0 text-muted" aria-hidden="true" />
+                  <ChevronRight size={16} className="shrink-0 text-muted" aria-hidden="true" />
                 </button>
               </li>
             ))}
@@ -186,7 +186,7 @@ function Week() {
           <div className="border-b border-separator" />
           {days.map(d => (
             <div key={d} className="border-b border-separator py-2.5 text-center">
-              <div className="text-[11px] font-medium uppercase tracking-wide text-muted">{parse(d).toLocaleDateString('ca-ES', { weekday: 'short' }).replace('.', '')}</div>
+              <div className="text-xs font-medium text-muted">{parse(d).toLocaleDateString('ca-ES', { weekday: 'short' }).replace('.', '')}</div>
               <div className={`mx-auto mt-1 grid size-7 place-items-center rounded-full text-sm font-semibold tnum ${d === TODAY ? 'bg-accent text-accent-foreground' : ''}`}>{parse(d).getDate()}</div>
             </div>
           ))}
@@ -226,8 +226,8 @@ function Upcoming({ all }: { all: Booking[] }) {
               <li key={keyOf(b)}>
                 <button type="button" onClick={() => openDetail(keyOf(b))} className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4 text-left outline-none hover:bg-[var(--row-hover)] focus-visible:bg-[var(--row-hover)]">
                   <span className="min-w-0 flex-1 basis-56">
-                    <span className="flex items-center gap-2 text-sm font-semibold">{who(b)}{atHome(b) && <span className="status paid">A casa</span>}</span>
-                    <span className="block text-xs text-muted">{shortName(b.stay)}, {day(b.first)} → {day(b.until)}</span>
+                    <span className="flex items-center gap-2 text-sm font-semibold">{who(b)}</span>
+                    <span className="block text-xs text-muted">{shortName(b.stay)}, {atHome(b) ? `a casa fins ${day(b.until)}` : range(b.first, b.until)}</span>
                   </span>
                   <Status b={b} />
                   <span className="flex w-24 items-center gap-2 text-xs text-muted tnum">

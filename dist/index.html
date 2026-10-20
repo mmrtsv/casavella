@@ -206,36 +206,85 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .cal-foot .legend { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .cal-foot .legend s { color: var(--cava); }
 
-/* Results when no stay is chosen */
-.results { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-top: 18px; }
-.res { display: grid; align-content: start; background: var(--paper); border: 1px solid var(--line); min-width: 0; }
-.res-cover { position: relative; }
-.res-cover .photo { aspect-ratio: 4 / 3; }
-.res-cover .plaque { position: absolute; left: 14px; bottom: -18px; width: 76px; height: auto; box-shadow: 0 6px 18px rgba(15, 38, 20, .25); }
-.res-body { display: grid; gap: 6px; justify-items: start; padding: 30px 18px 18px; }
-.res-body h3 { font-size: 26px; }
-.res-cap { font-size: 13px; color: var(--muted); }
-.res-price { margin-top: 4px; line-height: 1.3; }
-.res-price b { font-family: var(--display); font-weight: 400; font-size: 26px; color: var(--ink); }
-.res-price s { font-size: 14px; color: var(--muted); margin-right: 4px; }
-.res-price span { display: block; font-size: 12.5px; color: var(--muted); }
-.res .btn { margin-top: 8px; padding: 12px 18px; }
-.res-no { margin-top: 10px; font-size: 11.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-.res.off .res-cover, .res.off h3, .res.off .res-price { opacity: .5; }
-@media (max-width: 1000px) { .results { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px) {
-  .results { grid-template-columns: 1fr; gap: 12px; }
-  .res { grid-template-columns: 116px minmax(0, 1fr); }
-  .res-cover .photo { aspect-ratio: auto; height: 100%; }
-  .res-cover .plaque { display: none; }
-  .res-body { gap: 4px; padding: 14px; }
-  .res-body h3 { font-size: 22px; }
-  .res-price b { font-size: 22px; }
-  .res .btn { margin-top: 6px; padding: 10px 14px; }
+/* Compare page (#disponibles): every stay for the chosen dates */
+.compare { padding-block: clamp(32px, 5vw, 64px) clamp(64px, 9vw, 112px); }
+.cmp-head { display: flex; justify-content: space-between; align-items: end; gap: 24px 48px; flex-wrap: wrap; margin-bottom: clamp(28px, 4vw, 48px); }
+.cmp-head .bp-head { margin-bottom: 0; }
+.cmp-when { display: grid; gap: 8px; justify-items: end; text-align: right; max-width: 42ch; }
+.cmp-when p { font-family: var(--display); font-size: clamp(19px, 2vw, 23px); line-height: 1.4; color: var(--ink); }
+.cmp-list { border-top: 1px solid var(--line); }
+.cmp-row { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr) minmax(0, 230px); gap: clamp(24px, 3.5vw, 52px); align-items: center; padding-block: clamp(26px, 3.5vw, 40px); border-bottom: 1px solid var(--line); }
+.cmp-media { position: relative; padding: 0; border: 0; background: none; cursor: zoom-in; text-align: left; }
+.cmp-media .photo { display: block; aspect-ratio: 3 / 2; }
+.cmp-media .photo img { transition: transform .6s ease; }
+.cmp-media:hover .photo img { transform: scale(1.03); }
+.cmp-media .plaque { position: absolute; left: 16px; bottom: -18px; width: 84px; height: auto; box-shadow: 0 6px 18px rgba(15, 38, 20, .25); }
+.cmp-info { display: grid; gap: 10px; justify-items: start; min-width: 0; }
+.cmp-info h3 { font-size: clamp(30px, 3.2vw, 42px); }
+.cmp-info p { color: var(--muted); font-size: 15.5px; max-width: 48ch; }
+.cmp-info .feats li { font-size: 13px; }
+.cmp-buy { display: grid; gap: 6px; justify-items: end; text-align: right; }
+.cmp-cap { font-size: 11.5px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.cmp-total { display: flex; align-items: baseline; gap: 10px; margin-top: 6px; }
+.cmp-total b { font-family: var(--display); font-weight: 400; font-size: clamp(34px, 3.4vw, 44px); line-height: 1; color: var(--ink); }
+.cmp-total s { font-size: 15px; color: var(--muted); }
+.cmp-nights { font-size: 13.5px; color: var(--muted); }
+.cmp-badge { justify-self: end; background: color-mix(in srgb, var(--sage) 22%, var(--paper)); color: var(--basil); font-size: 11.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; padding: 5px 10px; }
+.cmp-buy .btn { margin-top: 12px; padding: 14px 26px; }
+.cmp-no { margin-top: 12px; font-size: 11.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.cmp-row.off .cmp-media, .cmp-row.off .cmp-info h3, .cmp-row.off .cmp-total { opacity: .45; }
+.cmp-foot { margin-top: 28px; font-size: 14px; color: var(--muted); }
+.cmp-more { background: none; border: 0; padding: 0; font: 500 13.5px var(--body); color: var(--basil); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* Stay details popup (from the compare page) */
+.stay-modal { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; padding: max(24px, env(safe-area-inset-top, 0px)) 24px 24px; background: rgba(10, 22, 12, .72); }
+.sm-box { position: relative; display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); width: min(1160px, 100%); max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); overflow: auto; background: var(--paper); box-shadow: 0 30px 80px rgba(0, 0, 0, .35); }
+.sm-close { position: absolute; top: 14px; right: 14px; z-index: 2; width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--paper); color: var(--ink); cursor: pointer; }
+.sm-close svg, .sm-nav svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.sm-gallery { display: grid; gap: 10px; align-content: start; padding: 14px; background: var(--ground); min-width: 0; }
+.sm-main { position: relative; aspect-ratio: 4 / 3; background: var(--cava); overflow: hidden; }
+.sm-main img { width: 100%; height: 100%; object-fit: cover; }
+.sm-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(247, 245, 240, .92); color: var(--ink); cursor: pointer; }
+.sm-nav.prev { left: 12px; } .sm-nav.next { right: 12px; }
+.sm-count { position: absolute; right: 12px; bottom: 12px; background: rgba(15, 38, 20, .72); color: #f3efe4; font-size: 11px; font-weight: 600; letter-spacing: .16em; padding: 6px 10px; }
+.sm-thumbs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.sm-thumbs button { padding: 0; border: 0; background: none; cursor: pointer; aspect-ratio: 1; overflow: hidden; opacity: .7; outline-offset: 2px; }
+.sm-thumbs button[aria-current="true"] { opacity: 1; outline: 2px solid var(--basil); }
+.sm-thumbs img { width: 100%; height: 100%; object-fit: cover; }
+.sm-info { display: grid; gap: 14px; align-content: start; justify-items: start; padding: 40px 34px 34px; min-width: 0; }
+.sm-plaque { width: 92px; height: auto; box-shadow: 0 6px 18px rgba(15, 38, 20, .2); margin-bottom: 6px; }
+.sm-info h3 { font-size: clamp(32px, 3.4vw, 44px); }
+.sm-info p { color: var(--muted); }
+.sm-info .feats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+.sm-buy { display: grid; gap: 6px; width: 100%; margin-top: 10px; padding-top: 18px; border-top: 1px solid var(--line); }
+.sm-buy .cmp-total { margin-top: 0; }
+.sm-buy .cmp-badge { justify-self: start; }
+.sm-buy .btn { justify-self: start; margin-top: 10px; padding: 14px 26px; }
+@media (max-width: 860px) {
+  .stay-modal { padding: 0; }
+  .sm-box { grid-template-columns: 1fr; max-height: none; height: 100%; width: 100%; }
+  .sm-gallery { padding: 0 0 10px; }
+  .sm-main { aspect-ratio: 4 / 3; }
+  .sm-thumbs { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 64px; overflow-x: auto; padding: 2px 12px; }
+  .sm-plaque { width: 76px; }
+  .sm-close { top: calc(env(safe-area-inset-top, 0px) + 12px); }
+  .sm-info { padding: 24px 18px 32px; }
+}
+@media (max-width: 980px) {
+  .cmp-row { grid-template-columns: minmax(0, 300px) minmax(0, 1fr); }
+  .cmp-buy { grid-column: 2; justify-items: start; text-align: left; }
+  .cmp-badge { justify-self: start; }
+}
+@media (max-width: 640px) {
+  .cmp-when { justify-items: start; text-align: left; }
+  .cmp-row { grid-template-columns: 1fr; gap: 26px; }
+  .cmp-buy { grid-column: auto; grid-template-columns: 1fr auto; align-items: end; gap: 4px 16px; }
+  .cmp-buy > * { grid-column: 1; }
+  .cmp-buy .btn, .cmp-buy .cmp-no { grid-column: 2; grid-row: 1 / span 4; align-self: end; margin: 0; }
 }
 
 /* Booking page (#reserva): guest details next to the stay summary, then Stripe */
-:root.booking-open body > :not(header.top):not(#reserva):not(footer):not(.lightbox):not(.phone-view) { display: none !important; }
+:root.booking-open body > :not(header.top):not(.subpage):not(footer):not(.lightbox):not(.phone-view):not(.stay-modal) { display: none !important; }
 .bookpage { padding-block: clamp(32px, 5vw, 64px) clamp(64px, 9vw, 112px); }
 .bp-back { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; text-decoration: none; color: var(--muted); }
 .bp-back:hover { color: var(--ink); }
@@ -633,9 +682,24 @@ footer { padding-bottom: 32px !important; }
   </div>
 </header>
 
-<section class="bookpage" id="reserva" hidden aria-labelledby="bpTitle">
+<section class="subpage compare" id="disponibles" hidden aria-labelledby="cmpTitle">
   <div class="wrap">
     <a class="bp-back" href="#reservar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Tornar</a>
+    <div class="cmp-head">
+      <div class="bp-head"><span class="label">Disponibilitat</span><h2 id="cmpTitle" data-script="tria el teu racó">On voleu dormir?</h2></div>
+      <div class="cmp-when">
+        <p id="cmpWhen"></p>
+        <a href="#reservar" class="bp-change">Canviar dates o hostes</a>
+      </div>
+    </div>
+    <div class="cmp-list" id="cmpList"></div>
+    <p class="cmp-foot">Com més dies us quedeu, millor: un 5 % menys per a dues nits i un 10 % a partir de tres. Impostos inclosos.</p>
+  </div>
+</section>
+
+<section class="subpage bookpage" id="reserva" hidden aria-labelledby="bpTitle">
+  <div class="wrap">
+    <a class="bp-back" id="bpBack" href="#reservar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Tornar</a>
     <div class="bp-head"><span class="label">La teva reserva</span><h2 id="bpTitle" data-script="gairebé ho tenim">Les teves dades</h2></div>
     <div class="bp-grid">
       <div class="bp-main">
@@ -700,7 +764,6 @@ footer { padding-bottom: 32px !important; }
     <button class="btn solid" type="submit">Reservar</button>
   </form>
   <p class="note" id="bookNote" aria-live="polite"></p>
-  <div class="results" id="results" hidden></div>
 </div>
 
 <section class="section intro" id="casa">
@@ -993,6 +1056,24 @@ footer { padding-bottom: 32px !important; }
 </footer>
 
 
+<div class="stay-modal" id="stayModal" hidden role="dialog" aria-modal="true" aria-labelledby="smName">
+  <div class="sm-box">
+    <button type="button" class="sm-close" id="smClose" aria-label="Tancar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <div class="sm-gallery">
+      <div class="sm-main"><img id="smImg" alt=""><button type="button" class="sm-nav prev" id="smPrev" aria-label="Foto anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="sm-nav next" id="smNext" aria-label="Foto següent"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><span class="sm-count" id="smCount"></span></div>
+      <div class="sm-thumbs" id="smThumbs"></div>
+    </div>
+    <div class="sm-info">
+      <img class="sm-plaque" id="smPlaque" alt="">
+      <span class="label" id="smKind"></span>
+      <h3 id="smName"></h3>
+      <p id="smDesc"></p>
+      <ul class="feats" id="smFeats"></ul>
+      <div class="sm-buy" id="smBuy"></div>
+    </div>
+  </div>
+</div>
+
 <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Foto ampliada">
   <button class="close" id="lbClose">Tancar</button>
   <img id="lbImg" alt="">
@@ -1269,8 +1350,7 @@ function quoteLine(q) {
 }
 async function showQuote() {
   available = null;
-  if (!fstay.value) { if (!resultsBox.hidden) showResults(); else note.textContent = ''; return; }
-  resultsBox.hidden = true;
+  if (!fstay.value) { note.textContent = ''; return; }
   const q = price();
   if (!q) { note.textContent = ''; return; }
   note.innerHTML = quoteLine(q);
@@ -1285,48 +1365,99 @@ async function showQuote() {
   } catch (e) {}
 }
 
-// No stay chosen: every stay for those dates, with its price and whether it is free
-const resultsBox = $('results'), freeNow = {};
-let searchSeq = 0;
-function drawResults() {
+// No stay chosen: the compare page lists every stay for those dates, with price and availability
+const av = $('disponibles'), cmpList = $('cmpList'), freeNow = {};
+let searchSeq = 0, cameFrom = '#reservar';
+function drawCompare() {
   const g = +fguests.value || 1;
+  $('cmpWhen').textContent = `${nightsTxt(nights())}, del ${dayLabel(fin.value, true)} al ${dayLabel(fout.value, true)}, per a ${people(g)}`;
   const rows = Object.entries(STAY_INFO).map(([stay, s]) => ({ stay, s, q: price(stay), fits: g <= s.max, free: freeNow[stay] !== false }));
   rows.sort((a, b) => (b.fits && b.free) - (a.fits && a.free));
-  resultsBox.innerHTML = rows.map(({ stay, s, q, fits, free }) => {
+  cmpList.innerHTML = rows.map(({ stay, s, q, fits, free }) => {
     const art = $(stay), ok = fits && free;
-    return `<article class="res${ok ? '' : ' off'}">
-      <div class="res-cover"><div class="photo"><img src="${art.querySelector('.stay-cover .photo img').getAttribute('src')}" alt="" loading="lazy"></div><img class="plaque" src="${art.querySelector('.plaque').getAttribute('src')}" alt="" loading="lazy"></div>
-      <div class="res-body"><span class="label">${s.kind}</span><h3>${s.name}</h3><p class="res-cap">Fins a ${people(s.max)}</p>
-        <p class="res-price">${q.discount ? `<s>${euro(q.subtotal)}</s> ` : ''}<b>${euro(q.total)}</b><span>${nightsTxt(q.n)}${q.discount ? `, amb un ${q.discount} % de descompte` : ''}</span></p>
-        ${ok ? `<button type="button" class="btn solid" data-choose="${stay}">Reservar</button>` : `<span class="res-no">${fits ? 'Ocupat aquests dies' : `Només fins a ${people(s.max)}`}</span>`}
-      </div></article>`;
+    const desc = art.querySelector('.stay-body > p:not(.price)').textContent;
+    return `<article class="cmp-row${ok ? '' : ' off'}">
+      <button type="button" class="cmp-media" data-details="${stay}" aria-label="Veure les fotos i els detalls de ${s.name}"><span class="photo"><img src="${art.querySelector('.stay-cover .photo img').getAttribute('src')}" alt="" loading="lazy"></span><img class="plaque" src="${art.querySelector('.plaque').getAttribute('src')}" alt="" loading="lazy"></button>
+      <div class="cmp-info"><span class="label">${s.kind}</span><h3>${s.name}</h3><p>${desc}</p><ul class="feats">${art.querySelector('.feats').innerHTML}</ul><button type="button" class="cmp-more" data-details="${stay}">Veure fotos i detalls</button></div>
+      <div class="cmp-buy">${buyBlock(stay)}</div></article>`;
   }).join('');
 }
-async function showResults() {
-  if (!(nights() > 0)) { resultsBox.hidden = true; note.textContent = "Tria les dates d'arribada i de sortida."; return; }
-  note.innerHTML = `Allotjaments per a <b>${nightsTxt(nights())}</b>, del ${dayLabel(fin.value)} al ${dayLabel(fout.value)}`;
+function buyBlock(stay) {
+  const s = STAY_INFO[stay], q = price(stay), fits = (+fguests.value || 1) <= s.max, ok = fits && freeNow[stay] !== false;
+  return `<span class="cmp-cap">Fins a ${people(s.max)}</span>
+    ${q.discount ? `<span class="cmp-badge">${q.discount} % de descompte</span>` : ''}
+    <div class="cmp-total">${q.discount ? `<s>${euro(q.subtotal)}</s>` : ''}<b>${euro(q.total)}</b></div>
+    <span class="cmp-nights">en total, per ${nightsTxt(q.n)}</span>
+    ${ok ? `<button type="button" class="btn solid" data-choose="${stay}">Reservar</button>` : `<span class="cmp-no">${fits ? 'Ocupat aquests dies' : `Només fins a ${people(s.max)}`}</span>`}`;
+}
+
+// Stay details popup: gallery, description, services and the price for the chosen dates
+const sm = $('stayModal'), smImg = $('smImg'), smThumbs = $('smThumbs');
+let smSet = [], smCur = 0, smOpener = null, smStay = '';
+function smShow(i) {
+  smCur = (i + smSet.length) % smSet.length;
+  smImg.src = `img/${smSet[smCur]}.jpg`; smImg.alt = `${STAY_INFO[smStay].kind} ${STAY_INFO[smStay].name}, foto ${smCur + 1}`;
+  $('smCount').textContent = `${smCur + 1} / ${smSet.length}`;
+  smThumbs.querySelectorAll('button').forEach((b, k) => b.setAttribute('aria-current', k === smCur));
+}
+function openStay(stay, from) {
+  const s = STAY_INFO[stay], art = $(stay);
+  smStay = stay; smOpener = from; smSet = STAY_SETS[stay];
+  $('smPlaque').src = art.querySelector('.plaque').getAttribute('src'); $('smPlaque').alt = art.querySelector('.plaque').alt;
+  $('smKind').textContent = s.kind; $('smName').textContent = s.name;
+  $('smDesc').textContent = art.querySelector('.stay-body > p:not(.price)').textContent;
+  $('smFeats').innerHTML = art.querySelector('.feats').innerHTML;
+  $('smBuy').innerHTML = buyBlock(stay);
+  smThumbs.innerHTML = smSet.map((n, k) => `<button type="button" data-k="${k}" aria-label="Foto ${k + 1}"><img src="img/${n}.jpg" alt="" loading="lazy"></button>`).join('');
+  smShow(0);
+  sm.hidden = false; document.documentElement.style.overflow = 'hidden';
+  $('smClose').focus();
+}
+function closeStay() {
+  sm.hidden = true; document.documentElement.style.overflow = '';
+  if (smOpener) smOpener.focus();
+}
+$('smClose').addEventListener('click', closeStay);
+$('smPrev').addEventListener('click', () => smShow(smCur - 1));
+$('smNext').addEventListener('click', () => smShow(smCur + 1));
+smThumbs.addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) smShow(+b.dataset.k); });
+sm.addEventListener('click', e => {
+  if (e.target === sm) return closeStay();
+  const c = e.target.closest('[data-choose]');
+  if (c) { closeStay(); chooseStay(c.dataset.choose); }
+});
+document.addEventListener('keydown', e => {
+  if (sm.hidden) return;
+  if (e.key === 'Escape') closeStay();
+  if (e.key === 'ArrowLeft') smShow(smCur - 1);
+  if (e.key === 'ArrowRight') smShow(smCur + 1);
+});
+function chooseStay(stay) {
+  stayPick.set(stay, true);
+  cameFrom = '#disponibles';
+  goToBooking();
+}
+async function showCompare() {
   Object.keys(freeNow).forEach(k => delete freeNow[k]);
-  drawResults(); resultsBox.hidden = false;
+  drawCompare();
   const seq = ++searchSeq, a = fin.value, b = fout.value;
   try {
     const d = await (await fetch(`/api/search?in=${a}&out=${b}&guests=${fguests.value}`)).json();
     (d.results || []).forEach(r => { if (r.total) serverQuotes[`${r.stay}|${a}|${b}`] = r; freeNow[r.stay] = r.available; });
-    if (seq === searchSeq && !resultsBox.hidden) drawResults();
+    if (seq === searchSeq && !av.hidden) { drawCompare(); if (!sm.hidden) $('smBuy').innerHTML = buyBlock(smStay); }
   } catch (e) {}
 }
-resultsBox.addEventListener('click', e => {
-  const b = e.target.closest('[data-choose]');
-  if (!b) return;
-  stayPick.set(b.dataset.choose, true);
-  resultsBox.hidden = true;
-  goToBooking();
+cmpList.addEventListener('click', e => {
+  const b = e.target.closest('[data-choose]'), d = e.target.closest('[data-details]');
+  if (d) return openStay(d.dataset.details, d);
+  if (b) chooseStay(b.dataset.choose);
 });
 fstay.addEventListener('change', () => {
   guestsPick.set(Math.min(+fguests.value || 2, (STAY_INFO[fstay.value] || { max: 3 }).max), true);
   if (fstay.value) loadBusy(fstay.value);
   showQuote();
 });
-fguests.addEventListener('change', () => { if (!fstay.value && !resultsBox.hidden) showResults(); });
+fguests.addEventListener('change', () => { if (!av.hidden) showCompare(); });
 document.querySelectorAll('[data-book]').forEach(a => a.addEventListener('click', () => {
   stayPick.set(a.closest('.stay').id);
   setTimeout(() => openCal('in'), 450);
@@ -1340,8 +1471,9 @@ function save() { try { sessionStorage.setItem('lcv-booking', JSON.stringify({ s
 function restore() {
   try {
     const s = JSON.parse(sessionStorage.getItem('lcv-booking') || 'null');
-    if (!s || !STAY_INFO[s.stay]) return;
-    stayPick.set(s.stay, true); guestsPick.set(s.guests, true);
+    if (!s) return;
+    if (STAY_INFO[s.stay]) stayPick.set(s.stay, true);
+    guestsPick.set(s.guests, true);
     if (s.in >= iso(new Date()) && s.out > s.in) setDates(s.in, s.out);
     G.name.value = s.name || ''; G.email.value = s.email || ''; G.phone.value = s.phone || ''; G.notes.value = s.notes || '';
     if (s.arrival) arrivalPick.set(s.arrival, true);
@@ -1360,19 +1492,22 @@ function renderSummary() {
     + (q.discount ? `<div class="disc"><span>Descompte ${q.n === 2 ? 'de 2 nits' : 'de 3 nits o més'} (${q.discount} %)</span><span>− ${euro(q.subtotal - q.total)}</span></div>` : '')
     + `<div class="total"><span>Total</span><span>${euro(q.total)}</span></div><small>Impostos inclosos.</small>`;
 }
-function showPage(on) {
+function showSub(id) {
   closePop();
-  document.documentElement.classList.toggle('booking-open', on);
-  bp.hidden = !on;
-  if (on) { renderSummary(); scrollTo(0, 0); showQuote(); }
+  document.documentElement.classList.toggle('booking-open', !!id);
+  bp.hidden = id !== 'reserva'; av.hidden = id !== 'disponibles';
+  if (id === 'reserva') { $('bpBack').href = $('bpChange').href = cameFrom; renderSummary(); showQuote(); }
+  if (id === 'disponibles') showCompare();
+  if (id) { scrollTo({ top: 0, behavior: 'instant' }); requestAnimationFrame(() => scrollTo({ top: 0, behavior: 'instant' })); }
 }
 function route() {
-  if (location.hash === '#reserva') {
-    if (!price()) { location.replace('#reservar'); return; }
-    showPage(true);
-  } else if (!bp.hidden) {
-    showPage(false);
-    const t = location.hash && document.querySelector(location.hash);
+  const h = location.hash;
+  if (h === '#reserva' && price()) return showSub('reserva');
+  if (h === '#disponibles' && nights() > 0) return showSub('disponibles');
+  if (h === '#reserva' || h === '#disponibles') { location.replace('#reservar'); return; }
+  if (document.documentElement.classList.contains('booking-open')) {
+    showSub(null);
+    const t = h && document.querySelector(h);
     if (t) t.scrollIntoView();
   }
 }
@@ -1384,8 +1519,9 @@ function goToBooking() {
 bookForm.addEventListener('submit', e => {
   e.preventDefault();
   if (!(nights() > 0)) { note.textContent = "Tria les dates d'arribada i de sortida."; openCal('in'); return; }
-  if (!fstay.value) { showResults(); return; }
+  if (!fstay.value) { save(); location.hash = 'disponibles'; return; }
   if (available === false) { note.innerHTML = "Aquestes dates ja estan reservades: prova'n unes altres."; openCal('in'); return; }
+  cameFrom = '#reservar';
   goToBooking();
 });
 guestForm.addEventListener('input', save);

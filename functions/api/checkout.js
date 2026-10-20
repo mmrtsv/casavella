@@ -21,7 +21,7 @@ export async function onRequestPost({ request, env }) {
     cal = await calendar(env, q.stay);
     if ((await cal.conflicts(q.checkin, q.checkout)).length) return json({ error: 'unavailable' }, 409);
     hold = await cal.create({
-      summary: `Pendent de pagament · ${q.name} · ${guest.name}`,
+      summary: `Pendent de pagament: ${q.name}, ${guest.name}`,
       description: `Reserva iniciada a la web. Si no es paga en 45 minuts, aquest bloqueig desapareix sol.`,
       start: { date: q.checkin }, end: { date: q.checkout },
       colorId: '5', extendedProperties: { private: { lcv: 'hold' } },
@@ -32,14 +32,14 @@ export async function onRequestPost({ request, env }) {
     if (rivals.length) { await cal.remove(hold.id); return json({ error: 'unavailable' }, 409); }
 
     const site = env.SITE_URL || new URL(request.url).origin;
-    const label = `${q.nights} ${q.nights === 1 ? 'nit' : 'nits'} · ${fmt(q.checkin)} – ${fmt(q.checkout)} · ${guests} ${guests === 1 ? 'persona' : 'persones'}`;
+    const label = `${q.nights} ${q.nights === 1 ? 'nit' : 'nits'}, del ${fmt(q.checkin)} al ${fmt(q.checkout)}, ${guests} ${guests === 1 ? 'persona' : 'persones'}`;
     const session = await stripe(env, 'checkout/sessions', {
       mode: 'payment',
       locale: 'auto',
       payment_method_types: ['card'],
       line_items: [{ quantity: 1, price_data: { currency: 'eur', unit_amount: q.total, product_data: {
-        name: `${q.name} · La Casa Vella`,
-        description: q.discount ? `${label} · ${q.price} € la nit, ${q.discount} % de descompte (abans ${euros(q.subtotal)})` : `${label} · ${q.price} € la nit`,
+        name: `${q.name}, La Casa Vella`,
+        description: q.discount ? `${label}. ${q.price} € la nit amb un ${q.discount} % de descompte (abans ${euros(q.subtotal)})` : `${label}. ${q.price} € la nit`,
       } } }],
       customer_email: guest.email,
       billing_address_collection: 'auto',
@@ -47,7 +47,7 @@ export async function onRequestPost({ request, env }) {
       success_url: `${site}/?reserva=ok#reserva`,
       cancel_url: `${site}/api/release?stay=${q.stay}&event=${encodeURIComponent(hold.id)}`,
       metadata: { stay: q.stay, checkin: q.checkin, checkout: q.checkout, nights: q.nights, guests, event: hold.id, ...guest },
-      payment_intent_data: { description: `${q.name} · ${label}`, metadata: { stay: q.stay, checkin: q.checkin, checkout: q.checkout, event: hold.id } },
+      payment_intent_data: { description: `${q.name}, ${label}`, metadata: { stay: q.stay, checkin: q.checkin, checkout: q.checkout, event: hold.id } },
     });
     await cal.patch(hold.id, { extendedProperties: { private: { lcv: 'hold', session: session.id } } });
     return json({ url: session.url });

@@ -21,7 +21,7 @@ export async function onRequestPost({ request, env }) {
   const cd = s.customer_details || {};
   const c = { name: m.name || cd.name, email: m.email || cd.email, phone: m.phone || cd.phone };
   const booking = {
-    summary: `${STAYS[m.stay].name} · ${c.name || 'Reserva web'} (${m.guests} pers.)`,
+    summary: `${STAYS[m.stay].name}: ${c.name || 'Reserva web'} (${m.guests} pers.)`,
     description: [
       `Reserva pagada a la web: ${euros(s.amount_total)}`,
       `${m.nights} nits, del ${m.checkin} al ${m.checkout}`,
@@ -45,7 +45,7 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: true });
   }
   await stripe(env, 'refunds', { payment_intent: s.payment_intent, metadata: { reason: 'dates_taken' } });
-  await cal.create({ ...booking, summary: `REEMBORSADA · ${booking.summary}`, transparency: 'transparent', colorId: '11',
+  await cal.create({ ...booking, summary: `REEMBORSADA: ${booking.summary}`, transparency: 'transparent', colorId: '11',
     description: 'Les dates ja estaven ocupades quan va arribar el pagament. Stripe ha retornat els diners automàticament.\n\n' + booking.description });
   return json({ ok: true, refunded: true });
 }

@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent
 DIST = ROOT / 'dist'
 SITE_URL = (sys.argv[1] if len(sys.argv) > 1 else '').rstrip('/')
 
-TITLE = 'La Casa Vella · Allotjament rural al Bedorc'
+TITLE = 'La Casa Vella, allotjament rural al Bedorc'
 DESCRIPTION = ("Casa de poble familiar de 1898 al Bedorc, entre vinyes i amb Montserrat a l'horitzó. "
                "Dos apartaments, dues habitacions i restaurant.")
 OG_IMAGE = 'img/hero-vinyes-cel.jpg'

@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
 <title>Maite</title>
 <link rel="icon" type="image/png" href="/img/iso-dark.png">
 <style>
@@ -18,14 +19,6 @@
   --display: "Le Monde Livre", Georgia, serif; --body: "Halyard Display", "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --ground: #141f17; --paper: #1b281e; --ink: #dfe8d6; --text: #e3e0d6; --muted: #a8b2a3; --line: #2f3d31;
-  --basil: #8fbf8c; --deep: #0f2614; --paid: #a6d1a1; --paid-bg: #26402a; --due: #e7c27a; --due-bg: #4a3a17;
-  --block: #b9bfb2; --block-bg: #313a32; --other: #a9c1e6; --other-bg: #263446; --danger: #f08f7c; --primary: #8fbf8c; --on-primary: #0f2614; color-scheme: dark; } }
-:root[data-theme="dark"] {
-  --ground: #141f17; --paper: #1b281e; --ink: #dfe8d6; --text: #e3e0d6; --muted: #a8b2a3; --line: #2f3d31;
-  --basil: #8fbf8c; --deep: #0f2614; --paid: #a6d1a1; --paid-bg: #26402a; --due: #e7c27a; --due-bg: #4a3a17;
-  --block: #b9bfb2; --block-bg: #313a32; --other: #a9c1e6; --other-bg: #263446; --danger: #f08f7c; --primary: #8fbf8c; --on-primary: #0f2614; color-scheme: dark; }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--ground); color: var(--text); font: 16px/1.45 var(--body); }
 [hidden] { display: none !important; }
@@ -56,19 +49,19 @@ main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 60px; }
 
 /* Month grid: one row per stay, one column per night */
 .grid-wrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; }
-.grid { --days: 30; display: grid; grid-template-columns: 132px repeat(var(--days), minmax(34px, 1fr)); min-width: calc(132px + var(--days) * 34px); }
+.grid { --days: 21; display: grid; grid-template-columns: 150px repeat(var(--days), minmax(52px, 1fr)); min-width: calc(150px + var(--days) * 52px); }
 .grid .h { font-size: 11px; color: var(--muted); text-align: center; padding: 8px 0 6px; border-bottom: 1px solid var(--line); line-height: 1.2; }
-.grid .h b { display: block; font-size: 14px; color: var(--text); font-weight: 500; }
+.grid .h b { display: block; font-size: 16px; color: var(--text); font-weight: 500; }
 .grid .h.we { background: color-mix(in srgb, var(--line) 35%, transparent); }
 .grid .h.today b { color: var(--today); }
-.grid .name { position: sticky; left: 0; z-index: 2; background: var(--paper); padding: 0 10px; display: flex; align-items: center; font-size: 14px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); min-height: 52px; }
+.grid .name { position: sticky; left: 0; z-index: 2; background: var(--paper); padding: 0 10px; display: flex; align-items: center; font-size: 14px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); min-height: 76px; font-size: 15px; }
 .grid .corner { position: sticky; left: 0; z-index: 2; background: var(--paper); border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); }
-.grid .cell { border-bottom: 1px solid var(--line); border-left: 1px solid color-mix(in srgb, var(--line) 55%, transparent); cursor: pointer; min-height: 52px; }
+.grid .cell { border-bottom: 1px solid var(--line); border-left: 1px solid color-mix(in srgb, var(--line) 55%, transparent); cursor: pointer; min-height: 76px; }
 .grid .cell.we { background: color-mix(in srgb, var(--line) 35%, transparent); }
 .grid .cell.past { cursor: default; background-image: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--line) 50%, transparent) 6px 7px); }
 .grid .cell:not(.past):hover { background: color-mix(in srgb, var(--basil) 12%, transparent); }
 .grid .cell.sel { background: color-mix(in srgb, var(--basil) 28%, transparent); }
-.ev { z-index: 1; margin: 7px 2px; border-radius: 7px; padding: 4px 7px; font-size: 12px; line-height: 1.25; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; border: 0; text-align: left; border-left: 4px solid; align-self: stretch; }
+.ev { z-index: 1; margin: 10px 3px; border-radius: 8px; padding: 6px 9px; font-size: 13px; line-height: 1.25; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; border: 0; text-align: left; border-left: 4px solid; align-self: stretch; }
 .ev small { display: block; opacity: .8; overflow: hidden; text-overflow: ellipsis; }
 .k-paid, .k-manual.settled { background: var(--paid-bg); border-color: var(--paid); }
 .k-pending, .k-manual { background: var(--due-bg); border-color: var(--due); }
@@ -95,7 +88,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 60px; }
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
 .stat { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
 .stat span { font-size: 13px; color: var(--muted); }
-.stat b { display: block; font: 400 28px/1.15 var(--display); color: var(--ink); font-variant-numeric: tabular-nums; }
+.stat b { display: block; font: 300 28px/1.2 var(--body); color: var(--ink); font-variant-numeric: tabular-nums; margin-top: 2px; }
 .day { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 22px 0 8px; }
 .card { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; background: var(--paper); border: 1px solid var(--line); border-left: 4px solid; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; width: 100%; text-align: left; }
 .card h3 { font: 500 17px/1.3 var(--body); color: var(--text); }
@@ -245,7 +238,8 @@ dd { margin: 0; overflow-wrap: anywhere; }
   .pday .p { font-size: 15px; }
   .pday .min { position: static; align-self: flex-start; font-size: 10px; padding: 0 4px; }
   .pcal { gap: 3px; }
-  .grid { grid-template-columns: 92px repeat(var(--days), 34px); min-width: calc(92px + var(--days) * 34px); }
+  .grid { grid-template-columns: 96px repeat(var(--days), 46px); min-width: calc(96px + var(--days) * 46px); }
+  .grid .name, .grid .cell { min-height: 64px; }
   .grid .name { font-size: 13px; padding: 0 8px; }
   .row, .row.three { grid-template-columns: 1fr; }
   .card { grid-template-columns: 1fr; }
@@ -277,9 +271,9 @@ dd { margin: 0; overflow-wrap: anywhere; }
   <section id="tab-cal">
     <div class="bar">
       <h2 id="month"></h2>
-      <button class="btn icon" id="prev" aria-label="Mes anterior">‹</button>
+      <button class="btn icon" id="prev" aria-label="Dues setmanes enrere">‹</button>
       <button class="btn" id="todayBtn">Avui</button>
-      <button class="btn icon" id="next" aria-label="Mes següent">›</button>
+      <button class="btn icon" id="next" aria-label="Dues setmanes endavant">›</button>
       <button class="btn" id="blockBtn">Tancar dates</button>
       <button class="btn solid" id="bookBtn">Nova reserva</button>
     </div>
@@ -566,17 +560,16 @@ document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click',
 
 // ---- Calendar ----
 const view = {};
-function setMonth(d) {
-  view.y = d.getFullYear(); view.m = d.getMonth();
-  view.from = iso(new Date(view.y, view.m, 1)); view.to = iso(new Date(view.y, view.m + 1, 1));
-}
-setMonth(new Date());
+// Three weeks, starting two days before the chosen day, so today and what comes next get the room
+const SPAN = 21, STEP = 14;
+function setStart(d) { view.from = d; view.to = addDays(d, SPAN); }
+setStart(addDays(TODAY, -2));
 let sel = null; // { stay, a, b }  a and b are nights (inclusive)
 let scrollToToday = true;
 
 function renderCal() {
-  const title = new Date(view.y, view.m, 1).toLocaleDateString('ca-ES', { month: 'long', year: 'numeric' });
-  $('month').textContent = title[0].toUpperCase() + title.slice(1);
+  const last = addDays(view.to, -1), sameYear = view.from.slice(0, 4) === last.slice(0, 4);
+  $('month').textContent = `${day(view.from, { day: 'numeric', month: 'short', ...(sameYear ? {} : { year: 'numeric' }) })} – ${day(last, { day: 'numeric', month: 'short', year: 'numeric' })}`;
   const days = nightsBetween(view.from, view.to), g = $('grid');
   g.style.setProperty('--days', days);
   let h = '<div class="corner"></div>';
@@ -603,7 +596,7 @@ function renderCal() {
   renderSel();
   if (scrollToToday && TODAY >= view.from && TODAY < view.to) {
     const w = g.parentElement, col = g.querySelector('.h.today');
-    w.scrollLeft = Math.max(0, col.offsetLeft - g.querySelector('.corner').offsetWidth - 34);
+    w.scrollLeft = Math.max(0, col.offsetLeft - g.querySelector('.corner').offsetWidth - col.offsetWidth);
   }
   scrollToToday = false;
 }
@@ -633,10 +626,10 @@ function renderSel() {
 $('selClear').onclick = () => { sel = null; renderCal(); };
 $('selBlock').onclick = () => openBlock({ stays: [sel.stay], first: sel.a, until: addDays(sel.b || sel.a, 1) });
 $('selBook').onclick = () => openBook({ stay: sel.stay, first: sel.a, until: addDays(sel.b || sel.a, 1) });
-async function go(d) { setMonth(d); sel = null; scrollToToday = true; $('tab-cal').classList.add('loading'); try { await ensure(view.from, view.to); } catch (e) { toast(e.message); } $('tab-cal').classList.remove('loading'); renderCal(); }
-$('prev').onclick = () => go(new Date(view.y, view.m - 1, 1));
-$('next').onclick = () => go(new Date(view.y, view.m + 1, 1));
-$('todayBtn').onclick = () => go(new Date());
+async function go(d) { setStart(d); sel = null; scrollToToday = true; $('tab-cal').classList.add('loading'); try { await ensure(view.from, view.to); } catch (e) { toast(e.message); } $('tab-cal').classList.remove('loading'); renderCal(); }
+$('prev').onclick = () => go(addDays(view.from, -STEP));
+$('next').onclick = () => go(addDays(view.from, STEP));
+$('todayBtn').onclick = () => go(addDays(TODAY, -2));
 $('bookBtn').onclick = () => openBook({});
 $('blockBtn').onclick = () => openBlock({});
 

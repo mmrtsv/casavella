@@ -277,6 +277,9 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .bp-back:hover { color: var(--ink); }
 .bp-back svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .bp-head { display: grid; gap: 14px; margin: 28px 0 clamp(32px, 5vw, 56px); }
+.bookpage .bp-head { margin: 20px 0 clamp(24px, 3vw, 36px); }
+:root[data-variant] .bookpage h2 { font-size: clamp(30px, 3.2vw, 44px) !important; }
+.bp-form input:-webkit-autofill, .bp-form input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 100px var(--ground) inset; -webkit-text-fill-color: var(--text); caret-color: var(--text); }
 .bp-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: clamp(32px, 5vw, 80px); align-items: start; }
 .bp-form { display: grid; gap: 26px; }
 .bp-row { display: grid; gap: 4px; min-width: 0; }
@@ -296,19 +299,18 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .bp-secure { display: flex; gap: 10px; align-items: center; font-size: 13.5px; color: var(--muted); margin-top: -8px; }
 .bp-secure svg { width: 18px; height: 18px; flex: none; fill: none; stroke: var(--basil); stroke-width: 1.5; stroke-linecap: round; }
 .bp-form .note { font-size: 14px; color: var(--text); min-height: 1.7em; }
-.bp-sum { background: var(--paper); border: 1px solid var(--line); position: sticky; top: 96px; }
-.bp-cover { position: relative; }
-.bp-cover .photo { aspect-ratio: 16 / 10; }
-.bp-cover .plaque { position: absolute; left: 22px; bottom: -22px; width: 110px; height: auto; box-shadow: 0 6px 20px rgba(15, 38, 20, .25); }
-.bp-sum-body { display: grid; gap: 14px; padding: 40px 26px 26px; }
-.bp-sum-body h3 { font-size: 34px; }
-.bp-sum .feats li { font-size: 13px; }
-.bp-lines { margin: 4px 0 0; border-top: 1px solid var(--line); }
-.bp-lines div { display: flex; justify-content: space-between; gap: 16px; padding-block: 11px; border-bottom: 1px solid var(--line); }
+.bp-sum { display: grid; gap: 16px; padding: 22px; background: var(--paper); border: 1px solid var(--line); position: sticky; top: 92px; }
+.bp-top { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 18px; align-items: center; }
+.bp-thumb { padding: 0; border: 0; background: none; cursor: zoom-in; }
+.bp-thumb .photo { display: block; aspect-ratio: 1; }
+.bp-id { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.bp-id h3 { font-size: 30px; }
+.bp-lines { margin: 0; border-top: 1px solid var(--line); }
+.bp-lines div { display: flex; justify-content: space-between; gap: 16px; padding-block: 9px; border-bottom: 1px solid var(--line); }
 .bp-lines dt { font-size: 11.5px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); align-self: center; }
 .bp-lines dd { margin: 0; text-align: right; }
 .bp-change { justify-self: start; font-size: 13px; color: var(--basil); }
-.bp-price { display: grid; gap: 8px; padding-top: 10px; font-size: 15px; }
+.bp-price { display: grid; gap: 8px; font-size: 15px; }
 .bp-price div { display: flex; justify-content: space-between; gap: 16px; }
 .bp-price .disc { color: var(--basil); }
 .bp-price .total { align-items: baseline; padding-top: 12px; margin-top: 4px; border-top: 1px solid var(--line); font-family: var(--display); font-size: 28px; color: var(--ink); }
@@ -320,7 +322,7 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .bp-done p { color: var(--muted); }
 .bookpage.done .bp-form, .bookpage.done .bp-change { display: none; }
 @media (max-width: 900px) { .bp-grid { grid-template-columns: 1fr; } .bp-sum { position: static; order: -1; } }
-@media (max-width: 560px) { .bp-two { grid-template-columns: 1fr; } .bp-sum-body { padding: 36px 18px 20px; } .bp-sum-body h3 { font-size: 30px; } .bp-pay { justify-self: stretch; } }
+@media (max-width: 560px) { .bp-two { grid-template-columns: 1fr; } .bp-sum { padding: 16px; } .bp-top { grid-template-columns: 84px minmax(0, 1fr); gap: 14px; } .bp-id h3 { font-size: 26px; } .bp-pay { justify-self: stretch; } }
 .stay-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
 .stays .btn { padding: 12px 18px; }
 @media (max-width: 760px) { .stays { grid-template-columns: 1fr; } }
@@ -699,7 +701,7 @@ footer { padding-bottom: 32px !important; }
           <div class="bp-row field"><label class="label" id="lbArrival">Hora d'arribada aproximada</label><button type="button" class="pick" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbArrival arrivalVal"><span class="val" id="arrivalVal">Encara no ho sé</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><input type="hidden" id="garrival" value="Encara no ho sé"></div>
           <div class="bp-row"><label class="label" for="gnotes">Alguna cosa que hàgim de saber?</label><textarea id="gnotes" rows="3" maxlength="500" placeholder="Una celebració, una al·lèrgia, si veniu amb bicicleta…"></textarea></div>
           <label class="bp-check"><input type="checkbox" id="gterms"><span>Accepto les <a href="#contacte">condicions de reserva</a> i la <a href="#contacte">política de privacitat</a>.</span></label>
-          <button class="btn solid bp-pay" type="submit">Continuar al pagament</button>
+          <button class="btn solid bp-pay" type="submit">Pagar</button>
           <p class="bp-secure"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>Pagament segur amb targeta a través de Stripe. No guardem les dades de la teva targeta.</p>
           <p class="note" id="payNote" aria-live="polite"></p>
         </form>
@@ -712,19 +714,17 @@ footer { padding-bottom: 32px !important; }
         </div>
       </div>
       <aside class="bp-sum" aria-label="Resum de la reserva">
-        <div class="bp-cover"><div class="photo"><img id="bpImg" src="img/apt-sala-2.jpg" alt=""></div><img class="plaque" id="bpPlaque" src="img/nom-montserrat.png" alt=""></div>
-        <div class="bp-sum-body">
-          <span class="label" id="bpKind"></span>
-          <h3 id="bpName"></h3>
-          <ul class="feats" id="bpFeats"></ul>
-          <dl class="bp-lines">
-            <div><dt>Arribada</dt><dd id="bpIn"></dd></div>
-            <div><dt>Sortida</dt><dd id="bpOut"></dd></div>
-            <div><dt>Hostes</dt><dd id="bpGuests"></dd></div>
-          </dl>
-          <a class="bp-change" href="#reservar" id="bpChange">Canviar dates o allotjament</a>
-          <div class="bp-price" id="bpPrice"></div>
+        <div class="bp-top">
+          <button type="button" class="bp-thumb" id="bpThumb" aria-label="Veure les fotos i els detalls"><span class="photo"><img id="bpImg" src="img/apt-sala-2.jpg" alt=""></span></button>
+          <div class="bp-id"><span class="label" id="bpKind"></span><h3 id="bpName"></h3><button type="button" class="cmp-more" id="bpDetails">Veure fotos i detalls</button></div>
         </div>
+        <dl class="bp-lines">
+          <div><dt>Arribada</dt><dd id="bpIn"></dd></div>
+          <div><dt>Sortida</dt><dd id="bpOut"></dd></div>
+          <div><dt>Hostes</dt><dd id="bpGuests"></dd></div>
+        </dl>
+        <div class="bp-price" id="bpPrice"></div>
+        <a class="bp-change" href="#reservar" id="bpChange">Canviar dates o allotjament</a>
       </aside>
     </div>
   </div>
@@ -1492,15 +1492,15 @@ function renderSummary() {
   const q = price(), art = $(fstay.value);
   if (!q || !art) return;
   $('bpImg').src = art.querySelector('.stay-cover .photo img').getAttribute('src');
-  $('bpPlaque').src = art.querySelector('.plaque').getAttribute('src'); $('bpPlaque').alt = art.querySelector('.plaque').alt;
   $('bpKind').textContent = q.s.kind; $('bpName').textContent = q.s.name;
-  $('bpFeats').innerHTML = art.querySelector('.feats').innerHTML;
   $('bpIn').textContent = dayLabel(fin.value, true); $('bpOut').textContent = dayLabel(fout.value, true);
   $('bpGuests').textContent = people(fguests.value);
   $('bpPrice').innerHTML = `<div><span>${euro(q.nightly)} × ${nightsTxt(q.n)}</span><span>${euro(q.subtotal)}</span></div>`
     + (q.discount ? `<div class="disc"><span>Descompte ${q.n === 2 ? 'de 2 nits' : 'de 3 nits o més'} (${q.discount} %)</span><span>− ${euro(q.subtotal - q.total)}</span></div>` : '')
     + `<div class="total"><span>Total</span><span>${euro(q.total)}</span></div><small>Impostos inclosos.</small>`;
+  if (!payBtn.disabled) payBtn.textContent = `Pagar ${euro(q.total)}`;
 }
+['bpThumb', 'bpDetails'].forEach(id => $(id).addEventListener('click', e => openStay(fstay.value, e.currentTarget)));
 function showSub(id) {
   closePop();
   document.documentElement.classList.toggle('booking-open', !!id);
@@ -1555,7 +1555,7 @@ guestForm.addEventListener('submit', async e => {
   } catch (err) {
     payNote.textContent = `${nightsTxt(q.n)}, total ${euro(q.total)}. ${CONTACT_MSG}`;
   }
-  payBtn.disabled = false;
+  payBtn.disabled = false; renderSummary();
 });
 
 // ---- Start: default dates, restore a booking in progress, handle the return from Stripe ----

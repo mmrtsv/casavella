@@ -167,6 +167,7 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .stay-body p { color: var(--muted); font-size: 15.5px; max-width: 52ch; }
 .stay-body .price { font-family: var(--display); font-size: 22px; color: var(--ink); }
 .stay-body .price span { font-family: var(--body); font-size: 13px; color: var(--muted); }
+.stay-body .price b { font-weight: inherit; }
 .booking .note b { font-weight: 600; color: var(--text); }
 
 /* Brand pickers: dropdowns and the stay calendar (no native controls) */
@@ -328,6 +329,8 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .bp-check input:checked { background: var(--basil); border-color: var(--basil); }
 .bp-check input:checked::after { opacity: 1; }
 .bp-check input[aria-invalid="true"] { border-color: #a33b2b; }
+.bp-policy { font-size: 14px; color: var(--muted); margin: 10px 0 0 32px; }
+.bp-policy:empty { display: none; }
 .bp-pay { justify-self: start; padding: 18px 32px; gap: 12px; }
 .bp-pay.loading { cursor: progress; opacity: .85; }
 .bp-pay.loading::before { content: ""; width: 14px; height: 14px; border: 1.5px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
@@ -725,7 +728,7 @@ footer { padding-bottom: 32px !important; }
     </div>
     <p class="cmp-count" id="cmpCount" aria-live="polite"></p>
     <div class="cmp-list" id="cmpList"></div>
-    <p class="cmp-foot">Com més dies us quedeu, millor: un 5 % menys per a dues nits i un 10 % a partir de tres. Impostos inclosos.</p>
+    <p class="cmp-foot"><span data-discounts>Com més dies us quedeu, millor: un 5 % menys per a dues nits i un 10 % a partir de tres.</span> Impostos inclosos.</p>
   </div>
 </section>
 
@@ -748,6 +751,7 @@ footer { padding-bottom: 32px !important; }
             <div id="payment-element"></div>
           </div>
           <label class="bp-check"><input type="checkbox" id="gterms"><span>Accepto les <a href="#contacte">condicions de reserva</a> i la <a href="#contacte">política de privacitat</a>.</span></label>
+          <p class="bp-policy" id="policy"></p>
           <button class="btn solid bp-pay" type="submit">Continuar al pagament</button>
           <p class="bp-secure"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>Pagament segur amb Stripe.</p>
           <p class="note" id="payNote" aria-live="polite"></p>
@@ -826,7 +830,7 @@ footer { padding-bottom: 32px !important; }
       <div><span class="label">Allotjaments</span><h2 data-script="les nostres estances">Dos apartaments i dues habitacions</h2></div>
       <a class="btn" href="#reservar">Consultar disponibilitat</a>
     </div>
-    <p class="stays-intro">Habitacions amb bany privat, apartaments complets per a estades més llargues i un jardí amb terrassa per gaudir de l'aire lliure. Com més dies us quedeu, millor: un 5 % menys per a dues nits i un 10 % a partir de tres.</p>
+    <p class="stays-intro">Habitacions amb bany privat, apartaments complets per a estades més llargues i un jardí amb terrassa per gaudir de l'aire lliure. <span data-discounts>Com més dies us quedeu, millor: un 5 % menys per a dues nits i un 10 % a partir de tres.</span></p>
     <div class="stays">
       <article class="stay" id="montserrat">
         <button class="stay-cover" type="button" data-stay="montserrat" aria-label="Veure les fotos de Montserrat">
@@ -837,7 +841,7 @@ footer { padding-bottom: 32px !important; }
         <div class="stay-body">
           <span class="label">Apartament</span>
           <h3>Montserrat</h3>
-          <p class="price">90 € <span>la nit</span></p>
+          <p class="price" data-price="montserrat"><b data-n>90</b> € <span>la nit</span></p>
           <ul class="feats"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 18v-3.5A3.5 3.5 0 0 0 17.5 11H11v3"/><circle cx="7" cy="11.5" r="1.8"/></svg>1 dormitori</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-1.7 1-3 3.2-3 6h3v12"/></svg>Cuina equipada</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-2Z"/><path d="M6 12V6a2 2 0 0 1 3.7-1M7 19l-1 2M17 19l1 2"/></svg>Bany privat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r=".9" fill="currentColor"/></svg>Wifi gratuït</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg>Aire condicionat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg>Smart TV</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M10 17V7.5h3.2a3 3 0 0 1 0 6H10"/></svg>Aparcament</li></ul>
           <p>La muntanya que es veu des del Bedorc, i el seu nom. Un apartament complet per a estades més llargues.</p>
           <div class="stay-actions"><button class="btn" type="button" data-stay="montserrat">Veure fotos</button><a class="btn solid" href="#reservar" data-book>Reservar</a></div>
@@ -852,7 +856,7 @@ footer { padding-bottom: 32px !important; }
         <div class="stay-body">
           <span class="label">Apartament</span>
           <h3>La Pineda</h3>
-          <p class="price">90 € <span>la nit</span></p>
+          <p class="price" data-price="la-pineda"><b data-n>90</b> € <span>la nit</span></p>
           <ul class="feats"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 18v-3.5A3.5 3.5 0 0 0 17.5 11H11v3"/><circle cx="7" cy="11.5" r="1.8"/></svg>Dormitori doble</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-1.7 1-3 3.2-3 6h3v12"/></svg>Cuina equipada</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-2Z"/><path d="M6 12V6a2 2 0 0 1 3.7-1M7 19l-1 2M17 19l1 2"/></svg>Bany privat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r=".9" fill="currentColor"/></svg>Wifi gratuït</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg>Aire condicionat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg>Smart TV</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M10 17V7.5h3.2a3 3 0 0 1 0 6H10"/></svg>Aparcament</li></ul>
           <p>Amb el nom dels pins que envolten el poble. Espai, cuina pròpia i calma per quedar-s'hi uns dies.</p>
           <div class="stay-actions"><button class="btn" type="button" data-stay="la-pineda">Veure fotos</button><a class="btn solid" href="#reservar" data-book>Reservar</a></div>
@@ -867,7 +871,7 @@ footer { padding-bottom: 32px !important; }
         <div class="stay-body">
           <span class="label">Habitació</span>
           <h3>Les Vinyes</h3>
-          <p class="price">70 € <span>la nit</span></p>
+          <p class="price" data-price="les-vinyes"><b data-n>70</b> € <span>la nit</span></p>
           <ul class="feats"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.5c1.9.8 3.2 2.8 3.5 5.5"/></svg>2 persones</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 18v-3.5A3.5 3.5 0 0 0 17.5 11H11v3"/><circle cx="7" cy="11.5" r="1.8"/></svg>Llit doble</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-2Z"/><path d="M6 12V6a2 2 0 0 1 3.7-1M7 19l-1 2M17 19l1 2"/></svg>Bany privat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r=".9" fill="currentColor"/></svg>Wifi gratuït</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg>Aire condicionat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg>Smart TV</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M10 17V7.5h3.2a3 3 0 0 1 0 6H10"/></svg>Aparcament</li></ul>
           <p>Per la tradició vitivinícola que ha modelat el paisatge. Llit de forja, terra hidràulic i l'armari antic de la casa.</p>
           <div class="stay-actions"><button class="btn" type="button" data-stay="les-vinyes">Veure fotos</button><a class="btn solid" href="#reservar" data-book>Reservar</a></div>
@@ -882,7 +886,7 @@ footer { padding-bottom: 32px !important; }
         <div class="stay-body">
           <span class="label">Habitació</span>
           <h3>Figarot</h3>
-          <p class="price">70 € <span>la nit</span></p>
+          <p class="price" data-price="figarot"><b data-n>70</b> € <span>la nit</span></p>
           <ul class="feats"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.5c1.9.8 3.2 2.8 3.5 5.5"/></svg>2 persones</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 18v-3.5A3.5 3.5 0 0 0 17.5 11H11v3"/><circle cx="7" cy="11.5" r="1.8"/></svg>Llit doble</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-2Z"/><path d="M6 12V6a2 2 0 0 1 3.7-1M7 19l-1 2M17 19l1 2"/></svg>Bany privat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r=".9" fill="currentColor"/></svg>Wifi gratuït</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg>Aire condicionat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg>Smart TV</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M10 17V7.5h3.2a3 3 0 0 1 0 6H10"/></svg>Aparcament</li></ul>
           <p>Amb el nom de la figuera, l'arbre de les cases de pagès. Una habitació tranquil·la amb bany privat.</p>
           <div class="stay-actions"><button class="btn" type="button" data-stay="figarot">Veure fotos</button><a class="btn solid" href="#reservar" data-book>Reservar</a></div>
@@ -1195,6 +1199,27 @@ const STAY_INFO = {
   'les-vinyes': { name: 'Les Vinyes', kind: 'Habitació', price: 70, max: 2 },
   'figarot': { name: 'Figarot', kind: 'Habitació', price: 70, max: 2 },
 };
+// Prices, discounts, rules and the cancellation policy set in Maite (the back office).
+// The card labels, the local price guess and the texts about discounts follow them.
+let DISCOUNTS = [{ nights: 2, pct: 5 }, { nights: 3, pct: 10 }], RULES = null;
+const tierFor = n => DISCOUNTS.filter(t => n >= t.nights).reduce((b, t) => t.pct > b.pct ? t : b, { nights: 0, pct: 0 });
+const nitsWord = n => n === 2 ? 'dues nits' : n === 3 ? 'tres nits' : `${n} nits`;
+fetch('/api/settings').then(r => r.ok ? r.json() : null).then(p => {
+  if (!p || !p.stays) return;
+  for (const [k, v] of Object.entries(p.stays)) if (STAY_INFO[k]) STAY_INFO[k].price = v.base;
+  DISCOUNTS = p.discounts; RULES = p.rules;
+  document.querySelectorAll('[data-price]').forEach(el => {
+    const v = p.stays[el.dataset.price]; if (!v) return;
+    el.querySelector('[data-n]').textContent = (v.varies ? 'des de ' : '') + v.from.toLocaleString('ca-ES');
+  });
+  const t = [...DISCOUNTS].sort((a, b) => a.nights - b.nights);
+  const disc = t.map((x, i) => i === 0 ? `un ${x.pct} % menys a partir de ${nitsWord(x.nights)}` : `un ${x.pct} % a partir de ${nitsWord(x.nights)}`);
+  const text = disc.length > 1 ? disc.slice(0, -1).join(', ') + ' i ' + disc.at(-1) : disc[0];
+  document.querySelectorAll('[data-discounts]').forEach(el => { el.textContent = `Com més dies us quedeu, millor: ${text}.`; el.hidden = !t.length; });
+  const hour = t => { const [h, m] = t.split(':'); return `${+h}${m === '00' ? '' : '.' + m} h`; };
+  if (p.content) applyContent(p.content);
+  const pol = $('policy'); if (pol) pol.textContent = `${p.policy} Entrada a partir de les ${hour(p.rules.checkin)} i sortida abans de les ${hour(p.rules.checkout)}.`;
+}).catch(() => {});
 const CONTACT_MSG = "Truca'ns o escriu-nos per WhatsApp al +34 667 40 98 59 i t'ho preparem.";
 const $ = id => document.getElementById(id);
 // Anchor jumps land below the sticky header, whatever height it has on this device
@@ -1220,9 +1245,10 @@ function price(stay = fstay.value) {
   const s = STAY_INFO[stay], n = nights();
   if (!s || !(n > 0)) return null;
   const sq = serverQuotes[`${stay}|${fin.value}|${fout.value}`];
-  if (sq) return { s, n: sq.nights, nightly: sq.price, discount: sq.discount, subtotal: sq.subtotal / 100, total: sq.total / 100 };
-  const discount = n >= 3 ? 10 : n === 2 ? 5 : 0, subtotal = s.price * n;
-  return { s, n, nightly: s.price, discount, subtotal, total: Math.round(subtotal * (100 - discount)) / 100 };
+  if (sq && sq.error) return { s, n, error: sq };
+  if (sq) return { s, n: sq.nights, nightly: sq.price, discount: sq.discount, discountNights: sq.discountNights, subtotal: sq.subtotal / 100, total: sq.total / 100 };
+  const tier = tierFor(n), discount = tier.pct, subtotal = s.price * n;
+  return { s, n, nightly: s.price, discount, discountNights: tier.nights, subtotal, total: Math.round(subtotal * (100 - discount)) / 100 };
 }
 
 // ---- Popovers: dropdowns and the calendar share one open slot ----
@@ -1392,6 +1418,38 @@ calPop.addEventListener('mouseover', e => {
 });
 calPop.addEventListener('mouseleave', () => paintRange());
 
+// Stay texts, features, capacity and photos edited in Maite replace what is written in the page
+const photoSrc = n => n.includes('/') ? n : `img/${n}.jpg`;
+function applyContent(C) {
+  for (const [k, c] of Object.entries(C)) {
+    const art = $(k), info = STAY_INFO[k];
+    if (!art || !info) continue;
+    Object.assign(info, { name: c.name, kind: c.kind, max: c.max });
+    art.querySelector('.stay-body .label').textContent = c.kind;
+    art.querySelector('.stay-body h3').textContent = c.name;
+    art.querySelector('.stay-body > p:not(.price)').textContent = c.desc;
+    const ul = art.querySelector('.feats'); ul.textContent = '';
+    for (const f of c.feats) {
+      const li = document.createElement('li');
+      li.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${f.svg}</svg>`; li.append(f.text); ul.append(li);
+    }
+    if (c.photos.length) {
+      art.querySelector('.stay-cover .photo img').src = photoSrc(c.photos[0]);
+      STAY_SETS[k] = c.photos; SETS['stay-' + k] = c.photos.map(src => [src, `${c.kind} ${c.name}`]);
+    }
+    art.querySelectorAll('[data-stay]').forEach(b => b.setAttribute('aria-label', `Veure les fotos de ${c.name}`));
+  }
+  if (fstay.value) stayPick.set(fstay.value, true);
+}
+// Why some dates can't be booked online (rules set in Maite)
+function ruleText(d) {
+  const e = d && d.error;
+  if (e === 'min_nights') return `Per arribar aquest dia, l'estada mínima és de ${nightsTxt(d.min)}.`;
+  if (e === 'too_long') return `L'estada màxima és de ${nightsTxt(d.max)}. ${CONTACT_MSG}`;
+  if (e === 'too_soon') return d.days === 1 ? 'Les reserves en línia es fan com a mínim amb un dia d\'antelació. ' + CONTACT_MSG : `Les reserves en línia es fan com a mínim amb ${d.days} dies d'antelació. ${CONTACT_MSG}`;
+  if (e === 'too_far') return `Encara no tenim obertes aquestes dates. ${CONTACT_MSG}`;
+  return '';
+}
 // ---- Price and availability for the chosen stay (the bar shows only a warning when the dates are taken) ----
 let available = null, quoteSeq = 0;
 async function showQuote() {
@@ -1400,9 +1458,10 @@ async function showQuote() {
   const seq = ++quoteSeq, stay = fstay.value, key = `${stay}|${fin.value}|${fout.value}`;
   try {
     const d = await (await fetch(`/api/quote?stay=${stay}&in=${fin.value}&out=${fout.value}`)).json();
-    if (d.total) serverQuotes[key] = d;
+    if (d.total || ruleText(d)) serverQuotes[key] = d;
     if (seq !== quoteSeq) return;
     available = d.available;
+    if (ruleText(d)) note.textContent = ruleText(d);
     if (!bp.hidden) renderSummary();
   } catch (e) {}
 }
@@ -1427,6 +1486,7 @@ function drawCompare() {
 }
 function buyBlock(stay) {
   const s = STAY_INFO[stay], q = price(stay), fits = (+fguests.value || 1) <= s.max, ok = fits && freeNow[stay] !== false;
+  if (q.error) return `<span class="cmp-cap">Fins a ${people(s.max)}</span><span class="cmp-no">${ruleText(q.error)}</span>`;
   return `<span class="cmp-cap">Fins a ${people(s.max)}</span>
     ${q.discount ? `<span class="cmp-badge">${q.discount} % de descompte</span>` : ''}
     <div class="cmp-total">${q.discount ? `<s>${euro(q.subtotal)}</s>` : ''}<b>${euro(q.total)}</b></div>
@@ -1439,7 +1499,7 @@ const sm = $('stayModal'), smImg = $('smImg'), smThumbs = $('smThumbs');
 let smSet = [], smCur = 0, smOpener = null, smStay = '';
 function smShow(i) {
   smCur = (i + smSet.length) % smSet.length;
-  smImg.src = `img/${smSet[smCur]}.jpg`; smImg.alt = `${STAY_INFO[smStay].kind} ${STAY_INFO[smStay].name}, foto ${smCur + 1}`;
+  smImg.src = photoSrc(smSet[smCur]); smImg.alt = `${STAY_INFO[smStay].kind} ${STAY_INFO[smStay].name}, foto ${smCur + 1}`;
   $('smCount').textContent = `${smCur + 1} / ${smSet.length}`;
   smThumbs.querySelectorAll('button').forEach((b, k) => b.setAttribute('aria-current', k === smCur));
 }
@@ -1451,7 +1511,7 @@ function openStay(stay, from) {
   $('smDesc').textContent = art.querySelector('.stay-body > p:not(.price)').textContent;
   $('smFeats').innerHTML = art.querySelector('.feats').innerHTML;
   $('smBuy').innerHTML = buyBlock(stay);
-  smThumbs.innerHTML = smSet.map((n, k) => `<button type="button" data-k="${k}" aria-label="Foto ${k + 1}"><img src="img/${n}.jpg" alt="" loading="lazy"></button>`).join('');
+  smThumbs.innerHTML = smSet.map((n, k) => `<button type="button" data-k="${k}" aria-label="Foto ${k + 1}"><img src="${photoSrc(n)}" alt="" loading="lazy"></button>`).join('');
   smShow(0);
   sm.hidden = false; document.documentElement.style.overflow = 'hidden';
   $('smClose').focus();
@@ -1499,7 +1559,8 @@ async function showCompare() {
   const seq = ++searchSeq, a = fin.value, b = fout.value;
   try {
     const d = await (await fetch(`/api/search?in=${a}&out=${b}&guests=${fguests.value}`)).json();
-    (d.results || []).forEach(r => { if (r.total) serverQuotes[`${r.stay}|${a}|${b}`] = r; freeNow[r.stay] = r.available; });
+    (d.results || []).forEach(r => { if (r.total || r.error) serverQuotes[`${r.stay}|${a}|${b}`] = r; freeNow[r.stay] = r.available; });
+    if (d.error) Object.keys(STAY_INFO).forEach(k => { serverQuotes[`${k}|${a}|${b}`] = d; });
   } catch (e) {}
   if (seq !== searchSeq) return;
   checking = false;
@@ -1545,8 +1606,9 @@ function renderSummary() {
   $('bpKind').textContent = q.s.kind; $('bpName').textContent = q.s.name;
   $('bpIn').textContent = dayLabel(fin.value, true); $('bpOut').textContent = dayLabel(fout.value, true);
   $('bpGuests').textContent = people(fguests.value);
-  $('bpPrice').innerHTML = `<div><span>${euro(q.nightly)} × ${nightsTxt(q.n)}</span><span>${euro(q.subtotal)}</span></div>`
-    + (q.discount ? `<div class="disc"><span>Descompte ${q.n === 2 ? 'de 2 nits' : 'de 3 nits o més'} (${q.discount} %)</span><span>− ${euro(q.subtotal - q.total)}</span></div>` : '')
+  if (q.error) return;
+  $('bpPrice').innerHTML = `<div><span>${q.nightly != null ? `${euro(q.nightly)} × ${nightsTxt(q.n)}` : `${nightsTxt(q.n)} (el preu varia segons el dia)`}</span><span>${euro(q.subtotal)}</span></div>`
+    + (q.discount ? `<div class="disc"><span>Descompte de ${q.discountNights} nits o més (${q.discount} %)</span><span>− ${euro(q.subtotal - q.total)}</span></div>` : '')
     + `<div class="total"><span>Total</span><span>${euro(q.total)}</span></div><small>Impostos inclosos.</small>`;
   if (!payBtn.disabled) payBtn.textContent = payStep ? `Pagar ${euro(q.total)}` : 'Continuar al pagament';
 }
@@ -1606,8 +1668,8 @@ async function checkAvailable(stay) {
   const a = fin.value, b = fout.value;
   try {
     const d = await (await fetch(`/api/quote?stay=${stay}&in=${a}&out=${b}`)).json();
-    if (d.total) serverQuotes[`${stay}|${a}|${b}`] = d;
-    return d.available;
+    if (d.total || ruleText(d)) serverQuotes[`${stay}|${a}|${b}`] = d;
+    return ruleText(d) ? d : d.available;
   } catch (e) { return null; }
 }
 bookForm.addEventListener('submit', async e => {
@@ -1619,6 +1681,7 @@ bookForm.addEventListener('submit', async e => {
   const free = await checkAvailable(fstay.value);
   barBtn.disabled = false;
   if (free === false) return datesTaken(fstay.value);
+  if (free && free.error) { note.textContent = ruleText(free); return; }
   cameFrom = '#reservar';
   goToBooking();
 });
@@ -1773,7 +1836,7 @@ const lb = document.getElementById('lightbox'), lbImg = document.getElementById(
 let set = [], cur = 0, opener = null;
 function show(i) {
   cur = (i + set.length) % set.length;
-  lbImg.src = `img/${set[cur][0]}.jpg`; lbImg.alt = set[cur][1];
+  lbImg.src = photoSrc(set[cur][0]); lbImg.alt = set[cur][1];
   lbCount.textContent = `${cur + 1} / ${set.length}`;
 }
 document.querySelectorAll('[data-set]').forEach(group => group.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {

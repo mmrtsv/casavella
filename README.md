@@ -74,6 +74,7 @@ Maite és el back office, a `maite.casavellarural.com`. Surt del mateix projecte
 - **Descomptes**: per estada llarga, tants com calgui («a partir de 7 nits, un 15 % menys»). S'aplica el més alt.
 - **Normes**: estada mínima i màxima, amb quanta antelació es pot reservar, hores d'entrada i sortida, i la política de cancel·lació (Flexible, Moderada, Estricta, No reemborsable o a mida). La web mostra la política al costat de les condicions, i cada reserva guarda la que va acceptar l'hoste: en cancel·lar-la, Maite proposa el retorn que toca.
 
+- **Correus**: els textos dels correus que rep l'hoste (reserva confirmada, pagament pendent i formulari de contacte): assumpte, títol, text, un bloc opcional «Abans d'arribar» i el comiat, amb etiquetes com `{nom}` o `{allotjament}` i una vista prèvia. El disseny, les dades de la reserva i el peu són a `lib/email.js`.
 - **Allotjaments**: tipus, nom, descripció, capacitat, característiques (amb icona) i fotos de cada allotjament, amb una vista prèvia de com es veu a la web. Les fotos es poden pujar (es redueixen al navegador i es guarden a R2), afegir de les que ja té la web, reordenar arrossegant-les o amb fletxes, i la primera és la portada. Les fotos pujades que ja no fa servir cap allotjament s'esborren. La capacitat compta per a la web, els pagaments i les reserves de Maite. El rètol amb el nom (`img/nom-*.png`) és una imatge i no canvia sol.
 
 Tot això s'aplica de seguida a la web i als pagaments. Les reserves fetes a Maite no segueixen les normes (es pot reservar per telèfon el mateix dia o una sola nit).
@@ -86,7 +87,7 @@ Tot el que hi ha al calendari continua sent la referència: el que es crea a mà
 | --- | --- | --- |
 | Reserves, dades dels hostes i la seva llista (entrada, documents…) | Google Calendar, un calendari per allotjament (a l'esdeveniment de cada reserva) | La web (disponibilitat) i Maite |
 | Pagaments i devolucions | Stripe | Maite el consulta en directe |
-| Preus, descomptes, normes, política i textos dels allotjaments | Cloudflare KV, espai `MAITE` (claus `settings` i `stays`) | La web (`/api/settings`) i Maite |
+| Preus, descomptes, normes, política, textos dels allotjaments i dels correus | Cloudflare KV, espai `MAITE` (claus `settings`, `stays` i `emails`) | La web (`/api/settings`) i Maite |
 | Fotos pujades a Maite | Cloudflare R2, bucket `PHOTOS`, servides a `/photos/…` | La web i Maite |
 | Fotos originals, disseny i codi | Aquest repositori (`img/`, `index.html`, `functions/`, `lib/`) | Cloudflare Pages el publica a cada push |
 

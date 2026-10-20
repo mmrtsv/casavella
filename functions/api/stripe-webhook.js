@@ -3,7 +3,7 @@
 // Paid later (bank payments): the dates are kept as "pending" until Stripe confirms or fails it.
 // If the dates were taken meanwhile (two guests paying at once), the payment is refunded.
 import { STAYS, calendar, stripe, verifyStripe, json, euros, settings, policyText } from '../../lib/booking.js';
-import { send, bookingConfirmation, bookingNotice } from '../../lib/email.js';
+import { send, bookingConfirmation, bookingNotice, texts } from '../../lib/email.js';
 
 export async function onRequestPost({ request, env, waitUntil }) {
   const body = await request.text();
@@ -47,13 +47,13 @@ export async function onRequestPost({ request, env, waitUntil }) {
   };
   // Confirmation to the guest and a notice to the house; a failed email never fails the webhook
   const notify = () => waitUntil((async () => {
-    const meta = { ...m, ...c }, S = await settings(env);
+    const meta = { ...m, ...c }, [S, T] = await Promise.all([settings(env), texts(env)]);
     // The policy the guest accepted at checkout ("fullDays/partialDays/partialPct"), else today's
     const [f, d, pct] = (m.policy || '').split('/');
     const cancel = m.policy ? { fullDays: f === '' ? null : +f, partialDays: d === '' ? null : +d, partialPct: +pct || 0 } : S.cancel;
     const extra = { checkin: S.rules.checkin, checkout: S.rules.checkout, policy: policyText(cancel) };
     await Promise.all([
-      c.email && send(env, bookingConfirmation(env, meta, s.amount_total, waiting, extra)),
+      c.email && send(env, bookingConfirmation(env, meta, s.amount_total, waiting, extra, T)),
       send(env, bookingNotice(env, meta, s.amount_total, waiting)),
     ]);
   })().catch(() => {}));

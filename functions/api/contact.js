@@ -2,7 +2,7 @@
 // Sends the contact form to the house inbox (guest as reply-to) and a copy to the guest, through Resend.
 // Without RESEND_API_KEY it answers 503 and the page falls back to the guest's mail app.
 import { json } from '../../lib/booking.js';
-import { send, contactNotice, contactReply } from '../../lib/email.js';
+import { send, contactNotice, contactReply, texts } from '../../lib/email.js';
 
 export async function onRequestPost({ request, env, waitUntil }) {
   const body = await request.json().catch(() => ({}));
@@ -15,6 +15,6 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
   const msg = { name, email, message };
   if (!(await send(env, contactNotice(env, msg)))) return json({ error: 'send_failed' }, 502);
-  waitUntil(send(env, contactReply(env, msg)).catch(() => {}));
+  waitUntil(texts(env).then(T => send(env, contactReply(env, msg, T))).catch(() => {}));
   return json({ ok: true });
 }

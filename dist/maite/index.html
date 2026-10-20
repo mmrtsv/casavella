@@ -180,6 +180,11 @@ label.inline { display: block; color: var(--text); font-size: 15px; margin: 0; c
 .st h3 { font-size: 20px; margin: 20px 0 8px; }
 .st-side { position: sticky; top: 12px; }
 .dirty { font-size: 13px; color: var(--due); }
+.ml { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.ml-frame { display: block; width: 100%; height: 680px; border: 1px solid var(--line); border-radius: 12px; background: #efebe3; }
+.ml-vars { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
+.ml-vars .chip { font-family: ui-monospace, monospace; font-size: 13px; }
+.ml label { margin-top: 12px; }
 .feat { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
 .feat .ico { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); cursor: pointer; padding: 0; }
 .feat svg, .pv-feats svg, .icons svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -268,6 +273,7 @@ dd { margin: 0; overflow-wrap: anywhere; }
     <button role="tab" data-tab="disc" aria-selected="false">Descomptes</button>
     <button role="tab" data-tab="rules" aria-selected="false">Normes</button>
     <button role="tab" data-tab="stays" aria-selected="false">Allotjaments</button>
+    <button role="tab" data-tab="mail" aria-selected="false">Correus</button>
   </nav>
 </header>
 
@@ -387,6 +393,24 @@ dd { margin: 0; overflow-wrap: anywhere; }
       <p class="err" hidden></p>
       <div class="actions left"><button class="btn solid" type="submit">Desa les normes</button></div>
       <p class="hint">Cada reserva de la web guarda la política que l'hoste va acceptar. En cancel·lar-la, Maite proposa el retorn segons aquella política.</p>
+    </form>
+  </section>
+  <section id="tab-mail" hidden>
+    <div class="bar"><div class="chips" id="mlKinds"></div><span class="dirty" id="mlDirty" hidden>Canvis sense desar</span></div>
+    <form id="mailForm" class="st ml" novalidate>
+      <div>
+        <p class="hint" id="mlWhen" style="margin:0"></p>
+        <p class="hint">Toca una etiqueta per afegir-la on és el cursor; al correu es canvia per la dada de cada hoste. Una línia en blanc comença un paràgraf nou.</p>
+        <div class="ml-vars" id="mlVars"></div>
+        <div id="mlFields"></div>
+        <p class="hint">Les dades de la reserva, l'adreça, la política de cancel·lació i el peu amb el telèfon s'hi posen sols.</p>
+        <p class="err" hidden></p>
+        <div class="actions left"><button class="btn solid" type="submit">Desa els textos</button><button class="btn" type="button" id="mlReset">Torna al text original</button></div>
+      </div>
+      <aside class="st-side">
+        <p class="hint" style="margin:0 0 8px">Així el rep l'hoste (amb dades d'exemple) · <b id="mlSubject"></b></p>
+        <iframe class="ml-frame" id="mlFrame" title="Vista prèvia del correu"></iframe>
+      </aside>
     </form>
   </section>
   <section id="tab-stays" hidden>
@@ -559,7 +583,7 @@ let tab = 'cal';
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
   tab = b.dataset.tab;
   document.querySelectorAll('[data-tab]').forEach(x => x.setAttribute('aria-selected', x === b));
-  for (const t of ['cal', 'list', 'prices', 'disc', 'rules', 'stays']) $('tab-' + t).hidden = t !== tab;
+  for (const t of ['cal', 'list', 'prices', 'disc', 'rules', 'stays', 'mail']) $('tab-' + t).hidden = t !== tab;
   try { localStorage.setItem('maite-tab', tab); } catch (e) {}
   render();
 }));
@@ -1218,6 +1242,58 @@ $('stayForm').addEventListener('submit', e => {
 });
 addEventListener('beforeunload', e => { if (!$('stDirty').hidden) e.preventDefault(); });
 
+// ---- Emails: the wording of what the guest receives ----
+const MAIL_KINDS = {
+  confirm: { name: 'Reserva confirmada', when: "S'envia quan l'hoste ha pagat la reserva a la web.", vars: ['nom', 'allotjament', 'arribada', 'sortida'],
+    fields: [['subject', 'Assumpte'], ['title', 'Títol'], ['subtitle', 'Subtítol'], ['body', 'Text'], ['before', "Abans d'arribar (opcional: aparcament, claus, què portar…)"], ['closing', 'Comiat (també al correu de pagament pendent)']] },
+  pending: { name: 'Pagament pendent', when: "S'envia quan l'hoste paga amb un mètode que el banc confirma més tard (transferència). Quan arriba el pagament, rep el de reserva confirmada.", vars: ['nom', 'allotjament', 'arribada', 'sortida'],
+    fields: [['subject', 'Assumpte'], ['title', 'Títol'], ['subtitle', 'Subtítol'], ['body', 'Text']] },
+  contact: { name: 'Formulari de contacte', when: "S'envia a qui escriu des del formulari de contacte de la web, amb una còpia del seu missatge.", vars: ['nom'],
+    fields: [['subject', 'Assumpte'], ['title', 'Títol'], ['subtitle', 'Subtítol'], ['body', 'Text']] },
+};
+let MAIL = null, mlKind = 'confirm', mlDraft = null, mlTimer = null, mlLastField = null;
+async function renderMail() {
+  if (!MAIL) { try { MAIL = await api('emails'); } catch (e) { return toast(e.message); } mlDraft = structuredClone(MAIL.texts); fillMail(); }
+}
+function fillMail() {
+  const k = MAIL_KINDS[mlKind];
+  $('mlKinds').innerHTML = Object.entries(MAIL_KINDS).map(([id, x]) => `<button type="button" class="chip" data-kind="${id}" aria-pressed="${id === mlKind}">${x.name}</button>`).join('');
+  $('mlWhen').textContent = k.when;
+  $('mlFields').innerHTML = k.fields.map(([f, name]) => {
+    const long = MAIL.limits[f] > 200, v = esc(mlDraft[mlKind][f]);
+    return `<label>${name}${long ? `<textarea data-f="${f}" rows="${f === 'subject' ? 1 : 4}" maxlength="${MAIL.limits[f]}">${v}</textarea>` : `<input data-f="${f}" maxlength="${MAIL.limits[f]}" value="${v}">`}</label>`;
+  }).join('');
+  $('mlVars').innerHTML = k.vars.map(v => `<button type="button" class="chip" data-var="${v}">{${v}}</button>`).join('');
+  mlLastField = null; previewMail();
+}
+const mlSetDirty = d => { $('mlDirty').hidden = !d; };
+function previewMail() {
+  clearTimeout(mlTimer);
+  mlTimer = setTimeout(async () => {
+    try { const d = await api('emails', { method: 'POST', body: { kind: mlKind, texts: mlDraft } }); $('mlFrame').srcdoc = d.html; $('mlSubject').textContent = d.subject; }
+    catch (e) { toast(e.message); }
+  }, 350);
+}
+$('mlKinds').addEventListener('click', e => { const c = e.target.closest('[data-kind]'); if (c) { mlKind = c.dataset.kind; fillMail(); } });
+$('mlFields').addEventListener('input', e => { const f = e.target.dataset.f; if (!f) return; mlDraft[mlKind][f] = e.target.value; mlSetDirty(true); previewMail(); });
+$('mlFields').addEventListener('focusin', e => { if (e.target.dataset.f) mlLastField = e.target; });
+$('mlVars').addEventListener('click', e => {
+  const v = e.target.closest('[data-var]')?.dataset.var; if (!v) return;
+  const el = mlLastField || $('mlFields').querySelector('[data-f="body"]');
+  const a = el.selectionStart ?? el.value.length, b = el.selectionEnd ?? a, ins = `{${v}}`;
+  el.value = el.value.slice(0, a) + ins + el.value.slice(b); el.focus(); el.setSelectionRange(a + ins.length, a + ins.length);
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+});
+$('mlReset').addEventListener('click', () => {
+  if (!confirm(`Tornar als textos originals de «${MAIL_KINDS[mlKind].name}»? Encara caldrà desar-los.`)) return;
+  for (const [f] of MAIL_KINDS[mlKind].fields) mlDraft[mlKind][f] = MAIL.defaults[mlKind][f];
+  mlSetDirty(true); fillMail();
+});
+$('mailForm').addEventListener('submit', e => {
+  e.preventDefault();
+  submit(e.target, async () => { MAIL = await api('emails', { method: 'PUT', body: { texts: mlDraft } }); mlDraft = structuredClone(MAIL.texts); mlSetDirty(false); fillMail(); toast('Textos desats'); });
+});
+
 function render() {
   if (tab === 'cal') renderCal();
   if (tab === 'list') renderList();
@@ -1225,6 +1301,7 @@ function render() {
   if (tab === 'disc') renderDisc();
   if (tab === 'rules') renderRules();
   if (tab === 'stays') renderStays();
+  if (tab === 'mail') renderMail();
 }
 
 (async () => {

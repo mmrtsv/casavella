@@ -3,6 +3,7 @@
 //      A booking taken by phone, WhatsApp or in person: written to the stay's calendar, which blocks those nights.
 import { STAYS, configured, calendar, isDate, addDays, json } from '../../../lib/booking.js';
 import { asBooking, manualEvent, isSource } from '../../../lib/maite.js';
+import { content } from '../../../lib/stays.js';
 
 export async function onRequestGet({ request, env, data }) {
   const u = new URL(request.url), from = u.searchParams.get('from'), to = u.searchParams.get('to');
@@ -16,14 +17,14 @@ export async function onRequestGet({ request, env, data }) {
     } catch (e) { errors.push({ stay, error: String(e.message || e) }); }
   }));
   bookings.sort((a, b) => a.first.localeCompare(b.first) || a.stay.localeCompare(b.stay));
-  const stays = Object.entries(STAYS).map(([id, s]) => ({ id, name: s.name, max: s.max }));
+  const C = await content(env), stays = Object.keys(STAYS).map(id => ({ id, name: `${C[id].kind} ${C[id].name}`, short: C[id].name, max: C[id].max }));
   return json({ user: data.user, stays, bookings, errors });
 }
 
 export async function onRequestPost({ request, env, data }) {
   let b;
   try { b = await request.json(); } catch { return json({ error: 'bad_request' }, 400); }
-  const s = STAYS[b.stay], clip = (v, n) => String(v ?? '').trim().slice(0, n);
+  const s = STAYS[b.stay] && (await content(env))[b.stay], clip = (v, n) => String(v ?? '').trim().slice(0, n);
   if (!s) return json({ error: 'stay' }, 400);
   if (!isDate(b.first) || !isDate(b.until) || b.until <= b.first || b.until > addDays(b.first, 90)) return json({ error: 'dates' }, 400);
   const booking = {

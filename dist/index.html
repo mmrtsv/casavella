@@ -1217,6 +1217,7 @@ fetch('/api/settings').then(r => r.ok ? r.json() : null).then(p => {
   const text = disc.length > 1 ? disc.slice(0, -1).join(', ') + ' i ' + disc.at(-1) : disc[0];
   document.querySelectorAll('[data-discounts]').forEach(el => { el.textContent = `Com més dies us quedeu, millor: ${text}.`; el.hidden = !t.length; });
   const hour = t => { const [h, m] = t.split(':'); return `${+h}${m === '00' ? '' : '.' + m} h`; };
+  if (p.content) applyContent(p.content);
   const pol = $('policy'); if (pol) pol.textContent = `${p.policy} Entrada a partir de les ${hour(p.rules.checkin)} i sortida abans de les ${hour(p.rules.checkout)}.`;
 }).catch(() => {});
 const CONTACT_MSG = "Truca'ns o escriu-nos per WhatsApp al +34 667 40 98 59 i t'ho preparem.";
@@ -1417,6 +1418,29 @@ calPop.addEventListener('mouseover', e => {
 });
 calPop.addEventListener('mouseleave', () => paintRange());
 
+// Stay texts, features, capacity and photos edited in Maite replace what is written in the page
+const photoSrc = n => n.includes('/') ? n : `img/${n}.jpg`;
+function applyContent(C) {
+  for (const [k, c] of Object.entries(C)) {
+    const art = $(k), info = STAY_INFO[k];
+    if (!art || !info) continue;
+    Object.assign(info, { name: c.name, kind: c.kind, max: c.max });
+    art.querySelector('.stay-body .label').textContent = c.kind;
+    art.querySelector('.stay-body h3').textContent = c.name;
+    art.querySelector('.stay-body > p:not(.price)').textContent = c.desc;
+    const ul = art.querySelector('.feats'); ul.textContent = '';
+    for (const f of c.feats) {
+      const li = document.createElement('li');
+      li.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${f.svg}</svg>`; li.append(f.text); ul.append(li);
+    }
+    if (c.photos.length) {
+      art.querySelector('.stay-cover .photo img').src = photoSrc(c.photos[0]);
+      STAY_SETS[k] = c.photos; SETS['stay-' + k] = c.photos.map(src => [src, `${c.kind} ${c.name}`]);
+    }
+    art.querySelectorAll('[data-stay]').forEach(b => b.setAttribute('aria-label', `Veure les fotos de ${c.name}`));
+  }
+  if (fstay.value) stayPick.set(fstay.value, true);
+}
 // Why some dates can't be booked online (rules set in Maite)
 function ruleText(d) {
   const e = d && d.error;
@@ -1475,7 +1499,7 @@ const sm = $('stayModal'), smImg = $('smImg'), smThumbs = $('smThumbs');
 let smSet = [], smCur = 0, smOpener = null, smStay = '';
 function smShow(i) {
   smCur = (i + smSet.length) % smSet.length;
-  smImg.src = `img/${smSet[smCur]}.jpg`; smImg.alt = `${STAY_INFO[smStay].kind} ${STAY_INFO[smStay].name}, foto ${smCur + 1}`;
+  smImg.src = photoSrc(smSet[smCur]); smImg.alt = `${STAY_INFO[smStay].kind} ${STAY_INFO[smStay].name}, foto ${smCur + 1}`;
   $('smCount').textContent = `${smCur + 1} / ${smSet.length}`;
   smThumbs.querySelectorAll('button').forEach((b, k) => b.setAttribute('aria-current', k === smCur));
 }
@@ -1487,7 +1511,7 @@ function openStay(stay, from) {
   $('smDesc').textContent = art.querySelector('.stay-body > p:not(.price)').textContent;
   $('smFeats').innerHTML = art.querySelector('.feats').innerHTML;
   $('smBuy').innerHTML = buyBlock(stay);
-  smThumbs.innerHTML = smSet.map((n, k) => `<button type="button" data-k="${k}" aria-label="Foto ${k + 1}"><img src="img/${n}.jpg" alt="" loading="lazy"></button>`).join('');
+  smThumbs.innerHTML = smSet.map((n, k) => `<button type="button" data-k="${k}" aria-label="Foto ${k + 1}"><img src="${photoSrc(n)}" alt="" loading="lazy"></button>`).join('');
   smShow(0);
   sm.hidden = false; document.documentElement.style.overflow = 'hidden';
   $('smClose').focus();
@@ -1812,7 +1836,7 @@ const lb = document.getElementById('lightbox'), lbImg = document.getElementById(
 let set = [], cur = 0, opener = null;
 function show(i) {
   cur = (i + set.length) % set.length;
-  lbImg.src = `img/${set[cur][0]}.jpg`; lbImg.alt = set[cur][1];
+  lbImg.src = photoSrc(set[cur][0]); lbImg.alt = set[cur][1];
   lbCount.textContent = `${cur + 1} / ${set.length}`;
 }
 document.querySelectorAll('[data-set]').forEach(group => group.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {

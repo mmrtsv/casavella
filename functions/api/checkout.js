@@ -3,6 +3,7 @@
 // the card form is embedded in our own booking page. Nothing is blocked until the guest pays;
 // the webhook (stripe-webhook.js) writes the booking to the calendar once the payment is complete.
 import { STAYS, quote, settings, configured, calendar, stripe, json, euros } from '../../lib/booking.js';
+import { content } from '../../lib/stays.js';
 
 const fmt = d => new Date(d + 'T12:00:00Z').toLocaleDateString('ca-ES', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
@@ -11,7 +12,7 @@ export async function onRequestPost({ request, env }) {
   try { body = await request.json(); } catch { return json({ error: 'bad_request' }, 400); }
   const S = await settings(env), q = quote(body.stay, body.in, body.out, S);
   if (q.error) return json(q, 400);
-  const guests = Math.min(Math.max(parseInt(body.guests, 10) || 1, 1), STAYS[q.stay].max);
+  const guests = Math.min(Math.max(parseInt(body.guests, 10) || 1, 1), (await content(env))[q.stay].max);
   const clip = (v, n) => String(v || '').trim().slice(0, n);
   const guest = { name: clip(body.name, 100), email: clip(body.email, 120), phone: clip(body.phone, 40), arrival: clip(body.arrival, 40), notes: clip(body.notes, 480) };
   if (guest.name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guest.email) || guest.phone.replace(/\D/g, '').length < 6) return json({ error: 'details' }, 400);

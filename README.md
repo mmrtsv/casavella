@@ -10,6 +10,7 @@ Web de La Casa Vella, casa de poble familiar al Bedorc (1898): allotjaments, res
 | `build.py` | Genera la versió per al domini a `dist/`. |
 | `dist/` | Versió per publicar: document HTML complet, etiquetes per a Google i xarxes, sense les eines de revisió. |
 | `maite/` | Maite, el back office (vegeu més avall). |
+| `lib/` | Lògica compartida de les funcions: reserves i preus (`booking.js`), Maite (`maite.js`) i contingut dels allotjaments (`stays.js`). |
 | `img/` | Fotos, logo, isotip i plaques dels allotjaments. |
 | `fonts/` | Tipografies de marca: Le Monde Livre i Halyard Display. |
 
@@ -63,6 +64,8 @@ Maite és el back office, a `maite.casavellarural.com`. Surt del mateix projecte
 - **Descomptes**: per estada llarga, tants com calgui («a partir de 7 nits, un 15 % menys»). S'aplica el més alt.
 - **Normes**: estada mínima i màxima, amb quanta antelació es pot reservar, hores d'entrada i sortida, i la política de cancel·lació (Flexible, Moderada, Estricta, No reemborsable o a mida). La web mostra la política al costat de les condicions, i cada reserva guarda la que va acceptar l'hoste: en cancel·lar-la, Maite proposa el retorn que toca.
 
+- **Allotjaments**: tipus, nom, descripció, capacitat, característiques (amb icona) i fotos de cada allotjament, amb una vista prèvia de com es veu a la web. Les fotos es poden pujar (es redueixen al navegador i es guarden a R2), afegir de les que ja té la web, reordenar arrossegant-les o amb fletxes, i la primera és la portada. Les fotos pujades que ja no fa servir cap allotjament s'esborren. La capacitat compta per a la web, els pagaments i les reserves de Maite. El rètol amb el nom (`img/nom-*.png`) és una imatge i no canvia sol.
+
 Tot això s'aplica de seguida a la web i als pagaments. Les reserves fetes a Maite no segueixen les normes (es pot reservar per telèfon el mateix dia o una sola nit).
 
 Tot el que hi ha al calendari continua sent la referència: el que es crea a mà a Google Calendar també surt a Maite (en blau) i bloqueja les nits.
@@ -70,9 +73,10 @@ Tot el que hi ha al calendari continua sent la referència: el que es crea a mà
 ### Posar-lo en marxa
 
 1. **Domini**: Cloudflare Pages → el projecte → Custom domains → afegeix `maite.casavellarural.com`.
-2. **Accés**: Cloudflare Zero Trust → Access → Applications → Add an application → Self-hosted, amb el domini `maite.casavellarural.com` i una política *Allow* amb els correus que hi poden entrar. Com s'entra: amb **Google** (Zero Trust → Settings → Authentication → Login methods → Google; es crea un client OAuth a Google Cloud i s'hi enganxa l'ID i el secret) i/o amb «One-time PIN» (un codi per correu, sense configurar res). Copia l'**Application Audience (AUD) tag**.
+2. **Accés amb Google**: a Google Cloud Console crea un client OAuth («Web application») amb l'URI de redirecció `https://<equip>.cloudflareaccess.com/cdn-cgi/access/callback`. A Cloudflare Zero Trust → Settings → Authentication → Login methods → Add new → Google, enganxa-hi l'ID i el secret del client. Després, Access → Applications → Add an application → Self-hosted, amb el domini `maite.casavellarural.com`, només el mètode Google i una política *Allow* amb els correus que hi poden entrar. Copia l'**Application Audience (AUD) tag**.
 3. **Preus i normes**: Workers & Pages → KV → crea un espai de noms (per exemple `casavella-maite`). Al projecte de Pages → Settings → Bindings → KV namespace, amb el nom de variable `MAITE`.
 4. **Variables** (Settings → Variables and secrets): `ACCESS_TEAM` (el nom de l'equip de Zero Trust, el que va davant de `.cloudflareaccess.com`) i `ACCESS_AUD` (el tag del pas 2). Les de Stripe i Google Calendar són les mateixes de la web.
+5. **Fotos**: R2 → crea un bucket (per exemple `casavella-fotos`). Al projecte de Pages → Settings → Bindings → R2 bucket, amb el nom de variable `PHOTOS`. Sense això, Maite deixa triar entre les fotos de la web però no pujar-ne de noves.
 
 Cada crida de Maite comprova el testimoni de Cloudflare Access, de manera que sense els passos 2 i 4 no s'hi pot entrar. Sense el pas 3, Maite funciona però no deixa desar preus ni normes, i la web fa servir els valors per defecte de `lib/booking.js`.
 

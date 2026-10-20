@@ -1,11 +1,13 @@
 // GET /api/search?in=2026-11-12&out=2026-11-15&guests=2
 // Every stay with its price for those dates and, when the calendars are connected, whether it is free.
 import { STAYS, quote, settings, configured, calendar, json } from '../../lib/booking.js';
+import { content } from '../../lib/stays.js';
 
 export async function onRequestGet({ request, env }) {
   const u = new URL(request.url), guests = parseInt(u.searchParams.get('guests'), 10) || 1;
-  const p = await settings(env);
-  const results = await Promise.all(Object.entries(STAYS).map(async ([stay, s]) => {
+  const [p, C] = await Promise.all([settings(env), content(env)]);
+  const results = await Promise.all(Object.keys(STAYS).map(async stay => {
+    const s = C[stay];
     const q = quote(stay, u.searchParams.get('in'), u.searchParams.get('out'), p);
     if (q.error) return { ...q, stay, max: s.max, fits: guests <= s.max, available: false };
     let available = null;

@@ -1,7 +1,7 @@
 // Two sites from one Pages project, split by host:
 // maite.casavellarural.com is the back office (dist/maite/ and /api/maite/), everything else is the public web.
 // Cloudflare Access guards the maite host; /api/maite/_middleware.js checks its token on every call as well.
-const SHARED = /^\/(fonts|img)\//;
+const SHARED = /^\/(fonts|img|photos)\//;
 
 export async function onRequest({ request, env, next }) {
   const url = new URL(request.url), path = url.pathname;

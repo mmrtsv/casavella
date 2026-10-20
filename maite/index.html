@@ -149,6 +149,45 @@ main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 60px; }
 .row.three { grid-template-columns: 1fr 1fr 1fr; }
 .actions.left { justify-content: flex-start; }
 .pc-bar { display: none; }
+.st-bar { display: none; position: fixed; left: 16px; right: 16px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 5; }
+/* Stays: content form, photos and a preview of the card on the web */
+.st { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+.st h3 { font-size: 20px; margin: 20px 0 8px; }
+.st-side { position: sticky; top: 12px; }
+.dirty { font-size: 13px; color: var(--due); }
+.feat { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.feat .ico { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); cursor: pointer; padding: 0; }
+.feat svg, .pv-feats svg, .icons svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.feat input { margin: 0; flex: 1; min-width: 0; }
+.feat .mv { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 6px 4px; font-size: 16px; }
+.feat .mv:disabled { opacity: .3; cursor: default; }
+.icons { display: flex; flex-wrap: wrap; gap: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 8px; margin: 0 0 8px 44px; }
+.icons button { display: flex; align-items: center; gap: 6px; border: 1px solid transparent; background: none; border-radius: 8px; padding: 5px 8px; cursor: pointer; font-size: 13px; }
+.icons button:hover, .icons button[aria-pressed="true"] { border-color: var(--basil); }
+.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.ph { position: relative; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: var(--line); cursor: grab; border: 0; padding: 0; }
+.ph img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.ph.dragging { opacity: .4; }
+.ph.over { outline: 2px dashed var(--basil); outline-offset: 2px; }
+.ph .cover { position: absolute; left: 6px; top: 6px; background: var(--deep); color: var(--on-deep); font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+.ph .tools { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; padding: 4px; background: linear-gradient(transparent, rgba(0,0,0,.55)); }
+.ph .tools button { border: 0; background: rgba(255,255,255,.9); color: #1a3f20; border-radius: 999px; width: 28px; height: 28px; cursor: pointer; font-size: 14px; line-height: 1; }
+.ph .tools button:disabled { opacity: .4; cursor: default; }
+.ph.up { display: grid; place-items: center; font-size: 13px; color: var(--muted); cursor: default; }
+.lib .ph { cursor: pointer; }
+.lib .ph[aria-pressed="true"] { outline: 3px solid var(--basil); outline-offset: -3px; }
+.lib .ph.in { opacity: .35; cursor: default; }
+dialog.wide { width: min(860px, calc(100vw - 32px)); }
+.btn.file { display: inline-block; margin: 0; color: var(--text); font-size: 16px; }
+.preview { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+.pv-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; border-radius: 4px; background: var(--line); }
+.pv-body { padding: 12px 2px 2px; }
+.pv-kind { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--basil); font-weight: 600; }
+.pv-body h4 { font: 400 26px/1.1 var(--display); color: var(--ink); margin: 4px 0 10px; }
+.pv-feats { list-style: none; padding: 0; margin: 0 0 10px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.pv-feats li { display: flex; align-items: center; gap: 6px; }
+.pv-body p { font-size: 14px; margin: 0; }
+
 
 /* Dialogs and forms */
 dialog { border: 0; border-radius: 16px; padding: 0; background: var(--paper); color: var(--text); width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); box-shadow: 0 20px 60px rgba(0,0,0,.3); }
@@ -171,8 +210,9 @@ dd { margin: 0; overflow-wrap: anywhere; }
 .loading { opacity: .55; pointer-events: none; transition: opacity .2s; }
 
 @media (max-width: 900px) {
-  .pc { grid-template-columns: 1fr; }
-  .pc-bar:not([hidden]) { display: flex; }
+  .pc, .st { grid-template-columns: 1fr; }
+  .st-side { position: static; }
+  .pc-bar:not([hidden]), .st-bar:not([hidden]) { display: flex; }
   .panel { position: static; }
 }
 @media (max-width: 640px) {
@@ -202,6 +242,7 @@ dd { margin: 0; overflow-wrap: anywhere; }
     <button role="tab" data-tab="prices" aria-selected="false">Preus</button>
     <button role="tab" data-tab="disc" aria-selected="false">Descomptes</button>
     <button role="tab" data-tab="rules" aria-selected="false">Normes</button>
+    <button role="tab" data-tab="stays" aria-selected="false">Allotjaments</button>
   </nav>
 </header>
 
@@ -322,6 +363,41 @@ dd { margin: 0; overflow-wrap: anywhere; }
       <p class="hint">Cada reserva de la web guarda la política que l'hoste va acceptar. En cancel·lar-la, Maite proposa el retorn segons aquella política.</p>
     </form>
   </section>
+  <section id="tab-stays" hidden>
+    <div class="bar"><div class="chips" id="stStays"></div><span class="dirty" id="stDirty" hidden>Canvis sense desar</span></div>
+    <form id="stayForm" class="st" novalidate>
+      <div class="st-main">
+        <div class="row">
+          <label>Tipus<input name="kind" list="kinds" required autocomplete="off"></label>
+          <label>Nom<input name="name" required autocomplete="off"></label>
+        </div>
+        <label>Capacitat<select name="max"></select></label>
+        <label>Descripció<textarea name="desc" rows="4"></textarea></label>
+        <h3>Característiques</h3>
+        <div id="feats"></div>
+        <button class="btn" type="button" id="addFeat">+ Afegeix una característica</button>
+        <h3>Fotos</h3>
+        <p class="hint">La primera és la portada. Arrossega-les per canviar l'ordre, o fes servir les fletxes.</p>
+        <div class="photos" id="photos"></div>
+        <div class="actions left">
+          <label class="btn file" id="uploadBtn">Puja fotos<input type="file" accept="image/*" multiple id="upload" hidden></label>
+          <button class="btn" type="button" id="libBtn">Fotos de la web</button>
+        </div>
+        <p class="hint" id="uploadHint"></p>
+      </div>
+      <aside class="st-side">
+        <div class="preview">
+          <p class="hint" style="margin:0 0 8px">Així es veu a la web</p>
+          <div class="pv-card"><img id="pvImg" alt=""><div class="pv-body"><span class="pv-kind" id="pvKind"></span><h4 id="pvName"></h4><ul class="pv-feats" id="pvFeats"></ul><p id="pvDesc"></p></div></div>
+        </div>
+        <p class="err" hidden></p>
+        <div class="actions left"><button class="btn solid" type="submit">Desa els canvis</button><a class="btn" id="viewSite" target="_blank" rel="noopener">Veure a la web</a></div>
+        <p class="hint">El rètol amb el nom que hi ha sobre la foto és una imatge: si canvies el nom, caldrà fer-ne un de nou.</p>
+      </aside>
+    </form>
+    <div class="selbar st-bar" id="stBar" hidden><span>Canvis sense desar</span><button class="btn solid" type="button" id="stBarSave">Desa</button></div>
+    <datalist id="kinds"><option value="Apartament"><option value="Habitació"><option value="Suite"><option value="Casa"></datalist>
+  </section>
 </main>
 
 <dialog id="detail"><div class="dlg"><button class="x" data-close aria-label="Tanca">×</button><div id="detailBody"></div></div></dialog>
@@ -370,6 +446,16 @@ dd { margin: 0; overflow-wrap: anywhere; }
   </form>
 </dialog>
 
+<dialog id="libDlg" class="wide">
+  <div class="dlg">
+    <button class="x" type="button" data-close aria-label="Tanca">×</button>
+    <h2>Fotos de la web</h2>
+    <p class="hint">Toca les que vulguis afegir.</p>
+    <div class="photos lib" id="lib"></div>
+    <div class="actions"><button class="btn solid" type="button" id="libAdd">Afegeix</button></div>
+  </div>
+</dialog>
+
 <dialog id="cancelDlg">
   <form id="cancelForm" novalidate>
     <button class="x" type="button" data-close aria-label="Tanca">×</button>
@@ -398,7 +484,7 @@ const KIND = { paid: 'Pagada a la web', pending: 'Pendent del banc', manual: 'Re
 const SOURCE = { web: 'Web', phone: 'Telèfon', whatsapp: 'WhatsApp', email: 'Correu', door: 'En persona', other: 'Altres' };
 const ERRORS = {
   unavailable: 'Aquestes nits ja estan ocupades', dates: 'Revisa les dates', name: 'Falta el nom', stay: 'Tria un allotjament',
-  amount: "L'import no és vàlid", rules: 'Revisa les normes: algun valor no és vàlid', cancel: 'Revisa la política: els dies del retorn parcial han de ser menys que els del retorn complet', min: 'Revisa l\'estada mínima', pending: 'El banc encara no ha confirmat aquest pagament. Espera que es confirmi per cancel·lar-la.',
+  amount: "L'import no és vàlid", rules: 'Revisa les normes: algun valor no és vàlid', cancel: 'Revisa la política: els dies del retorn parcial han de ser menys que els del retorn complet', min: 'Revisa l\'estada mínima', max: 'Revisa la capacitat', photos: 'Cal almenys una foto', type: 'Aquest format d\'imatge no es pot pujar', size: 'La foto és massa gran', pending: 'El banc encara no ha confirmat aquest pagament. Espera que es confirmi per cancel·lar-la.',
   refund_amount: "No es pot retornar més del que es va pagar", not_configured: 'Aquest allotjament no té el calendari connectat',
   no_payment: 'No trobo el pagament a Stripe', access: 'La sessió ha caducat. Torna a carregar la pàgina.', discount: 'Revisa els descomptes: de 2 nits en amunt, entre 1 i 90 %, sense repetir nits',
   price: 'Revisa els preus',
@@ -421,7 +507,7 @@ function toast(msg) {
   setTimeout(() => t.remove(), 3200);
 }
 const stayName = id => STAYS.find(s => s.id === id)?.name || id;
-const shortName = id => stayName(id).replace(/^(Apartament|Habitació) /, '');
+const shortName = id => STAYS.find(s => s.id === id)?.short || stayName(id);
 
 // ---- Data: windows of calendar entries, merged by id ----
 async function load(from, to) {
@@ -447,7 +533,7 @@ let tab = 'cal';
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
   tab = b.dataset.tab;
   document.querySelectorAll('[data-tab]').forEach(x => x.setAttribute('aria-selected', x === b));
-  for (const t of ['cal', 'list', 'prices', 'disc', 'rules']) $('tab-' + t).hidden = t !== tab;
+  for (const t of ['cal', 'list', 'prices', 'disc', 'rules', 'stays']) $('tab-' + t).hidden = t !== tab;
   try { localStorage.setItem('maite-tab', tab); } catch (e) {}
   render();
 }));
@@ -895,12 +981,142 @@ $('rulesForm').addEventListener('submit', e => {
   });
 });
 
+// ---- Stays: texts, features, capacity and photos for the web ----
+let CONTENT = null, stStay = null, draft = null, openIcons = null;
+const icon = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${CONTENT.icons[k] || CONTENT.icons.star}</svg>`;
+const photoUrl = src => src.startsWith('/') ? src : '/' + src;
+async function renderStays() {
+  if (!CONTENT) { try { CONTENT = await api('stays'); } catch (e) { return toast(e.message); } }
+  stStay ||= STAYS[0]?.id;
+  if (!stStay) return;
+  if (!draft || draft.stay !== stStay) { draft = { stay: stStay, ...structuredClone(CONTENT.stays[stStay]) }; setDirty(false); fillStay(); }
+  $('stStays').innerHTML = STAYS.map(s => `<button class="chip" type="button" data-stay="${s.id}" aria-pressed="${s.id === stStay}">${esc(CONTENT.stays[s.id].name)}</button>`).join('');
+  drawFeats(); drawPhotos(); preview();
+}
+function fillStay() {
+  const f = $('stayForm'); formError(f);
+  f.kind.value = draft.kind; f.name.value = draft.name; f.desc.value = draft.desc;
+  f.max.innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1} ${i ? 'persones' : 'persona'}</option>`).join('');
+  f.max.value = draft.max;
+  $('viewSite').href = `${location.protocol}//${location.hostname.replace(/^maite\./, '')}/#${stStay}`;
+  $('uploadBtn').hidden = !CONTENT.uploads;
+  $('uploadHint').textContent = CONTENT.uploads ? '' : "Per pujar fotos noves cal connectar l'emmagatzematge R2 (vegeu el README). Mentrestant pots triar entre les fotos de la web.";
+}
+function setDirty(v) { $('stDirty').hidden = $('stBar').hidden = !v; }
+$('stBarSave').onclick = () => $('stayForm').requestSubmit();
+function drawFeats() {
+  $('feats').innerHTML = draft.feats.map((f, i) => `<div class="feat" data-i="${i}">
+      <button type="button" class="ico" data-icons title="Canvia la icona" aria-label="Canvia la icona">${icon(f.icon)}</button>
+      <input value="${esc(f.text)}" data-text aria-label="Característica ${i + 1}" maxlength="60">
+      <button type="button" class="mv" data-up aria-label="Puja"${i ? '' : ' disabled'}>↑</button>
+      <button type="button" class="mv" data-down aria-label="Baixa"${i < draft.feats.length - 1 ? '' : ' disabled'}>↓</button>
+      <button type="button" class="mv" data-del aria-label="Treu">×</button>
+    </div>${openIcons === i ? `<div class="icons" data-for="${i}">${Object.keys(CONTENT.icons).map(k => `<button type="button" data-icon="${k}" aria-pressed="${k === f.icon}">${icon(k)}${esc(CONTENT.iconNames[k] || k)}</button>`).join('')}</div>` : ''}`).join('');
+}
+$('feats').addEventListener('input', e => { const i = e.target.closest('.feat')?.dataset.i; if (i != null && e.target.hasAttribute('data-text')) { draft.feats[i].text = e.target.value; setDirty(true); preview(); } });
+$('feats').addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return;
+  const i = +(e.target.closest('.feat')?.dataset.i ?? e.target.closest('.icons')?.dataset.for);
+  if (t.dataset.icon) { draft.feats[i].icon = t.dataset.icon; openIcons = null; }
+  else if (t.hasAttribute('data-icons')) openIcons = openIcons === i ? null : i;
+  else if (t.hasAttribute('data-up')) [draft.feats[i - 1], draft.feats[i]] = [draft.feats[i], draft.feats[i - 1]];
+  else if (t.hasAttribute('data-down')) [draft.feats[i + 1], draft.feats[i]] = [draft.feats[i], draft.feats[i + 1]];
+  else if (t.hasAttribute('data-del')) { draft.feats.splice(i, 1); openIcons = null; }
+  else return;
+  setDirty(true); drawFeats(); preview();
+});
+$('addFeat').onclick = () => { draft.feats.push({ icon: 'star', text: '' }); openIcons = draft.feats.length - 1; drawFeats(); $('feats').querySelectorAll('[data-text]')[openIcons].focus(); };
+
+let uploading = 0, dragFrom = null;
+function drawPhotos() {
+  $('photos').innerHTML = draft.photos.map((src, i) => `<div class="ph" draggable="true" data-i="${i}">
+      <img src="${esc(photoUrl(src))}" alt="" loading="lazy">${i ? '' : '<span class="cover">Portada</span>'}
+      <div class="tools"><span><button type="button" data-left aria-label="Mou a l'esquerra"${i ? '' : ' disabled'}>←</button> <button type="button" data-right aria-label="Mou a la dreta"${i < draft.photos.length - 1 ? '' : ' disabled'}>→</button></span>
+      <span>${i ? '<button type="button" data-cover aria-label="Fes-la portada" title="Fes-la portada">★</button> ' : ''}<button type="button" data-del aria-label="Treu la foto">×</button></span></div></div>`).join('')
+    + Array.from({ length: uploading }, () => '<div class="ph up">Pujant…</div>').join('');
+}
+function movePhoto(from, to) { const [x] = draft.photos.splice(from, 1); draft.photos.splice(to, 0, x); setDirty(true); drawPhotos(); preview(); }
+$('photos').addEventListener('click', e => {
+  const t = e.target.closest('button'), i = +e.target.closest('.ph')?.dataset.i;
+  if (!t) return;
+  if (t.hasAttribute('data-left')) movePhoto(i, i - 1);
+  if (t.hasAttribute('data-right')) movePhoto(i, i + 1);
+  if (t.hasAttribute('data-cover')) movePhoto(i, 0);
+  if (t.hasAttribute('data-del')) {
+    if (draft.photos.length === 1) return toast('Cal almenys una foto');
+    draft.photos.splice(i, 1); setDirty(true); drawPhotos(); preview();
+  }
+});
+$('photos').addEventListener('dragstart', e => { const ph = e.target.closest('.ph[data-i]'); if (!ph) return; dragFrom = +ph.dataset.i; ph.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+$('photos').addEventListener('dragover', e => { const ph = e.target.closest('.ph[data-i]'); if (dragFrom == null || !ph) return; e.preventDefault(); $('photos').querySelectorAll('.over').forEach(x => x.classList.remove('over')); ph.classList.add('over'); });
+$('photos').addEventListener('drop', e => { const ph = e.target.closest('.ph[data-i]'); if (dragFrom == null || !ph) return; e.preventDefault(); const to = +ph.dataset.i; const from = dragFrom; dragFrom = null; if (to !== from) movePhoto(from, to); else drawPhotos(); });
+$('photos').addEventListener('dragend', () => { if (dragFrom != null) { dragFrom = null; drawPhotos(); } });
+
+// Photos are resized in the browser (longest side 2000 px, JPEG) before going up
+async function shrink(file) {
+  const bmp = await createImageBitmap(file), k = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise(ok => c.toBlob(ok, 'image/jpeg', .85));
+}
+$('upload').addEventListener('change', async e => {
+  const files = [...e.target.files]; e.target.value = '';
+  uploading += files.length; drawPhotos();
+  for (const file of files) {
+    try {
+      const blob = await shrink(file);
+      const r = await fetch('/api/maite/photos', { method: 'POST', headers: { 'content-type': 'image/jpeg' }, body: blob });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(ERRORS[d.error] || "No s'ha pogut pujar la foto");
+      draft.photos.push(d.src); setDirty(true);
+    } catch (err) { toast(`${file.name}: ${err.message}`); }
+    uploading--; drawPhotos(); preview();
+  }
+});
+let libPick = new Set();
+$('libBtn').onclick = () => {
+  libPick = new Set();
+  $('lib').innerHTML = CONTENT.library.map(src => `<button type="button" class="ph${draft.photos.includes(src) ? ' in' : ''}" data-src="${esc(src)}" aria-pressed="false"${draft.photos.includes(src) ? ' disabled' : ''}><img src="${esc(photoUrl(src))}" alt="" loading="lazy"></button>`).join('');
+  $('libDlg').showModal();
+};
+$('lib').addEventListener('click', e => { const b = e.target.closest('[data-src]'); if (!b || b.disabled) return; const on = !libPick.has(b.dataset.src); on ? libPick.add(b.dataset.src) : libPick.delete(b.dataset.src); b.setAttribute('aria-pressed', on); });
+$('libAdd').onclick = () => { if (libPick.size) { draft.photos.push(...libPick); setDirty(true); drawPhotos(); preview(); } $('libDlg').close(); };
+
+function preview() {
+  $('pvImg').src = draft.photos[0] ? photoUrl(draft.photos[0]) : '';
+  $('pvKind').textContent = draft.kind; $('pvName').textContent = draft.name; $('pvDesc').textContent = draft.desc;
+  $('pvFeats').innerHTML = draft.feats.filter(f => f.text.trim()).map(f => `<li>${icon(f.icon)}${esc(f.text)}</li>`).join('');
+}
+$('stayForm').addEventListener('input', e => {
+  const k = e.target.name;
+  if (['kind', 'name', 'desc'].includes(k)) { draft[k] = e.target.value; setDirty(true); preview(); }
+});
+$('stayForm').max.addEventListener('change', e => { draft.max = +e.target.value; setDirty(true); });
+$('stStays').addEventListener('click', e => {
+  const c = e.target.closest('[data-stay]'); if (!c || c.dataset.stay === stStay) return;
+  if (!$('stDirty').hidden && !confirm('Hi ha canvis sense desar. Els vols descartar?')) return;
+  stStay = c.dataset.stay; openIcons = null; renderStays();
+});
+$('stayForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target;
+  submit(f, async () => {
+    if (uploading) throw new Error('Espera que acabin de pujar les fotos');
+    const d = await api('stays', { method: 'PUT', body: { ...draft, feats: draft.feats.filter(x => x.text.trim()) } });
+    CONTENT.stays[stStay] = d.stay; draft = null; toast('Allotjament desat');
+    const st = STAYS.find(x => x.id === stStay); if (st) Object.assign(st, { name: `${d.stay.kind} ${d.stay.name}`, short: d.stay.name, max: d.stay.max });
+    renderStays();
+  });
+});
+addEventListener('beforeunload', e => { if (!$('stDirty').hidden) e.preventDefault(); });
+
 function render() {
   if (tab === 'cal') renderCal();
   if (tab === 'list') renderList();
   if (tab === 'prices') renderPrices();
   if (tab === 'disc') renderDisc();
   if (tab === 'rules') renderRules();
+  if (tab === 'stays') renderStays();
 }
 
 (async () => {

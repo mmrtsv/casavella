@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ca" class="dark" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b100c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
+<title>Maite</title>
+<link rel="icon" type="image/png" href="/img/iso-dark.png">
+<script>
+  // Theme before first paint (dark unless the viewer chose light), so nothing flashes or shifts
+  try { if (localStorage.getItem('maite-theme') === 'light') { document.documentElement.className = 'light'; document.documentElement.dataset.theme = 'light'; } } catch (e) {}
+</script>
+</head>
+<body class="bg-background text-foreground">
+<div id="root"></div>
+<script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

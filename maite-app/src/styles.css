@@ -1,0 +1,144 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+/* Maite. Brand colours only (from the web): Verd fosc #1a3f20, Verd alfàbrega #2e6d2e, Verd sàlvia #79a57a, Cava #c6bfaf.
+   Neutrals are those greens mixed towards black or white, so every surface stays on-brand. Dark first, light on request. */
+:root {
+  --brand-deep: #1a3f20;
+  --brand-basil: #2e6d2e;
+  --brand-sage: #79a57a;
+  --brand-cava: #c6bfaf;
+  --font-ui: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ease-quick: cubic-bezier(.2, .8, .2, 1);
+}
+
+@layer base {
+  :root, .dark, [data-theme="dark"] {
+    color-scheme: dark;
+    --radius: 0.875rem;
+    --field-radius: 0.75rem;
+    --background: color-mix(in oklab, var(--brand-deep) 22%, #050706);
+    --foreground: #eef1ec;
+    --surface: color-mix(in oklab, var(--brand-deep) 26%, #0d110e);
+    --surface-foreground: var(--foreground);
+    --overlay: color-mix(in oklab, var(--brand-deep) 30%, #10140f);
+    --overlay-foreground: var(--foreground);
+    --muted: #a3ada2;
+    --default: color-mix(in oklab, var(--brand-sage) 12%, #161b16);
+    --default-foreground: var(--foreground);
+    --accent: var(--brand-sage);
+    --accent-foreground: #08100a;
+    --field-background: color-mix(in oklab, var(--brand-sage) 8%, #121712);
+    --field-foreground: var(--foreground);
+    --field-placeholder: #8c968b;
+    --field-border: color-mix(in oklab, var(--brand-sage) 18%, transparent);
+    --success: var(--brand-sage);
+    --success-foreground: #08100a;
+    --border: color-mix(in oklab, var(--brand-sage) 16%, transparent);
+    --separator: color-mix(in oklab, var(--brand-sage) 14%, transparent);
+    --focus: var(--brand-sage);
+    --link: var(--brand-sage);
+    --surface-shadow: 0 1px 0 0 rgb(255 255 255 / .04) inset, 0 12px 32px -16px rgb(0 0 0 / .6);
+    --overlay-shadow: 0 1px 0 0 rgb(255 255 255 / .06) inset, 0 24px 64px -12px rgb(0 0 0 / .7);
+    --field-shadow: none;
+    /* Glass: the tint keeps text at AA contrast whatever is behind it */
+    --glass-tint: color-mix(in oklab, var(--brand-deep) 34%, rgb(10 14 11 / .74));
+    --glass-tint-liquid: rgb(12 17 13 / .52);
+    --glass-tint-solid: color-mix(in oklab, var(--brand-deep) 30%, #0e130f);
+    --glass-edge: rgb(255 255 255 / .09);
+    --glow-a: color-mix(in oklab, var(--brand-basil) 55%, transparent);
+    --glow-b: color-mix(in oklab, var(--brand-deep) 80%, transparent);
+    --glow-c: color-mix(in oklab, var(--brand-cava) 14%, transparent);
+    --row-hover: rgb(255 255 255 / .035);
+    --tone-paid: color-mix(in oklab, var(--brand-sage) 22%, transparent);
+    --tone-paid-fg: #b9d6b9;
+  }
+  .light, [data-theme="light"] {
+    color-scheme: light;
+    --background: color-mix(in oklab, var(--brand-cava) 20%, #fbfaf7);
+    --foreground: #121a14;
+    --surface: #ffffff;
+    --surface-foreground: var(--foreground);
+    --overlay: #ffffff;
+    --overlay-foreground: var(--foreground);
+    --muted: #586257;
+    --default: color-mix(in oklab, var(--brand-cava) 26%, #f3f1ec);
+    --default-foreground: var(--foreground);
+    --accent: var(--brand-basil);
+    --accent-foreground: #ffffff;
+    --field-background: #ffffff;
+    --field-foreground: var(--foreground);
+    --field-placeholder: #6f786e;
+    --field-border: color-mix(in oklab, var(--brand-deep) 16%, transparent);
+    --success: var(--brand-basil);
+    --success-foreground: #ffffff;
+    --border: color-mix(in oklab, var(--brand-deep) 12%, transparent);
+    --separator: color-mix(in oklab, var(--brand-deep) 10%, transparent);
+    --focus: var(--brand-basil);
+    --link: var(--brand-basil);
+    --surface-shadow: 0 1px 2px rgb(26 63 32 / .06), 0 8px 24px -12px rgb(26 63 32 / .14);
+    --overlay-shadow: 0 24px 64px -16px rgb(26 63 32 / .28);
+    --glass-tint: rgb(255 255 255 / .72);
+    --glass-tint-liquid: rgb(255 255 255 / .55);
+    --glass-tint-solid: #ffffff;
+    --glass-edge: rgb(26 63 32 / .10);
+    --glow-a: color-mix(in oklab, var(--brand-sage) 34%, transparent);
+    --glow-b: color-mix(in oklab, var(--brand-cava) 60%, transparent);
+    --glow-c: color-mix(in oklab, var(--brand-basil) 10%, transparent);
+    --row-hover: color-mix(in oklab, var(--brand-deep) 4%, transparent);
+    --tone-paid: color-mix(in oklab, var(--brand-sage) 22%, transparent);
+    --tone-paid-fg: var(--brand-deep);
+  }
+  html { font-family: var(--font-ui); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+  body { min-height: 100dvh; letter-spacing: -0.006em; }
+  /* Soft brand light behind everything: what the glass refracts */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(60rem 40rem at 8% -10%, var(--glow-a), transparent 60%),
+      radial-gradient(50rem 36rem at 105% 10%, var(--glow-b), transparent 62%),
+      radial-gradient(40rem 30rem at 60% 110%, var(--glow-c), transparent 60%);
+  }
+  .tnum { font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+}
+
+/* ---------- Glass ---------- */
+.glass { position: relative; isolation: isolate; box-shadow: 0 0 0 1px var(--glass-edge) inset, var(--overlay-shadow); }
+.glass-refraction, .glass-tint { position: absolute; inset: 0; pointer-events: none; }
+.glass-refraction { z-index: -2; overflow: hidden; }
+.glass-tint { z-index: -1; background: var(--glass-tint-solid); }
+.glass-body { position: relative; height: 100%; }
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .glass:not(.is-liquid) > .glass-tint {
+    background: var(--glass-tint);
+    -webkit-backdrop-filter: blur(24px) saturate(170%);
+    backdrop-filter: blur(24px) saturate(170%);
+  }
+  .glass.is-liquid > .glass-tint { background: var(--glass-tint-liquid); }
+}
+/* The library's own wrapper: keep it a pure backdrop layer */
+.glass-refraction > div, .glass-refraction > span { pointer-events: none !important; }
+@media (prefers-reduced-transparency: reduce) {
+  .glass > .glass-tint { background: var(--glass-tint-solid) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+  .glass-refraction { display: none; }
+}
+
+/* ---------- Motion: fast and quiet, and none when asked ---------- */
+.fade-in { animation: fade-in .18s var(--ease-quick) both; }
+@keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- Status chips ---------- */
+.status { display: inline-flex; align-items: center; gap: .4rem; height: 1.5rem; padding: 0 .6rem; border-radius: 999px; font-size: .75rem; font-weight: 550; white-space: nowrap; }
+.status::before { content: ""; width: .4rem; height: .4rem; border-radius: 50%; background: currentColor; }
+.status.paid { background: var(--tone-paid); color: var(--tone-paid-fg); }
+.status.due { background: color-mix(in oklab, var(--warning) 18%, transparent); color: color-mix(in oklab, var(--warning) 70%, var(--foreground)); }
+.status.other { background: color-mix(in oklab, var(--brand-cava) 18%, transparent); color: color-mix(in oklab, var(--brand-cava) 55%, var(--foreground)); }
+.status.neutral { background: var(--default); color: var(--muted); }
+.status.danger { background: color-mix(in oklab, var(--danger) 16%, transparent); color: color-mix(in oklab, var(--danger) 70%, var(--foreground)); }
+
+/* Scrollbars that stay out of the way */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--foreground) 18%, transparent) transparent; }

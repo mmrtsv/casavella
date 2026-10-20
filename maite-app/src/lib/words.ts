@@ -1,0 +1,55 @@
+// Labels and messages, as in the previous Maite
+import type { Booking, Kind, Policy } from './types';
+import { TODAY } from './dates';
+
+export const KIND: Record<Kind, string> = { paid: 'Pagada a la web', pending: 'Pendent del banc', manual: 'Reserva directa', block: 'Tancat', cancelled: 'Cancel·lada', refunded: 'Reemborsada', other: 'Google Calendar' };
+export const SOURCE: Record<string, string> = { web: 'Web', phone: 'Telèfon', whatsapp: 'WhatsApp', email: 'Correu', door: 'En persona', other: 'Altres' };
+export const METHOD: Record<string, string> = { cash: 'Efectiu', transfer: 'Transferència', bizum: 'Bizum', card: 'Targeta (TPV)', other: 'Altres' };
+export const PAYTYPE: Record<string, string> = { card: 'Targeta', sepa_debit: 'Domiciliació SEPA', customer_balance: 'Transferència', bancontact: 'Bancontact', ideal: 'iDEAL', paypal: 'PayPal', klarna: 'Klarna', link: 'Link', revolut_pay: 'Revolut Pay', amazon_pay: 'Amazon Pay', sofort: 'Sofort', giropay: 'Giropay', eps: 'EPS', p24: 'Przelewy24' };
+export const WALLET: Record<string, string> = { apple_pay: 'Apple Pay', google_pay: 'Google Pay', samsung_pay: 'Samsung Pay', link: 'Link' };
+export const ERRORS: Record<string, string> = {
+  unavailable: 'Aquestes nits ja estan ocupades', dates: 'Revisa les dates', name: 'Falta el nom', stay: 'Tria un allotjament',
+  amount: "L'import no és vàlid", rules: 'Revisa les normes: algun valor no és vàlid', cancel: 'Revisa la política: els dies del retorn parcial han de ser menys que els del retorn complet',
+  min: "Revisa l'estada mínima", max: 'Revisa la capacitat', photos: 'Cal almenys una foto', type: "Aquest format d'imatge no es pot pujar", size: 'La foto és massa gran',
+  pending: 'El banc encara no ha confirmat aquest pagament. Espera que es confirmi per cancel·lar-la.',
+  refund_amount: 'No es pot retornar més del que es va pagar', not_configured: 'Aquest allotjament no té el calendari connectat',
+  no_payment: 'No trobo el pagament a Stripe', access: 'La sessió ha caducat. Torna a carregar la pàgina.',
+  discount: 'Revisa els descomptes: de 2 nits en amunt, entre 1 i 90 %, sense repetir nits', price: 'Revisa els preus', email: 'Revisa el correu',
+};
+
+export const isBooking = (b: Booking) => b.kind === 'paid' || b.kind === 'pending' || b.kind === 'manual';
+export const atHome = (b: Booking) => !!b.checkin && !b.checkout;
+export const who = (b: Booking) => b.kind === 'block' ? (b.title || 'Tancat') : b.kind === 'other' ? b.title : (b.name || b.title);
+
+export interface Check { k: 'pay' | 'email' | 'phone' | 'docs' | 'police' | 'checkin' | 'checkout'; label: string; ok: boolean }
+export function checklist(b: Booking): Check[] {
+  return [
+    { k: 'pay', label: 'Pagament', ok: b.kind === 'paid' || (b.kind === 'manual' && b.settled) },
+    { k: 'email', label: 'Correu', ok: !!b.email },
+    { k: 'phone', label: 'Telèfon', ok: !!b.phone },
+    { k: 'docs', label: 'Documents', ok: b.docs },
+    { k: 'police', label: 'Registre de viatgers', ok: b.police },
+    { k: 'checkin', label: 'Entrada', ok: !!b.checkin },
+    { k: 'checkout', label: 'Sortida', ok: !!b.checkout },
+  ];
+}
+// What is still missing and already matters: before arrival the paperwork, from arrival day the check-in, from departure day the check-out
+export function missing(b: Booking) {
+  const due: Record<Check['k'], boolean> = { pay: true, email: true, phone: true, docs: true, police: b.first <= TODAY, checkin: b.first <= TODAY, checkout: b.until <= TODAY };
+  return checklist(b).filter(c => !c.ok && due[c.k]);
+}
+
+// Cancellation policy (same rules as lib/booking.js)
+export function policyText(c: Policy) {
+  const days = (n: number) => n === 1 ? '1 dia' : `${n} dies`;
+  if (c.fullDays == null && !c.partialPct) return "No es retorna l'import si es cancel·la.";
+  const out: string[] = [];
+  if (c.fullDays != null) out.push(c.fullDays === 0 ? "Cancel·lació gratuïta fins al dia abans de l'arribada" : `Cancel·lació gratuïta fins a ${days(c.fullDays)} abans de l'arribada`);
+  if (c.partialPct && c.partialDays != null) out.push(`es retorna el ${c.partialPct} % fins a ${c.partialDays === 0 ? "l'arribada" : days(c.partialDays) + ' abans'}`);
+  return out.join('; ') + '. Després no es retorna res.';
+}
+export function refundDue(c: Policy, paid: number, before: number) {
+  if (c.fullDays != null && before >= c.fullDays) return paid;
+  if (c.partialPct && c.partialDays != null && before >= c.partialDays) return Math.round(paid * c.partialPct / 100);
+  return 0;
+}

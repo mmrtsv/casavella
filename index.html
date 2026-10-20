@@ -296,6 +296,10 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .bp-check input:checked::after { opacity: 1; }
 .bp-check input[aria-invalid="true"] { border-color: #a33b2b; }
 .bp-pay { justify-self: start; padding: 18px 32px; }
+.bp-payment { display: grid; gap: 18px; border-top: 1px solid var(--line); padding-top: 24px; }
+.bp-pay-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+#payment-element { min-height: 120px; }
+.bp-form.paying input:not([type="checkbox"]), .bp-form.paying textarea, .bp-form.paying .pick { color: var(--muted); }
 .bp-secure { display: flex; gap: 10px; align-items: center; font-size: 13.5px; color: var(--muted); margin-top: -8px; }
 .bp-secure svg { width: 18px; height: 18px; flex: none; fill: none; stroke: var(--basil); stroke-width: 1.5; stroke-linecap: round; }
 .bp-form .note { font-size: 14px; color: var(--text); min-height: 1.7em; }
@@ -701,8 +705,12 @@ footer { padding-bottom: 32px !important; }
           <div class="bp-row field"><label class="label" id="lbArrival">Hora d'arribada aproximada</label><button type="button" class="pick" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbArrival arrivalVal"><span class="val" id="arrivalVal">Encara no ho sé</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><input type="hidden" id="garrival" value="Encara no ho sé"></div>
           <div class="bp-row"><label class="label" for="gnotes">Alguna cosa que hàgim de saber?</label><textarea id="gnotes" rows="3" maxlength="500" placeholder="Una celebració, una al·lèrgia, si veniu amb bicicleta…"></textarea></div>
           <label class="bp-check"><input type="checkbox" id="gterms"><span>Accepto les <a href="#contacte">condicions de reserva</a> i la <a href="#contacte">política de privacitat</a>.</span></label>
-          <button class="btn solid bp-pay" type="submit">Pagar</button>
-          <p class="bp-secure"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>Pagament segur amb targeta a través de Stripe. No guardem les dades de la teva targeta.</p>
+          <div class="bp-payment" id="payStep" hidden>
+            <div class="bp-pay-head"><span class="label">Pagament</span><button type="button" class="cmp-more" id="payEdit">Canviar les dades</button></div>
+            <div id="payment-element"></div>
+          </div>
+          <button class="btn solid bp-pay" type="submit">Continuar al pagament</button>
+          <p class="bp-secure"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>Pagament segur amb Stripe. Les dades de la targeta van directament a Stripe: nosaltres no les veiem ni les guardem.</p>
           <p class="note" id="payNote" aria-live="polite"></p>
         </form>
         <div class="bp-done" id="bpDone" hidden>
@@ -1492,7 +1500,7 @@ function renderSummary() {
   $('bpPrice').innerHTML = `<div><span>${euro(q.nightly)} × ${nightsTxt(q.n)}</span><span>${euro(q.subtotal)}</span></div>`
     + (q.discount ? `<div class="disc"><span>Descompte ${q.n === 2 ? 'de 2 nits' : 'de 3 nits o més'} (${q.discount} %)</span><span>− ${euro(q.subtotal - q.total)}</span></div>` : '')
     + `<div class="total"><span>Total</span><span>${euro(q.total)}</span></div><small>Impostos inclosos.</small>`;
-  if (!payBtn.disabled) payBtn.textContent = `Pagar ${euro(q.total)}`;
+  if (!payBtn.disabled) payBtn.textContent = payStep ? `Pagar ${euro(q.total)}` : 'Continuar al pagament';
 }
 ['bpThumb', 'bpDetails'].forEach(id => $(id).addEventListener('click', e => openStay(fstay.value, e.currentTarget)));
 function showSub(id) {
@@ -1528,8 +1536,75 @@ bookForm.addEventListener('submit', e => {
   goToBooking();
 });
 guestForm.addEventListener('input', save);
+// ---- Embedded payment: Stripe Checkout Session in Elements mode, styled like the rest of the site ----
+let payStep = null, confirming = false;
+const APPEARANCE = {
+  theme: 'flat',
+  variables: {
+    fontFamily: '"Halyard Display", "Helvetica Neue", Arial, sans-serif', fontSizeBase: '16px', fontWeightNormal: '300',
+    colorPrimary: '#2E6D2E', colorBackground: '#f7f5f0', colorText: '#26302a', colorTextSecondary: '#5f6a5f',
+    colorTextPlaceholder: '#8b948b', colorDanger: '#a33b2b', borderRadius: '0px', spacingUnit: '4px', gridRowSpacing: '22px',
+  },
+  rules: {
+    '.Label': { fontSize: '11.5px', fontWeight: '600', letterSpacing: '.2em', textTransform: 'uppercase', color: '#2E6D2E', marginBottom: '6px' },
+    '.Input': { backgroundColor: 'transparent', border: 'none', borderBottom: '1px solid #e3dfd5', boxShadow: 'none', padding: '10px 0', fontSize: '17px' },
+    '.Input:focus': { borderBottomColor: '#2E6D2E', boxShadow: 'none' },
+    '.Input--invalid': { borderBottomColor: '#a33b2b', boxShadow: 'none' },
+    '.Tab': { backgroundColor: '#ffffff', border: '1px solid #e3dfd5', boxShadow: 'none' },
+    '.Tab:hover': { borderColor: '#79A57A' },
+    '.Tab--selected': { borderColor: '#2E6D2E', boxShadow: '0 0 0 1px #2E6D2E' },
+    '.Block': { backgroundColor: '#ffffff', border: '1px solid #e3dfd5', boxShadow: 'none' },
+  },
+};
+const FONTS = ['300', '600'].map(weight => ({ family: 'Halyard Display', src: `url(${location.origin}/fonts/HalyardDisplay.ttf)`, weight }));
+function loadStripeJs() {
+  if (window.Stripe) return Promise.resolve();
+  return new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = 'https://js.stripe.com/endive/stripe.js'; sc.onload = ok; sc.onerror = ko; document.head.appendChild(sc); });
+}
+function lockDetails(on) {
+  [G.name, G.email, G.phone, G.notes].forEach(el => { el.readOnly = on; });
+  G.terms.disabled = on; arrivalPick.btn.disabled = on;
+  guestForm.classList.toggle('paying', on);
+}
+async function startPayment(d) {
+  const r = await fetch('/api/checkout', { method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ stay: fstay.value, in: fin.value, out: fout.value, guests: fguests.value, ...d }) });
+  const res = await r.json().catch(() => ({}));
+  if (r.status === 409) return 'taken';
+  if (!r.ok || !res.clientSecret || !res.publishableKey) return 'fail';
+  await loadStripeJs();
+  const checkout = Stripe(res.publishableKey).initCheckoutElementsSdk({ clientSecret: Promise.resolve(res.clientSecret), elementsOptions: { appearance: APPEARANCE, fonts: FONTS } });
+  $('payStep').hidden = false;
+  const element = checkout.createPaymentElement();
+  element.mount('#payment-element');
+  const loaded = await checkout.loadActions();
+  if (loaded.type !== 'success') { fetch(res.release).catch(() => {}); element.destroy(); $('payStep').hidden = true; return 'fail'; }
+  payStep = { actions: loaded.actions, release: res.release, element };
+  return 'ok';
+}
+function cancelPayment() {
+  if (!payStep) return;
+  const { release, element } = payStep;
+  payStep = null;
+  try { element.destroy(); } catch (e) {}
+  $('payStep').hidden = true; lockDetails(false); payNote.textContent = '';
+  fetch(release).catch(() => {});
+  renderSummary();
+}
+$('payEdit').addEventListener('click', () => { cancelPayment(); G.name.focus(); });
+['bpBack', 'bpChange'].forEach(id => $(id).addEventListener('click', cancelPayment));
+addEventListener('pagehide', () => { if (payStep && !confirming) fetch(payStep.release, { keepalive: true }); });
 guestForm.addEventListener('submit', async e => {
   e.preventDefault();
+  const q = price();
+  if (payStep) {
+    payBtn.disabled = true; confirming = true; payNote.textContent = 'Confirmant el pagament…';
+    const result = await payStep.actions.confirm();
+    // Only reached on an immediate error; on success Stripe sends the guest to the return page
+    confirming = false; payBtn.disabled = false;
+    payNote.textContent = result.type === 'error' ? result.error.message : '';
+    return;
+  }
   const d = details(), bad = [];
   if (d.name.length < 2) bad.push([G.name, 'el teu nom']);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) bad.push([G.email, 'un correu vàlid']);
@@ -1538,32 +1613,36 @@ guestForm.addEventListener('submit', async e => {
   bad.forEach(([el]) => el.setAttribute('aria-invalid', 'true'));
   if (bad.length) { payNote.textContent = 'Ens falta ' + bad.map(b => b[1]).join(', ') + '.'; bad[0][0].focus(); return; }
   if (!G.terms.checked) { G.terms.setAttribute('aria-invalid', 'true'); payNote.textContent = 'Cal acceptar les condicions de reserva.'; G.terms.focus(); return; }
-  const q = price();
-  payBtn.disabled = true; payNote.textContent = 'Obrint el pagament segur…';
-  try {
-    const r = await fetch('/api/checkout', { method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ stay: fstay.value, in: fin.value, out: fout.value, guests: fguests.value, ...d }) });
-    const res = await r.json().catch(() => ({}));
-    if (r.ok && res.url) { save(); location.assign(res.url); return; }
-    payNote.textContent = r.status === 409 ? "Ho sentim, aquestes dates s'acaben de reservar. Torna enrere i prova'n unes altres." : `${nightsTxt(q.n)}, total ${euro(q.total)}. ${CONTACT_MSG}`;
-  } catch (err) {
-    payNote.textContent = `${nightsTxt(q.n)}, total ${euro(q.total)}. ${CONTACT_MSG}`;
+  payBtn.disabled = true; payNote.textContent = 'Preparant el pagament segur…';
+  let outcome = 'fail';
+  try { save(); outcome = await startPayment(d); } catch (err) {}
+  payBtn.disabled = false;
+  if (outcome === 'ok') {
+    lockDetails(true); payNote.textContent = ''; renderSummary();
+    $('payStep').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    payNote.textContent = outcome === 'taken' ? "Ho sentim, aquestes dates s'acaben de reservar. Torna enrere i prova'n unes altres." : `${nightsTxt(q.n)}, total ${euro(q.total)}. ${CONTACT_MSG}`;
+    renderSummary();
   }
-  payBtn.disabled = false; renderSummary();
 });
 
 // ---- Start: default dates, restore a booking in progress, handle the return from Stripe ----
 setDates(addDays(iso(new Date()), 14), addDays(iso(new Date()), 16));
 restore();
 {
-  const r = new URLSearchParams(location.search).get('reserva');
+  const params = new URLSearchParams(location.search), r = params.get('reserva'), sid = params.get('session_id');
   if (r) try { history.replaceState(null, '', location.pathname + '#reserva'); } catch (e) {}
-  if (r === 'ok' && price()) {
-    bp.classList.add('done'); $('bpDone').hidden = false; $('bpTitle').textContent = 'Reserva confirmada';
+  const markDone = pending => {
+    bp.classList.add('done'); $('bpDone').hidden = false; $('bpTitle').textContent = pending ? 'Reserva rebuda' : 'Reserva confirmada';
+    if (pending) $('bpDone').querySelector('p').textContent = "Hem rebut la reserva i les dates queden guardades. El banc encara ha de confirmar el pagament: t'escriurem quan arribi.";
     try { sessionStorage.removeItem('lcv-booking'); } catch (e) {}
+  };
+  if (r === 'ok' && sid) {
+    fetch('/api/status?session_id=' + encodeURIComponent(sid)).then(x => x.json()).then(st => {
+      if (st.paid || st.pending) { if (price()) { markDone(st.pending); route(); } else note.textContent = "Gràcies! La reserva està confirmada i t'hem enviat el rebut per correu."; }
+      else payNote.textContent = "El pagament no s'ha completat i no s'ha cobrat res. Quan vulguis, pots tornar-ho a provar.";
+    }).catch(() => {});
   }
-  if (r === 'ok' && !price()) note.textContent = "Gràcies! La reserva està confirmada i t'hem enviat el rebut per correu.";
-  if (r === 'cancel') payNote.textContent = "El pagament no s'ha completat i no s'ha cobrat res. Quan vulguis, pots tornar-ho a provar.";
   route();
 }
 

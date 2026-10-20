@@ -69,4 +69,6 @@ DIST.mkdir()
 (DIST / 'index.html').write_text(page, encoding='utf-8')
 for folder in ('img', 'fonts'):
     shutil.copytree(ROOT / folder, DIST / folder)
+# Cloudflare Pages headers: the Stripe payment form (another origin) loads our brand font
+(DIST / '_headers').write_text('/fonts/*\n  Access-Control-Allow-Origin: *\n', encoding='utf-8')
 print(f'Built {DIST} ({len(page) // 1024} KB html)')

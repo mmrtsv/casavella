@@ -1,5 +1,6 @@
 // POST /api/checkout  { stay, in, out, guests, name, email, phone, arrival, notes }
-// Holds the dates in the stay's calendar for 45 minutes and opens a Stripe Checkout session.
+// Holds the dates in the stay's calendar for 45 minutes and opens a Stripe Checkout session
+// in Elements mode: the card form is embedded in our own booking page.
 // The webhook (stripe-webhook.js) confirms the hold when paid and removes it when the session expires.
 import { STAYS, quote, configured, calendar, stripe, json, euros } from '../../lib/booking.js';
 
@@ -14,7 +15,7 @@ export async function onRequestPost({ request, env }) {
   const clip = (v, n) => String(v || '').trim().slice(0, n);
   const guest = { name: clip(body.name, 100), email: clip(body.email, 120), phone: clip(body.phone, 40), arrival: clip(body.arrival, 40), notes: clip(body.notes, 480) };
   if (guest.name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guest.email) || guest.phone.replace(/\D/g, '').length < 6) return json({ error: 'details' }, 400);
-  if (!configured(env, q.stay)) return json({ error: 'not_configured' }, 503);
+  if (!configured(env, q.stay) || !env.STRIPE_PUBLISHABLE_KEY) return json({ error: 'not_configured' }, 503);
 
   let cal, hold;
   try {
@@ -35,7 +36,7 @@ export async function onRequestPost({ request, env }) {
     const label = `${q.nights} ${q.nights === 1 ? 'nit' : 'nits'}, del ${fmt(q.checkin)} al ${fmt(q.checkout)}, ${guests} ${guests === 1 ? 'persona' : 'persones'}`;
     const session = await stripe(env, 'checkout/sessions', {
       mode: 'payment',
-      locale: 'auto',
+      ui_mode: 'elements',
       line_items: [{ quantity: 1, price_data: { currency: 'eur', unit_amount: q.total, product_data: {
         name: `${q.name}, La Casa Vella`,
         description: q.discount ? `${label}. ${q.price} € la nit amb un ${q.discount} % de descompte (abans ${euros(q.subtotal)})` : `${label}. ${q.price} € la nit`,
@@ -43,13 +44,12 @@ export async function onRequestPost({ request, env }) {
       customer_email: guest.email,
       billing_address_collection: 'auto',
       expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
-      success_url: `${site}/?reserva=ok#reserva`,
-      cancel_url: `${site}/api/release?stay=${q.stay}&event=${encodeURIComponent(hold.id)}`,
+      return_url: `${site}/?reserva=ok&session_id={CHECKOUT_SESSION_ID}#reserva`,
       metadata: { stay: q.stay, checkin: q.checkin, checkout: q.checkout, nights: q.nights, guests, event: hold.id, ...guest },
       payment_intent_data: { description: `${q.name}, ${label}`, metadata: { stay: q.stay, checkin: q.checkin, checkout: q.checkout, event: hold.id } },
     });
     await cal.patch(hold.id, { extendedProperties: { private: { lcv: 'hold', session: session.id } } });
-    return json({ url: session.url });
+    return json({ clientSecret: session.client_secret, publishableKey: env.STRIPE_PUBLISHABLE_KEY, release: `/api/release?stay=${q.stay}&event=${encodeURIComponent(hold.id)}` });
   } catch (e) {
     if (hold) await cal.remove(hold.id).catch(() => {});
     return json({ error: 'server', detail: String(e.message || e) }, 500);

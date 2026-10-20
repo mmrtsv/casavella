@@ -61,7 +61,7 @@ export default function Prices() {
       </ToggleButtonGroup>
 
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <section className="rounded-3xl bg-surface p-3 shadow-[var(--surface-shadow)] ring-1 ring-border sm:p-5">
+        <section className="card p-3 sm:p-5">
           <div className="mb-3 flex items-center gap-2">
             <h2 className="mr-auto text-xl font-semibold tracking-tight">{title}</h2>
             <Button isIconOnly size="sm" variant="ghost" aria-label="Mes anterior" isDisabled={month <= TODAY.slice(0, 7) + '-01'} onPress={() => moveMonth(-1)}><ChevronLeft size={18} /></Button>
@@ -109,7 +109,7 @@ export default function Prices() {
 
 function Panel({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-3xl bg-surface p-5 shadow-[var(--surface-shadow)] ring-1 ring-border fade-in">
+    <section className="card p-5 fade-in">
       <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
       {sub && <p className="mt-1 text-sm text-muted">{sub}</p>}
       <div className="mt-4 space-y-4">{children}</div>

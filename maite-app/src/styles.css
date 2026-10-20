@@ -46,6 +46,7 @@
   --brand-cava: #c6bfaf;
   --font-ui: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --ease-quick: cubic-bezier(.2, .8, .2, 1);
+  --card-radius: 16px;
 }
 
 @layer base {
@@ -81,6 +82,8 @@
     --glass-tint: color-mix(in oklab, var(--brand-deep) 34%, rgb(10 14 11 / .74));
     --glass-tint-liquid: rgb(12 17 13 / .6);
     --glass-rim: rgb(255 255 255 / .22);
+    --card-fill: 88%;
+    --card-shine: rgb(255 255 255 / .05);
     --glass-tint-solid: color-mix(in oklab, var(--brand-deep) 30%, #0e130f);
     --glass-edge: rgb(255 255 255 / .09);
     --glow-a: color-mix(in oklab, var(--brand-basil) 55%, transparent);
@@ -118,6 +121,8 @@
     --glass-tint: rgb(255 255 255 / .72);
     --glass-tint-liquid: rgb(255 255 255 / .6);
     --glass-rim: rgb(255 255 255 / .95);
+    --card-fill: 82%;
+    --card-shine: rgb(255 255 255 / .9);
     --glass-tint-solid: #ffffff;
     --glass-edge: rgb(26 63 32 / .10);
     --glow-a: color-mix(in oklab, var(--brand-sage) 34%, transparent);
@@ -156,17 +161,38 @@
   }
   .glass.is-liquid > .glass-tint { background: var(--glass-tint-liquid); }
 }
-/* A thin specular rim, lit from the top left, like light catching the edge of glass */
+/* A thin specular rim on the top left edge only, like light catching glass; a lit bottom edge next to the border read as a double line */
 .glass::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; padding: 1px;
-  background: linear-gradient(155deg, var(--glass-rim), transparent 32%, transparent 70%, color-mix(in oklab, var(--glass-rim) 50%, transparent));
+  background: linear-gradient(155deg, var(--glass-rim), transparent 34%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+/* Cards and tables: a quieter glass than the bars. Nearly opaque so text stays crisp, a little blur of the brand light
+   behind, a lit rim on the edge and a soft highlight along the top. One radius for all of them. */
+.card {
+  position: relative; border-radius: var(--card-radius);
+  background: color-mix(in oklab, var(--surface) var(--card-fill), transparent);
+  box-shadow: inset 0 0 0 1px var(--border), inset 0 1px 0 var(--card-shine), var(--surface-shadow);
+}
+.card::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; padding: 1px; z-index: 30;
+  background: linear-gradient(160deg, var(--glass-rim), transparent 30%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .card { -webkit-backdrop-filter: blur(14px) saturate(150%); backdrop-filter: blur(14px) saturate(150%); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .card { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 /* Bars that content scrolls under need a denser tint so nothing reads through */
 .glass.glass-dense > .glass-tint { background: color-mix(in oklab, var(--glass-tint-solid) 90%, transparent) !important; }
 /* The library's own wrapper: keep it a pure backdrop layer */
 .glass-refraction > div, .glass-refraction > span { pointer-events: none !important; }
+/* No text inside the library's layers, so no line height can make them taller than the card */
+.glass-refraction, .glass-refraction * { font-size: 0 !important; line-height: 0 !important; }
 @media (prefers-reduced-transparency: reduce) {
   .glass > .glass-tint { background: var(--glass-tint-solid) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
   .glass-refraction { display: none; }
@@ -175,6 +201,10 @@
 }
 
 /* ---------- Motion: fast and quiet, and none when asked ---------- */
+/* Inici: words rise out of a mask, then the cards come up one after another */
+@keyframes home-rise { from { transform: translateY(105%); } to { transform: none; } }
+@keyframes home-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.home-up { animation: home-up .7s cubic-bezier(.2, .7, .2, 1) both; }
 .fade-in { animation: fade-in .18s var(--ease-quick) both; }
 @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {

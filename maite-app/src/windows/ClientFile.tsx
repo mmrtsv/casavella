@@ -135,7 +135,7 @@ function Overview({ b, toClient }: { b: Booking; toClient: () => void }) {
           {b.notes && <p className="mt-1"><span className="text-muted">Comentaris de l'hoste:</span> {b.notes}</p>}
         </div>
       )}
-      <div className="mt-4 divide-y divide-separator overflow-hidden rounded-2xl bg-surface ring-1 ring-border">
+      <div className="mt-4 divide-y divide-separator overflow-hidden card">
         {b.kind === 'paid' && <Row ok title="Pagada a la web" sub={`${euro(b.amount)}${b.refunded ? `, retornats ${euro(b.refunded)}` : ''}`} />}
         {b.kind === 'pending' && <Row ok={false} title="Pendent del banc" sub={`${euro(b.amount)}. Stripe encara no l'ha confirmat.`} />}
         {b.kind === 'manual' && <Row title="Cobrada" sub={`${b.amount != null ? euro(b.amount) : 'Sense import'}${b.method ? `, ${METHOD[b.method]}` : ''}`} control={<Tick b={b} k="settled" label="Cobrada" />} />}
@@ -236,12 +236,12 @@ function ClientTab({ b }: { b: Booking }) {
     <div className="fade-in space-y-4">
       <Contact b={b} k="email" label="Correu" type="email" />
       <Contact b={b} k="phone" label="Telèfon" type="tel" />
-      <div className="divide-y divide-separator overflow-hidden rounded-2xl bg-surface ring-1 ring-border">
+      <div className="divide-y divide-separator overflow-hidden card">
         <Docs b={b} />
       </div>
       <h3 className="pt-2 text-base font-semibold">Altres estades</h3>
       {history.length ? (
-        <div className="divide-y divide-separator overflow-hidden rounded-2xl bg-surface ring-1 ring-border">
+        <div className="divide-y divide-separator overflow-hidden card">
           {history.map(x => (
             <button key={keyOf(x)} type="button" onClick={() => openDetail(keyOf(x))} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm outline-none hover:bg-[var(--row-hover)] focus-visible:bg-[var(--row-hover)]">
               <span className="flex-1 tnum">{range(x.first, x.until)}</span><span className="text-muted">{shortName(x.stay)}</span><span className="w-20 text-right tnum">{euro(x.amount)}</span><Status b={x} />

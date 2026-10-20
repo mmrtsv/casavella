@@ -13,7 +13,7 @@ export default function Emails() {
   const [id, setId] = useState('');
   const [view, setView] = useState<'html' | 'text'>('html');
   useEffect(() => { api<{ emails: Email[] }>('emails').then(d => { setList(d.emails); setId(d.emails[0]?.id || ''); }).catch(toastError); }, []);
-  if (!list) return <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]"><Skeleton className="h-80 rounded-3xl" /><Skeleton className="h-[640px] rounded-3xl" /></div>;
+  if (!list) return <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]"><Skeleton className="h-80 rounded-2xl" /><Skeleton className="h-[640px] rounded-2xl" /></div>;
   const e = list.find(x => x.id === id) || list[0];
 
   return (
@@ -39,7 +39,7 @@ export default function Emails() {
         </ul>
       </nav>
 
-      <section className="min-w-0 overflow-hidden rounded-3xl bg-surface shadow-[var(--surface-shadow)] ring-1 ring-border">
+      <section className="min-w-0 overflow-hidden card">
         <div className="space-y-3 border-b border-separator p-5 sm:p-6">
           <h2 className="text-lg font-semibold tracking-tight">{e.name}</h2>
           <p className="text-sm text-muted">{e.when}</p>

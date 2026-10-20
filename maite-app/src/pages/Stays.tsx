@@ -31,7 +31,7 @@ export default function Stays() {
   useEffect(() => { if (content && stay) { setDraft(structuredClone(content.stays[stay])); setDirty(false); setIconsFor(null); } }, [content, stay]);
 
   useGuard(dirty, save);
-  if (!content || !draft) return <div><Skeleton className="mb-4 h-9 w-80 rounded-xl" /><Skeleton className="h-[520px] rounded-3xl" /></div>;
+  if (!content || !draft) return <div><Skeleton className="mb-4 h-9 w-80 rounded-xl" /><Skeleton className="h-[520px] rounded-2xl" /></div>;
   const edit = (patch: Partial<StayContent>) => { setDraft(d => ({ ...d!, ...patch })); setDirty(true); };
   const feats = draft.feats, photos = draft.photos;
   const moveFeat = (i: number, j: number) => { const f = [...feats]; [f[i], f[j]] = [f[j], f[i]]; edit({ feats: f }); };
@@ -75,7 +75,7 @@ export default function Stays() {
 
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-5">
-          <section className="rounded-3xl bg-surface p-5 shadow-[var(--surface-shadow)] ring-1 ring-border sm:p-6">
+          <section className="card p-5 sm:p-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Tipus" value={draft.kind} onChange={v => edit({ kind: v })} help="Apartament, Habitació…" />
               <Field label="Nom" value={draft.name} onChange={v => edit({ name: v })} />
@@ -84,7 +84,7 @@ export default function Stays() {
             </div>
           </section>
 
-          <section className="rounded-3xl bg-surface p-5 shadow-[var(--surface-shadow)] ring-1 ring-border sm:p-6">
+          <section className="card p-5 sm:p-6">
             <h2 className="text-base font-semibold">Característiques</h2>
             <div className="mt-4 space-y-2">
               {feats.map((f, i) => (
@@ -116,7 +116,7 @@ export default function Stays() {
             <Button variant="secondary" size="sm" className="mt-3" onPress={() => { edit({ feats: [...feats, { icon: 'star', text: '' }] }); setIconsFor(feats.length); }}><Plus size={15} />Afegeix una característica</Button>
           </section>
 
-          <section className="rounded-3xl bg-surface p-5 shadow-[var(--surface-shadow)] ring-1 ring-border sm:p-6">
+          <section className="card p-5 sm:p-6">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="mr-auto text-base font-semibold">Fotos</h2>
               {content.uploads && <Button size="sm" variant="secondary" onPress={() => file.current?.click()}><Upload size={15} />Puja fotos</Button>}
@@ -200,7 +200,7 @@ function Library({ open, onClose, have, library, add }: { open: boolean; onClose
 
 function Preview({ draft, icons }: { draft: StayContent; icons: Record<string, string> }) {
   return (
-    <div className="overflow-hidden rounded-3xl bg-surface shadow-[var(--surface-shadow)] ring-1 ring-border">
+    <div className="overflow-hidden card">
       <div className="px-5 pt-4 text-xs font-medium text-muted">Així es veu a la web</div>
       <div className="p-4">
         <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-default">{draft.photos[0] && <img src={photoUrl(draft.photos[0])} alt="" className="size-full object-cover" />}</div>

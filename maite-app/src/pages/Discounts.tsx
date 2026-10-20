@@ -35,7 +35,7 @@ export default function Discounts() {
 
   return (
     <div className="fade-in grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-      <section className="rounded-3xl bg-surface p-5 shadow-[var(--surface-shadow)] ring-1 ring-border sm:p-6">
+      <section className="card p-5 sm:p-6">
         <h2 className="text-lg font-semibold tracking-tight">Descomptes per estada llarga</h2>
         <p className="mt-1 text-sm text-muted">Com més nits, més descompte. S'aplica el més alt que toqui. A la web, els textos que en parlen s'actualitzen sols.</p>
         <div className="mt-5 space-y-2">
@@ -54,7 +54,7 @@ export default function Discounts() {
         </div>
       </section>
       {s && (
-        <Glass lively radius={28} className="lg:sticky lg:top-24">
+        <Glass lively radius={18} className="lg:sticky lg:top-24">
           <div className="p-5 sm:p-6">
             <div className="text-xs font-medium text-muted">Exemple</div>
             <div className="mt-1 text-base font-semibold">{s.name} a {euro(base * 100)} la nit</div>

@@ -4,14 +4,14 @@ import { SearchField, Table, ToggleButton, ToggleButtonGroup, type Key, type Sor
 import { Glass } from '../lib/glass';
 import { addDays, day, euro, nightsBetween, TODAY } from '../lib/dates';
 import { keyOf, shortName, stayName, useStore } from '../lib/store';
-import { openDetail } from '../lib/ui';
+import { openDetail, takeBookingsFilter } from '../lib/ui';
 import { atHome, checklist, isBooking, KIND, missing, SOURCE, who } from '../lib/words';
 import { Status, Tag } from '../parts/Status';
 import type { Booking } from '../lib/types';
 
-type Filter = 'today' | 'next' | 'past' | 'cancelled' | 'block';
+type Filter = 'today' | 'todo' | 'next' | 'past' | 'cancelled' | 'block';
 const FILTERS: { id: Filter; label: string }[] = [
-  { id: 'today', label: 'Avui' }, { id: 'next', label: 'Properes' }, { id: 'past', label: 'Passades' }, { id: 'cancelled', label: 'Cancel·lades' }, { id: 'block', label: 'Tancaments' },
+  { id: 'today', label: 'Avui' }, { id: 'todo', label: 'Per fer' }, { id: 'next', label: 'Properes' }, { id: 'past', label: 'Passades' }, { id: 'cancelled', label: 'Cancel·lades' }, { id: 'block', label: 'Tancaments' },
 ];
 const short = (d: string) => day(d, { weekday: 'short', day: 'numeric', month: 'short' });
 
@@ -24,7 +24,8 @@ const SORT: Record<string, (b: Booking) => string | number> = {
 export default function Bookings() {
   const map = useStore(s => s.bookings);
   const stays = useStore(s => s.stays);
-  const [filter, setFilter] = useState<Filter>('next');
+  const [filter, setFilter] = useState<Filter>(() => (takeBookingsFilter() as Filter) || 'next');
+  const in30 = addDays(TODAY, 30);
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<SortDescriptor | null>(null);
   const all = useMemo(() => [...map.values()], [map]);
@@ -32,6 +33,8 @@ export default function Bookings() {
   const rows = useMemo(() => {
     let r = all.filter(b => {
       if (filter === 'today') return isBooking(b) && b.first <= TODAY && b.until >= TODAY;
+      // The same bookings Inici counts under "Per fer": from now to 30 days out, with something missing
+      if (filter === 'todo') return isBooking(b) && b.until >= TODAY && b.first < in30 && missing(b).length > 0;
       if (filter === 'next') return (isBooking(b) || (b.kind === 'other' && b.blocks)) && b.until >= TODAY;
       if (filter === 'past') return (isBooking(b) || (b.kind === 'other' && b.blocks)) && b.until < TODAY;
       if (filter === 'cancelled') return b.kind === 'cancelled' || b.kind === 'refunded';
@@ -45,7 +48,6 @@ export default function Bookings() {
   }, [all, filter, q, sort]);
 
   // The next 30 days at a glance
-  const in30 = addDays(TODAY, 30);
   const stats = useMemo(() => {
     const bk = all.filter(isBooking);
     const nights = bk.reduce((n, b) => n + Math.max(0, nightsBetween(b.first < TODAY ? TODAY : b.first, b.until > in30 ? in30 : b.until)), 0);
@@ -61,7 +63,7 @@ export default function Bookings() {
   return (
     <div className="fade-in space-y-5">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <Glass lively radius={22} className="col-span-2 md:col-span-1">
+        <Glass lively radius={18} className="col-span-2 md:col-span-1">
           <Stat label="Arribades avui" value={stats.today} accent />
         </Glass>
         <Card><Stat label="Arribades en 30 dies" value={stats.soon} /></Card>
@@ -89,7 +91,7 @@ export default function Bookings() {
 }
 
 function Card({ children }: { children: ReactNode }) {
-  return <div className="rounded-[22px] bg-surface shadow-[var(--surface-shadow)] ring-1 ring-border">{children}</div>;
+  return <div className="card">{children}</div>;
 }
 function Stat({ label, value, accent, children }: { label: string; value: ReactNode; accent?: boolean; children?: ReactNode }) {
   return (
@@ -121,7 +123,7 @@ const COLS: { id: string; label: string; num?: boolean; row?: boolean; className
 function BookingTable({ rows, sort, setSort }: { rows: Booking[]; sort: SortDescriptor | null; setSort: (s: SortDescriptor) => void }) {
   return (
     // The card always reaches the foot of the screen; below the last booking, empty ruled rows keep the table's shape
-    <div className="flex min-h-[calc(100dvh-19.5rem)] flex-col overflow-hidden rounded-3xl bg-surface shadow-[var(--surface-shadow)] ring-1 ring-border">
+    <div className="flex min-h-[calc(100dvh-19.5rem)] flex-col overflow-hidden card">
       <Table variant="secondary" className="!rounded-none !bg-transparent !shadow-none">
         <Table.ScrollContainer className="overflow-x-auto">
           <Table.Content aria-label="Reserves" className="min-w-[1020px] [&_td]:whitespace-nowrap [&_td:first-child]:whitespace-normal" sortDescriptor={sort ?? undefined} onSortChange={setSort}
@@ -165,9 +167,9 @@ function BookingTable({ rows, sort, setSort }: { rows: Booking[]; sort: SortDesc
 
 // Phones: one tappable row per booking, with what is still missing
 function PhoneList({ rows }: { rows: Booking[] }) {
-  if (!rows.length) return <p className="rounded-3xl bg-surface p-8 text-center text-sm text-muted ring-1 ring-border md:hidden">No hi ha res aquí.</p>;
+  if (!rows.length) return <p className="card p-8 text-center text-sm text-muted md:hidden">No hi ha res aquí.</p>;
   return (
-    <ul className="divide-y divide-separator overflow-hidden rounded-3xl bg-surface shadow-[var(--surface-shadow)] ring-1 ring-border md:hidden">
+    <ul className="divide-y divide-separator overflow-hidden card md:hidden">
       {rows.map(b => {
         const todo = isBooking(b) && b.until >= addDays(TODAY, -3) ? missing(b) : [];
         return (
@@ -193,16 +195,16 @@ function Today({ rows }: { rows: Booking[] }) {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       {groups.map(([t, g]) => (
-        <section key={t} className="rounded-3xl bg-surface p-2 shadow-[var(--surface-shadow)] ring-1 ring-border">
+        <section key={t} className="card p-2">
           <h3 className="flex items-center justify-between px-3 pt-2 pb-1 text-sm font-semibold">{t}<span className="text-muted tnum">{g.length}</span></h3>
           {g.length ? g.map(b => {
             const todo = missing(b);
             return (
               <button key={keyOf(b)} type="button" onClick={() => openDetail(keyOf(b))}
-                className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left outline-none transition-colors hover:bg-[var(--row-hover)] focus-visible:ring-2 focus-visible:ring-focus">
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left outline-none transition-colors hover:bg-[var(--row-hover)] focus-visible:ring-2 focus-visible:ring-focus">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">{who(b)}</span>
-                  <span className="block truncate text-xs text-muted">{shortName(b.stay)}{b.guests ? `, ${b.guests} pers.` : ''}{todo.length ? `. Falta: ${todo.map(c => c.label.toLowerCase()).join(', ')}` : ''}</span>
+                  <span className="block truncate text-xs text-muted">{shortName(b.stay)}{b.guests ? `, ${b.guests} ${b.guests === 1 ? 'persona' : 'persones'}` : ''}{todo.length ? `. Falta: ${todo.map(c => c.label.toLowerCase()).join(', ')}` : ''}</span>
                 </span>
                 <Progress b={b} />
               </button>

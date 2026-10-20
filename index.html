@@ -28,7 +28,7 @@
   --line: #2f3d31; --basil: #8fbf8c; --sage: #8fbf8c; --deep: #0f2614; --on-deep: #f3efe4; color-scheme: dark; }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--header-h, 0px) + env(safe-area-inset-top, 0px) + 16px); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
 body { background: var(--ground); color: var(--text); font-family: var(--body); font-weight: 300; font-size: 17px; line-height: 1.7; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--ground); }
@@ -1206,6 +1206,11 @@ const STAY_INFO = {
 };
 const CONTACT_MSG = "Truca'ns o escriu-nos per WhatsApp al +34 667 40 98 59 i t'ho preparem.";
 const $ = id => document.getElementById(id);
+// Anchor jumps land below the sticky header, whatever height it has on this device
+const topBar = document.querySelector('header.top');
+const syncHeaderH = () => document.documentElement.style.setProperty('--header-h', /sticky|fixed/.test(getComputedStyle(topBar).position) ? topBar.offsetHeight + 'px' : '0px');
+syncHeaderH();
+new ResizeObserver(syncHeaderH).observe(topBar);
 const bookForm = $('bookForm'), fstay = $('stay'), fguests = $('guests'), fin = $('in'), fout = $('out'), note = $('bookNote');
 const pad = n => String(n).padStart(2, '0');
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;

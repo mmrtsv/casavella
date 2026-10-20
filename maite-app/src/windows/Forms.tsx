@@ -84,6 +84,7 @@ export function BlockDates() {
   const submit = async () => {
     setErr('');
     if (!pick.length) return setErr('Tria almenys un allotjament');
+    if (!note.trim()) return setErr('Escriu el motiu');
     setBusy(true);
     try { await api('block', { method: 'POST', body: { stays: pick, first, until, note } }); closeBlock(); done('Nits tancades'); await reload(); }
     catch (e) { setErr((e as Error).message); }
@@ -99,7 +100,7 @@ export function BlockDates() {
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Field label="Primera nit" type="date" value={first} onChange={v => { setFirst(v); if (until <= v) setUntil(addDays(v, 1)); }} />
         <Field label="Fins al dia" type="date" value={until} onChange={setUntil} />
-        <Field label="Motiu (opcional)" value={note} onChange={setNote} placeholder="Obres, família, vacances…" className="sm:col-span-2" />
+        <Field label="Motiu" value={note} onChange={setNote} placeholder="Obres, família, vacances…" className="sm:col-span-2" isRequired />
       </div>
       <Err msg={err} />
     </Dialog>

@@ -248,6 +248,12 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .dist { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); width: 100%; }
 .dist li { display: flex; justify-content: space-between; gap: 16px; padding-block: 12px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 .dist li span:last-child { color: var(--muted); white-space: nowrap; }
+.near { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 clamp(24px, 3vw, 44px); margin-top: 24px; border-top: 1px solid var(--line); }
+.near article { display: grid; gap: 8px; align-content: start; padding-block: 24px; border-bottom: 1px solid var(--line); min-width: 0; }
+.near h3 { font-size: 24px; }
+.near p { font-size: 15px; color: var(--muted); }
+@media (max-width: 880px) { .near { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .near { grid-template-columns: 1fr; } }
 
 /* Contact */
 .contact { background: var(--deep); color: var(--on-deep); }
@@ -715,10 +721,22 @@ footer { padding-bottom: 32px !important; }
       <p>El Bedorc és un petit paradís al cor de l'Anoia: vinyes, boscos i camps de conreu a tocar dels cellers del Penedès. Des de la casa, la silueta de Montserrat marca l'horitzó.</p>
       <p>A peu o en bicicleta, les rutes surten de la mateixa porta: camins entre vinyes, ermites i pobles amb història.</p>
       <ul class="dist">
-        <li><span>Montserrat</span><span>Distància per confirmar</span></li>
+        <li><span>Sant Sadurní d'Anoia</span><span>15 min</span></li>
+        <li><span>Montserrat</span><span>45 min</span></li>
         <li><span>Barcelona</span><span>Molt a prop</span></li>
-        <li><span>Aeroport del Prat</span><span>Distància per confirmar</span></li>
+        <li><span>Aeroport del Prat</span><span>50 min</span></li>
       </ul>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="seal-head"><span class="label">A prop de casa</span><h3>Racons per descobrir</h3></div>
+    <div class="near">
+      <article><span class="label">Al mateix Bedorc</span><h3>Castell de la Ventosa</h3><p>Les pedres del castell que va veure néixer el poble, documentat fa més de mil anys. Un passeig curt per començar el dia.</p></article>
+      <article><span class="label">15 min</span><h3>Sant Sadurní d'Anoia</h3><p>La capital del cava. Caves centenàries, tasts entre vinyes i bombolles per brindar al capvespre.</p></article>
+      <article><span class="label">20 min</span><h3>Capellades</h3><p>El Museu Molí Paperer i la Bassa, on l'aigua ha mogut molins durant segles.</p></article>
+      <article><span class="label">25 min</span><h3>Vilafranca del Penedès</h3><p>El cor del Penedès: el Vinseum, el mercat i, per festa major, els castellers a la plaça.</p></article>
+      <article><span class="label">30 min</span><h3>Castell de Claramunt</h3><p>Una fortalesa medieval dalt del turó, amb tota l'Anoia als peus.</p></article>
+      <article><span class="label">45 min</span><h3>Montserrat</h3><p>La muntanya que veieu des de casa: el monestir, l'Escolania i camins fins a Sant Jeroni.</p></article>
     </div>
   </div>
 </section>
@@ -746,7 +764,7 @@ footer { padding-bottom: 32px !important; }
       <div class="lines">
         <div class="copy-row"><span>El Bedorc · Adreça per confirmar</span></div>
         <div class="copy-row"><span id="phone">+34 667 40 98 59</span><button data-copy="phone">Copiar</button></div>
-        <div class="copy-row"><span id="mail">hola@lacasavella.cat</span><button data-copy="mail">Copiar</button></div>
+        <div class="copy-row"><span id="mail">info@lacasavella.cat</span><button data-copy="mail">Copiar</button></div>
       </div>
     </div>
     <form id="contactForm" aria-label="Formulari de contacte">
@@ -771,7 +789,7 @@ footer { padding-bottom: 32px !important; }
         <li>El Bedorc · adreça per confirmar</li>
         <li>+34 667 40 98 59</li>
         <li><a href="https://wa.me/34667409859" target="_blank" rel="noopener">WhatsApp: +34 667 40 98 59</a></li>
-        <li>hola@lacasavella.cat</li>
+        <li>info@lacasavella.cat</li>
       </ul>
     </div>
     <div>

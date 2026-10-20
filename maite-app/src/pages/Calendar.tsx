@@ -14,10 +14,10 @@ const COL = 76, NAMES = 132; // a night is at least 76 px wide; the stay names t
 type Sel = { stay: string; a: string; b?: string } | null;
 
 export const tone: Record<string, string> = {
-  paid: 'bg-[color-mix(in_oklab,var(--brand-sage)_26%,transparent)] text-foreground',
-  settled: 'bg-[color-mix(in_oklab,var(--brand-sage)_26%,transparent)] text-foreground',
-  pending: 'bg-warning/20 text-foreground', manual: 'bg-warning/20 text-foreground',
-  block: 'bg-default text-muted', other: 'bg-[color-mix(in_oklab,var(--brand-cava)_22%,transparent)] text-foreground',
+  paid: 'bg-[color-mix(in_oklab,var(--brand-sage)_38%,transparent)] text-foreground',
+  settled: 'bg-[color-mix(in_oklab,var(--brand-sage)_38%,transparent)] text-foreground',
+  pending: 'bg-warning/30 text-foreground', manual: 'bg-warning/30 text-foreground',
+  block: 'bg-[color-mix(in_oklab,var(--foreground)_12%,transparent)] text-muted', other: 'bg-[color-mix(in_oklab,var(--brand-cava)_34%,transparent)] text-foreground',
 };
 export const bar: Record<string, string> = { paid: 'bg-accent', settled: 'bg-accent', pending: 'bg-warning', manual: 'bg-warning', block: 'bg-muted/60', other: 'bg-[var(--brand-cava)]' };
 

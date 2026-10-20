@@ -6,7 +6,7 @@ import { addDays, day, euro, nightsBetween, parse, TODAY } from '../lib/dates';
 import { go } from '../lib/route';
 import { keyOf, shortName, useStore } from '../lib/store';
 import { openBookings, openDetail } from '../lib/ui';
-import { atHome, checklist, isBooking, missing, who } from '../lib/words';
+import { atHome, dueList, isBooking, missing, who } from '../lib/words';
 import { Status } from '../parts/Status';
 import { bar, tone } from './Calendar';
 import type { Booking } from '../lib/types';
@@ -121,8 +121,8 @@ const TODO: { title: string; color: string; has: (k: string) => boolean }[] = [
   { title: 'per cobrar', color: 'bg-danger', has: k => k === 'pay' },
   { title: 'sense documents', color: 'bg-warning', has: k => k === 'docs' },
   { title: 'sense correu o telèfon', color: 'bg-[var(--brand-cava)]', has: k => k === 'email' || k === 'phone' },
-  { title: "sense l'entrada marcada", color: 'bg-accent', has: k => k === 'checkin' },
-  { title: 'sense la sortida marcada', color: 'bg-accent', has: k => k === 'checkout' },
+  { title: 'sense el check-in fet', color: 'bg-accent', has: k => k === 'checkin' },
+  { title: 'sense el check-out fet', color: 'bg-accent', has: k => k === 'checkout' },
 ];
 function Todo({ all }: { all: Booking[] }) {
   const soon = all.filter(b => b.until >= TODAY && b.first < addDays(TODAY, 30));
@@ -221,7 +221,7 @@ function Upcoming({ all }: { all: Booking[] }) {
       {rows.length ? (
         <ul className="divide-y divide-separator overflow-hidden card">
           {rows.map(b => {
-            const list = checklist(b), done = list.filter(c => c.ok).length;
+            const list = dueList(b), done = list.filter(c => c.ok).length;
             return (
               <li key={keyOf(b)}>
                 <button type="button" onClick={() => openDetail(keyOf(b))} className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4 text-left outline-none hover:bg-[var(--row-hover)] focus-visible:bg-[var(--row-hover)]">

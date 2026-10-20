@@ -66,8 +66,8 @@ export default function Rules() {
       </Section>
       <Section title="Horari">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Entrada a partir de" type="time" value={f.checkin} onChange={set('checkin')} />
-          <Field label="Sortida abans de" type="time" value={f.checkout} onChange={set('checkout')} />
+          <Field label="Check-in a partir de" type="time" value={f.checkin} onChange={set('checkin')} />
+          <Field label="Check-out abans de" type="time" value={f.checkout} onChange={set('checkout')} />
         </div>
       </Section>
       <Section title="Política de cancel·lació" hint="Cada reserva de la web guarda la política que l'hoste va acceptar. En cancel·lar-la, Maite proposa el retorn segons aquella política.">

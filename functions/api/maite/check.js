@@ -1,4 +1,4 @@
-// POST /api/maite/check  { stay, id, set: { checkin, checkout, docs, police, settled, method, email, phone, memo } }
+// POST /api/maite/check  { stay, id, set: { checkin, checkout, police, settled, method, email, phone, memo } }
 // Ticks the booking's checklist. Everything is kept on the booking's calendar event (private properties),
 // next to the guest details. checkin/checkout: true stamps the current time, false clears it.
 import { STAYS, configured, calendar, json } from '../../../lib/booking.js';
@@ -17,7 +17,7 @@ export async function onRequestPost({ request, env, data }) {
   const now = new Date().toISOString();
   if ('checkin' in set) p.in = set.checkin ? p.in || now : '';
   if ('checkout' in set) p.out = set.checkout ? p.out || now : '';
-  if ('docs' in set) p.docs = set.docs ? 'yes' : '';
+  // Documents are marked done only by an upload (see docs.js), never by hand
   if ('police' in set) p.police = set.police ? 'yes' : '';
   if ('memo' in set) p.memo = clip(set.memo, 1000);
   if ('phone' in set) p.phone = clip(set.phone, 40);

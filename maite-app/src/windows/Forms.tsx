@@ -52,8 +52,8 @@ export function NewBooking() {
       footer={<><Button variant="ghost" onPress={closeBook}>Cancel·la</Button><Save busy={busy} onPress={submit}>Desa la reserva</Save></>}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Choice label="Allotjament" value={f.stay} onChange={set('stay')} items={stays.map(s => ({ id: s.id, name: s.name }))} className="sm:col-span-2" />
-        <Field label="Arribada" type="date" value={f.first} onChange={v => setF(x => ({ ...x, first: v, until: x.until <= v ? addDays(v, 1) : x.until }))} />
-        <Field label="Sortida" type="date" value={f.until} onChange={set('until')} />
+        <Field label="Check-in" type="date" value={f.first} onChange={v => setF(x => ({ ...x, first: v, until: x.until <= v ? addDays(v, 1) : x.until }))} />
+        <Field label="Check-out" type="date" value={f.until} onChange={set('until')} />
         <Field label="Nom" value={f.name} onChange={set('name')} />
         <Choice label="Persones" value={f.guests} onChange={set('guests')} items={Array.from({ length: max }, (_, i) => ({ id: String(i + 1), name: String(i + 1) }))} />
         <Field label="Telèfon" type="tel" value={f.phone} onChange={set('phone')} inputMode="tel" />

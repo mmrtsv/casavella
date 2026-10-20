@@ -329,6 +329,8 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .bp-check input:checked { background: var(--basil); border-color: var(--basil); }
 .bp-check input:checked::after { opacity: 1; }
 .bp-check input[aria-invalid="true"] { border-color: #a33b2b; }
+.bp-policy { font-size: 14px; color: var(--muted); margin: 10px 0 0 32px; }
+.bp-policy:empty { display: none; }
 .bp-pay { justify-self: start; padding: 18px 32px; gap: 12px; }
 .bp-pay.loading { cursor: progress; opacity: .85; }
 .bp-pay.loading::before { content: ""; width: 14px; height: 14px; border: 1.5px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
@@ -749,6 +751,7 @@ footer { padding-bottom: 32px !important; }
             <div id="payment-element"></div>
           </div>
           <label class="bp-check"><input type="checkbox" id="gterms"><span>Accepto les <a href="#contacte">condicions de reserva</a> i la <a href="#contacte">política de privacitat</a>.</span></label>
+          <p class="bp-policy" id="policy"></p>
           <button class="btn solid bp-pay" type="submit">Continuar al pagament</button>
           <p class="bp-secure"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>Pagament segur amb Stripe.</p>
           <p class="note" id="payNote" aria-live="polite"></p>
@@ -1196,16 +1199,25 @@ const STAY_INFO = {
   'les-vinyes': { name: 'Les Vinyes', kind: 'Habitació', price: 70, max: 2 },
   'figarot': { name: 'Figarot', kind: 'Habitació', price: 70, max: 2 },
 };
-// Prices set in Maite (the back office): the card labels, the local guess and the discount sentences follow them
-const DISCOUNTS = { d2: 5, d3: 10 };
-fetch('/api/prices').then(r => r.ok ? r.json() : null).then(p => {
+// Prices, discounts, rules and the cancellation policy set in Maite (the back office).
+// The card labels, the local price guess and the texts about discounts follow them.
+let DISCOUNTS = [{ nights: 2, pct: 5 }, { nights: 3, pct: 10 }], RULES = null;
+const tierFor = n => DISCOUNTS.filter(t => n >= t.nights).reduce((b, t) => t.pct > b.pct ? t : b, { nights: 0, pct: 0 });
+const nitsWord = n => n === 2 ? 'dues nits' : n === 3 ? 'tres nits' : `${n} nits`;
+fetch('/api/settings').then(r => r.ok ? r.json() : null).then(p => {
   if (!p || !p.stays) return;
-  for (const [k, v] of Object.entries(p.stays)) if (STAY_INFO[k]) STAY_INFO[k].price = v;
-  Object.assign(DISCOUNTS, { d2: p.d2, d3: p.d3 });
-  document.querySelectorAll('[data-price]').forEach(el => { const v = STAY_INFO[el.dataset.price]?.price; if (v) el.querySelector('[data-n]').textContent = v.toLocaleString('ca-ES'); });
-  const disc = p.d2 && p.d3 ? `un ${p.d2} % menys per a dues nits i un ${p.d3} % a partir de tres`
-    : p.d3 ? `un ${p.d3} % menys a partir de tres nits` : `un ${p.d2} % menys per a dues nits`;
-  document.querySelectorAll('[data-discounts]').forEach(el => { el.textContent = `Com més dies us quedeu, millor: ${disc}.`; el.hidden = !p.d2 && !p.d3; });
+  for (const [k, v] of Object.entries(p.stays)) if (STAY_INFO[k]) STAY_INFO[k].price = v.base;
+  DISCOUNTS = p.discounts; RULES = p.rules;
+  document.querySelectorAll('[data-price]').forEach(el => {
+    const v = p.stays[el.dataset.price]; if (!v) return;
+    el.querySelector('[data-n]').textContent = (v.varies ? 'des de ' : '') + v.from.toLocaleString('ca-ES');
+  });
+  const t = [...DISCOUNTS].sort((a, b) => a.nights - b.nights);
+  const disc = t.map((x, i) => i === 0 ? `un ${x.pct} % menys a partir de ${nitsWord(x.nights)}` : `un ${x.pct} % a partir de ${nitsWord(x.nights)}`);
+  const text = disc.length > 1 ? disc.slice(0, -1).join(', ') + ' i ' + disc.at(-1) : disc[0];
+  document.querySelectorAll('[data-discounts]').forEach(el => { el.textContent = `Com més dies us quedeu, millor: ${text}.`; el.hidden = !t.length; });
+  const hour = t => { const [h, m] = t.split(':'); return `${+h}${m === '00' ? '' : '.' + m} h`; };
+  const pol = $('policy'); if (pol) pol.textContent = `${p.policy} Entrada a partir de les ${hour(p.rules.checkin)} i sortida abans de les ${hour(p.rules.checkout)}.`;
 }).catch(() => {});
 const CONTACT_MSG = "Truca'ns o escriu-nos per WhatsApp al +34 667 40 98 59 i t'ho preparem.";
 const $ = id => document.getElementById(id);
@@ -1232,9 +1244,10 @@ function price(stay = fstay.value) {
   const s = STAY_INFO[stay], n = nights();
   if (!s || !(n > 0)) return null;
   const sq = serverQuotes[`${stay}|${fin.value}|${fout.value}`];
-  if (sq) return { s, n: sq.nights, nightly: sq.price, discount: sq.discount, subtotal: sq.subtotal / 100, total: sq.total / 100 };
-  const discount = n >= 3 ? DISCOUNTS.d3 : n === 2 ? DISCOUNTS.d2 : 0, subtotal = s.price * n;
-  return { s, n, nightly: s.price, discount, subtotal, total: Math.round(subtotal * (100 - discount)) / 100 };
+  if (sq && sq.error) return { s, n, error: sq };
+  if (sq) return { s, n: sq.nights, nightly: sq.price, discount: sq.discount, discountNights: sq.discountNights, subtotal: sq.subtotal / 100, total: sq.total / 100 };
+  const tier = tierFor(n), discount = tier.pct, subtotal = s.price * n;
+  return { s, n, nightly: s.price, discount, discountNights: tier.nights, subtotal, total: Math.round(subtotal * (100 - discount)) / 100 };
 }
 
 // ---- Popovers: dropdowns and the calendar share one open slot ----
@@ -1404,6 +1417,15 @@ calPop.addEventListener('mouseover', e => {
 });
 calPop.addEventListener('mouseleave', () => paintRange());
 
+// Why some dates can't be booked online (rules set in Maite)
+function ruleText(d) {
+  const e = d && d.error;
+  if (e === 'min_nights') return `Per arribar aquest dia, l'estada mínima és de ${nightsTxt(d.min)}.`;
+  if (e === 'too_long') return `L'estada màxima és de ${nightsTxt(d.max)}. ${CONTACT_MSG}`;
+  if (e === 'too_soon') return d.days === 1 ? 'Les reserves en línia es fan com a mínim amb un dia d\'antelació. ' + CONTACT_MSG : `Les reserves en línia es fan com a mínim amb ${d.days} dies d'antelació. ${CONTACT_MSG}`;
+  if (e === 'too_far') return `Encara no tenim obertes aquestes dates. ${CONTACT_MSG}`;
+  return '';
+}
 // ---- Price and availability for the chosen stay (the bar shows only a warning when the dates are taken) ----
 let available = null, quoteSeq = 0;
 async function showQuote() {
@@ -1412,9 +1434,10 @@ async function showQuote() {
   const seq = ++quoteSeq, stay = fstay.value, key = `${stay}|${fin.value}|${fout.value}`;
   try {
     const d = await (await fetch(`/api/quote?stay=${stay}&in=${fin.value}&out=${fout.value}`)).json();
-    if (d.total) serverQuotes[key] = d;
+    if (d.total || ruleText(d)) serverQuotes[key] = d;
     if (seq !== quoteSeq) return;
     available = d.available;
+    if (ruleText(d)) note.textContent = ruleText(d);
     if (!bp.hidden) renderSummary();
   } catch (e) {}
 }
@@ -1439,6 +1462,7 @@ function drawCompare() {
 }
 function buyBlock(stay) {
   const s = STAY_INFO[stay], q = price(stay), fits = (+fguests.value || 1) <= s.max, ok = fits && freeNow[stay] !== false;
+  if (q.error) return `<span class="cmp-cap">Fins a ${people(s.max)}</span><span class="cmp-no">${ruleText(q.error)}</span>`;
   return `<span class="cmp-cap">Fins a ${people(s.max)}</span>
     ${q.discount ? `<span class="cmp-badge">${q.discount} % de descompte</span>` : ''}
     <div class="cmp-total">${q.discount ? `<s>${euro(q.subtotal)}</s>` : ''}<b>${euro(q.total)}</b></div>
@@ -1511,7 +1535,8 @@ async function showCompare() {
   const seq = ++searchSeq, a = fin.value, b = fout.value;
   try {
     const d = await (await fetch(`/api/search?in=${a}&out=${b}&guests=${fguests.value}`)).json();
-    (d.results || []).forEach(r => { if (r.total) serverQuotes[`${r.stay}|${a}|${b}`] = r; freeNow[r.stay] = r.available; });
+    (d.results || []).forEach(r => { if (r.total || r.error) serverQuotes[`${r.stay}|${a}|${b}`] = r; freeNow[r.stay] = r.available; });
+    if (d.error) Object.keys(STAY_INFO).forEach(k => { serverQuotes[`${k}|${a}|${b}`] = d; });
   } catch (e) {}
   if (seq !== searchSeq) return;
   checking = false;
@@ -1557,8 +1582,9 @@ function renderSummary() {
   $('bpKind').textContent = q.s.kind; $('bpName').textContent = q.s.name;
   $('bpIn').textContent = dayLabel(fin.value, true); $('bpOut').textContent = dayLabel(fout.value, true);
   $('bpGuests').textContent = people(fguests.value);
-  $('bpPrice').innerHTML = `<div><span>${euro(q.nightly)} × ${nightsTxt(q.n)}</span><span>${euro(q.subtotal)}</span></div>`
-    + (q.discount ? `<div class="disc"><span>Descompte ${q.n === 2 ? 'de 2 nits' : 'de 3 nits o més'} (${q.discount} %)</span><span>− ${euro(q.subtotal - q.total)}</span></div>` : '')
+  if (q.error) return;
+  $('bpPrice').innerHTML = `<div><span>${q.nightly != null ? `${euro(q.nightly)} × ${nightsTxt(q.n)}` : `${nightsTxt(q.n)} (el preu varia segons el dia)`}</span><span>${euro(q.subtotal)}</span></div>`
+    + (q.discount ? `<div class="disc"><span>Descompte de ${q.discountNights} nits o més (${q.discount} %)</span><span>− ${euro(q.subtotal - q.total)}</span></div>` : '')
     + `<div class="total"><span>Total</span><span>${euro(q.total)}</span></div><small>Impostos inclosos.</small>`;
   if (!payBtn.disabled) payBtn.textContent = payStep ? `Pagar ${euro(q.total)}` : 'Continuar al pagament';
 }
@@ -1618,8 +1644,8 @@ async function checkAvailable(stay) {
   const a = fin.value, b = fout.value;
   try {
     const d = await (await fetch(`/api/quote?stay=${stay}&in=${a}&out=${b}`)).json();
-    if (d.total) serverQuotes[`${stay}|${a}|${b}`] = d;
-    return d.available;
+    if (d.total || ruleText(d)) serverQuotes[`${stay}|${a}|${b}`] = d;
+    return ruleText(d) ? d : d.available;
   } catch (e) { return null; }
 }
 bookForm.addEventListener('submit', async e => {
@@ -1631,6 +1657,7 @@ bookForm.addEventListener('submit', async e => {
   const free = await checkAvailable(fstay.value);
   barBtn.disabled = false;
   if (free === false) return datesTaken(fstay.value);
+  if (free && free.error) { note.textContent = ruleText(free); return; }
   cameFrom = '#reservar';
   goToBooking();
 });

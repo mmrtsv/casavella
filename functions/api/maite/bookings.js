@@ -1,7 +1,7 @@
 // GET  /api/maite/bookings?from=2026-11-01&to=2026-12-01  Every entry on the stays' calendars in [from, to)
 // POST /api/maite/bookings  { stay, first, until, guests, name, email, phone, amount, settled, source, arrival, notes }
 //      A booking taken by phone, WhatsApp or in person: written to the stay's calendar, which blocks those nights.
-import { STAYS, configured, calendar, prices, isDate, addDays, json } from '../../../lib/booking.js';
+import { STAYS, configured, calendar, isDate, addDays, json } from '../../../lib/booking.js';
 import { asBooking, manualEvent, isSource } from '../../../lib/maite.js';
 
 export async function onRequestGet({ request, env, data }) {
@@ -17,7 +17,7 @@ export async function onRequestGet({ request, env, data }) {
   }));
   bookings.sort((a, b) => a.first.localeCompare(b.first) || a.stay.localeCompare(b.stay));
   const stays = Object.entries(STAYS).map(([id, s]) => ({ id, name: s.name, max: s.max }));
-  return json({ user: data.user, stays, prices: await prices(env), bookings, errors });
+  return json({ user: data.user, stays, bookings, errors });
 }
 
 export async function onRequestPost({ request, env, data }) {

@@ -37,14 +37,14 @@ Cada push a `main` publica la web de nou.
 
 ## Reserves (Stripe + Google Calendar)
 
-El formulari calcula el preu (habitació 70 €, apartament 90 € la nit; 5 % de descompte per a 2 nits i 10 % a partir de 3) i obre el pagament de Stripe. Ho fan les funcions de `functions/api/` (Cloudflare Pages Functions), amb la lògica compartida a `lib/booking.js`:
+El formulari calcula el preu (per defecte habitació 70 €, apartament 90 € la nit; 5 % de descompte per a 2 nits i 10 % a partir de 3; tot es canvia des de Maite) i obre el pagament de Stripe. Ho fan les funcions de `functions/api/` (Cloudflare Pages Functions), amb la lògica compartida a `lib/booking.js`:
 
 - `quote`, `search`, `busy`: preu i disponibilitat (un allotjament o tots; nits ocupades per al calendari).
 - `checkout`: comprova el calendari i obre el pagament de Stripe integrat a la pàgina de reserva. No bloqueja res fins que es paga.
 - `stripe-webhook`: quan es completa el pagament, escriu la reserva al calendari de l'allotjament. Si mentrestant algú altre ha pagat les mateixes dates, retorna els diners.
 - `release`: tanca la sessió de pagament si l'hoste canvia les dades o marxa.
 - `status`: diu a la pàgina de tornada si el pagament s'ha completat.
-- `prices`: els preus i descomptes desats a Maite, perquè la pàgina mostri els actuals.
+- `settings`: preus, descomptes, normes i política de cancel·lació desats a Maite, perquè la pàgina mostri els actuals.
 
 Cada allotjament té un Google Calendar a info@casavellarural.com, compartit amb un compte de servei de Google. Qualsevol esdeveniment al calendari d'un allotjament bloqueja aquelles nits, sigui quin sigui el títol (els marcats com a «Disponible» no). Per bloquejar dates a mà, n'hi ha prou amb crear-hi un esdeveniment.
 
@@ -59,18 +59,22 @@ Maite és el back office, a `maite.casavellarural.com`. Surt del mateix projecte
 - **Reserves directes** (telèfon, WhatsApp, en persona): s'escriuen al calendari de l'allotjament i bloquegen les nits a la web. Proposa el preu de la web, però es pot canviar.
 - **Cancel·lar**: la reserva queda al calendari com a «CANCEL·LADA» i les nits queden lliures. Si es va pagar a la web, es pot retornar tot o una part per Stripe. Les que esperen la confirmació del banc no es poden cancel·lar fins que arriba.
 - **Tancar dates**: un o més allotjaments, o tota la casa. Si alguna nit ja està ocupada, no es tanca res.
-- **Preus**: preu per nit de cada allotjament i descomptes de 2 nits i de 3 o més. S'apliquen de seguida a la web i als pagaments.
+- **Preus**: un calendari per allotjament amb el preu de cada nit. A la dreta, el preu normal i, si es vol, un altre per a divendres i dissabte. Tocant un dia, o el primer i l'últim d'un període, s'hi posa un preu especial o una estada mínima per a qui arribi aquells dies, i es pot aplicar a la vegada a altres allotjaments. Hi ha tries ràpides per a tots els caps de setmana o tot el mes.
+- **Descomptes**: per estada llarga, tants com calgui («a partir de 7 nits, un 15 % menys»). S'aplica el més alt.
+- **Normes**: estada mínima i màxima, amb quanta antelació es pot reservar, hores d'entrada i sortida, i la política de cancel·lació (Flexible, Moderada, Estricta, No reemborsable o a mida). La web mostra la política al costat de les condicions, i cada reserva guarda la que va acceptar l'hoste: en cancel·lar-la, Maite proposa el retorn que toca.
+
+Tot això s'aplica de seguida a la web i als pagaments. Les reserves fetes a Maite no segueixen les normes (es pot reservar per telèfon el mateix dia o una sola nit).
 
 Tot el que hi ha al calendari continua sent la referència: el que es crea a mà a Google Calendar també surt a Maite (en blau) i bloqueja les nits.
 
 ### Posar-lo en marxa
 
 1. **Domini**: Cloudflare Pages → el projecte → Custom domains → afegeix `maite.casavellarural.com`.
-2. **Accés**: Cloudflare Zero Trust → Access → Applications → Add an application → Self-hosted. Domini `maite.casavellarural.com`, política *Allow* amb els correus que hi poden entrar (per exemple info@casavellarural.com) i el mètode «One-time PIN»: Cloudflare envia un codi per correu per entrar. Copia l'**Application Audience (AUD) tag**.
-3. **Preus**: Workers & Pages → KV → crea un espai de noms (per exemple `casavella-maite`). Al projecte de Pages → Settings → Bindings → KV namespace, amb el nom de variable `MAITE`.
+2. **Accés**: Cloudflare Zero Trust → Access → Applications → Add an application → Self-hosted, amb el domini `maite.casavellarural.com` i una política *Allow* amb els correus que hi poden entrar. Com s'entra: amb **Google** (Zero Trust → Settings → Authentication → Login methods → Google; es crea un client OAuth a Google Cloud i s'hi enganxa l'ID i el secret) i/o amb «One-time PIN» (un codi per correu, sense configurar res). Copia l'**Application Audience (AUD) tag**.
+3. **Preus i normes**: Workers & Pages → KV → crea un espai de noms (per exemple `casavella-maite`). Al projecte de Pages → Settings → Bindings → KV namespace, amb el nom de variable `MAITE`.
 4. **Variables** (Settings → Variables and secrets): `ACCESS_TEAM` (el nom de l'equip de Zero Trust, el que va davant de `.cloudflareaccess.com`) i `ACCESS_AUD` (el tag del pas 2). Les de Stripe i Google Calendar són les mateixes de la web.
 
-Cada crida de Maite comprova el testimoni de Cloudflare Access, de manera que sense els passos 2 i 4 no s'hi pot entrar. Sense el pas 3, Maite funciona però no deixa desar preus i la web fa servir els de `lib/booking.js`.
+Cada crida de Maite comprova el testimoni de Cloudflare Access, de manera que sense els passos 2 i 4 no s'hi pot entrar. Sense el pas 3, Maite funciona però no deixa desar preus ni normes, i la web fa servir els valors per defecte de `lib/booking.js`.
 
 ## Pendent
 

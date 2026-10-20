@@ -42,7 +42,7 @@ export async function onRequestPost({ request, env }) {
     colorId: waiting ? '5' : '10',
     // Read back by Maite (the back office) to list the booking and refund it
     extendedProperties: { private: { lcv: waiting ? 'pending' : 'paid', session: s.id, pi: s.payment_intent || '', amount: String(s.amount_total ?? ''),
-      guests: String(m.guests || ''), name: c.name || '', email: c.email || '', phone: c.phone || '' } },
+      guests: String(m.guests || ''), policy: m.policy || '', name: c.name || '', email: c.email || '', phone: c.phone || '' } },
   };
 
   const existing = await mine();

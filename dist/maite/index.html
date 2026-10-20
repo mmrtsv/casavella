@@ -107,15 +107,48 @@ main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 60px; }
 .pill.other { background: var(--other-bg); color: var(--other); }
 .empty { color: var(--muted); padding: 30px 0; text-align: center; }
 
-/* Prices */
-.prices { max-width: 560px; }
-.prices table { width: 100%; border-collapse: collapse; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-.prices td { padding: 12px 14px; border-bottom: 1px solid var(--line); }
-.prices tr:last-child td { border-bottom: 0; }
-.prices td:last-child { text-align: right; white-space: nowrap; }
-.prices input { width: 90px; text-align: right; }
-.prices h3 { font-size: 20px; margin: 22px 0 8px; }
-.example { font-size: 14px; color: var(--muted); margin: 10px 0 18px; }
+/* Prices: month calendar for one stay, side panel for the normal price or the selected days */
+.pc { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.pc-nav h2 { font-size: 22px; }
+.pcal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; user-select: none; }
+.pcal .wd { font-size: 12px; color: var(--muted); text-align: center; padding: 4px 0; }
+.pday { position: relative; min-height: 74px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 6px 7px; text-align: left; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; }
+.pday .n { font-size: 13px; color: var(--muted); }
+.pday .p { font: 400 18px/1.1 var(--display); color: var(--ink); font-variant-numeric: tabular-nums; }
+.pday.special { background: color-mix(in srgb, var(--today) 16%, var(--paper)); border-color: color-mix(in srgb, var(--today) 55%, var(--line)); }
+.pday.special .p { font-weight: 600; }
+.pday .min { position: absolute; top: 5px; right: 6px; font-size: 11px; background: var(--other-bg); color: var(--other); border-radius: 999px; padding: 0 6px; }
+.pday.booked::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: 4px; height: 3px; border-radius: 3px; background: var(--paid); opacity: .7; }
+.pday.today .n { color: var(--today); font-weight: 600; }
+.pday.past { opacity: .4; cursor: default; }
+.pday.sel { outline: 2px solid var(--basil); outline-offset: -2px; background: color-mix(in srgb, var(--basil) 14%, var(--paper)); }
+.pday.blank { visibility: hidden; }
+.legend .l-special::before { background: color-mix(in srgb, var(--today) 30%, var(--paper)); border-color: var(--today); }
+.legend .l-min::before { background: var(--other-bg); border-color: var(--other); border-radius: 999px; }
+.legend .l-booked::before { background: var(--paid); border-color: var(--paid); height: 3px; vertical-align: 2px; }
+.quick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.panel { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 16px; position: sticky; top: 12px; }
+.panel h3, .narrow h3 { font-size: 20px; margin: 0 0 6px; }
+.narrow h3 { margin-top: 24px; }
+.narrow h3:first-child { margin-top: 0; }
+.panel .hint { margin: 0 0 12px; }
+.link { background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 8px 0 0; font-size: 14px; }
+.narrow { max-width: 620px; }
+.tier { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
+.tier input { width: 76px; display: inline-block; margin: 0; text-align: right; }
+.tier .x { position: static; margin-left: auto; }
+.example { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 14px 0; font-size: 14px; }
+.example table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.example td { padding: 3px 0; }
+.example td:last-child { text-align: right; }
+.presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.preset { border: 1px solid var(--line); background: var(--paper); border-radius: 12px; padding: 10px 12px; text-align: left; cursor: pointer; }
+.preset b { display: block; font-weight: 500; }
+.preset small { color: var(--muted); font-size: 12px; line-height: 1.3; display: block; margin-top: 2px; }
+.preset[aria-pressed="true"] { border-color: var(--basil); box-shadow: 0 0 0 1px var(--basil); }
+.row.three { grid-template-columns: 1fr 1fr 1fr; }
+.actions.left { justify-content: flex-start; }
+.pc-bar { display: none; }
 
 /* Dialogs and forms */
 dialog { border: 0; border-radius: 16px; padding: 0; background: var(--paper); color: var(--text); width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); box-shadow: 0 20px 60px rgba(0,0,0,.3); }
@@ -137,10 +170,19 @@ dd { margin: 0; overflow-wrap: anywhere; }
 .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--deep); color: var(--on-deep); padding: 10px 18px; border-radius: 999px; font-size: 14px; z-index: 10; max-width: calc(100vw - 32px); }
 .loading { opacity: .55; pointer-events: none; transition: opacity .2s; }
 
+@media (max-width: 900px) {
+  .pc { grid-template-columns: 1fr; }
+  .pc-bar:not([hidden]) { display: flex; }
+  .panel { position: static; }
+}
 @media (max-width: 640px) {
+  .pday { min-height: 58px; padding: 4px 5px; border-radius: 8px; }
+  .pday .p { font-size: 15px; }
+  .pday .min { position: static; align-self: flex-start; font-size: 10px; padding: 0 4px; }
+  .pcal { gap: 3px; }
   .grid { grid-template-columns: 92px repeat(var(--days), 34px); min-width: calc(92px + var(--days) * 34px); }
   .grid .name { font-size: 13px; padding: 0 8px; }
-  .row { grid-template-columns: 1fr; }
+  .row, .row.three { grid-template-columns: 1fr; }
   .card { grid-template-columns: 1fr; }
   .card .amt { text-align: left; }
   .who { display: none; }
@@ -158,6 +200,8 @@ dd { margin: 0; overflow-wrap: anywhere; }
     <button role="tab" data-tab="cal" aria-selected="true">Calendari</button>
     <button role="tab" data-tab="list" aria-selected="false">Reserves</button>
     <button role="tab" data-tab="prices" aria-selected="false">Preus</button>
+    <button role="tab" data-tab="disc" aria-selected="false">Descomptes</button>
+    <button role="tab" data-tab="rules" aria-selected="false">Normes</button>
   </nav>
 </header>
 
@@ -193,19 +237,89 @@ dd { margin: 0; overflow-wrap: anywhere; }
     <div id="list"></div>
   </section>
 
-  <section id="tab-prices" class="prices" hidden>
-    <form id="priceForm">
-      <h3>Preu per nit</h3>
-      <table id="priceTable"></table>
-      <h3>Descomptes</h3>
-      <table>
-        <tr><td>2 nits</td><td><input name="d2" type="number" min="0" max="90" step="1" inputmode="numeric"> %</td></tr>
-        <tr><td>3 nits o més</td><td><input name="d3" type="number" min="0" max="90" step="1" inputmode="numeric"> %</td></tr>
-      </table>
-      <p class="example" id="example"></p>
-      <p class="err" id="priceErr" hidden></p>
-      <div class="actions" style="justify-content:flex-start"><button class="btn solid" type="submit">Desa els preus</button></div>
-      <p class="hint">Els preus nous s'apliquen de seguida a la web i als pagaments. Les reserves ja fetes mantenen el que van pagar. Els preus i descomptes que surten als textos de la web també s'actualitzen sols.</p>
+  <section id="tab-prices" hidden>
+    <div class="bar">
+      <div class="chips" id="pcStays"></div>
+    </div>
+    <div class="pc">
+      <div class="pc-main">
+        <div class="bar pc-nav">
+          <h2 id="pcMonth"></h2>
+          <button class="btn icon" id="pcPrev" aria-label="Mes anterior">‹</button>
+          <button class="btn icon" id="pcNext" aria-label="Mes següent">›</button>
+        </div>
+        <div class="pcal" id="pcal"></div>
+        <div class="legend"><span class="l-special">Preu especial</span><span class="l-min">Estada mínima</span><span class="l-booked">Ocupat</span></div>
+        <div class="selbar pc-bar" id="pcBar" hidden><span id="pcBarText"></span><button class="btn" type="button" id="pcBarClear">Desfés</button><button class="btn solid" type="button" id="pcBarEdit">Canvia el preu</button></div>
+        <div class="quick"><span>Tria ràpida:</span><button class="chip" data-q="weekends">Caps de setmana del mes</button><button class="chip" data-q="month">Tot el mes</button></div>
+      </div>
+      <aside class="pc-side">
+        <form id="normalForm" class="panel">
+          <h3>Preu normal</h3>
+          <p class="hint" id="normalName"></p>
+          <label>Preu per nit (€)<input name="base" type="number" min="1" step="1" inputmode="decimal" required></label>
+          <label>Divendres i dissabte (€)<input name="weekend" type="number" min="1" step="1" inputmode="decimal" placeholder="El mateix"></label>
+          <p class="err" hidden></p>
+          <div class="actions"><button class="btn solid" type="submit">Desa</button></div>
+          <p class="hint">Toca un dia del calendari, o el primer i l'últim d'un període, per posar-hi un preu especial o una estada mínima.</p>
+        </form>
+        <form id="dayForm" class="panel" hidden>
+          <h3 id="dayTitle"></h3>
+          <p class="hint" id="dayNow"></p>
+          <label>Preu per nit (€)<input name="price" type="number" min="1" step="1" inputmode="decimal" placeholder="Preu normal"></label>
+          <label>Estada mínima si s'arriba aquests dies<select name="min"></select></label>
+          <div class="checks" id="dayAlso"></div>
+          <p class="err" hidden></p>
+          <div class="actions"><button class="btn" type="button" id="dayReset">Torna al normal</button><button class="btn solid" type="submit">Aplica</button></div>
+          <button class="link" type="button" id="dayCancel">Desfés la selecció</button>
+        </form>
+      </aside>
+    </div>
+  </section>
+
+  <section id="tab-disc" class="narrow" hidden>
+    <form id="discForm">
+      <h3>Descomptes per estada llarga</h3>
+      <p class="hint">Com més nits, més descompte. S'aplica el més alt que toqui.</p>
+      <div id="tiers"></div>
+      <button class="btn" type="button" id="addTier">+ Afegeix un descompte</button>
+      <div class="example" id="discExample"></div>
+      <p class="err" hidden></p>
+      <div class="actions left"><button class="btn solid" type="submit">Desa els descomptes</button></div>
+      <p class="hint">A la web, els textos que parlen dels descomptes s'actualitzen sols.</p>
+    </form>
+  </section>
+
+  <section id="tab-rules" class="narrow" hidden>
+    <form id="rulesForm">
+      <h3>Estada</h3>
+      <div class="row">
+        <label>Mínim de nits<input name="minNights" type="number" min="1" max="30" step="1" inputmode="numeric"></label>
+        <label>Màxim de nits<input name="maxNights" type="number" min="1" max="90" step="1" inputmode="numeric"></label>
+      </div>
+      <p class="hint">El mínim es pot canviar per a dies concrets (agost, ponts…) des de Preus.</p>
+      <h3>Antelació</h3>
+      <div class="row">
+        <label>Com a mínim, dies abans<input name="minAdvance" type="number" min="0" max="60" step="1" inputmode="numeric"></label>
+        <label>Com a molt<select name="maxAdvance"><option value="90">3 mesos abans</option><option value="180">6 mesos abans</option><option value="270">9 mesos abans</option><option value="365">1 any abans</option><option value="545">18 mesos abans</option><option value="730">2 anys abans</option></select></label>
+      </div>
+      <p class="hint">0 vol dir que es pot reservar el mateix dia. Per telèfon o des de Maite sempre es pot.</p>
+      <h3>Horari</h3>
+      <div class="row">
+        <label>Entrada a partir de<input name="checkin" type="time" step="900"></label>
+        <label>Sortida abans de<input name="checkout" type="time" step="900"></label>
+      </div>
+      <h3>Política de cancel·lació</h3>
+      <div class="presets" id="presets"></div>
+      <div class="row three" id="customPolicy">
+        <label>Retorn complet fins a (dies abans)<input name="fullDays" type="number" min="0" max="90" step="1" inputmode="numeric" placeholder="Mai"></label>
+        <label>Després, es retorna (%)<input name="partialPct" type="number" min="0" max="99" step="5" inputmode="numeric"></label>
+        <label>…fins a (dies abans)<input name="partialDays" type="number" min="0" max="90" step="1" inputmode="numeric"></label>
+      </div>
+      <div class="example"><b>El que veu l'hoste:</b> <span id="policyText"></span></div>
+      <p class="err" hidden></p>
+      <div class="actions left"><button class="btn solid" type="submit">Desa les normes</button></div>
+      <p class="hint">Cada reserva de la web guarda la política que l'hoste va acceptar. En cancel·lar-la, Maite proposa el retorn segons aquella política.</p>
     </form>
   </section>
 </main>
@@ -284,13 +398,13 @@ const KIND = { paid: 'Pagada a la web', pending: 'Pendent del banc', manual: 'Re
 const SOURCE = { web: 'Web', phone: 'Telèfon', whatsapp: 'WhatsApp', email: 'Correu', door: 'En persona', other: 'Altres' };
 const ERRORS = {
   unavailable: 'Aquestes nits ja estan ocupades', dates: 'Revisa les dates', name: 'Falta el nom', stay: 'Tria un allotjament',
-  amount: "L'import no és vàlid", pending: 'El banc encara no ha confirmat aquest pagament. Espera que es confirmi per cancel·lar-la.',
+  amount: "L'import no és vàlid", rules: 'Revisa les normes: algun valor no és vàlid', cancel: 'Revisa la política: els dies del retorn parcial han de ser menys que els del retorn complet', min: 'Revisa l\'estada mínima', pending: 'El banc encara no ha confirmat aquest pagament. Espera que es confirmi per cancel·lar-la.',
   refund_amount: "No es pot retornar més del que es va pagar", not_configured: 'Aquest allotjament no té el calendari connectat',
-  no_payment: 'No trobo el pagament a Stripe', access: 'La sessió ha caducat. Torna a carregar la pàgina.', discount: 'Els descomptes han de ser entre 0 i 90 %',
+  no_payment: 'No trobo el pagament a Stripe', access: 'La sessió ha caducat. Torna a carregar la pàgina.', discount: 'Revisa els descomptes: de 2 nits en amunt, entre 1 i 90 %, sense repetir nits',
   price: 'Revisa els preus',
 };
 
-let STAYS = [], PRICES = null, bookings = new Map(), loaded = [];
+let STAYS = [], SET = null, bookings = new Map(), loaded = [];
 
 async function api(path, opt = {}) {
   const r = await fetch('/api/maite/' + path, { ...opt, headers: { 'content-type': 'application/json' }, body: opt.body && JSON.stringify(opt.body) });
@@ -312,7 +426,7 @@ const shortName = id => stayName(id).replace(/^(Apartament|Habitació) /, '');
 // ---- Data: windows of calendar entries, merged by id ----
 async function load(from, to) {
   const d = await api(`bookings?from=${from}&to=${to}`);
-  STAYS = d.stays; PRICES = d.prices;
+  STAYS = d.stays;
   $('who').textContent = d.user;
   for (const [k, b] of bookings) if (b.first < to && b.until > from) bookings.delete(k);
   for (const b of d.bookings) bookings.set(b.stay + '|' + b.id, b);
@@ -325,7 +439,7 @@ async function load(from, to) {
 }
 const covered = (from, to) => loaded.some(([a, b]) => a <= from && b >= to);
 async function ensure(from, to) { if (!covered(from, to)) await load(from, to); }
-async function reload() { loaded = []; await load(addDays(TODAY, -120), addDays(TODAY, 280)); if (!covered(view.from, view.to)) await load(view.from, view.to); render(); }
+async function reload() { loaded = []; SET = await api('settings'); await load(addDays(TODAY, -120), addDays(TODAY, 280)); if (!covered(view.from, view.to)) await load(view.from, view.to); render(); }
 const all = () => [...bookings.values()];
 
 // ---- Tabs ----
@@ -333,7 +447,7 @@ let tab = 'cal';
 document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
   tab = b.dataset.tab;
   document.querySelectorAll('[data-tab]').forEach(x => x.setAttribute('aria-selected', x === b));
-  for (const t of ['cal', 'list', 'prices']) $('tab-' + t).hidden = t !== tab;
+  for (const t of ['cal', 'list', 'prices', 'disc', 'rules']) $('tab-' + t).hidden = t !== tab;
   try { localStorage.setItem('maite-tab', tab); } catch (e) {}
   render();
 }));
@@ -526,12 +640,15 @@ function syncGuests() {
   f.guests.innerHTML = Array.from({ length: max }, (_, i) => `<option>${i + 1}</option>`).join('');
   f.guests.value = Math.min(v, max);
 }
-// Suggests the web price for those dates; it can be changed freely
-function suggestAmount() {
-  const f = $('bookForm'), n = f.first.value && f.until.value ? nightsBetween(f.first.value, f.until.value) : 0;
-  if (!PRICES || !(n > 0) || f.amount.dataset.touched) return;
-  const disc = n >= 3 ? PRICES.d3 : n === 2 ? PRICES.d2 : 0;
-  f.amount.value = Math.round(PRICES.stays[f.stay.value] * n * (100 - disc)) / 100;
+// Suggests the web price for those nights (special prices and discounts included); it can be changed freely
+let suggestSeq = 0;
+async function suggestAmount() {
+  const f = $('bookForm'), seq = ++suggestSeq;
+  if (!f.first.value || !(f.until.value > f.first.value) || f.amount.dataset.touched) return;
+  try {
+    const q = await api(`quote?stay=${f.stay.value}&in=${f.first.value}&out=${f.until.value}`);
+    if (seq === suggestSeq && !f.amount.dataset.touched) f.amount.value = q.total / 100;
+  } catch (e) {}
 }
 $('bookForm').stay.addEventListener('change', () => { syncGuests(); suggestAmount(); });
 $('bookForm').first.addEventListener('change', e => { const f = $('bookForm'); if (f.until.value <= e.target.value) f.until.value = addDays(e.target.value, 1); suggestAmount(); });
@@ -572,10 +689,15 @@ function openCancel(b) {
   cancelling = b;
   const f = $('cancelForm'); f.reset(); formError(f);
   const paid = b.kind === 'paid';
-  $('cancelText').textContent = `${b.name || b.title}, ${stayName(b.stay)}, ${range(b.first, b.until)}. Les nits quedaran lliures.`
+  $('cancelText').textContent = `${b.name || b.title}, ${stayName(b.stay)}. Les nits del ${range(b.first, b.until)} quedaran lliures.`
     + (paid ? ' Pagada amb targeta: indica quant vols retornar (0 si no en retornes res).' : '');
   $('refundRow').hidden = !paid;
-  if (paid) { f.refund.value = b.amount != null ? b.amount / 100 : ''; f.refund.max = b.amount != null ? b.amount / 100 : ''; }
+  if (paid) {
+    const pol = b.policy || SET.cancel, before = nightsBetween(TODAY, b.first), due = b.amount != null ? refundDue(pol, b.amount, before) : null;
+    f.refund.value = due != null ? due / 100 : ''; f.refund.max = b.amount != null ? b.amount / 100 : '';
+    $('cancelText').textContent += ` ${before <= 0 ? 'Arriba avui o ja és aquí.' : `Falten ${before === 1 ? '1 dia' : before + ' dies'} per a l'arribada.`} ${b.policy ? 'Política que va acceptar' : 'Política actual'}: ${policyText(pol)}`
+      + (due != null ? ` Toca retornar ${euro(due)}.` : '');
+  }
   $('cancelDlg').showModal();
 }
 $('cancelForm').addEventListener('submit', e => {
@@ -588,37 +710,197 @@ $('cancelForm').addEventListener('submit', e => {
   });
 });
 
-// ---- Prices ----
+// ---- Cancellation policy (same rules as lib/booking.js) ----
+function policyText(c) {
+  const days = n => n === 1 ? '1 dia' : `${n} dies`;
+  if (c.fullDays == null && !c.partialPct) return "No es retorna l'import si es cancel·la.";
+  const parts = [];
+  if (c.fullDays != null) parts.push(c.fullDays === 0 ? "Cancel·lació gratuïta fins al dia abans de l'arribada" : `Cancel·lació gratuïta fins a ${days(c.fullDays)} abans de l'arribada`);
+  if (c.partialPct && c.partialDays != null) parts.push(`es retorna el ${c.partialPct} % fins a ${c.partialDays === 0 ? "l'arribada" : days(c.partialDays) + ' abans'}`);
+  return parts.join('; ') + '. Després no es retorna res.';
+}
+function refundDue(c, paid, before) {
+  if (c.fullDays != null && before >= c.fullDays) return paid;
+  if (c.partialPct && c.partialDays != null && before >= c.partialDays) return Math.round(paid * c.partialPct / 100);
+  return 0;
+}
+
+// ---- Prices: a month per stay; tap a day, or the first and last of a period, to change it ----
+let pcStay = null, pcMonth = null, pcSel = null; // pcSel: { a, b } dates, b may be null while picking
+const nightOf = (stay, d) => {
+  const sp = SET.days[stay]?.[d]?.price;
+  if (sp != null) return { price: sp, special: true };
+  const dow = parse(d).getDay(), st = SET.stays[stay];
+  return { price: (dow === 5 || dow === 6) && st.weekend != null ? st.weekend : st.base, special: false };
+};
+// The weekend quick pick keeps only Fridays and Saturdays
+const selDates = () => { if (!pcSel) return []; const out = []; for (let d = pcSel.a; d <= (pcSel.b || pcSel.a); d = addDays(d, 1)) if (!pcSel.only || pcSel.only.includes(parse(d).getDay())) out.push(d); return out; };
 function renderPrices() {
-  if (!PRICES) return;
-  const f = $('priceForm');
-  if (!f.dataset.filled) {
-    $('priceTable').innerHTML = STAYS.map(s => `<tr><td>${esc(s.name)}</td><td><input name="p-${s.id}" type="number" min="1" step="1" inputmode="decimal" value="${PRICES.stays[s.id]}"> €</td></tr>`).join('');
-    f.d2.value = PRICES.d2; f.d3.value = PRICES.d3; f.dataset.filled = 1;
+  if (!SET || !STAYS.length) return;
+  pcStay ||= STAYS[0].id;
+  pcMonth ||= TODAY.slice(0, 7) + '-01';
+  $('pcStays').innerHTML = STAYS.map(s => `<button class="chip" data-stay="${s.id}" aria-pressed="${s.id === pcStay}">${esc(shortName(s.id))}</button>`).join('');
+  const m = parse(pcMonth), title = m.toLocaleDateString('ca-ES', { month: 'long', year: 'numeric' });
+  $('pcMonth').textContent = title[0].toUpperCase() + title.slice(1);
+  $('pcPrev').disabled = pcMonth <= TODAY.slice(0, 7) + '-01';
+  const end = iso(new Date(m.getFullYear(), m.getMonth() + 1, 1)), lead = (m.getDay() + 6) % 7;
+  let h = ['dl', 'dt', 'dc', 'dj', 'dv', 'ds', 'dg'].map(w => `<div class="wd">${w}</div>`).join('') + '<div class="pday blank"></div>'.repeat(lead);
+  const sel = new Set(selDates());
+  for (let d = pcMonth; d < end; d = addDays(d, 1)) {
+    const n = nightOf(pcStay, d), min = SET.days[pcStay]?.[d]?.min, booked = all().some(b => b.blocks && b.stay === pcStay && b.first <= d && b.until > d);
+    const cls = ['pday', n.special && 'special', booked && 'booked', d === TODAY && 'today', d < TODAY && 'past', sel.has(d) && 'sel'].filter(Boolean).join(' ');
+    h += `<button type="button" class="${cls}" data-d="${d}"${d < TODAY ? ' disabled' : ''}><span class="n">${parse(d).getDate()}</span>${min ? `<span class="min">mín. ${min}</span>` : ''}<span class="p">${n.price.toLocaleString('ca-ES')} €</span></button>`;
   }
-  example();
+  $('pcal').innerHTML = h;
+  // Side panel: normal price, or the selected days
+  const st = SET.stays[pcStay], nf = $('normalForm'), df = $('dayForm');
+  nf.hidden = !!pcSel; df.hidden = !pcSel;
+  if (!pcSel && nf.dataset.stay !== pcStay) {
+    nf.base.value = st.base; nf.weekend.value = st.weekend ?? ''; nf.dataset.stay = pcStay; formError(nf);
+    $('normalName').textContent = stayName(pcStay);
+  }
+  if (pcSel) renderDayForm();
+  $('pcBar').hidden = !pcSel;
+  if (pcSel) $('pcBarText').textContent = $('dayTitle').textContent;
 }
-function example() {
-  const f = $('priceForm'), s = STAYS[0]; if (!s) return;
-  const p = Number(f['p-' + s.id]?.value) || 0, d3 = Number(f.d3.value) || 0, d2 = Number(f.d2.value) || 0;
-  $('example').textContent = `Exemple, ${s.name}: 1 nit ${euro(p * 100)}, 2 nits ${euro(Math.round(p * 2 * (100 - d2)))}, 3 nits ${euro(Math.round(p * 3 * (100 - d3)))}.`;
+function renderDayForm() {
+  const f = $('dayForm'), ds = selDates(), a = ds[0], z = ds.at(-1);
+  if (!ds.length) { pcSel = null; return renderPrices(); }
+  $('dayTitle').textContent = pcSel.only ? `Divendres i dissabtes (${ds.length} nits)` : ds.length === 1 ? day(a, { weekday: 'long', day: 'numeric', month: 'long' }) : `${day(a, { day: 'numeric', month: 'short' })} – ${day(z, { day: 'numeric', month: 'short' })} (${ds.length} dies)`;
+  const prices = [...new Set(ds.map(d => nightOf(pcStay, d).price))], mins = [...new Set(ds.map(d => SET.days[pcStay]?.[d]?.min ?? null))];
+  $('dayNow').textContent = `${stayName(pcStay)}. Ara: ${prices.length === 1 ? euro(prices[0] * 100) : `entre ${euro(Math.min(...prices) * 100)} i ${euro(Math.max(...prices) * 100)}`} la nit`
+    + (mins.length === 1 && mins[0] ? `, mínim ${nitsTxt(mins[0])}.` : '.');
+  const key = [pcSel.a, pcSel.b, pcSel.only, pcStay].join('|');
+  if (f.dataset.for !== key) {
+    f.dataset.for = key; formError(f);
+    const specials = [...new Set(ds.map(d => SET.days[pcStay]?.[d]?.price ?? null))];
+    f.price.value = specials.length === 1 && specials[0] != null ? specials[0] : '';
+    f.min.innerHTML = `<option value="">Normal (${nitsTxt(SET.rules.minNights)})</option>` + Array.from({ length: 14 }, (_, i) => `<option value="${i + 1}">${nitsTxt(i + 1)}</option>`).join('');
+    f.min.value = mins.length === 1 && mins[0] ? mins[0] : '';
+    $('dayAlso').innerHTML = '<p class="hint" style="margin:4px 0 6px">Aplica-ho també a:</p>' + STAYS.filter(s => s.id !== pcStay).map(s => `<label><input type="checkbox" value="${s.id}">${esc(s.name)}</label>`).join('');
+  }
 }
-$('priceForm').addEventListener('input', example);
-$('priceForm').addEventListener('submit', async e => {
+$('pcStays').addEventListener('click', e => { const c = e.target.closest('[data-stay]'); if (!c) return; pcStay = c.dataset.stay; renderPrices(); });
+$('pcPrev').onclick = () => { const m = parse(pcMonth); pcMonth = iso(new Date(m.getFullYear(), m.getMonth() - 1, 1)); pcSel = null; renderPrices(); };
+$('pcNext').onclick = async () => {
+  const m = parse(pcMonth); pcMonth = iso(new Date(m.getFullYear(), m.getMonth() + 1, 1)); pcSel = null;
+  const end = iso(new Date(m.getFullYear(), m.getMonth() + 2, 1));
+  try { await ensure(pcMonth, end); } catch (e) {}
+  renderPrices();
+};
+$('pcal').addEventListener('click', e => {
+  const c = e.target.closest('.pday[data-d]'); if (!c || c.disabled) return;
+  const d = c.dataset.d;
+  if (pcSel && !pcSel.b && d > pcSel.a) pcSel.b = d;
+  else if (pcSel && !pcSel.b && d === pcSel.a) pcSel.b = d;
+  else pcSel = { a: d, b: null };
+  renderPrices();
+});
+document.querySelector('.quick').addEventListener('click', e => {
+  const q = e.target.closest('[data-q]')?.dataset.q; if (!q) return;
+  const m = parse(pcMonth), end = iso(new Date(m.getFullYear(), m.getMonth() + 1, 0)), first = pcMonth < TODAY ? TODAY : pcMonth;
+  if (q === 'month') { pcSel = { a: first, b: end }; return renderPrices(); }
+  pcSel = { a: first, b: end, only: [5, 6] };
+  renderPrices();
+});
+async function saveDays(body) {
+  const f = $('dayForm'), stays = [pcStay, ...[...$('dayAlso').querySelectorAll('input:checked')].map(c => c.value)];
+  const r = await api('days', { method: 'POST', body: { stays, dates: selDates(), ...body } });
+  SET.days = r.days; pcSel = null; delete f.dataset.for; renderPrices();
+}
+$('dayForm').addEventListener('submit', e => {
   e.preventDefault();
-  const f = e.target, btn = f.querySelector('[type="submit"]'), err = $('priceErr');
-  btn.disabled = true; err.hidden = true;
-  try {
-    PRICES = await api('prices', { method: 'PUT', body: { stays: Object.fromEntries(STAYS.map(s => [s.id, f['p-' + s.id].value])), d2: f.d2.value, d3: f.d3.value } });
-    toast('Preus desats');
-  } catch (ex) { err.textContent = ex.message; err.hidden = false; }
-  btn.disabled = false;
+  const f = e.target;
+  submit(f, async () => { await saveDays({ price: f.price.value === '' ? null : f.price.value, min: f.min.value === '' ? null : f.min.value }); toast('Dies actualitzats'); });
+});
+$('dayReset').onclick = () => submit($('dayForm'), async () => { await saveDays({ price: null, min: null }); toast('Dies tornats al preu normal'); });
+$('dayCancel').onclick = $('pcBarClear').onclick = () => { pcSel = null; renderPrices(); };
+$('pcBarEdit').onclick = () => { $('dayForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => $('dayForm').price.focus({ preventScroll: true }), 400); };
+$('normalForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target;
+  submit(f, async () => {
+    SET = await api('settings', { method: 'PUT', body: { stays: { [pcStay]: { base: f.base.value, weekend: f.weekend.value === '' ? null : f.weekend.value } } } });
+    toast('Preu desat'); renderPrices();
+  });
+});
+
+// ---- Discounts ----
+let tiers = null;
+function renderDisc() {
+  if (!SET) return;
+  tiers ||= SET.discounts.map(t => ({ ...t }));
+  $('tiers').innerHTML = tiers.map((t, i) => `<div class="tier" data-i="${i}">A partir de <input data-k="nights" type="number" min="2" max="90" value="${t.nights}" inputmode="numeric"> nits, <input data-k="pct" type="number" min="1" max="90" value="${t.pct}" inputmode="numeric"> % menys<button class="x" type="button" data-del aria-label="Treu aquest descompte">×</button></div>`).join('')
+    || '<p class="hint">Sense descomptes: totes les estades paguen el preu per nit.</p>';
+  discExample();
+}
+function discExample() {
+  const s = STAYS[0]; if (!s || !tiers) return;
+  const base = SET.stays[s.id].base, rows = [1, 2, 3, 5, 7, 14].map(n => {
+    const t = tiers.filter(x => n >= x.nights).reduce((b, x) => x.pct > b ? x.pct : b, 0);
+    return `<tr><td>${nitsTxt(n)}${t ? ` (−${t} %)` : ''}</td><td>${euro(Math.round(base * n * (100 - t)))}</td></tr>`;
+  }).join('');
+  $('discExample').innerHTML = `<b>Exemple: ${esc(s.name)} a ${euro(base * 100)} la nit</b><table>${rows}</table>`;
+}
+$('tiers').addEventListener('input', e => { const i = e.target.closest('.tier')?.dataset.i, k = e.target.dataset.k; if (i != null && k) { tiers[i][k] = Number(e.target.value); discExample(); } });
+$('tiers').addEventListener('click', e => { if (e.target.closest('[data-del]')) { tiers.splice(e.target.closest('.tier').dataset.i, 1); renderDisc(); } });
+$('addTier').onclick = () => { const last = tiers.at(-1); tiers.push({ nights: last ? last.nights + 4 : 2, pct: last ? Math.min(last.pct + 5, 90) : 5 }); renderDisc(); };
+$('discForm').addEventListener('submit', e => {
+  e.preventDefault();
+  submit(e.target, async () => { SET = await api('settings', { method: 'PUT', body: { discounts: tiers } }); tiers = null; renderDisc(); toast('Descomptes desats'); });
+});
+
+// ---- Rules and cancellation policy ----
+const PRESETS = {
+  flexible: { name: 'Flexible', fullDays: 1, partialDays: null, partialPct: 0 },
+  moderate: { name: 'Moderada', fullDays: 7, partialDays: 2, partialPct: 50 },
+  strict: { name: 'Estricta', fullDays: 30, partialDays: 14, partialPct: 50 },
+  none: { name: 'No reemborsable', fullDays: null, partialDays: null, partialPct: 0 },
+};
+const samePolicy = (a, b) => (a.fullDays ?? null) === (b.fullDays ?? null) && (a.partialPct || 0) === (b.partialPct || 0) && (!a.partialPct || (a.partialDays ?? null) === (b.partialDays ?? null));
+function formPolicy() {
+  const f = $('rulesForm'), n = v => v === '' ? null : Number(v);
+  return { fullDays: n(f.fullDays.value), partialDays: n(f.partialDays.value), partialPct: Number(f.partialPct.value) || 0 };
+}
+function renderRules() {
+  if (!SET) return;
+  const f = $('rulesForm');
+  if (!f.dataset.filled) {
+    for (const k of ['minNights', 'maxNights', 'minAdvance', 'checkin', 'checkout']) f[k].value = SET.rules[k];
+    f.maxAdvance.value = String(SET.rules.maxAdvance);
+    if (f.maxAdvance.value !== String(SET.rules.maxAdvance)) { f.maxAdvance.insertAdjacentHTML('beforeend', `<option value="${SET.rules.maxAdvance}">${SET.rules.maxAdvance} dies abans</option>`); f.maxAdvance.value = String(SET.rules.maxAdvance); }
+    setPolicy(SET.cancel); f.dataset.filled = 1;
+  }
+  syncPolicy();
+}
+function setPolicy(c) {
+  const f = $('rulesForm');
+  f.fullDays.value = c.fullDays ?? ''; f.partialPct.value = c.partialPct || 0; f.partialDays.value = c.partialDays ?? '';
+}
+function syncPolicy() {
+  const c = formPolicy();
+  $('presets').innerHTML = Object.entries(PRESETS).map(([k, p]) => `<button type="button" class="preset" data-p="${k}" aria-pressed="${samePolicy(p, c)}"><b>${p.name}</b><small>${esc(policyText(p))}</small></button>`).join('')
+    + `<button type="button" class="preset" data-p="custom" aria-pressed="${!Object.values(PRESETS).some(p => samePolicy(p, c))}"><b>A mida</b><small>Tria els dies i el percentatge a sota.</small></button>`;
+  $('policyText').textContent = policyText(c);
+}
+$('presets').addEventListener('click', e => { const k = e.target.closest('[data-p]')?.dataset.p; if (PRESETS[k]) { setPolicy(PRESETS[k]); syncPolicy(); } else if (k) $('rulesForm').fullDays.focus(); });
+$('rulesForm').addEventListener('input', syncPolicy);
+$('rulesForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target;
+  submit(f, async () => {
+    const rules = Object.fromEntries(['minNights', 'maxNights', 'minAdvance', 'maxAdvance', 'checkin', 'checkout'].map(k => [k, f[k].value]));
+    SET = await api('settings', { method: 'PUT', body: { rules, cancel: formPolicy() } });
+    delete f.dataset.filled; renderRules(); toast('Normes desades');
+  });
 });
 
 function render() {
   if (tab === 'cal') renderCal();
   if (tab === 'list') renderList();
   if (tab === 'prices') renderPrices();
+  if (tab === 'disc') renderDisc();
+  if (tab === 'rules') renderRules();
 }
 
 (async () => {

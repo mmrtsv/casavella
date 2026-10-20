@@ -40,8 +40,8 @@ export function Glass({ children, className = '', style, radius = 24, lively = f
         <div className="glass-refraction" aria-hidden="true" style={{ borderRadius: radius }}>
           <Suspense fallback={null}>
             <LiquidGlass
-              cornerRadius={radius} padding="0" mode="standard" elasticity={lively ? 0.08 : 0}
-              displacementScale={strength === 'strong' ? 64 : 36} blurAmount={strength === 'strong' ? 0.1 : 0.06} saturation={150} aberrationIntensity={1.4}
+              cornerRadius={radius} padding="0" mode="standard" elasticity={lively ? 0.12 : 0}
+              displacementScale={strength === 'strong' ? 80 : 48} blurAmount={strength === 'strong' ? 0.1 : 0.06} saturation={160} aberrationIntensity={2}
               style={{ position: 'absolute', top: '50%', left: '50%' }}
               {...(lively ? {} : { globalMousePos: still, mouseOffset: still })}
             >

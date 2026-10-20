@@ -120,7 +120,8 @@ const COLS: { id: string; label: string; num?: boolean; row?: boolean; className
 
 function BookingTable({ rows, sort, setSort }: { rows: Booking[]; sort: SortDescriptor | null; setSort: (s: SortDescriptor) => void }) {
   return (
-    <div className="overflow-hidden rounded-3xl bg-surface shadow-[var(--surface-shadow)] ring-1 ring-border">
+    // The card always reaches the foot of the screen; below the last booking, empty ruled rows keep the table's shape
+    <div className="flex min-h-[calc(100dvh-19.5rem)] flex-col overflow-hidden rounded-3xl bg-surface shadow-[var(--surface-shadow)] ring-1 ring-border">
       <Table variant="secondary" className="!rounded-none !bg-transparent !shadow-none">
         <Table.ScrollContainer className="overflow-x-auto">
           <Table.Content aria-label="Reserves" className="min-w-[1020px] [&_td]:whitespace-nowrap [&_td:first-child]:whitespace-normal" sortDescriptor={sort ?? undefined} onSortChange={setSort}
@@ -157,6 +158,7 @@ function BookingTable({ rows, sort, setSort }: { rows: Booking[]; sort: SortDesc
           </Table.Content>
         </Table.ScrollContainer>
       </Table>
+      <div aria-hidden="true" className="min-h-16 flex-1 bg-[repeating-linear-gradient(to_bottom,transparent_0_63px,var(--separator)_63px_64px)]" />
     </div>
   );
 }

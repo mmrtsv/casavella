@@ -13,13 +13,13 @@ import { toastError } from '../parts/toast';
 const COL = 76, NAMES = 132; // a night is at least 76 px wide; the stay names take 132 px
 type Sel = { stay: string; a: string; b?: string } | null;
 
-const tone: Record<string, string> = {
+export const tone: Record<string, string> = {
   paid: 'bg-[color-mix(in_oklab,var(--brand-sage)_26%,transparent)] text-foreground',
   settled: 'bg-[color-mix(in_oklab,var(--brand-sage)_26%,transparent)] text-foreground',
   pending: 'bg-warning/20 text-foreground', manual: 'bg-warning/20 text-foreground',
   block: 'bg-default text-muted', other: 'bg-[color-mix(in_oklab,var(--brand-cava)_22%,transparent)] text-foreground',
 };
-const bar: Record<string, string> = { paid: 'bg-accent', settled: 'bg-accent', pending: 'bg-warning', manual: 'bg-warning', block: 'bg-muted/60', other: 'bg-[var(--brand-cava)]' };
+export const bar: Record<string, string> = { paid: 'bg-accent', settled: 'bg-accent', pending: 'bg-warning', manual: 'bg-warning', block: 'bg-muted/60', other: 'bg-[var(--brand-cava)]' };
 
 export function CalendarActions() {
   return (
@@ -75,7 +75,7 @@ export function Calendar() {
   const sameYear = from.slice(0, 4) === last.slice(0, 4);
 
   return (
-    <div className="fade-in">
+    <div className="fade-in flex min-h-[calc(100dvh-13.5rem)] flex-col lg:min-h-[calc(100dvh-8.5rem)]">
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <h2 className="mr-auto text-2xl font-semibold tracking-tight tnum sm:text-[28px]">
           {day(from, { day: 'numeric', month: 'short', ...(sameYear ? {} : { year: 'numeric' }) })} – {day(last, { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -124,10 +124,13 @@ export function Calendar() {
       </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted">
+      {/* Key and hint sit at the foot of the screen, out of the way of the grid */}
+      <div className="mt-auto pt-6">
+      <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted">
         <Legend c="bg-accent" t="Pagada" /><Legend c="bg-warning" t="Pendent de cobrar" /><Legend c="bg-muted/60" t="Tancat" /><Legend c="bg-[var(--brand-cava)]" t="Altres (Google Calendar)" />
       </div>
       <p className="mt-2 text-xs text-muted">Toca la primera nit i després l'última per tancar dates o afegir una reserva. Toca una reserva per veure'n la fitxa.</p>
+      </div>
 
       {sel && (
         <div className="fixed inset-x-3 bottom-28 z-40 mx-auto max-w-xl lg:bottom-6 fade-in">

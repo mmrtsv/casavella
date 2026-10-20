@@ -6,9 +6,10 @@ import { Check, Choice, Field } from '../parts/fields';
 import { done } from '../parts/toast';
 import { api } from '../lib/api';
 import { addDays, euro, nightsBetween, range, TODAY } from '../lib/dates';
-import { getState, reload, stayName, useStore } from '../lib/store';
+import { getState, reload, setBooking, stayName, useStore } from '../lib/store';
 import { closeBlock, closeBook, closeCancel, useUI } from '../lib/ui';
 import { policyText, refundDue } from '../lib/words';
+import type { Booking } from '../lib/types';
 
 function Err({ msg }: { msg: string }) { return msg ? <p role="alert" className="mt-1 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">{msg}</p> : null; }
 function Save({ busy, children, onPress, variant = 'primary' }: { busy: boolean; children: React.ReactNode; onPress: () => void; variant?: 'primary' | 'danger' }) {
@@ -42,7 +43,7 @@ export function NewBooking() {
   }, [draft, f.stay, f.first, f.until]);
   const submit = async () => {
     setBusy(true); setErr('');
-    try { await api('bookings', { method: 'POST', body: { ...f, settled } }); closeBook(); done('Reserva desada'); await reload(); }
+    try { const d = await api<{ booking: Booking }>('bookings', { method: 'POST', body: { ...f, settled } }); setBooking(d.booking); closeBook(); done('Reserva desada'); await reload(); }
     catch (e) { setErr((e as Error).message); }
     setBusy(false);
   };

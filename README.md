@@ -100,6 +100,11 @@ No hi ha cap altra base de dades: tot el que es canvia a Maite es llegeix al mom
 3. **Preus i normes**: Workers & Pages → KV → crea un espai de noms (per exemple `casavella-maite`). Al projecte de Pages → Settings → Bindings → KV namespace, amb el nom de variable `MAITE`.
 4. **Variables** (Settings → Variables and secrets): `ACCESS_TEAM` (el nom de l'equip de Zero Trust, el que va davant de `.cloudflareaccess.com`) i `ACCESS_AUD` (el tag del pas 2). Les de Stripe i Google Calendar són les mateixes de la web.
 5. **Fotos**: R2 → crea un bucket (per exemple `casavella-fotos`). Al projecte de Pages → Settings → Bindings → R2 bucket, amb el nom de variable `PHOTOS`. Sense això, Maite deixa triar entre les fotos de la web però no pujar-ne de noves.
+6. **Documents dels hostes a Google Drive**: a Google Cloud, activa la Google Drive API al mateix projecte del compte de servei del calendari. Després tria una de les dues opcions:
+   - **Unitat compartida** (més senzill): posa la carpeta «05.01 Documentació checkin» dins d'una unitat compartida i afegeix-hi el correu del compte de servei (`GOOGLE_SA_EMAIL`) com a *Gestor de contingut*.
+   - **La teva unitat**: a la consola d'administració de Google Workspace → Seguretat → Controls d'API → Delegació a tot el domini, afegeix l'ID de client del compte de servei amb l'àmbit `https://www.googleapis.com/auth/drive`, i posa la variable `GOOGLE_DRIVE_AS` amb el correu del propietari de la carpeta (per exemple `info@casavellarural.com`).
+
+   En tots dos casos, posa la variable `DOCS_FOLDER` amb l'ID de la carpeta (el tros de l'URL després de `/folders/`). Cada reserva hi té una carpeta numerada, «05.01.07 - Nom (20/10/2026 - 23/10/2026)», que es crea quan s'hi puja el primer document. Un compte de servei no pot desar fitxers a «La meva unitat» d'una altra persona sense una d'aquestes dues opcions.
 
 Cada crida de Maite comprova el testimoni de Cloudflare Access, de manera que sense els passos 2 i 4 no s'hi pot entrar. Sense el pas 3, Maite funciona però no deixa desar preus ni normes, i la web fa servir els valors per defecte de `lib/booking.js`.
 

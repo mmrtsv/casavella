@@ -1,19 +1,21 @@
 // The frame: glass sidebar (desktop), glass top bar, glass tab bar (phone). Pages render in the scrolling column.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@heroui/react';
-import { CalendarDays, Table2, Tag, Percent, ScrollText, BedDouble, Search, Moon, Sun, Command, MoreHorizontal } from 'lucide-react';
+import { House, CalendarDays, Table2, Tag, Percent, ScrollText, BedDouble, Mail, Search, Moon, Sun, Command, MoreHorizontal } from 'lucide-react';
 import { Glass } from '../lib/glass';
 import { go, usePage, type Page } from '../lib/route';
 import { setTheme, useTheme } from '../lib/theme';
 import { useStore } from '../lib/store';
 
 export const NAV: { page: Page; label: string; short?: string; icon: typeof CalendarDays; hint: string }[] = [
+  { page: 'home', label: 'Inici', icon: House, hint: "El que passa avui i el que falta per fer" },
   { page: 'calendar', label: 'Calendari', icon: CalendarDays, hint: 'Ocupació de les properes setmanes' },
   { page: 'bookings', label: 'Reserves', icon: Table2, hint: 'Totes les reserves i la seva llista' },
   { page: 'prices', label: 'Preus', icon: Tag, hint: 'Preu per nit i dies especials' },
   { page: 'discounts', label: 'Descomptes', icon: Percent, hint: 'Descomptes per estada llarga' },
-  { page: 'rules', label: 'Normes', icon: ScrollText, hint: 'Estada, antelació, horaris i cancel·lació' },
   { page: 'stays', label: 'Allotjaments', icon: BedDouble, hint: 'Textos, capacitat i fotos de la web' },
+  { page: 'rules', label: 'Normes', icon: ScrollText, hint: 'Estada, antelació, horaris i cancel·lació' },
+  { page: 'emails', label: 'Correus', icon: Mail, hint: 'Els correus que reben els hostes i la casa' },
 ];
 
 function ThemeButton() {
@@ -95,7 +97,7 @@ function TabBar() {
   const page = usePage();
   const [more, setMore] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
-  const main = NAV.filter(n => n.page !== 'discounts' && n.page !== 'rules'), extra = NAV.filter(n => n.page === 'discounts' || n.page === 'rules');
+  const inMore: Page[] = ['stays', 'discounts', 'rules', 'emails'], main = NAV.filter(n => !inMore.includes(n.page)), extra = NAV.filter(n => inMore.includes(n.page));
   const extraOn = extra.some(n => n.page === page);
   useEffect(() => {
     if (!more) return;

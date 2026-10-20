@@ -15,27 +15,28 @@ export const ERRORS: Record<string, string> = {
   refund_amount: 'No es pot retornar més del que es va pagar', not_configured: 'Aquest allotjament no té el calendari connectat',
   no_payment: 'No trobo el pagament a Stripe', access: 'La sessió ha caducat. Torna a carregar la pàgina.',
   discount: 'Revisa els descomptes: de 2 nits en amunt, entre 1 i 90 %, sense repetir nits', price: 'Revisa els preus', email: 'Revisa el correu',
+  doc_type: 'Només es poden pujar fotos (JPG, PNG, HEIC) o PDF', doc_size: 'El document és massa gran (màxim 15 MB)',
+  docs_not_configured: 'Falta connectar la carpeta de Google Drive dels documents', drive: 'Google Drive no ha deixat desar el document',
 };
 
 export const isBooking = (b: Booking) => b.kind === 'paid' || b.kind === 'pending' || b.kind === 'manual';
 export const atHome = (b: Booking) => !!b.checkin && !b.checkout;
 export const who = (b: Booking) => b.kind === 'block' ? (b.title || 'Tancat') : b.kind === 'other' ? b.title : (b.name || b.title);
 
-export interface Check { k: 'pay' | 'email' | 'phone' | 'docs' | 'police' | 'checkin' | 'checkout'; label: string; ok: boolean }
+export interface Check { k: 'pay' | 'email' | 'phone' | 'docs' | 'checkin' | 'checkout'; label: string; ok: boolean }
 export function checklist(b: Booking): Check[] {
   return [
     { k: 'pay', label: 'Pagament', ok: b.kind === 'paid' || (b.kind === 'manual' && b.settled) },
     { k: 'email', label: 'Correu', ok: !!b.email },
     { k: 'phone', label: 'Telèfon', ok: !!b.phone },
     { k: 'docs', label: 'Documents', ok: b.docs },
-    { k: 'police', label: 'Registre de viatgers', ok: b.police },
     { k: 'checkin', label: 'Entrada', ok: !!b.checkin },
     { k: 'checkout', label: 'Sortida', ok: !!b.checkout },
   ];
 }
 // What is still missing and already matters: before arrival the paperwork, from arrival day the check-in, from departure day the check-out
 export function missing(b: Booking) {
-  const due: Record<Check['k'], boolean> = { pay: true, email: true, phone: true, docs: true, police: b.first <= TODAY, checkin: b.first <= TODAY, checkout: b.until <= TODAY };
+  const due: Record<Check['k'], boolean> = { pay: true, email: true, phone: true, docs: true, checkin: b.first <= TODAY, checkout: b.until <= TODAY };
   return checklist(b).filter(c => !c.ok && due[c.k]);
 }
 

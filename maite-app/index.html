@@ -29,10 +29,9 @@
 </div></div>
 <script>
   (function () {
-    var t = { calendar: 'Calendari', bookings: 'Reserves', prices: 'Preus', discounts: 'Descomptes', rules: 'Normes', stays: 'Allotjaments' };
-    var h = location.hash.replace(/^#\/?/, ''), saved = null;
-    try { saved = localStorage.getItem('maite-page'); } catch (e) {}
-    document.getElementById('boot-title').textContent = t[h] || t[saved] || 'Calendari';
+    var t = { home: 'Inici', calendar: 'Calendari', bookings: 'Reserves', prices: 'Preus', discounts: 'Descomptes', rules: 'Normes', stays: 'Allotjaments', emails: 'Correus' };
+    var h = location.hash.replace(/^#\/?/, '');
+    document.getElementById('boot-title').textContent = t[h] || 'Inici';
     if (document.documentElement.classList.contains('dark')) document.getElementById('boot-iso').src = '/img/iso-light.png';
   })();
 </script>

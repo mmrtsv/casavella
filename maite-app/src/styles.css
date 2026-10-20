@@ -79,7 +79,8 @@
     --field-shadow: none;
     /* Glass: the tint keeps text at AA contrast whatever is behind it */
     --glass-tint: color-mix(in oklab, var(--brand-deep) 34%, rgb(10 14 11 / .74));
-    --glass-tint-liquid: rgb(12 17 13 / .7);
+    --glass-tint-liquid: rgb(12 17 13 / .6);
+    --glass-rim: rgb(255 255 255 / .22);
     --glass-tint-solid: color-mix(in oklab, var(--brand-deep) 30%, #0e130f);
     --glass-edge: rgb(255 255 255 / .09);
     --glow-a: color-mix(in oklab, var(--brand-basil) 55%, transparent);
@@ -115,7 +116,8 @@
     --surface-shadow: 0 1px 2px rgb(26 63 32 / .06), 0 8px 24px -12px rgb(26 63 32 / .14);
     --overlay-shadow: 0 24px 64px -16px rgb(26 63 32 / .28);
     --glass-tint: rgb(255 255 255 / .72);
-    --glass-tint-liquid: rgb(255 255 255 / .72);
+    --glass-tint-liquid: rgb(255 255 255 / .6);
+    --glass-rim: rgb(255 255 255 / .95);
     --glass-tint-solid: #ffffff;
     --glass-edge: rgb(26 63 32 / .10);
     --glow-a: color-mix(in oklab, var(--brand-sage) 34%, transparent);
@@ -154,6 +156,13 @@
   }
   .glass.is-liquid > .glass-tint { background: var(--glass-tint-liquid); }
 }
+/* A thin specular rim, lit from the top left, like light catching the edge of glass */
+.glass::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; padding: 1px;
+  background: linear-gradient(155deg, var(--glass-rim), transparent 32%, transparent 70%, color-mix(in oklab, var(--glass-rim) 50%, transparent));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
 /* Bars that content scrolls under need a denser tint so nothing reads through */
 .glass.glass-dense > .glass-tint { background: color-mix(in oklab, var(--glass-tint-solid) 90%, transparent) !important; }
 /* The library's own wrapper: keep it a pure backdrop layer */
@@ -181,6 +190,17 @@
 .status.other { background: color-mix(in oklab, var(--brand-cava) 18%, transparent); color: color-mix(in oklab, var(--brand-cava) 55%, var(--foreground)); }
 .status.neutral { background: var(--default); color: var(--muted); }
 .status.danger { background: color-mix(in oklab, var(--danger) 16%, transparent); color: color-mix(in oklab, var(--danger) 70%, var(--foreground)); }
+
+/* Table header runs edge to edge; the card around it rounds the corners */
+.table-root--secondary .table__column { border-radius: 0 !important; }
+
+/* Filters read as one segmented control: a soft track and a solid brand pill for the chosen option */
+.toggle-button-group { padding: 3px; gap: 2px; border-radius: 999px; background: color-mix(in oklab, var(--default) 80%, transparent); box-shadow: inset 0 0 0 1px var(--border); }
+.toggle-button-group .toggle-button { border-radius: 999px !important; --toggle-button-bg: transparent; --toggle-button-bg-hover: color-mix(in oklab, var(--foreground) 6%, transparent); --toggle-button-bg-pressed: var(--toggle-button-bg-hover);
+  --toggle-button-bg-selected: var(--accent); --toggle-button-bg-selected-hover: var(--accent); --toggle-button-bg-selected-pressed: var(--accent); --toggle-button-fg-selected: var(--accent-foreground);
+  transition: background-color .15s var(--ease-quick), color .15s var(--ease-quick); }
+.toggle-button-group .toggle-button[data-selected="true"] { font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / .12), 0 4px 12px -4px color-mix(in oklab, var(--accent) 60%, transparent), inset 0 1px 0 rgb(255 255 255 / .22); }
+.toggle-button-group__separator { display: none; }
 
 /* Unticked boxes stay visible on glass and on dark surfaces */
 .checkbox__control { box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--foreground) 38%, transparent); }

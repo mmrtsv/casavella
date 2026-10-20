@@ -4,7 +4,7 @@ import { STAYS, configured, calendar, stripe } from '../../lib/booking.js';
 
 export async function onRequestGet({ request, env }) {
   const u = new URL(request.url), stay = u.searchParams.get('stay'), id = u.searchParams.get('event');
-  const back = Response.redirect(new URL('/?reserva=cancel#reservar', u.origin).toString(), 303);
+  const back = Response.redirect(new URL('/?reserva=cancel#reserva', u.origin).toString(), 303);
   if (!STAYS[stay] || !id || !configured(env, stay)) return back;
   try {
     const cal = await calendar(env, stay), ev = await cal.get(id);

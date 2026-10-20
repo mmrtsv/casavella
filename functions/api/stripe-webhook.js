@@ -18,7 +18,8 @@ export async function onRequestPost({ request, env }) {
   }
   if (event.type !== 'checkout.session.completed' || s.payment_status !== 'paid') return json({ ignored: true });
 
-  const c = s.customer_details || {};
+  const cd = s.customer_details || {};
+  const c = { name: m.name || cd.name, email: m.email || cd.email, phone: m.phone || cd.phone };
   const booking = {
     summary: `${STAYS[m.stay].name} · ${c.name || 'Reserva web'} (${m.guests} pers.)`,
     description: [
@@ -26,6 +27,7 @@ export async function onRequestPost({ request, env }) {
       `${m.nights} nits, del ${m.checkin} al ${m.checkout}`,
       `Hostes: ${m.guests}`,
       c.name && `Nom: ${c.name}`, c.email && `Correu: ${c.email}`, c.phone && `Telèfon: ${c.phone}`,
+      m.arrival && `Arribada prevista: ${m.arrival}`, m.notes && `Comentaris: ${m.notes}`,
       `Stripe: https://dashboard.stripe.com/${s.livemode ? '' : 'test/'}payments/${s.payment_intent}`,
     ].filter(Boolean).join('\n'),
     start: { date: m.checkin }, end: { date: m.checkout },

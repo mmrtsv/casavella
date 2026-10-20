@@ -6,7 +6,7 @@ import { addDays, day, euro, nightsBetween, TODAY } from '../lib/dates';
 import { keyOf, shortName, stayName, useStore } from '../lib/store';
 import { openDetail, takeBookingsFilter } from '../lib/ui';
 import { atHome, dueList, isBooking, KIND, missing, SOURCE, who } from '../lib/words';
-import { Status, Tag } from '../parts/Status';
+import { Status } from '../parts/Status';
 import type { Booking } from '../lib/types';
 
 type Filter = 'today' | 'todo' | 'next' | 'past' | 'cancelled' | 'block';
@@ -141,7 +141,7 @@ function BookingTable({ rows, sort, setSort }: { rows: Booking[]; sort: SortDesc
                 return (
                   <Table.Row id={b.key} className="cursor-pointer">
                     <Table.Cell>
-                      <div className="flex items-center gap-2 font-medium">{who(b)}{isBooking(b) && atHome(b) && <Tag tone="paid">A casa</Tag>}</div>
+                      <div className="flex items-center gap-2 font-medium">{who(b)}{isBooking(b) && atHome(b) && <span className="text-xs font-medium text-accent">A casa</span>}</div>
                       {todo.length > 0 && <div className="mt-0.5 text-xs text-warning">Falta: {todo.map(c => c.label.toLowerCase()).join(', ')}</div>}
                     </Table.Cell>
                     <Table.Cell>{shortName(b.stay)}</Table.Cell>
@@ -176,8 +176,8 @@ function PhoneList({ rows }: { rows: Booking[] }) {
           <li key={keyOf(b)}>
             <button type="button" onClick={() => openDetail(keyOf(b))} className="flex w-full items-start gap-3 px-4 py-3.5 text-left outline-none active:bg-[var(--row-hover)] focus-visible:bg-[var(--row-hover)]">
               <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2"><span className="truncate font-medium">{who(b)}</span>{isBooking(b) && atHome(b) && <Tag tone="paid">A casa</Tag>}</span>
-                <span className="mt-0.5 block text-[13px] text-muted tnum">{shortName(b.stay)}, {short(b.first)} → {short(b.until)}</span>
+                <span className="flex items-center gap-2"><span className="truncate font-medium">{who(b)}</span></span>
+                <span className="mt-0.5 block text-[13px] text-muted tnum">{shortName(b.stay)}, {isBooking(b) && atHome(b) ? `a casa fins ${short(b.until)}` : `${short(b.first)} – ${short(b.until)}`}</span>
                 {todo.length > 0 && <span className="mt-0.5 block text-xs text-warning">Falta: {todo.map(c => c.label.toLowerCase()).join(', ')}</span>}
               </span>
               <span className="flex shrink-0 flex-col items-end gap-1.5"><span className="text-sm font-medium tnum">{euro(b.amount)}</span><Status b={b} /><Progress b={b} /></span>

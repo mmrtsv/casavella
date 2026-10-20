@@ -62,11 +62,11 @@ export default function Palette() {
                       <span className="block truncate text-sm font-medium">{it.label}</span>
                       {it.hint && <span className="block truncate text-xs text-muted">{it.hint}</span>}
                     </span>
-                    <span className="text-[11px] text-muted">{it.group}</span>
+                    <span className="text-xs text-muted">{it.group}</span>
                   </ListBox.Item>
                 )}
               </ListBox>
-              <div className="flex items-center gap-3 border-t border-separator px-3 pt-2 pb-1 text-[11px] text-muted">
+              <div className="flex items-center gap-3 border-t border-separator px-3 pt-2 pb-1 text-xs text-muted">
                 <span className="inline-flex items-center gap-1"><Kbd variant="light">↑↓</Kbd> moure</span>
                 <span className="inline-flex items-center gap-1"><Kbd variant="light">↵</Kbd> obrir</span>
                 <span className="inline-flex items-center gap-1"><Kbd variant="light">Esc</Kbd> tancar</span>

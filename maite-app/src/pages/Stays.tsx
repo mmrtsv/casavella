@@ -160,7 +160,7 @@ function Photos({ photos, move, remove, uploading }: { photos: string[]; move: (
           onDragOver={e => { e.preventDefault(); setOver(i); }} onDrop={e => { e.preventDefault(); if (drag != null && drag !== i) move(drag, i); setDrag(null); setOver(null); }}
           className={`group relative aspect-[4/3] cursor-grab overflow-hidden rounded-2xl bg-default ring-1 ring-border ${drag === i ? 'opacity-40' : ''} ${over === i && drag !== i ? 'ring-2 ring-accent' : ''}`}>
           <img src={photoUrl(src)} alt="" loading="lazy" className="size-full object-cover" draggable={false} />
-          {i === 0 && <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">Portada</span>}
+          {i === 0 && <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white">Portada</span>}
           <div className="absolute inset-x-0 bottom-0 flex items-center gap-1 p-2">
             <button type="button" className={tool} aria-label="Mou a l'esquerra" disabled={!i} onClick={() => move(i, i - 1)}><ArrowLeft size={15} /></button>
             <button type="button" className={tool} aria-label="Mou a la dreta" disabled={i === photos.length - 1} onClick={() => move(i, i + 1)}><ArrowRight size={15} /></button>

@@ -55,7 +55,7 @@ function Sidebar({ onSearch }: { onSearch: () => void }) {
         <button type="button" onClick={onSearch}
           className="mb-4 flex h-10 items-center gap-2 rounded-xl bg-default/70 px-3 text-sm text-muted outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus">
           <Search size={16} aria-hidden="true" /><span className="flex-1 text-left">Cerca o vés a…</span>
-          <kbd className="flex items-center gap-0.5 rounded-md border border-border px-1.5 text-[11px]"><Command size={11} aria-hidden="true" />K</kbd>
+          <kbd className="flex items-center gap-0.5 rounded-md border border-border px-1.5 text-xs"><Command size={11} aria-hidden="true" />K</kbd>
         </button>
         <nav className="flex flex-col gap-0.5" aria-label="Seccions">
           {NAV.map(({ page: p, label, icon: Icon }) => {
@@ -109,7 +109,7 @@ function TabBar() {
   const item = (on: boolean, Icon: typeof CalendarDays, label: string) => (
     <><span className={`grid h-7 w-12 place-items-center rounded-full transition-colors duration-150 ${on ? 'bg-accent/20 text-accent' : ''}`}><Icon size={19} aria-hidden="true" /></span><span>{label}</span></>
   );
-  const cell = 'flex h-16 flex-col items-center justify-center gap-1 rounded-[22px] text-[11px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-focus';
+  const cell = 'flex h-16 flex-col items-center justify-center gap-1 rounded-[22px] text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-focus';
   return (
     <div ref={moreRef} className="fixed inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-40 lg:hidden">
       {more && (

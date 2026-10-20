@@ -63,7 +63,7 @@ export default function Discounts() {
                 {[1, 2, 3, 5, 7, 14].map(n => { const p = pctFor(n); return (
                   <tr key={n} className="border-t border-separator">
                     <td className="py-2.5">{nitsTxt(n)}</td>
-                    <td className="py-2.5 text-right">{p ? <span className="status paid">−{p} %</span> : null}</td>
+                    <td className="py-2.5 text-right">{p ? <span className="text-sm text-muted tnum">−{p} %</span> : null}</td>
                     <td className="py-2.5 text-right font-semibold">{euro(Math.round(base * n * (100 - p)))}</td>
                   </tr>
                 ); })}

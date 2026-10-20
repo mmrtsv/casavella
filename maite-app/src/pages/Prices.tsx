@@ -68,7 +68,7 @@ export default function Prices() {
             <Button isIconOnly size="sm" variant="ghost" aria-label="Mes següent" onPress={() => moveMonth(1)}><ChevronRight size={18} /></Button>
           </div>
           <div className="grid grid-cols-7 gap-1 sm:gap-1.5" role="grid" aria-label={`Preus de ${stayName(stay)}, ${title}`}>
-            {['dl', 'dt', 'dc', 'dj', 'dv', 'ds', 'dg'].map(w => <div key={w} className="pb-1 text-center text-[11px] font-medium uppercase tracking-wide text-muted">{w}</div>)}
+            {['dl', 'dt', 'dc', 'dj', 'dv', 'ds', 'dg'].map(w => <div key={w} className="pb-1 text-center text-xs font-medium text-muted">{w}</div>)}
             {Array.from({ length: lead }, (_, i) => <div key={'b' + i} />)}
             {days.map(d => {
               const n = nightOf(d), min = S.days[stay]?.[d]?.min, past = d < TODAY, on = chosen.has(d), bk = booked(d);
@@ -79,7 +79,7 @@ export default function Prices() {
                     ${past ? 'cursor-default opacity-35' : 'hover:bg-[var(--row-hover)]'} ${on ? '!bg-accent/20 ring-2 ring-accent' : n.special ? 'bg-[color-mix(in_oklab,var(--brand-cava)_20%,transparent)]' : 'bg-default/40'}`}>
                   <span className="flex items-start justify-between gap-1">
                     <span className={`text-xs tnum ${d === TODAY ? 'font-bold text-accent' : 'text-muted'}`}>{parse(d).getDate()}</span>
-                    {min ? <span className="rounded-md bg-foreground/10 px-1 text-[10px] font-semibold">{min}n</span> : null}
+                    {min ? <span className="rounded-md bg-foreground/10 px-1 text-xs font-semibold">{min}n</span> : null}
                   </span>
                   <span className={`text-[13px] tnum sm:text-base ${n.special ? 'font-semibold' : ''}`}>{n.price.toLocaleString('ca-ES')} €</span>
                   {bk && <span className="absolute inset-x-2 bottom-1 h-0.5 rounded-full bg-accent" aria-hidden="true" />}
@@ -89,7 +89,7 @@ export default function Prices() {
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted">
             <span className="inline-flex items-center gap-2"><span className="size-2.5 rounded-sm bg-[color-mix(in_oklab,var(--brand-cava)_45%,transparent)]" />Preu especial</span>
-            <span className="inline-flex items-center gap-2"><span className="rounded bg-foreground/10 px-1 text-[10px] font-semibold text-foreground">3n</span>Estada mínima</span>
+            <span className="inline-flex items-center gap-2"><span className="rounded bg-foreground/10 px-1 text-xs font-semibold text-foreground">3n</span>Estada mínima</span>
             <span className="inline-flex items-center gap-2"><span className="h-0.5 w-4 rounded-full bg-accent" />Ocupat</span>
             <span className="ml-auto flex gap-2">
               <Button size="sm" variant="tertiary" onPress={() => quick('weekends')}>Caps de setmana</Button>

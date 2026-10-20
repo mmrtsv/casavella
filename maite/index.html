@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ca">
+<html lang="ca" class="sl-theme-light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,244 +7,315 @@
 <meta name="color-scheme" content="light">
 <title>Maite</title>
 <link rel="icon" type="image/png" href="/img/iso-dark.png">
+<!-- Shoelace (shoelace.style): buttons, fields, selects, dialogs, tags and alerts, themed below with the web's type and colours -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
 <style>
 @font-face { font-family: "Le Monde Livre"; src: url(/fonts/LeMondeLivre.woff2) format("woff2"); font-weight: 400 600; font-display: swap; }
 @font-face { font-family: "Halyard Display"; src: url(/fonts/HalyardDisplay.ttf) format("truetype"); font-weight: 300 700; font-display: swap; }
-/* Maite, the back office of La Casa Vella. Same palette and type as the public web, quieter. */
+/* Maite, the back office of La Casa Vella: the web's palette, type and square corners. Light only. */
 :root {
   --ground: #efebe3; --paper: #f7f5f0; --ink: #1a3f20; --text: #26302a; --muted: #5f6a5f; --line: #d6d0c2;
-  --basil: #2e6d2e; --deep: #1a3f20; --on-deep: #f3efe4;
-  --paid: #2e6d2e; --paid-bg: #dbe8d6; --due: #9a6a12; --due-bg: #f3e4c2; --block: #5f6a5f; --block-bg: #e2ded4;
-  --other: #3f5f8a; --other-bg: #dde5ef; --danger: #a33a2a; --today: #c98a2b; --primary: #1a3f20; --on-primary: #f3efe4;
+  --basil: #2e6d2e; --sage: #79a57a; --deep: #1a3f20; --on-deep: #f3efe4; --cava: #c6bfaf;
+  --paid: #2e6d2e; --paid-bg: #dfe9da; --due: #946515; --due-bg: #f1e4c6; --block: #5f6a5f; --block-bg: #e3dfd5;
+  --other: #3f5f8a; --other-bg: #dfe6ee; --danger: #a33a2a; --today: #b97a22;
   --display: "Le Monde Livre", Georgia, serif; --body: "Halyard Display", "Helvetica Neue", Arial, sans-serif;
+  --caps: 600 11px/1.2 var(--body);
   color-scheme: light;
+
+  /* Shoelace theme */
+  --sl-font-sans: var(--body); --sl-font-serif: var(--display);
+  --sl-border-radius-small: 0; --sl-border-radius-medium: 0; --sl-border-radius-large: 0; --sl-border-radius-x-large: 0;
+  --sl-color-primary-50: #f1f6ef; --sl-color-primary-100: #dfe9da; --sl-color-primary-200: #bfd5b7; --sl-color-primary-300: #96ba8c;
+  --sl-color-primary-400: #6b9e62; --sl-color-primary-500: #2e6d2e; --sl-color-primary-600: #2e6d2e; --sl-color-primary-700: #245726;
+  --sl-color-primary-800: #1f4b21; --sl-color-primary-900: #1a3f20; --sl-color-primary-950: #0f2614;
+  --sl-color-danger-600: #a33a2a; --sl-color-danger-500: #8f3222; --sl-color-danger-50: #f8ece8;
+  --sl-input-background-color: var(--paper); --sl-input-background-color-hover: var(--paper); --sl-input-background-color-focus: #fff;
+  --sl-input-border-color: var(--line); --sl-input-border-color-hover: var(--muted); --sl-input-border-color-focus: var(--basil);
+  --sl-input-color: var(--text); --sl-input-placeholder-color: #8b938a; --sl-input-label-color: var(--muted); --sl-input-help-text-color: var(--muted);
+  --sl-input-font-family: var(--body); --sl-input-font-weight: 400; --sl-input-height-medium: 2.6rem;
+  --sl-panel-background-color: var(--paper); --sl-panel-border-color: var(--line);
+  --sl-focus-ring-color: var(--basil); --sl-focus-ring-width: 2px;
+  --sl-color-neutral-0: #fff; --sl-overlay-background-color: rgba(15, 38, 20, .4);
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--ground); color: var(--text); font: 16px/1.45 var(--body); }
+html, body { margin: 0; background: var(--ground); color: var(--text); font: 300 16px/1.45 var(--body); }
+body { font-weight: 400; }
 [hidden] { display: none !important; }
-button, input, select, textarea { font: inherit; color: inherit; }
+button { font: inherit; color: inherit; }
 a { color: var(--basil); }
-h1, h2, h3 { font-family: var(--display); font-weight: 400; color: var(--ink); margin: 0; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 400; color: var(--ink); margin: 0; }
+.caps { font: var(--caps); letter-spacing: .2em; text-transform: uppercase; }
 
-.top { background: var(--deep); color: var(--on-deep); padding: 14px 16px 0; padding-top: max(14px, env(safe-area-inset-top)); }
-.top-row { display: flex; align-items: center; gap: 12px; max-width: 1280px; margin: 0 auto; }
+/* Shoelace pieces in the web's language: uppercase spaced labels and buttons, outlined by default */
+sl-button::part(base) { font-family: var(--body); font-weight: 600; font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase; transition: background .2s, color .2s, border-color .2s; }
+sl-button[size="small"]::part(base) { font-size: 10.5px; letter-spacing: .16em; }
+sl-button::part(label) { padding-top: 1px; }
+sl-button[variant="default"]::part(base) { background: transparent; border-color: var(--ink); color: var(--ink); }
+sl-button[variant="default"]::part(base):hover { background: var(--ink); color: var(--ground); }
+sl-button[variant="primary"]::part(base) { background: var(--basil); border-color: var(--basil); color: var(--on-deep); }
+sl-button[variant="primary"]::part(base):hover { background: var(--deep); border-color: var(--deep); }
+sl-button[variant="danger"]::part(base) { background: transparent; border-color: var(--danger); color: var(--danger); }
+sl-button[variant="danger"]::part(base):hover { background: var(--danger); color: #fff; }
+sl-button[variant="text"]::part(base) { color: var(--muted); padding: 0; }
+sl-button[variant="text"]::part(label) { padding: 0; text-decoration: underline; text-underline-offset: 3px; }
+.on-dark sl-button[variant="default"]::part(base) { border-color: rgba(243, 239, 228, .5); color: var(--on-deep); }
+.on-dark sl-button[variant="default"]::part(base):hover { background: var(--on-deep); color: var(--deep); }
+.on-dark sl-button[variant="primary"]::part(base) { background: var(--on-deep); border-color: var(--on-deep); color: var(--deep); }
+sl-input::part(form-control-label), sl-select::part(form-control-label), sl-textarea::part(form-control-label) {
+  font: var(--caps); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+sl-input, sl-select, sl-textarea { margin-bottom: 16px; }
+sl-checkbox::part(label), sl-switch::part(label) { font-size: 15px; color: var(--text); }
+sl-tag::part(base) { font: 600 10px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; padding: 0 8px; height: 22px; border-radius: 0; }
+sl-tag.paid::part(base) { background: var(--paid-bg); border-color: transparent; color: var(--paid); }
+sl-tag.due::part(base) { background: var(--due-bg); border-color: transparent; color: var(--due); }
+sl-tag.other::part(base) { background: var(--other-bg); border-color: transparent; color: var(--other); }
+sl-tag.neutral::part(base) { background: var(--block-bg); border-color: transparent; color: var(--block); }
+sl-radio-button::part(button) { font: 600 10.5px/1 var(--body); letter-spacing: .16em; text-transform: uppercase; border-color: var(--line); background: var(--paper); color: var(--text); }
+sl-radio-button::part(button--checked) { background: var(--deep); border-color: var(--deep); color: var(--on-deep); }
+sl-dialog::part(panel) { background: var(--paper); box-shadow: 0 24px 70px rgba(15, 38, 20, .25); }
+sl-dialog::part(title) { font: 400 26px/1.15 var(--display); color: var(--ink); padding-bottom: 6px; }
+sl-dialog::part(body) { padding-top: 6px; }
+sl-dialog::part(footer) { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+sl-alert::part(base) { border-radius: 0; font-size: 14px; }
+sl-icon-button::part(base) { color: var(--muted); padding: 6px; }
+sl-icon-button::part(base):hover { color: var(--ink); }
+
+/* Header */
+.top { background: var(--deep); color: var(--on-deep); padding: 16px 16px 0; padding-top: max(16px, env(safe-area-inset-top)); }
+.top-row { display: flex; align-items: center; gap: 14px; max-width: 1280px; margin: 0 auto; }
 .top img { width: 30px; height: 30px; }
-.top h1 { color: var(--on-deep); font-size: 26px; line-height: 1; }
-.top small { display: block; font-size: 12px; opacity: .7; letter-spacing: .04em; }
+.top h1 { color: var(--on-deep); font-size: 22px; line-height: 1; letter-spacing: .18em; text-transform: uppercase; }
+.top small { display: block; font: var(--caps); letter-spacing: .22em; text-transform: uppercase; opacity: .65; margin-top: 4px; }
 .who { margin-left: auto; font-size: 13px; opacity: .8; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.tabs { display: flex; gap: 4px; max-width: 1280px; margin: 12px auto 0; overflow-x: auto; }
-.tabs button { background: none; border: 0; color: var(--on-deep); opacity: .7; padding: 10px 14px; border-radius: 8px 8px 0 0; cursor: pointer; white-space: nowrap; }
-.tabs button[aria-selected="true"] { background: var(--ground); color: var(--ink); opacity: 1; }
+.tabs { display: flex; gap: 26px; max-width: 1280px; margin: 18px auto 0; overflow-x: auto; scrollbar-width: none; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--on-deep); opacity: .65; padding: 0 0 12px; cursor: pointer; white-space: nowrap; font: var(--caps); letter-spacing: .2em; text-transform: uppercase; }
+.tabs button[aria-selected="true"] { opacity: 1; border-bottom-color: var(--on-deep); }
 
-main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 60px; }
-.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
-.bar h2 { font-size: 26px; margin-right: auto; }
-.btn { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 8px 16px; cursor: pointer; line-height: 1.2; }
-.btn:hover { border-color: var(--muted); }
-.btn.solid { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
-.btn.danger { color: var(--danger); border-color: var(--danger); }
-.btn.icon { padding: 8px 12px; }
-.btn:disabled { opacity: .5; cursor: default; }
-.notice { background: var(--due-bg); color: var(--text); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
+main { max-width: 1280px; margin: 0 auto; padding: 26px 16px 70px; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+.bar h2 { font-size: 28px; margin-right: auto; }
+.hint { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.err { color: var(--danger); font-size: 14px; margin: 0 0 12px; }
+#notice { margin-bottom: 16px; }
 
-/* Month grid: one row per stay, one column per night */
-.grid-wrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; }
+/* Calendar: one row per stay, one column per night */
+.grid-wrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--line); }
 .grid { --days: 21; display: grid; grid-template-columns: 150px repeat(var(--days), minmax(52px, 1fr)); min-width: calc(150px + var(--days) * 52px); }
-.grid .h { font-size: 11px; color: var(--muted); text-align: center; padding: 8px 0 6px; border-bottom: 1px solid var(--line); line-height: 1.2; }
-.grid .h b { display: block; font-size: 16px; color: var(--text); font-weight: 500; }
-.grid .h.we { background: color-mix(in srgb, var(--line) 35%, transparent); }
-.grid .h.today b { color: var(--today); }
-.grid .name { position: sticky; left: 0; z-index: 2; background: var(--paper); padding: 0 10px; display: flex; align-items: center; font-size: 14px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); min-height: 76px; font-size: 15px; }
-.grid .corner { position: sticky; left: 0; z-index: 2; background: var(--paper); border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); }
+.grid .h { font: var(--caps); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); text-align: center; padding: 10px 0 8px; border-bottom: 1px solid var(--line); }
+.grid .h b { display: block; font: 400 17px/1.2 var(--body); letter-spacing: 0; color: var(--text); margin-top: 3px; }
+.grid .h.we, .grid .cell.we { background: color-mix(in srgb, var(--cava) 18%, transparent); }
+.grid .h.today b { color: var(--today); font-weight: 600; }
+.grid .name, .grid .corner { position: sticky; left: 0; z-index: 2; background: var(--paper); border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); }
+.grid .name { padding: 0 14px; display: flex; align-items: center; font: 400 17px/1.2 var(--display); color: var(--ink); min-height: 76px; }
 .grid .cell { border-bottom: 1px solid var(--line); border-left: 1px solid color-mix(in srgb, var(--line) 55%, transparent); cursor: pointer; min-height: 76px; }
-.grid .cell.we { background: color-mix(in srgb, var(--line) 35%, transparent); }
-.grid .cell.past { cursor: default; background-image: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--line) 50%, transparent) 6px 7px); }
-.grid .cell:not(.past):hover { background: color-mix(in srgb, var(--basil) 12%, transparent); }
-.grid .cell.sel { background: color-mix(in srgb, var(--basil) 28%, transparent); }
-.ev { z-index: 1; margin: 10px 3px; border-radius: 8px; padding: 6px 9px; font-size: 13px; line-height: 1.25; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; border: 0; text-align: left; border-left: 4px solid; align-self: stretch; }
-.ev small { display: block; opacity: .8; overflow: hidden; text-overflow: ellipsis; }
+.grid .cell.past { cursor: default; background-image: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--line) 55%, transparent) 6px 7px); }
+.grid .cell:not(.past):hover { background-color: color-mix(in srgb, var(--basil) 10%, transparent); }
+.grid .cell.sel { background-color: color-mix(in srgb, var(--basil) 24%, transparent); }
+.ev { z-index: 1; margin: 10px 2px; padding: 7px 9px; font: 400 13px/1.25 var(--body); color: var(--text); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; border: 0; border-left: 3px solid; text-align: left; align-self: stretch; }
+.ev small { display: flex; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 2px; overflow: hidden; }
 .k-paid, .k-manual.settled { background: var(--paid-bg); border-color: var(--paid); }
 .k-pending, .k-manual { background: var(--due-bg); border-color: var(--due); }
 .k-block { background: var(--block-bg); border-color: var(--block); }
 .k-other { background: var(--other-bg); border-color: var(--other); }
-.k-cancelled, .k-refunded { background: transparent; border-color: var(--line); color: var(--muted); text-decoration: line-through; }
-.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); margin-top: 12px; }
-.legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border-left: 3px solid; }
+.legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px; color: var(--muted); margin-top: 14px; }
+.legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 7px; vertical-align: -1px; border-left: 3px solid; }
 .legend .l-paid::before { background: var(--paid-bg); border-color: var(--paid); }
 .legend .l-due::before { background: var(--due-bg); border-color: var(--due); }
 .legend .l-block::before { background: var(--block-bg); border-color: var(--block); }
 .legend .l-other::before { background: var(--other-bg); border-color: var(--other); }
-.hint { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
-.selbar { position: sticky; bottom: 12px; margin-top: 12px; background: var(--deep); color: var(--on-deep); border-radius: 14px; padding: 10px 12px 10px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+.legend .l-special::before { background: color-mix(in srgb, var(--today) 22%, var(--paper)); border-color: var(--today); }
+.legend .l-min::before { background: var(--other-bg); border-color: var(--other); }
+.legend .l-booked::before { background: var(--paper); border: 0; border-bottom: 3px solid var(--paid); height: 9px; }
+.selbar { position: sticky; bottom: 12px; margin-top: 14px; background: var(--deep); color: var(--on-deep); padding: 12px 14px 12px 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; box-shadow: 0 10px 30px rgba(15, 38, 20, .2); z-index: 3; }
 .selbar span { margin-right: auto; }
-.selbar .btn { background: transparent; color: var(--on-deep); border-color: rgba(243,239,228,.4); }
-.selbar .btn.solid { background: var(--on-deep); color: var(--deep); }
 
-/* Bookings list */
-.chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.chip { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 14px; }
-.chip[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
-.search { flex: 1 1 200px; min-width: 0; max-width: 320px; border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 8px 14px; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
-.stat { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
-.stat span { font-size: 13px; color: var(--muted); }
-.stat b { display: block; font: 300 28px/1.2 var(--body); color: var(--ink); font-variant-numeric: tabular-nums; margin-top: 2px; }
-.day { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 22px 0 8px; }
-.card { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; background: var(--paper); border: 1px solid var(--line); border-left: 4px solid; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; width: 100%; text-align: left; }
-.card h3 { font: 500 17px/1.3 var(--body); color: var(--text); }
-.card .meta { font-size: 14px; color: var(--muted); }
-.card .amt { text-align: right; font-variant-numeric: tabular-nums; font-size: 17px; }
-.pill { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--block-bg); color: var(--text); white-space: nowrap; }
-.pill.paid { background: var(--paid-bg); color: var(--paid); }
-.pill.due { background: var(--due-bg); color: var(--due); }
-.pill.other { background: var(--other-bg); color: var(--other); }
-.empty { color: var(--muted); padding: 30px 0; text-align: center; }
+/* Bookings */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); border: 1px solid var(--line); background: var(--paper); margin-bottom: 22px; }
+.stat { padding: 14px 18px; border-left: 1px solid var(--line); }
+.stat:first-child { border-left: 0; }
+.stat span { font: var(--caps); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.stat b { display: block; font: 300 30px/1.2 var(--body); color: var(--ink); font-variant-numeric: tabular-nums; margin-top: 6px; }
+#q { flex: 1 1 220px; max-width: 340px; margin: 0; }
+.month { font: var(--caps); letter-spacing: .2em; text-transform: uppercase; color: var(--basil); margin: 26px 0 10px; }
+.meta { display: flex; flex-wrap: wrap; gap: 2px 16px; font-size: 14px; color: var(--muted); margin-top: 3px; }
+.flags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.todo { font-size: 13px; color: var(--due); }
+.empty { color: var(--muted); padding: 30px 0; }
+.empty.small { padding: 6px 0 14px; font-size: 14px; }
 
-/* Booking detail: checklist */
-#detail { width: min(600px, calc(100vw - 32px)); }
-#detail .dlg { max-height: calc(100dvh - 32px); overflow-y: auto; }
-.d-meta { color: var(--muted); font-size: 14px; margin: -8px 0 12px; }
-.d-note { background: var(--ground); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 0 0 14px; }
-.ck-head { display: flex; align-items: baseline; justify-content: space-between; margin: 6px 0 6px; }
-.ck-head h3 { font-size: 20px; }
-.ck-head span { font-size: 13px; color: var(--muted); }
-.ck { border: 1px solid var(--line); border-radius: 12px; margin-bottom: 14px; }
-.ck-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 15px; }
+/* Bookings table */
+.tbl-wrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--line); }
+.tbl { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.tbl th, .tbl td { padding: 0 14px; text-align: left; white-space: nowrap; }
+.tbl thead th { position: sticky; top: 0; background: var(--paper); border-bottom: 1px solid var(--ink); height: 42px; z-index: 1; }
+.tbl thead button { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 0; cursor: pointer; font: var(--caps); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.tbl thead button sl-icon { font-size: 11px; opacity: .45; }
+.tbl thead th[aria-sort="ascending"] button, .tbl thead th[aria-sort="descending"] button { color: var(--ink); }
+.tbl thead th[aria-sort="ascending"] sl-icon, .tbl thead th[aria-sort="descending"] sl-icon { opacity: 1; }
+.tbl th.num, .tbl td.num { text-align: right; }
+.tbl th.num button { flex-direction: row-reverse; }
+.tbl tbody td { height: 56px; border-bottom: 1px solid var(--line); color: var(--text); }
+.tbl tbody tr[data-id] { cursor: pointer; }
+.tbl tbody tr[data-id]:hover td { background: #fff; }
+.tbl tbody tr[data-id]:focus-visible { outline: 2px solid var(--basil); outline-offset: -2px; }
+.tbl td.guest { position: relative; padding-left: 18px; white-space: normal; min-width: 220px; }
+.tbl td.guest::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: var(--c); }
+.tbl td.guest b { font: 400 17px/1.25 var(--display); color: var(--ink); }
+.tbl td.guest .todo { margin-top: 2px; }
+.tbl td.date { color: var(--muted); }
+.tbl tr.group th { background: var(--ground); font: var(--caps); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--basil); height: 34px; border-bottom: 1px solid var(--line); }
+.tbl tr.none td { color: var(--muted); height: 44px; }
+.meter { display: inline-block; width: 46px; height: 4px; background: var(--line); margin-right: 8px; vertical-align: middle; }
+.meter i { display: block; height: 100%; background: var(--paid); }
+
+/* Booking detail and checklist */
+.d-meta { margin: 0 0 14px; }
+.d-note { background: var(--ground); padding: 10px 12px; font-size: 14px; margin: 0 0 16px; }
+.ck-head { display: flex; align-items: baseline; justify-content: space-between; margin: 4px 0 8px; }
+.ck-head h3 { font-size: 21px; }
+.ck-head span { font: var(--caps); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.ck { border: 1px solid var(--line); margin-bottom: 16px; background: #fff; }
+.ck-row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
 .ck-row:last-child { border-bottom: 0; }
 .ck-row .grow { flex: 1; min-width: 0; }
-.ck-sub { font-size: 13px; color: var(--muted); }
-.tick { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-size: 13px; color: var(--on-primary); }
-.tick.ok { background: var(--paid); border-color: var(--paid); color: var(--paper); }
-label.inline { display: block; color: var(--text); font-size: 15px; margin: 0; cursor: pointer; }
-.ck-row select { margin-top: 6px; max-width: 240px; padding: 6px 10px; font-size: 14px; }
-.ck-field { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
-.ck-field input { flex: 1 1 180px; margin: 0; padding: 6px 10px; font-size: 15px; }
-.btn.small { padding: 5px 12px; font-size: 14px; text-decoration: none; color: inherit; }
-.btn.small.solid { color: var(--on-primary); }
-.flags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.todo { font-size: 13px; color: var(--due); }
-.empty.small { padding: 8px 0; text-align: left; font-size: 14px; }
+.ck-row b { font-weight: 500; }
+.ck-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.tick { flex: none; width: 20px; height: 20px; border: 1.5px solid var(--line); display: grid; place-items: center; }
+.tick.ok { background: var(--paid); border-color: var(--paid); }
+.tick.ok::after { content: ""; width: 9px; height: 5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: translateY(-1px) rotate(-45deg); }
+.ck-field { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
+.ck-field sl-input { flex: 1 1 180px; margin: 0; }
+.ck-row sl-select { margin: 8px 0 0; max-width: 260px; }
+.ck-row > sl-checkbox { flex: none; width: 20px; }
+label.ck-row { cursor: pointer; }
+sl-checkbox::part(control) { width: 20px; height: 20px; border-color: var(--line); }
+sl-checkbox::part(control--checked) { background: var(--paid); border-color: var(--paid); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.actions.left { justify-content: flex-start; }
 
-/* Prices: month calendar for one stay, side panel for the normal price or the selected days */
-.pc { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
-.pc-nav h2 { font-size: 22px; }
-.pcal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; user-select: none; }
-.pcal .wd { font-size: 12px; color: var(--muted); text-align: center; padding: 4px 0; }
-.pday { position: relative; min-height: 74px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 6px 7px; text-align: left; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; }
+/* Client file */
+.d-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; font-size: 14px; color: var(--muted); margin: -4px 0 6px; }
+#detail::part(panel) { height: min(860px, calc(100dvh - 32px)); }
+#dTabs::part(nav) { border-bottom: 1px solid var(--line); }
+#dTabs { --indicator-color: var(--ink); --track-color: transparent; }
+sl-tab::part(base) { font: var(--caps); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); padding: 14px 18px 12px 0; margin-right: 10px; }
+sl-tab[active]::part(base) { color: var(--ink); }
+sl-tab-panel::part(base) { padding: 18px 0 4px; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); background: #fff; margin-bottom: 16px; }
+.kpis div { padding: 10px 14px; border-left: 1px solid var(--line); }
+.kpis div:first-child { border-left: 0; }
+.kpis span { font: var(--caps); font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.kpis b { display: block; font: 300 22px/1.2 var(--body); color: var(--ink); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.facts { display: grid; grid-template-columns: 130px 1fr; margin: 0 0 18px; border-top: 1px solid var(--line); }
+.facts dt, .facts dd { padding: 11px 0; border-bottom: 1px solid var(--line); margin: 0; }
+.facts dt { font: var(--caps); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); padding-top: 14px; }
+.facts dd sl-select { margin: 8px 0 0; max-width: 260px; }
+.sub-h { font-size: 19px; margin: 6px 0 10px; }
+.tbl.mini tbody td { height: 44px; padding: 0 10px 0 0; }
+.tbl.mini tr { cursor: pointer; }
+.tbl.mini tr:hover td { background: #fff; }
+@media (max-width: 640px) { .kpis { grid-template-columns: 1fr 1fr; } .kpis div:nth-child(3) { border-left: 0; } .kpis div:nth-child(n+3) { border-top: 1px solid var(--line); } .facts { grid-template-columns: 1fr; } .facts dt { border-bottom: 0; padding-bottom: 0; } }
+
+/* Prices: month calendar of one stay, side panel for the normal price or the chosen days */
+.pc { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 24px; align-items: start; }
+.pc-nav h2 { font-size: 24px; }
+.pcal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); border-left: 1px solid var(--line); user-select: none; }
+.pcal .wd { font: var(--caps); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-align: center; padding: 8px 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--paper); }
+.pday { position: relative; min-height: 78px; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--paper); padding: 7px 8px; text-align: left; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; }
+.pday:hover:not(:disabled) { background: #fff; }
 .pday .n { font-size: 13px; color: var(--muted); }
-.pday .p { font: 400 18px/1.1 var(--display); color: var(--ink); font-variant-numeric: tabular-nums; }
-.pday.special { background: color-mix(in srgb, var(--today) 16%, var(--paper)); border-color: color-mix(in srgb, var(--today) 55%, var(--line)); }
-.pday.special .p { font-weight: 600; }
-.pday .min { position: absolute; top: 5px; right: 6px; font-size: 11px; background: var(--other-bg); color: var(--other); border-radius: 999px; padding: 0 6px; }
-.pday.booked::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: 4px; height: 3px; border-radius: 3px; background: var(--paid); opacity: .7; }
+.pday .p { font: 300 19px/1.1 var(--body); color: var(--ink); font-variant-numeric: tabular-nums; }
+.pday.special { background: color-mix(in srgb, var(--today) 14%, var(--paper)); }
+.pday.special .p { font-weight: 500; }
+.pday .min { position: absolute; top: 7px; right: 7px; font: var(--caps); font-size: 9.5px; letter-spacing: .08em; background: var(--other-bg); color: var(--other); padding: 2px 5px; }
+.pday.booked::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--paid); }
 .pday.today .n { color: var(--today); font-weight: 600; }
 .pday.past { opacity: .4; cursor: default; }
-.pday.sel { outline: 2px solid var(--basil); outline-offset: -2px; background: color-mix(in srgb, var(--basil) 14%, var(--paper)); }
-.pday.blank { visibility: hidden; }
-.legend .l-special::before { background: color-mix(in srgb, var(--today) 30%, var(--paper)); border-color: var(--today); }
-.legend .l-min::before { background: var(--other-bg); border-color: var(--other); border-radius: 999px; }
-.legend .l-booked::before { background: var(--paid); border-color: var(--paid); height: 3px; vertical-align: 2px; }
-.quick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; font-size: 13px; color: var(--muted); }
-.panel { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 16px; position: sticky; top: 12px; }
-.panel h3, .narrow h3 { font-size: 20px; margin: 0 0 6px; }
-.narrow h3 { margin-top: 24px; }
+.pday.sel { box-shadow: inset 0 0 0 2px var(--basil); background: color-mix(in srgb, var(--basil) 12%, var(--paper)); }
+.pday.blank { background: var(--ground); cursor: default; }
+.quick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--muted); }
+.panel { background: var(--paper); border: 1px solid var(--line); padding: 18px; position: sticky; top: 12px; }
+.panel h3, .narrow h3 { font-size: 22px; margin: 0 0 6px; }
+.panel .hint { margin: 0 0 14px; }
+.narrow { max-width: 640px; }
+.narrow h3 { margin: 30px 0 12px; }
 .narrow h3:first-child { margin-top: 0; }
-.panel .hint { margin: 0 0 12px; }
-.link { background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 8px 0 0; font-size: 14px; }
-.narrow { max-width: 620px; }
-.tier { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
-.tier input { width: 76px; display: inline-block; margin: 0; text-align: right; }
-.tier .x { position: static; margin-left: auto; }
-.example { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: 14px 0; font-size: 14px; }
-.example table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.example td { padding: 3px 0; }
-.example td:last-child { text-align: right; }
-.presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 12px; }
-.preset { border: 1px solid var(--line); background: var(--paper); border-radius: 12px; padding: 10px 12px; text-align: left; cursor: pointer; }
-.preset b { display: block; font-weight: 500; }
-.preset small { color: var(--muted); font-size: 12px; line-height: 1.3; display: block; margin-top: 2px; }
-.preset[aria-pressed="true"] { border-color: var(--basil); box-shadow: 0 0 0 1px var(--basil); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
 .row.three { grid-template-columns: 1fr 1fr 1fr; }
-.actions.left { justify-content: flex-start; }
 .pc-bar { display: none; }
-.st-bar { display: none; position: fixed; left: 16px; right: 16px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 5; }
-/* Stays: content form, photos and a preview of the card on the web */
-.st { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
-.st h3 { font-size: 20px; margin: 20px 0 8px; }
+.checks { display: grid; gap: 8px; margin: 4px 0 16px; }
+
+/* Discounts */
+.tier { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--paper); border: 1px solid var(--line); padding: 10px 12px; margin-bottom: -1px; }
+.tier sl-input { width: 90px; margin: 0; }
+.tier sl-icon-button { margin-left: auto; }
+.example { background: var(--paper); border: 1px solid var(--line); padding: 14px 16px; margin: 18px 0; font-size: 14px; }
+.example table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; margin-top: 8px; }
+.example td { padding: 5px 0; border-top: 1px solid var(--line); }
+.example td:last-child { text-align: right; }
+
+/* Rules */
+.presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); margin-bottom: 18px; }
+.preset { border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--paper); padding: 12px 14px; text-align: left; cursor: pointer; }
+.preset b { display: block; font: var(--caps); letter-spacing: .16em; text-transform: uppercase; color: var(--ink); }
+.preset small { color: var(--muted); font-size: 12.5px; line-height: 1.35; display: block; margin-top: 6px; }
+.preset[aria-pressed="true"] { background: var(--deep); }
+.preset[aria-pressed="true"] b, .preset[aria-pressed="true"] small { color: var(--on-deep); }
+
+/* Stays */
+.st { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 28px; align-items: start; }
+.st h3 { font-size: 22px; margin: 26px 0 10px; }
 .st-side { position: sticky; top: 12px; }
-.dirty { font-size: 13px; color: var(--due); }
-.feat { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-.feat .ico { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); cursor: pointer; padding: 0; }
+.feat { display: flex; align-items: center; gap: 6px; margin-bottom: -1px; background: var(--paper); border: 1px solid var(--line); padding: 6px 8px; }
+.feat .ico { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border: 1px solid var(--line); background: #fff; cursor: pointer; padding: 0; color: var(--ink); }
 .feat svg, .pv-feats svg, .icons svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.feat input { margin: 0; flex: 1; min-width: 0; }
-.feat .mv { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 6px 4px; font-size: 16px; }
-.feat .mv:disabled { opacity: .3; cursor: default; }
-.icons { display: flex; flex-wrap: wrap; gap: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 8px; margin: 0 0 8px 44px; }
-.icons button { display: flex; align-items: center; gap: 6px; border: 1px solid transparent; background: none; border-radius: 8px; padding: 5px 8px; cursor: pointer; font-size: 13px; }
+.feat sl-input { flex: 1; min-width: 0; margin: 0; }
+.icons { display: flex; flex-wrap: wrap; gap: 4px; background: #fff; border: 1px solid var(--line); padding: 8px; margin: 0 0 -1px; }
+.icons button { display: flex; align-items: center; gap: 6px; border: 1px solid transparent; background: none; padding: 6px 9px; cursor: pointer; font-size: 13px; }
 .icons button:hover, .icons button[aria-pressed="true"] { border-color: var(--basil); }
-.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-.ph { position: relative; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: var(--line); cursor: grab; border: 0; padding: 0; }
+.feats-add { margin-top: 12px; }
+.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.ph { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--line); cursor: grab; border: 0; padding: 0; }
 .ph img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
 .ph.dragging { opacity: .4; }
 .ph.over { outline: 2px dashed var(--basil); outline-offset: 2px; }
-.ph .cover { position: absolute; left: 6px; top: 6px; background: var(--deep); color: var(--on-deep); font-size: 11px; padding: 2px 8px; border-radius: 999px; }
-.ph .tools { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; padding: 4px; background: linear-gradient(transparent, rgba(0,0,0,.55)); }
-.ph .tools button { border: 0; background: rgba(255,255,255,.9); color: #1a3f20; border-radius: 999px; width: 28px; height: 28px; cursor: pointer; font-size: 14px; line-height: 1; }
-.ph .tools button:disabled { opacity: .4; cursor: default; }
+.ph .cover { position: absolute; left: 0; top: 0; background: var(--deep); color: var(--on-deep); font: var(--caps); font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; padding: 5px 8px; }
+.ph .tools { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; padding: 4px; background: linear-gradient(transparent, rgba(0, 0, 0, .55)); }
+.ph .tools button { border: 0; background: rgba(247, 245, 240, .94); color: var(--ink); width: 28px; height: 28px; cursor: pointer; display: inline-grid; place-items: center; font-size: 14px; padding: 0; }
+.ph .tools button:disabled { opacity: .35; cursor: default; }
 .ph.up { display: grid; place-items: center; font-size: 13px; color: var(--muted); cursor: default; }
 .lib .ph { cursor: pointer; }
 .lib .ph[aria-pressed="true"] { outline: 3px solid var(--basil); outline-offset: -3px; }
 .lib .ph.in { opacity: .35; cursor: default; }
-dialog.wide { width: min(860px, calc(100vw - 32px)); }
-.btn.file { display: inline-block; margin: 0; color: var(--text); font-size: 16px; }
-.preview { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
-.pv-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; border-radius: 4px; background: var(--line); }
-.pv-body { padding: 12px 2px 2px; }
-.pv-kind { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--basil); font-weight: 600; }
-.pv-body h4 { font: 400 26px/1.1 var(--display); color: var(--ink); margin: 4px 0 10px; }
-.pv-feats { list-style: none; padding: 0; margin: 0 0 10px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.preview { background: var(--paper); border: 1px solid var(--line); padding: 16px; margin-bottom: 14px; }
+.pv-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; background: var(--line); }
+.pv-body { padding: 14px 2px 2px; }
+.pv-body h4 { font: 400 28px/1.1 var(--display); color: var(--ink); margin: 6px 0 12px; }
+.pv-feats { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); }
 .pv-feats li { display: flex; align-items: center; gap: 6px; }
 .pv-body p { font-size: 14px; margin: 0; }
-
-
-/* Dialogs and forms */
-dialog { border: 0; border-radius: 16px; padding: 0; background: var(--paper); color: var(--text); width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); box-shadow: 0 20px 60px rgba(0,0,0,.3); }
-dialog::backdrop { background: rgba(15, 25, 17, .45); }
-dialog form, .dlg { padding: 20px; }
-dialog h2 { font-size: 24px; margin-bottom: 14px; padding-right: 30px; }
-.x { position: absolute; right: 12px; top: 12px; border: 0; background: none; font-size: 24px; line-height: 1; cursor: pointer; color: var(--muted); padding: 4px 8px; }
-label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 12px; }
-input, select, textarea { display: block; width: 100%; margin-top: 4px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--ground); font-size: 16px; }
-input[type="checkbox"] { display: inline-block; width: auto; margin: 0 8px 0 0; vertical-align: -2px; }
-textarea { min-height: 70px; resize: vertical; }
-.row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
-.checks label { color: var(--text); font-size: 15px; margin-bottom: 8px; }
-.actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 8px; }
-.err { color: var(--danger); font-size: 14px; margin: 0 0 10px; }
-dl { display: grid; grid-template-columns: 110px 1fr; gap: 6px 12px; margin: 0 0 16px; font-size: 15px; }
-dt { color: var(--muted); }
-dd { margin: 0; overflow-wrap: anywhere; }
-.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--deep); color: var(--on-deep); padding: 10px 18px; border-radius: 999px; font-size: 14px; z-index: 10; max-width: calc(100vw - 32px); }
+.dirty { font-size: 13px; color: var(--due); }
+.st-bar { display: none; position: fixed; left: 16px; right: 16px; bottom: max(12px, env(safe-area-inset-bottom)); }
 .loading { opacity: .55; pointer-events: none; transition: opacity .2s; }
 
 @media (max-width: 900px) {
   .pc, .st { grid-template-columns: 1fr; }
-  .st-side { position: static; }
+  .panel, .st-side { position: static; }
   .pc-bar:not([hidden]), .st-bar:not([hidden]) { display: flex; }
-  .panel { position: static; }
 }
 @media (max-width: 640px) {
-  .pday { min-height: 58px; padding: 4px 5px; border-radius: 8px; }
-  .pday .p { font-size: 15px; }
-  .pday .min { position: static; align-self: flex-start; font-size: 10px; padding: 0 4px; }
-  .pcal { gap: 3px; }
   .grid { grid-template-columns: 96px repeat(var(--days), 46px); min-width: calc(96px + var(--days) * 46px); }
   .grid .name, .grid .cell { min-height: 64px; }
-  .grid .name { font-size: 13px; padding: 0 8px; }
+  .grid .name { font-size: 15px; padding: 0 10px; }
   .row, .row.three { grid-template-columns: 1fr; }
-  .card { grid-template-columns: 1fr; }
-  .card .amt { text-align: left; }
-  .who { display: none; }
+      .who { display: none; }
+  .tbl td.guest { position: sticky; left: 0; background: var(--paper); z-index: 1; min-width: 170px; }
+  .stat { border-left: 0; border-top: 1px solid var(--line); }
+  .stat:first-child { border-top: 0; }
+  .pday { min-height: 58px; padding: 5px; }
+  .pday .p { font-size: 14px; }
+  .pday .min { position: static; align-self: flex-start; font-size: 8.5px; padding: 1px 3px; }
 }
 </style>
 </head>
@@ -266,228 +337,229 @@ dd { margin: 0; overflow-wrap: anywhere; }
 </header>
 
 <main>
-  <div class="notice" id="notice" hidden></div>
+  <sl-alert id="notice" variant="warning"><sl-icon slot="icon" name="exclamation-triangle"></sl-icon><span id="noticeText"></span></sl-alert>
 
   <section id="tab-cal">
     <div class="bar">
       <h2 id="month"></h2>
-      <button class="btn icon" id="prev" aria-label="Dues setmanes enrere">‹</button>
-      <button class="btn" id="todayBtn">Avui</button>
-      <button class="btn icon" id="next" aria-label="Dues setmanes endavant">›</button>
-      <button class="btn" id="blockBtn">Tancar dates</button>
-      <button class="btn solid" id="bookBtn">Nova reserva</button>
+      <sl-button-group label="Dates">
+        <sl-button id="prev" aria-label="Dues setmanes enrere"><sl-icon name="chevron-left"></sl-icon></sl-button>
+        <sl-button id="todayBtn">Avui</sl-button>
+        <sl-button id="next" aria-label="Dues setmanes endavant"><sl-icon name="chevron-right"></sl-icon></sl-button>
+      </sl-button-group>
+      <sl-button id="blockBtn">Tancar dates</sl-button>
+      <sl-button id="bookBtn" variant="primary">Nova reserva</sl-button>
     </div>
     <div class="grid-wrap"><div class="grid" id="grid"></div></div>
     <div class="legend"><span class="l-paid">Pagada</span><span class="l-due">Pendent de cobrar</span><span class="l-block">Tancat</span><span class="l-other">Altres (Google Calendar)</span></div>
     <p class="hint">Toca la primera nit i després l'última per tancar dates o afegir una reserva. Toca una reserva per veure'n els detalls.</p>
-    <div class="selbar" id="selbar" hidden><span id="selText"></span><button class="btn" id="selClear">Desfés</button><button class="btn" id="selBlock">Tancar</button><button class="btn solid" id="selBook">Reserva</button></div>
+    <div class="selbar on-dark" id="selbar" hidden><span id="selText"></span><sl-button size="small" id="selClear">Desfés</sl-button><sl-button size="small" id="selBlock">Tancar</sl-button><sl-button size="small" variant="primary" id="selBook">Reserva</sl-button></div>
   </section>
 
   <section id="tab-list" hidden>
     <div class="stats" id="stats"></div>
     <div class="bar">
-      <div class="chips" id="chips">
-        <button class="chip" data-f="today" aria-pressed="false">Avui</button>
-        <button class="chip" data-f="next" aria-pressed="true">Properes</button>
-        <button class="chip" data-f="past" aria-pressed="false">Passades</button>
-        <button class="chip" data-f="cancelled" aria-pressed="false">Cancel·lades</button>
-        <button class="chip" data-f="block" aria-pressed="false">Tancaments</button>
-      </div>
-      <input class="search" id="q" type="search" placeholder="Cerca per nom, telèfon o correu">
+      <sl-radio-group id="chips" value="next" size="small" aria-label="Mostra">
+        <sl-radio-button value="today">Avui</sl-radio-button>
+        <sl-radio-button value="next">Properes</sl-radio-button>
+        <sl-radio-button value="past">Passades</sl-radio-button>
+        <sl-radio-button value="cancelled">Cancel·lades</sl-radio-button>
+        <sl-radio-button value="block">Tancaments</sl-radio-button>
+      </sl-radio-group>
+      <sl-input id="q" type="search" placeholder="Cerca per nom, telèfon o correu" clearable size="small"><sl-icon slot="prefix" name="search"></sl-icon></sl-input>
     </div>
     <div id="list"></div>
   </section>
 
   <section id="tab-prices" hidden>
-    <div class="bar">
-      <div class="chips" id="pcStays"></div>
-    </div>
+    <div class="bar"><sl-radio-group id="pcStays" size="small" aria-label="Allotjament"></sl-radio-group></div>
     <div class="pc">
       <div class="pc-main">
         <div class="bar pc-nav">
           <h2 id="pcMonth"></h2>
-          <button class="btn icon" id="pcPrev" aria-label="Mes anterior">‹</button>
-          <button class="btn icon" id="pcNext" aria-label="Mes següent">›</button>
+          <sl-button-group label="Mes">
+            <sl-button id="pcPrev" aria-label="Mes anterior"><sl-icon name="chevron-left"></sl-icon></sl-button>
+            <sl-button id="pcNext" aria-label="Mes següent"><sl-icon name="chevron-right"></sl-icon></sl-button>
+          </sl-button-group>
         </div>
         <div class="pcal" id="pcal"></div>
         <div class="legend"><span class="l-special">Preu especial</span><span class="l-min">Estada mínima</span><span class="l-booked">Ocupat</span></div>
-        <div class="selbar pc-bar" id="pcBar" hidden><span id="pcBarText"></span><button class="btn" type="button" id="pcBarClear">Desfés</button><button class="btn solid" type="button" id="pcBarEdit">Canvia el preu</button></div>
-        <div class="quick"><span>Tria ràpida:</span><button class="chip" data-q="weekends">Caps de setmana del mes</button><button class="chip" data-q="month">Tot el mes</button></div>
+        <div class="selbar pc-bar on-dark" id="pcBar" hidden><span id="pcBarText"></span><sl-button size="small" id="pcBarClear">Desfés</sl-button><sl-button size="small" variant="primary" id="pcBarEdit">Canvia el preu</sl-button></div>
+        <div class="quick"><span class="caps">Tria ràpida</span><sl-button size="small" data-q="weekends">Caps de setmana del mes</sl-button><sl-button size="small" data-q="month">Tot el mes</sl-button></div>
       </div>
       <aside class="pc-side">
-        <form id="normalForm" class="panel">
+        <form id="normalForm" class="panel" novalidate>
           <h3>Preu normal</h3>
           <p class="hint" id="normalName"></p>
-          <label>Preu per nit (€)<input name="base" type="number" min="1" step="1" inputmode="decimal" required></label>
-          <label>Divendres i dissabte (€)<input name="weekend" type="number" min="1" step="1" inputmode="decimal" placeholder="El mateix"></label>
+          <sl-input name="base" type="number" min="1" step="1" inputmode="decimal" label="Preu per nit (€)"></sl-input>
+          <sl-input name="weekend" type="number" min="1" step="1" inputmode="decimal" label="Divendres i dissabte (€)" placeholder="El mateix"></sl-input>
           <p class="err" hidden></p>
-          <div class="actions"><button class="btn solid" type="submit">Desa</button></div>
+          <div class="actions left"><sl-button type="submit" variant="primary">Desa</sl-button></div>
           <p class="hint">Toca un dia del calendari, o el primer i l'últim d'un període, per posar-hi un preu especial o una estada mínima.</p>
         </form>
-        <form id="dayForm" class="panel" hidden>
+        <form id="dayForm" class="panel" novalidate hidden>
           <h3 id="dayTitle"></h3>
           <p class="hint" id="dayNow"></p>
-          <label>Preu per nit (€)<input name="price" type="number" min="1" step="1" inputmode="decimal" placeholder="Preu normal"></label>
-          <label>Estada mínima si s'arriba aquests dies<select name="min"></select></label>
+          <sl-input name="price" type="number" min="1" step="1" inputmode="decimal" label="Preu per nit (€)" placeholder="Preu normal"></sl-input>
+          <sl-select name="min" label="Estada mínima si s'arriba aquests dies"></sl-select>
           <div class="checks" id="dayAlso"></div>
           <p class="err" hidden></p>
-          <div class="actions"><button class="btn" type="button" id="dayReset">Torna al normal</button><button class="btn solid" type="submit">Aplica</button></div>
-          <button class="link" type="button" id="dayCancel">Desfés la selecció</button>
+          <div class="actions left"><sl-button type="submit" variant="primary">Aplica</sl-button><sl-button id="dayReset">Torna al normal</sl-button></div>
+          <p class="hint"><sl-button variant="text" size="small" id="dayCancel">Desfés la selecció</sl-button></p>
         </form>
       </aside>
     </div>
   </section>
 
   <section id="tab-disc" class="narrow" hidden>
-    <form id="discForm">
+    <form id="discForm" novalidate>
       <h3>Descomptes per estada llarga</h3>
-      <p class="hint">Com més nits, més descompte. S'aplica el més alt que toqui.</p>
+      <p class="hint" style="margin:0 0 14px">Com més nits, més descompte. S'aplica el més alt que toqui.</p>
       <div id="tiers"></div>
-      <button class="btn" type="button" id="addTier">+ Afegeix un descompte</button>
+      <div class="feats-add"><sl-button size="small" id="addTier"><sl-icon slot="prefix" name="plus-lg"></sl-icon>Afegeix un descompte</sl-button></div>
       <div class="example" id="discExample"></div>
       <p class="err" hidden></p>
-      <div class="actions left"><button class="btn solid" type="submit">Desa els descomptes</button></div>
+      <div class="actions left"><sl-button type="submit" variant="primary">Desa els descomptes</sl-button></div>
       <p class="hint">A la web, els textos que parlen dels descomptes s'actualitzen sols.</p>
     </form>
   </section>
 
   <section id="tab-rules" class="narrow" hidden>
-    <form id="rulesForm">
+    <form id="rulesForm" novalidate>
       <h3>Estada</h3>
       <div class="row">
-        <label>Mínim de nits<input name="minNights" type="number" min="1" max="30" step="1" inputmode="numeric"></label>
-        <label>Màxim de nits<input name="maxNights" type="number" min="1" max="90" step="1" inputmode="numeric"></label>
+        <sl-input name="minNights" type="number" min="1" max="30" step="1" inputmode="numeric" label="Mínim de nits"></sl-input>
+        <sl-input name="maxNights" type="number" min="1" max="90" step="1" inputmode="numeric" label="Màxim de nits"></sl-input>
       </div>
-      <p class="hint">El mínim es pot canviar per a dies concrets (agost, ponts…) des de Preus.</p>
+      <p class="hint" style="margin-top:0">El mínim es pot canviar per a dies concrets (agost, ponts…) des de Preus.</p>
       <h3>Antelació</h3>
       <div class="row">
-        <label>Com a mínim, dies abans<input name="minAdvance" type="number" min="0" max="60" step="1" inputmode="numeric"></label>
-        <label>Com a molt<select name="maxAdvance"><option value="90">3 mesos abans</option><option value="180">6 mesos abans</option><option value="270">9 mesos abans</option><option value="365">1 any abans</option><option value="545">18 mesos abans</option><option value="730">2 anys abans</option></select></label>
+        <sl-input name="minAdvance" type="number" min="0" max="60" step="1" inputmode="numeric" label="Com a mínim, dies abans"></sl-input>
+        <sl-select name="maxAdvance" label="Com a molt">
+          <sl-option value="90">3 mesos abans</sl-option><sl-option value="180">6 mesos abans</sl-option><sl-option value="270">9 mesos abans</sl-option>
+          <sl-option value="365">1 any abans</sl-option><sl-option value="545">18 mesos abans</sl-option><sl-option value="730">2 anys abans</sl-option>
+        </sl-select>
       </div>
-      <p class="hint">0 vol dir que es pot reservar el mateix dia. Per telèfon o des de Maite sempre es pot.</p>
+      <p class="hint" style="margin-top:0">0 vol dir que es pot reservar el mateix dia. Per telèfon o des de Maite sempre es pot.</p>
       <h3>Horari</h3>
       <div class="row">
-        <label>Entrada a partir de<input name="checkin" type="time" step="900"></label>
-        <label>Sortida abans de<input name="checkout" type="time" step="900"></label>
+        <sl-input name="checkin" type="time" step="900" label="Entrada a partir de"></sl-input>
+        <sl-input name="checkout" type="time" step="900" label="Sortida abans de"></sl-input>
       </div>
       <h3>Política de cancel·lació</h3>
       <div class="presets" id="presets"></div>
-      <div class="row three" id="customPolicy">
-        <label>Retorn complet fins a (dies abans)<input name="fullDays" type="number" min="0" max="90" step="1" inputmode="numeric" placeholder="Mai"></label>
-        <label>Després, es retorna (%)<input name="partialPct" type="number" min="0" max="99" step="5" inputmode="numeric"></label>
-        <label>…fins a (dies abans)<input name="partialDays" type="number" min="0" max="90" step="1" inputmode="numeric"></label>
+      <div class="row three">
+        <sl-input name="fullDays" type="number" min="0" max="90" step="1" inputmode="numeric" label="Retorn complet fins a" placeholder="Mai" help-text="Dies abans de l'arribada"></sl-input>
+        <sl-input name="partialPct" type="number" min="0" max="99" step="5" inputmode="numeric" label="Després es retorna" help-text="Percentatge"></sl-input>
+        <sl-input name="partialDays" type="number" min="0" max="90" step="1" inputmode="numeric" label="Fins a" help-text="Dies abans de l'arribada"></sl-input>
       </div>
-      <div class="example"><b>El que veu l'hoste:</b> <span id="policyText"></span></div>
+      <div class="example"><span class="caps" style="color:var(--basil)">El que veu l'hoste</span><p id="policyText" style="margin:6px 0 0"></p></div>
       <p class="err" hidden></p>
-      <div class="actions left"><button class="btn solid" type="submit">Desa les normes</button></div>
+      <div class="actions left"><sl-button type="submit" variant="primary">Desa les normes</sl-button></div>
       <p class="hint">Cada reserva de la web guarda la política que l'hoste va acceptar. En cancel·lar-la, Maite proposa el retorn segons aquella política.</p>
     </form>
   </section>
+
   <section id="tab-stays" hidden>
-    <div class="bar"><div class="chips" id="stStays"></div><span class="dirty" id="stDirty" hidden>Canvis sense desar</span></div>
+    <div class="bar"><sl-radio-group id="stStays" size="small" aria-label="Allotjament"></sl-radio-group><span class="dirty" id="stDirty" hidden>Canvis sense desar</span></div>
     <form id="stayForm" class="st" novalidate>
       <div class="st-main">
         <div class="row">
-          <label>Tipus<input name="kind" list="kinds" required autocomplete="off"></label>
-          <label>Nom<input name="name" required autocomplete="off"></label>
+          <sl-input name="kind" label="Tipus" help-text="Apartament, Habitació…" autocomplete="off"></sl-input>
+          <sl-input name="name" label="Nom" autocomplete="off"></sl-input>
         </div>
-        <label>Capacitat<select name="max"></select></label>
-        <label>Descripció<textarea name="desc" rows="4"></textarea></label>
+        <sl-select name="max" label="Capacitat"></sl-select>
+        <sl-textarea name="desc" label="Descripció" rows="4" resize="auto"></sl-textarea>
         <h3>Característiques</h3>
         <div id="feats"></div>
-        <button class="btn" type="button" id="addFeat">+ Afegeix una característica</button>
+        <div class="feats-add"><sl-button size="small" id="addFeat"><sl-icon slot="prefix" name="plus-lg"></sl-icon>Afegeix una característica</sl-button></div>
         <h3>Fotos</h3>
-        <p class="hint">La primera és la portada. Arrossega-les per canviar l'ordre, o fes servir les fletxes.</p>
+        <p class="hint" style="margin:0 0 12px">La primera és la portada. Arrossega-les per canviar l'ordre, o fes servir les fletxes.</p>
         <div class="photos" id="photos"></div>
-        <div class="actions left">
-          <label class="btn file" id="uploadBtn">Puja fotos<input type="file" accept="image/*" multiple id="upload" hidden></label>
-          <button class="btn" type="button" id="libBtn">Fotos de la web</button>
+        <div class="actions left" style="margin-top:14px">
+          <sl-button id="uploadBtn"><sl-icon slot="prefix" name="upload"></sl-icon>Puja fotos</sl-button>
+          <input type="file" accept="image/*" multiple id="upload" hidden>
+          <sl-button id="libBtn"><sl-icon slot="prefix" name="images"></sl-icon>Fotos de la web</sl-button>
         </div>
         <p class="hint" id="uploadHint"></p>
       </div>
       <aside class="st-side">
         <div class="preview">
-          <p class="hint" style="margin:0 0 8px">Així es veu a la web</p>
-          <div class="pv-card"><img id="pvImg" alt=""><div class="pv-body"><span class="pv-kind" id="pvKind"></span><h4 id="pvName"></h4><ul class="pv-feats" id="pvFeats"></ul><p id="pvDesc"></p></div></div>
+          <span class="caps" style="color:var(--muted)">Així es veu a la web</span>
+          <div class="pv-card" style="margin-top:10px"><img id="pvImg" alt=""><div class="pv-body"><span class="caps" style="color:var(--basil)" id="pvKind"></span><h4 id="pvName"></h4><ul class="pv-feats" id="pvFeats"></ul><p id="pvDesc"></p></div></div>
         </div>
         <p class="err" hidden></p>
-        <div class="actions left"><button class="btn solid" type="submit">Desa els canvis</button><a class="btn" id="viewSite" target="_blank" rel="noopener">Veure a la web</a></div>
+        <div class="actions left"><sl-button type="submit" variant="primary">Desa els canvis</sl-button><sl-button id="viewSite" target="_blank">Veure a la web</sl-button></div>
         <p class="hint">El rètol amb el nom que hi ha sobre la foto és una imatge: si canvies el nom, caldrà fer-ne un de nou.</p>
       </aside>
     </form>
-    <div class="selbar st-bar" id="stBar" hidden><span>Canvis sense desar</span><button class="btn solid" type="button" id="stBarSave">Desa</button></div>
-    <datalist id="kinds"><option value="Apartament"><option value="Habitació"><option value="Suite"><option value="Casa"></datalist>
+    <div class="selbar st-bar on-dark" id="stBar" hidden><span>Canvis sense desar</span><sl-button size="small" variant="primary" id="stBarSave">Desa</sl-button></div>
   </section>
 </main>
 
-<dialog id="detail"><div class="dlg"><button class="x" data-close aria-label="Tanca">×</button><div id="detailBody"></div></div></dialog>
+<sl-dialog id="detail" label="Reserva" style="--width: 620px"><div id="detailBody"></div></sl-dialog>
 
-<dialog id="bookDlg">
+<sl-dialog id="bookDlg" label="Nova reserva" style="--width: 560px">
   <form id="bookForm" novalidate>
-    <button class="x" type="button" data-close aria-label="Tanca">×</button>
-    <h2>Nova reserva</h2>
-    <label>Allotjament<select name="stay" required></select></label>
+    <sl-select name="stay" label="Allotjament"></sl-select>
     <div class="row">
-      <label>Arribada<input name="first" type="date" required></label>
-      <label>Sortida<input name="until" type="date" required></label>
+      <sl-input name="first" type="date" label="Arribada"></sl-input>
+      <sl-input name="until" type="date" label="Sortida"></sl-input>
     </div>
     <div class="row">
-      <label>Nom<input name="name" required autocomplete="off"></label>
-      <label>Persones<select name="guests"></select></label>
+      <sl-input name="name" label="Nom" autocomplete="off"></sl-input>
+      <sl-select name="guests" label="Persones"></sl-select>
     </div>
     <div class="row">
-      <label>Telèfon<input name="phone" type="tel" autocomplete="off"></label>
-      <label>Correu<input name="email" type="email" autocomplete="off"></label>
+      <sl-input name="phone" type="tel" label="Telèfon" autocomplete="off"></sl-input>
+      <sl-input name="email" type="email" label="Correu" autocomplete="off"></sl-input>
     </div>
     <div class="row">
-      <label>Import (€)<input name="amount" type="number" min="0" step="0.01" inputmode="decimal"></label>
-      <label>Via<select name="source"><option value="phone">Telèfon</option><option value="whatsapp">WhatsApp</option><option value="email">Correu</option><option value="door">En persona</option><option value="other">Altres</option></select></label>
+      <sl-input name="amount" type="number" min="0" step="0.01" inputmode="decimal" label="Import (€)" help-text="El preu de la web per a aquestes nits. Es pot canviar."></sl-input>
+      <sl-select name="source" label="Via" value="phone">
+        <sl-option value="phone">Telèfon</sl-option><sl-option value="whatsapp">WhatsApp</sl-option><sl-option value="email">Correu</sl-option><sl-option value="door">En persona</sl-option><sl-option value="other">Altres</sl-option>
+      </sl-select>
     </div>
-    <label class="checks"><input name="settled" type="checkbox">Ja està cobrada</label>
-    <label>Arribada prevista<input name="arrival" placeholder="Cap a les 18 h" autocomplete="off"></label>
-    <label>Comentaris<textarea name="notes"></textarea></label>
+    <sl-checkbox name="settled" style="display:block;margin-bottom:16px">Ja està cobrada</sl-checkbox>
+    <sl-input name="arrival" label="Arribada prevista" placeholder="Cap a les 18 h" autocomplete="off"></sl-input>
+    <sl-textarea name="notes" label="Comentaris" rows="2" resize="auto"></sl-textarea>
     <p class="err" hidden></p>
-    <div class="actions"><button class="btn" type="button" data-close>Cancel·la</button><button class="btn solid" type="submit">Desa la reserva</button></div>
+    <div class="actions"><sl-button data-close>Cancel·la</sl-button><sl-button type="submit" variant="primary">Desa la reserva</sl-button></div>
   </form>
-</dialog>
+</sl-dialog>
 
-<dialog id="blockDlg">
+<sl-dialog id="blockDlg" label="Tancar dates" style="--width: 520px">
   <form id="blockForm" novalidate>
-    <button class="x" type="button" data-close aria-label="Tanca">×</button>
-    <h2>Tancar dates</h2>
     <div class="checks" id="blockStays"></div>
     <div class="row">
-      <label>Primera nit<input name="first" type="date" required></label>
-      <label>Fins al dia<input name="until" type="date" required></label>
+      <sl-input name="first" type="date" label="Primera nit"></sl-input>
+      <sl-input name="until" type="date" label="Fins al dia"></sl-input>
     </div>
-    <label>Motiu (opcional)<input name="note" placeholder="Obres, família, vacances…" autocomplete="off"></label>
+    <sl-input name="note" label="Motiu (opcional)" placeholder="Obres, família, vacances…" autocomplete="off"></sl-input>
     <p class="err" hidden></p>
-    <div class="actions"><button class="btn" type="button" data-close>Cancel·la</button><button class="btn solid" type="submit">Tanca les nits</button></div>
+    <div class="actions"><sl-button data-close>Cancel·la</sl-button><sl-button type="submit" variant="primary">Tanca les nits</sl-button></div>
   </form>
-</dialog>
+</sl-dialog>
 
-<dialog id="libDlg" class="wide">
-  <div class="dlg">
-    <button class="x" type="button" data-close aria-label="Tanca">×</button>
-    <h2>Fotos de la web</h2>
-    <p class="hint">Toca les que vulguis afegir.</p>
-    <div class="photos lib" id="lib"></div>
-    <div class="actions"><button class="btn solid" type="button" id="libAdd">Afegeix</button></div>
-  </div>
-</dialog>
+<sl-dialog id="libDlg" label="Fotos de la web" style="--width: 880px">
+  <p class="hint" style="margin:0 0 12px">Toca les que vulguis afegir.</p>
+  <div class="photos lib" id="lib"></div>
+  <sl-button slot="footer" variant="primary" id="libAdd">Afegeix</sl-button>
+</sl-dialog>
 
-<dialog id="cancelDlg">
+<sl-dialog id="cancelDlg" label="Cancel·lar la reserva" style="--width: 540px">
   <form id="cancelForm" novalidate>
-    <button class="x" type="button" data-close aria-label="Tanca">×</button>
-    <h2>Cancel·lar la reserva</h2>
-    <p id="cancelText"></p>
-    <label id="refundRow">Retornar a la targeta (€)<input name="refund" type="number" min="0" step="0.01" inputmode="decimal"></label>
+    <p id="cancelText" style="margin-top:0"></p>
+    <p id="cancelPolicy" class="d-note" hidden></p>
+    <sl-input name="refund" id="refundRow" type="number" min="0" step="0.01" inputmode="decimal" label="Retornar a la targeta (€)" help-text="0 si no se li retorna res."></sl-input>
     <p class="err" hidden></p>
-    <div class="actions"><button class="btn" type="button" data-close>No</button><button class="btn danger" type="submit">Cancel·la la reserva</button></div>
+    <div class="actions"><sl-button data-close>No</sl-button><sl-button type="submit" variant="danger">Cancel·la la reserva</sl-button></div>
   </form>
-</dialog>
+</sl-dialog>
 
-<script>
+<!-- Tags the page creates later, so Shoelace's autoloader fetches them up front -->
+<div hidden><sl-tab-group></sl-tab-group><sl-tab></sl-tab><sl-tab-panel></sl-tab-panel><sl-tag></sl-tag><sl-option></sl-option><sl-checkbox></sl-checkbox><sl-icon-button></sl-icon-button><sl-radio-button></sl-radio-button></div>
+<script type="module">
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, '0');
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -500,14 +572,18 @@ const day = (s, opt = { weekday: 'short', day: 'numeric', month: 'short' }) => p
 const range = (a, b) => `${day(a)} → ${day(b)}`;
 const nitsTxt = n => `${n} ${n === 1 ? 'nit' : 'nits'}`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// Bits of text shown side by side (spacing comes from the layout, not from separator characters)
+const parts = (...xs) => xs.filter(Boolean).map(x => `<span>${x}</span>`).join('');
 const KIND = { paid: 'Pagada a la web', pending: 'Pendent del banc', manual: 'Reserva directa', block: 'Tancat', cancelled: 'Cancel·lada', refunded: 'Reemborsada', other: 'Google Calendar' };
 const SOURCE = { web: 'Web', phone: 'Telèfon', whatsapp: 'WhatsApp', email: 'Correu', door: 'En persona', other: 'Altres' };
 const ERRORS = {
   unavailable: 'Aquestes nits ja estan ocupades', dates: 'Revisa les dates', name: 'Falta el nom', stay: 'Tria un allotjament',
-  amount: "L'import no és vàlid", rules: 'Revisa les normes: algun valor no és vàlid', cancel: 'Revisa la política: els dies del retorn parcial han de ser menys que els del retorn complet', min: 'Revisa l\'estada mínima', max: 'Revisa la capacitat', photos: 'Cal almenys una foto', type: 'Aquest format d\'imatge no es pot pujar', size: 'La foto és massa gran', pending: 'El banc encara no ha confirmat aquest pagament. Espera que es confirmi per cancel·lar-la.',
-  refund_amount: "No es pot retornar més del que es va pagar", not_configured: 'Aquest allotjament no té el calendari connectat',
-  no_payment: 'No trobo el pagament a Stripe', access: 'La sessió ha caducat. Torna a carregar la pàgina.', discount: 'Revisa els descomptes: de 2 nits en amunt, entre 1 i 90 %, sense repetir nits',
-  price: 'Revisa els preus',
+  amount: "L'import no és vàlid", rules: 'Revisa les normes: algun valor no és vàlid', cancel: 'Revisa la política: els dies del retorn parcial han de ser menys que els del retorn complet',
+  min: "Revisa l'estada mínima", max: 'Revisa la capacitat', photos: 'Cal almenys una foto', type: "Aquest format d'imatge no es pot pujar", size: 'La foto és massa gran',
+  pending: 'El banc encara no ha confirmat aquest pagament. Espera que es confirmi per cancel·lar-la.',
+  refund_amount: 'No es pot retornar més del que es va pagar', not_configured: 'Aquest allotjament no té el calendari connectat',
+  no_payment: 'No trobo el pagament a Stripe', access: 'La sessió ha caducat. Torna a carregar la pàgina.',
+  discount: 'Revisa els descomptes: de 2 nits en amunt, entre 1 i 90 %, sense repetir nits', price: 'Revisa els preus', email: 'Revisa el correu',
 };
 
 let STAYS = [], SET = null, bookings = new Map(), loaded = [];
@@ -516,18 +592,31 @@ async function api(path, opt = {}) {
   const r = await fetch('/api/maite/' + path, { ...opt, headers: { 'content-type': 'application/json' }, body: opt.body && JSON.stringify(opt.body) });
   const d = await r.json().catch(() => ({ error: 'server' }));
   if (!r.ok) {
-    let msg = ERRORS[d.error] || (d.detail ? 'Error: ' + d.detail : "Alguna cosa no ha anat bé. Torna-ho a provar.");
+    let msg = ERRORS[d.error] || (d.detail ? 'Error: ' + d.detail : 'Alguna cosa no ha anat bé. Torna-ho a provar.');
     if (d.with?.length) msg += ': ' + d.with.map(b => `${stayName(b.stay)}, ${b.kind === 'block' ? 'tancat' : b.name || b.title} (${range(b.first, b.until)})`).join('; ');
     throw Object.assign(new Error(msg), { code: d.error });
   }
   return d;
 }
-function toast(msg) {
-  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.append(t);
-  setTimeout(() => t.remove(), 3200);
+function toast(msg, variant = 'primary') {
+  const a = Object.assign(document.createElement('sl-alert'), { variant, closable: true, duration: 3500 });
+  a.textContent = msg; document.body.append(a);
+  customElements.whenDefined('sl-alert').then(() => a.toast());
 }
 const stayName = id => STAYS.find(s => s.id === id)?.name || id;
 const shortName = id => STAYS.find(s => s.id === id)?.short || stayName(id);
+
+// Shoelace fields are not part of form.elements: give each form direct access to its named fields (form.first, form.name…)
+function bindNames(form) {
+  for (const el of form.querySelectorAll('sl-input[name], sl-select[name], sl-textarea[name], sl-checkbox[name]')) Object.defineProperty(form, el.getAttribute('name'), { get: () => el, configurable: true });
+  return form;
+}
+['normalForm', 'dayForm', 'rulesForm', 'stayForm', 'bookForm', 'blockForm', 'cancelForm'].forEach(id => bindNames($(id)));
+const openDlg = id => $(id).show();
+const closeDlg = id => $(id).hide();
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('sl-dialog').hide()));
+
+function notice(text) { $('noticeText').textContent = text || ''; $('notice').open = !!text; }
 
 // ---- Data: windows of calendar entries, merged by id ----
 async function load(from, to) {
@@ -539,9 +628,7 @@ async function load(from, to) {
   loaded.push([from, to]);
   const off = d.errors.filter(e => e.error === 'not_configured').map(e => stayName(e.stay));
   const bad = d.errors.filter(e => e.error !== 'not_configured').map(e => `${stayName(e.stay)} (${e.error})`);
-  const n = $('notice');
-  n.hidden = !off.length && !bad.length;
-  n.textContent = [off.length && `Calendari no connectat: ${off.join(', ')}.`, bad.length && `No s'ha pogut llegir: ${bad.join(', ')}.`].filter(Boolean).join(' ');
+  notice([off.length && `Calendari no connectat: ${off.join(', ')}.`, bad.length && `No s'ha pogut llegir: ${bad.join(', ')}.`].filter(Boolean).join(' '));
 }
 const covered = (from, to) => loaded.some(([a, b]) => a <= from && b >= to);
 async function ensure(from, to) { if (!covered(from, to)) await load(from, to); }
@@ -550,13 +637,14 @@ const all = () => [...bookings.values()];
 
 // ---- Tabs ----
 let tab = 'cal';
-document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
-  tab = b.dataset.tab;
-  document.querySelectorAll('[data-tab]').forEach(x => x.setAttribute('aria-selected', x === b));
-  for (const t of ['cal', 'list', 'prices', 'disc', 'rules', 'stays']) $('tab-' + t).hidden = t !== tab;
-  try { localStorage.setItem('maite-tab', tab); } catch (e) {}
+function showTab(t) {
+  tab = t;
+  document.querySelectorAll('[data-tab]').forEach(x => x.setAttribute('aria-selected', x.dataset.tab === t));
+  for (const k of ['cal', 'list', 'prices', 'disc', 'rules', 'stays']) $('tab-' + k).hidden = k !== t;
+  try { localStorage.setItem('maite-tab', t); } catch (e) {}
   render();
-}));
+}
+document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
 
 // ---- Calendar ----
 const view = {};
@@ -575,7 +663,7 @@ function renderCal() {
   let h = '<div class="corner"></div>';
   for (let i = 0; i < days; i++) {
     const d = addDays(view.from, i), dt = parse(d), we = dt.getDay() === 0 || dt.getDay() === 6;
-    h += `<div class="h${we ? ' we' : ''}${d === TODAY ? ' today' : ''}" style="grid-row:1;grid-column:${i + 2}">${dt.toLocaleDateString('ca-ES', { weekday: 'narrow' })}<b>${dt.getDate()}</b></div>`;
+    h += `<div class="h${we ? ' we' : ''}${d === TODAY ? ' today' : ''}" style="grid-row:1;grid-column:${i + 2}">${dt.toLocaleDateString('ca-ES', { weekday: 'short' }).replace('.', '')}<b>${dt.getDate()}</b></div>`;
   }
   STAYS.forEach((s, r) => {
     const row = r + 2;
@@ -588,8 +676,8 @@ function renderCal() {
     for (const b of all().filter(b => b.stay === s.id && b.blocks && b.first < view.to && b.until > view.from)) {
       const a = Math.max(0, nightsBetween(view.from, b.first)), z = Math.min(days, nightsBetween(view.from, b.until));
       const who = b.kind === 'block' ? (b.title || 'Tancat') : b.kind === 'other' ? b.title : b.name || b.title;
-      const sub = b.kind === 'block' || b.kind === 'other' ? '' : [b.guests && `${b.guests} pers.`, euro(b.amount)].filter(Boolean).join(' · ');
-      h += `<button class="ev k-${b.kind}${b.settled ? ' settled' : ''}" data-id="${esc(b.stay + '|' + b.id)}" style="grid-row:${row};grid-column:${a + 2}/${z + 2}" title="${esc(who)}">${esc(who)}${sub ? `<small>${esc(sub)}</small>` : ''}</button>`;
+      const sub = b.kind === 'block' || b.kind === 'other' ? '' : parts(b.guests && `${b.guests} pers.`, euro(b.amount));
+      h += `<button class="ev k-${b.kind}${b.settled ? ' settled' : ''}" data-id="${esc(b.stay + '|' + b.id)}" style="grid-row:${row};grid-column:${a + 2}/${z + 2}" title="${esc(who)}">${esc(who)}${sub ? `<small>${sub}</small>` : ''}</button>`;
     }
   });
   g.innerHTML = h;
@@ -626,7 +714,7 @@ function renderSel() {
 $('selClear').onclick = () => { sel = null; renderCal(); };
 $('selBlock').onclick = () => openBlock({ stays: [sel.stay], first: sel.a, until: addDays(sel.b || sel.a, 1) });
 $('selBook').onclick = () => openBook({ stay: sel.stay, first: sel.a, until: addDays(sel.b || sel.a, 1) });
-async function go(d) { setStart(d); sel = null; scrollToToday = true; $('tab-cal').classList.add('loading'); try { await ensure(view.from, view.to); } catch (e) { toast(e.message); } $('tab-cal').classList.remove('loading'); renderCal(); }
+async function go(d) { setStart(d); sel = null; scrollToToday = true; $('tab-cal').classList.add('loading'); try { await ensure(view.from, view.to); } catch (e) { toast(e.message, 'danger'); } $('tab-cal').classList.remove('loading'); renderCal(); }
 $('prev').onclick = () => go(addDays(view.from, -STEP));
 $('next').onclick = () => go(addDays(view.from, STEP));
 $('todayBtn').onclick = () => go(addDays(TODAY, -2));
@@ -635,16 +723,12 @@ $('blockBtn').onclick = () => openBlock({});
 
 // ---- List ----
 let filter = 'next';
-$('chips').addEventListener('click', e => {
-  const c = e.target.closest('.chip'); if (!c) return;
-  filter = c.dataset.f;
-  document.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', x === c));
-  renderList();
-});
-$('q').addEventListener('input', () => renderList());
+$('chips').addEventListener('sl-change', e => { filter = e.target.value; renderList(); });
+$('q').addEventListener('sl-input', () => renderList());
+$('q').addEventListener('sl-clear', () => renderList());
 const isBooking = b => ['paid', 'pending', 'manual'].includes(b.kind);
 function renderList() {
-  const q = $('q').value.trim().toLowerCase();
+  const q = ($('q').value || '').trim().toLowerCase();
   let rows = all().filter(b => {
     if (filter === 'today') return isBooking(b) && b.first <= TODAY && b.until >= TODAY;
     if (filter === 'next') return (isBooking(b) || b.kind === 'other' && b.blocks) && b.until >= TODAY;
@@ -653,16 +737,12 @@ function renderList() {
     return b.kind === 'block' && b.until >= TODAY;
   });
   if (q) rows = rows.filter(b => [b.name, b.phone, b.email, b.title, stayName(b.stay)].join(' ').toLowerCase().includes(q));
+  renderStats();
   if (filter === 'today') return renderToday(rows);
-  rows.sort((a, b) => filter === 'past' || filter === 'cancelled' ? b.first.localeCompare(a.first) : a.first.localeCompare(b.first));
-  let h = '', last = '';
-  for (const b of rows) {
-    const m = parse(b.first).toLocaleDateString('ca-ES', { month: 'long', year: 'numeric' });
-    if (m !== last) { h += `<div class="day">${esc(m)}</div>`; last = m; }
-    h += card(b);
-  }
-  $('list').innerHTML = h || '<p class="empty">No hi ha res aquí.</p>';
-  // Next 30 days at a glance
+  $('list').innerHTML = rows.length ? table([[null, sortRows(rows)]]) : '<p class="empty">No hi ha res aquí.</p>';
+}
+// The next 30 days at a glance
+function renderStats() {
   const in30 = addDays(TODAY, 30), soon = all().filter(b => isBooking(b) && b.first >= TODAY && b.first < in30);
   const nightsSold = all().filter(isBooking).reduce((n, b) => n + Math.max(0, nightsBetween(b.first < TODAY ? TODAY : b.first, b.until > in30 ? in30 : b.until)), 0);
   const due = all().filter(b => b.kind === 'manual' && !b.settled && b.until >= TODAY);
@@ -677,24 +757,68 @@ function renderList() {
 // Today: who arrives, who is staying, who leaves
 function renderToday(rows) {
   const groups = [['Arriben avui', rows.filter(b => b.first === TODAY)], ['A casa', rows.filter(b => b.first < TODAY && b.until > TODAY)], ['Marxen avui', rows.filter(b => b.until === TODAY)]];
-  $('list').innerHTML = groups.map(([t, g]) => `<div class="day">${t} (${g.length})</div>` + (g.map(card).join('') || '<p class="empty small">Ningú.</p>')).join('');
+  $('list').innerHTML = table(groups.map(([t, g]) => [`${t} (${g.length})`, sortRows(g)]), true);
 }
 function pill(b) {
-  if (b.kind === 'paid') return '<span class="pill paid">Pagada a la web</span>';
-  if (b.kind === 'pending') return '<span class="pill due">Pendent del banc</span>';
-  if (b.kind === 'manual') return `<span class="pill ${b.settled ? 'paid' : 'due'}">${b.settled ? 'Cobrada' : 'Per cobrar'}</span>`;
-  if (b.kind === 'other') return '<span class="pill other">Google Calendar</span>';
-  return `<span class="pill">${KIND[b.kind]}</span>`;
+  if (b.kind === 'paid') return '<sl-tag size="small" class="paid">Pagada a la web</sl-tag>';
+  if (b.kind === 'pending') return '<sl-tag size="small" class="due">Pendent del banc</sl-tag>';
+  if (b.kind === 'manual') return `<sl-tag size="small" class="${b.settled ? 'paid' : 'due'}">${b.settled ? 'Cobrada' : 'Per cobrar'}</sl-tag>`;
+  if (b.kind === 'other') return '<sl-tag size="small" class="other">Google Calendar</sl-tag>';
+  return `<sl-tag size="small" class="neutral">${KIND[b.kind]}</sl-tag>`;
 }
-function card(b) {
+// Bookings table: sortable columns, one row per booking, the checklist as a small progress meter
+const COLS = [
+  { k: 'name', label: 'Hoste', get: b => (b.kind === 'block' || b.kind === 'other' ? b.title : b.name || b.title).toLowerCase() },
+  { k: 'stay', label: 'Allotjament', get: b => shortName(b.stay) },
+  { k: 'first', label: 'Arribada', get: b => b.first },
+  { k: 'until', label: 'Sortida', get: b => b.until },
+  { k: 'nights', label: 'Nits', get: b => nightsBetween(b.first, b.until), num: true },
+  { k: 'guests', label: 'Pers.', get: b => b.guests || 0, num: true },
+  { k: 'source', label: 'Via', get: b => SOURCE[b.source] || '' },
+  { k: 'amount', label: 'Import', get: b => b.amount ?? -1, num: true },
+  { k: 'state', label: 'Estat', get: b => KIND[b.kind] + (b.settled ? '1' : '0') },
+  { k: 'done', label: 'Llista', get: b => isBooking(b) ? checklist(b).filter(c => c.ok).length : -1, num: true },
+];
+let sortBy = null; // { k, dir }; null: by arrival, newest first for past and cancelled
+function sortRows(rows) {
+  const col = COLS.find(c => c.k === sortBy?.k), dir = sortBy ? sortBy.dir : filter === 'past' || filter === 'cancelled' ? -1 : 1;
+  const get = col ? col.get : b => b.first;
+  return [...rows].sort((a, b) => { const x = get(a), y = get(b); return (x < y ? -1 : x > y ? 1 : a.first.localeCompare(b.first)) * dir; });
+}
+function table(groups, keepEmpty) {
+  const head = COLS.map(c => {
+    const on = sortBy?.k === c.k;
+    return `<th class="${c.num ? 'num' : ''}" aria-sort="${on ? (sortBy.dir > 0 ? 'ascending' : 'descending') : 'none'}"><button type="button" data-sort="${c.k}">${c.label}<sl-icon name="${on ? (sortBy.dir > 0 ? 'arrow-up' : 'arrow-down') : 'arrow-down-up'}"></sl-icon></button></th>`;
+  }).join('');
+  const body = groups.map(([title, rows]) => (title ? `<tr class="group"><th colspan="${COLS.length}">${esc(title)}</th></tr>` : '')
+    + (rows.length ? rows.map(row).join('') : keepEmpty ? `<tr class="none"><td colspan="${COLS.length}">Ningú.</td></tr>` : '')).join('');
+  return `<div class="tbl-wrap"><table class="tbl"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+function row(b) {
   const color = { paid: 'var(--paid)', pending: 'var(--due)', manual: b.settled ? 'var(--paid)' : 'var(--due)', other: 'var(--other)' }[b.kind] || 'var(--line)';
   const who = b.kind === 'block' || b.kind === 'other' ? b.title : b.name || b.title;
-  const meta = [stayName(b.stay), range(b.first, b.until), nitsTxt(nightsBetween(b.first, b.until)), b.guests && `${b.guests} pers.`, b.source && SOURCE[b.source]].filter(Boolean).join(' · ');
   const todo = isBooking(b) && b.until >= addDays(TODAY, -3) ? missing(b) : [];
-  const flags = (isBooking(b) && atHome(b) ? '<span class="pill paid">A casa</span> ' : '') + (todo.length ? `<span class="todo">Falta: ${todo.map(c => esc(c.label.toLowerCase())).join(', ')}</span>` : '');
-  return `<button class="card" style="border-left-color:${color}" data-id="${esc(b.stay + '|' + b.id)}"><div><h3>${esc(who)}</h3><div class="meta">${esc(meta)}</div>${flags ? `<div class="flags">${flags}</div>` : ''}</div><div class="amt">${euro(b.amount)}<div>${pill(b)}</div></div></button>`;
+  const list = isBooking(b) ? checklist(b) : null, done = list ? list.filter(c => c.ok).length : 0;
+  const short = d => day(d, { weekday: 'short', day: 'numeric', month: 'short' });
+  return `<tr data-id="${esc(b.stay + '|' + b.id)}" tabindex="0">
+    <td class="guest" style="--c:${color}"><b>${esc(who)}</b>${isBooking(b) && atHome(b) ? ' <sl-tag size="small" class="paid">A casa</sl-tag>' : ''}${todo.length ? `<div class="todo">Falta: ${todo.map(c => esc(c.label.toLowerCase())).join(', ')}</div>` : ''}</td>
+    <td>${esc(shortName(b.stay))}</td>
+    <td class="date">${esc(short(b.first))}</td>
+    <td class="date">${esc(short(b.until))}</td>
+    <td class="num">${nightsBetween(b.first, b.until)}</td>
+    <td class="num">${b.guests || ''}</td>
+    <td>${b.source ? esc(SOURCE[b.source] || b.source) : ''}</td>
+    <td class="num">${euro(b.amount)}</td>
+    <td>${pill(b)}</td>
+    <td class="num">${list ? `<span class="meter" title="${done} de ${list.length} fet"><i style="width:${done / list.length * 100}%"></i></span>${done}/${list.length}` : ''}</td>
+  </tr>`;
 }
-$('list').addEventListener('click', e => { const c = e.target.closest('.card'); if (c) showDetail(bookings.get(c.dataset.id)); });
+$('list').addEventListener('click', e => {
+  const s = e.target.closest('[data-sort]');
+  if (s) { const k = s.dataset.sort; sortBy = sortBy?.k === k ? (sortBy.dir > 0 ? { k, dir: -1 } : null) : { k, dir: 1 }; return renderList(); }
+  const r = e.target.closest('tr[data-id]'); if (r) showDetail(bookings.get(r.dataset.id));
+});
+$('list').addEventListener('keydown', e => { const r = e.target.closest('tr[data-id]'); if (r && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); showDetail(bookings.get(r.dataset.id)); } });
 
 // ---- Detail: booking info, checklist (payment, contact, documents, police register, check-in and out) ----
 const METHOD = { cash: 'Efectiu', transfer: 'Transferència', bizum: 'Bizum', card: 'Targeta (TPV)', other: 'Altres' };
@@ -718,58 +842,116 @@ function missing(b) {
 }
 const atHome = b => !!b.checkin && !b.checkout;
 const stamp = t => new Date(t).toLocaleString('ca-ES', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const longDay = d => day(d, { weekday: 'short', day: 'numeric', month: 'short' });
 const payments = {};
 
+// Client file: three tabs. Resum: where the stay is at and the checklist. Reserva: dates, payment and policy. Client: contact, papers and past stays.
+let detailTab = 'overview', detailId = null;
 function showDetail(b) {
   if (!b) return;
   if (!isBooking(b)) return showOther(b);
+  const key = b.stay + '|' + b.id;
+  if (detailId !== key) { detailTab = 'overview'; detailId = key; }
   const list = checklist(b), done = list.filter(c => c.ok).length, future = b.until >= TODAY;
-  const tick = ok => `<span class="tick${ok ? ' ok' : ''}" aria-hidden="true">${ok ? '✓' : ''}</span>`;
-  const pay = b.kind === 'paid'
-    ? `<div class="ck-row">${tick(true)}<div><b>Pagada a la web</b> · ${euro(b.amount)}${b.refunded ? ` (retornats ${euro(b.refunded)})` : ''}<div class="ck-sub" id="payInfo">Consultant Stripe…</div></div></div>`
-    : b.kind === 'pending'
-    ? `<div class="ck-row">${tick(false)}<div><b>Pendent del banc</b> · ${euro(b.amount)}<div class="ck-sub">Stripe encara no ha confirmat el pagament. Les nits queden reservades.</div><div class="ck-sub" id="payInfo"></div></div></div>`
-    : `<div class="ck-row">${tick(b.settled)}<div class="grow"><label class="inline"><input type="checkbox" data-set="settled"${b.settled ? ' checked' : ''}> <b>Cobrada</b>${b.amount != null ? ' · ' + euro(b.amount) : ''}</label>
-        <select data-set="method" aria-label="Com s'ha cobrat"><option value="">Com s'ha cobrat?</option>${Object.entries(METHOD).map(([k, v]) => `<option value="${k}"${b.method === k ? ' selected' : ''}>${v}</option>`).join('')}</select></div></div>`;
-  const contact = (k, label, type, link) => `<div class="ck-row">${tick(!!b[k])}<div class="grow"><b>${label}</b>
-      <div class="ck-field"><input type="${type}" data-set="${k}" value="${esc(b[k])}" placeholder="Falta" autocomplete="off">${b[k] ? link : ''}</div></div></div>`;
-  const toggle = (k, label, sub) => `<div class="ck-row">${tick(b[k])}<label class="inline grow"><input type="checkbox" data-set="${k}"${b[k] ? ' checked' : ''}> <b>${label}</b><div class="ck-sub">${sub}</div></label></div>`;
+  const tick = ok => `<span class="tick${ok ? ' ok' : ''}" aria-hidden="true"></span>`;
+  const check = (k, label, sub) => `<label class="ck-row"><sl-checkbox data-set="${k}"${b[k] ? ' checked' : ''} aria-label="${esc(label)}"></sl-checkbox><div class="grow"><b>${label}</b><div class="ck-sub">${sub}</div></div></label>`;
   const moment = (k, label, when) => `<div class="ck-row">${tick(!!b[k])}<div class="grow"><b>${label}</b><div class="ck-sub">${b[k] ? `Fet ${esc(stamp(b[k]))}` : `Previst ${esc(when)}`}</div></div>
-      ${b[k] ? `<button class="btn small" data-undo="${k}">Desfés</button>` : `<button class="btn small solid" data-do="${k}">Marca ${label.toLowerCase()}</button>`}</div>`;
+      ${b[k] ? `<sl-button size="small" data-undo="${k}">Desfés</sl-button>` : `<sl-button size="small" variant="primary" data-do="${k}">Marca ${label.toLowerCase()}</sl-button>`}</div>`;
+  const goClient = (k, label, value) => `<div class="ck-row">${tick(!!value)}<div class="grow"><b>${label}</b><div class="ck-sub">${value ? esc(value) : 'Falta'}</div></div><sl-button size="small" variant="text" data-goto="client">${value ? 'Canvia' : 'Afegeix'}</sl-button></div>`;
+  const payRow = b.kind === 'paid'
+    ? `<div class="ck-row">${tick(true)}<div class="grow"><b>Pagada a la web</b><div class="ck-sub">${euro(b.amount)}${b.refunded ? `, retornats ${euro(b.refunded)}` : ''}</div></div></div>`
+    : b.kind === 'pending'
+    ? `<div class="ck-row">${tick(false)}<div class="grow"><b>Pendent del banc</b><div class="ck-sub">${euro(b.amount)}. Stripe encara no l'ha confirmat.</div></div></div>`
+    : `<label class="ck-row"><sl-checkbox data-set="settled"${b.settled ? ' checked' : ''} aria-label="Cobrada"></sl-checkbox><div class="grow"><b>Cobrada</b><div class="ck-sub">${b.amount != null ? euro(b.amount) : 'Sense import'}${b.method ? `, ${METHOD[b.method]}` : ''}</div></div></label>`;
+  const when = (d, t) => `${esc(day(d, { weekday: 'long', day: 'numeric', month: 'long' }))}<div class="ck-sub">${t}</div>`;
+  const facts = rows => `<dl class="facts">${rows.filter(Boolean).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
   const tel = b.phone.replace(/\s/g, ''), wa = b.phone.replace(/\D/g, '');
-  $('detailBody').innerHTML = `<h2>${esc(b.name || b.title)}</h2>
-    <p class="d-meta">${esc(stayName(b.stay))} · ${esc(day(b.first, { weekday: 'short', day: 'numeric', month: 'short' }))} → ${esc(day(b.until, { weekday: 'short', day: 'numeric', month: 'short' }))} · ${nitsTxt(nightsBetween(b.first, b.until))}${b.guests ? ` · ${b.guests} pers.` : ''}${b.source ? ` · ${SOURCE[b.source] || b.source}` : ''}${atHome(b) ? ' · <span class="pill paid">A casa</span>' : ''}</p>
-    ${b.arrival || b.notes ? `<p class="d-note">${b.arrival ? `<b>Arribada prevista:</b> ${esc(b.arrival)}<br>` : ''}${b.notes ? `<b>Comentaris de l'hoste:</b> ${esc(b.notes)}` : ''}</p>` : ''}
-    <div class="ck-head"><h3>Llista</h3><span>${done} de ${list.length} fet</span></div>
-    <div class="ck" id="ck">
-      ${pay}
-      ${contact('email', 'Correu', 'email', `<a class="btn small" href="mailto:${esc(b.email)}">Escriu</a>`)}
-      ${contact('phone', 'Telèfon', 'tel', `<a class="btn small" href="tel:${esc(tel)}">Truca</a><a class="btn small" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`)}
-      ${toggle('docs', "Documents d'identitat", 'DNI o passaport de tots els hostes adults.')}
-      ${toggle('police', 'Registre de viatgers', 'Comunicat als Mossos d\'Esquadra.')}
-      ${moment('checkin', 'Entrada', `${day(b.first, { weekday: 'short', day: 'numeric', month: 'short' })}, a partir de les ${SET?.rules.checkin || '15:00'}`)}
-      ${moment('checkout', 'Sortida', `${day(b.until, { weekday: 'short', day: 'numeric', month: 'short' })}, abans de les ${SET?.rules.checkout || '11:00'}`)}
-    </div>
-    <label>Nota interna (només a Maite)<textarea data-set="memo" rows="2" placeholder="Claus, llit supletori, al·lèrgies…">${esc(b.memo)}</textarea></label>
-    <div class="actions">
-      ${b.stripe ? `<a class="btn" href="${esc(b.stripe)}" target="_blank" rel="noopener">Stripe</a>` : ''}
-      ${b.link ? `<a class="btn" href="${esc(b.link)}" target="_blank" rel="noopener">Google Calendar</a>` : ''}
-      ${(b.kind === 'paid' || b.kind === 'manual') && future ? '<button class="btn danger" data-act="cancel">Cancel·la la reserva</button>' : ''}
-    </div>`;
-  const body = $('detailBody');
-  body.querySelector('[data-act="cancel"]')?.addEventListener('click', () => { $('detail').close(); openCancel(b); });
+  // Other stays of the same guest, matched by email or phone
+  const same = x => x !== b && isBooking(x) && (b.email && x.email && x.email.toLowerCase() === b.email.toLowerCase() || wa.length > 5 && x.phone && x.phone.replace(/\D/g, '') === wa);
+  const history = all().filter(same).sort((x, y) => y.first.localeCompare(x.first));
+  const stage = b.checkout ? 'Ja ha marxat' : atHome(b) ? 'A casa' : b.first > TODAY ? `Arriba d'aquí a ${nightsBetween(TODAY, b.first) === 1 ? '1 dia' : nightsBetween(TODAY, b.first) + ' dies'}` : b.first === TODAY ? 'Arriba avui' : b.until < TODAY ? 'Estada acabada' : 'Hauria de ser a casa';
+  const pol = b.policy || SET?.cancel;
+
+  $('detail').label = b.name || b.title;
+  $('detailBody').innerHTML = `
+    <div class="d-head">${pill(b)}<span>${esc(stage)}</span><span>${esc(shortName(b.stay))}</span><span>${esc(range(b.first, b.until))}</span></div>
+    <sl-tab-group id="dTabs">
+      <sl-tab slot="nav" panel="overview">Resum</sl-tab>
+      <sl-tab slot="nav" panel="booking">Reserva</sl-tab>
+      <sl-tab slot="nav" panel="client">Client</sl-tab>
+
+      <sl-tab-panel name="overview">
+        <div class="kpis">
+          <div><span>Nits</span><b>${nightsBetween(b.first, b.until)}</b></div>
+          <div><span>Persones</span><b>${b.guests || '–'}</b></div>
+          <div><span>Import</span><b>${b.amount != null ? euro(b.amount) : '–'}</b></div>
+          <div><span>Llista</span><b>${done}/${list.length}</b></div>
+        </div>
+        ${b.arrival || b.notes ? `<p class="d-note">${b.arrival ? `<b>Arribada prevista:</b> ${esc(b.arrival)}<br>` : ''}${b.notes ? `<b>Comentaris de l'hoste:</b> ${esc(b.notes)}` : ''}</p>` : ''}
+        <div class="ck">
+          ${payRow}
+          ${goClient('email', 'Correu', b.email)}
+          ${goClient('phone', 'Telèfon', b.phone)}
+          ${check('docs', "Documents d'identitat", 'DNI o passaport de tots els hostes adults.')}
+          ${check('police', 'Registre de viatgers', "Comunicat als Mossos d'Esquadra.")}
+          ${moment('checkin', 'Entrada', `${longDay(b.first)}, a partir de les ${SET?.rules.checkin || '15:00'}`)}
+          ${moment('checkout', 'Sortida', `${longDay(b.until)}, abans de les ${SET?.rules.checkout || '11:00'}`)}
+        </div>
+        <sl-textarea data-set="memo" label="Nota interna (només a Maite)" rows="2" resize="auto" placeholder="Claus, llit supletori, al·lèrgies…" value="${esc(b.memo)}"></sl-textarea>
+      </sl-tab-panel>
+
+      <sl-tab-panel name="booking">
+        ${facts([
+          ['Allotjament', esc(stayName(b.stay))],
+          ['Arribada', when(b.first, `A partir de les ${SET?.rules.checkin || '15:00'}${b.arrival ? `. L'hoste diu: ${esc(b.arrival)}` : ''}`)],
+          ['Sortida', when(b.until, `Abans de les ${SET?.rules.checkout || '11:00'}`)],
+          ['Estada', `${nitsTxt(nightsBetween(b.first, b.until))}${b.guests ? `, ${b.guests} ${b.guests === 1 ? 'persona' : 'persones'}` : ''}`],
+          ['Via', SOURCE[b.source] || esc(b.source) || '–'],
+          ['Import', `${b.amount != null ? euro(b.amount) : 'Sense import'}${b.refunded ? `<div class="ck-sub">Retornats ${euro(b.refunded)}</div>` : ''}`],
+          ['Pagament', b.kind === 'manual'
+            ? `<sl-checkbox data-set="settled"${b.settled ? ' checked' : ''}>Cobrada</sl-checkbox><sl-select data-set="method" size="small" placeholder="Com s'ha cobrat?" clearable value="${esc(b.method)}">${Object.entries(METHOD).map(([k, v]) => `<sl-option value="${k}">${v}</sl-option>`).join('')}</sl-select>`
+            : `${b.kind === 'paid' ? 'Pagada a la web' : 'Pendent del banc'}<div class="ck-sub" id="payInfo">Consultant Stripe…</div>`],
+          pol && b.kind !== 'manual' && ['Cancel·lació', `${esc(policyText(pol))}<div class="ck-sub">${b.policy ? "La que va acceptar l'hoste." : 'La política actual (aquesta reserva no en té cap de guardada).'}</div>`],
+          b.notes && ["Comentaris", esc(b.notes)],
+        ])}
+        <div class="actions left">
+          ${b.stripe ? `<sl-button size="small" href="${esc(b.stripe)}" target="_blank"><sl-icon slot="prefix" name="credit-card"></sl-icon>Stripe</sl-button>` : ''}
+          ${b.link ? `<sl-button size="small" href="${esc(b.link)}" target="_blank"><sl-icon slot="prefix" name="calendar3"></sl-icon>Google Calendar</sl-button>` : ''}
+          ${(b.kind === 'paid' || b.kind === 'manual') && future ? '<sl-button size="small" variant="danger" data-act="cancel">Cancel·la la reserva</sl-button>' : ''}
+        </div>
+      </sl-tab-panel>
+
+      <sl-tab-panel name="client">
+        <sl-input data-set="email" type="email" label="Correu" value="${esc(b.email)}" placeholder="Falta" autocomplete="off">${b.email ? `<sl-icon-button slot="suffix" name="envelope" label="Escriu" href="mailto:${esc(b.email)}"></sl-icon-button>` : ''}</sl-input>
+        <sl-input data-set="phone" type="tel" label="Telèfon" value="${esc(b.phone)}" placeholder="Falta" autocomplete="off">${b.phone ? `<sl-icon-button slot="suffix" name="telephone" label="Truca" href="tel:${esc(tel)}"></sl-icon-button><sl-icon-button slot="suffix" name="whatsapp" label="WhatsApp" href="https://wa.me/${esc(wa)}" target="_blank"></sl-icon-button>` : ''}</sl-input>
+        <div class="ck">
+          ${check('docs', "Documents d'identitat", 'DNI o passaport de tots els hostes adults.')}
+          ${check('police', 'Registre de viatgers', "Comunicat als Mossos d'Esquadra.")}
+        </div>
+        <h4 class="sub-h">Altres estades</h4>
+        ${history.length ? `<table class="tbl mini"><tbody>${history.map(x => `<tr data-open="${esc(x.stay + '|' + x.id)}"><td>${esc(range(x.first, x.until))}</td><td>${esc(shortName(x.stay))}</td><td class="num">${euro(x.amount)}</td><td>${pill(x)}</td></tr>`).join('')}</tbody></table>`
+          : `<p class="hint" style="margin:0">${b.email || b.phone ? 'Cap altra estada amb aquest correu o telèfon.' : 'Afegeix el correu o el telèfon per veure si ja ha estat a casa.'}</p>`}
+      </sl-tab-panel>
+    </sl-tab-group>`;
+
+  const body = $('detailBody'), tabs = $('dTabs');
+  customElements.whenDefined('sl-tab-group').then(() => tabs.updateComplete).then(() => tabs.show(detailTab));
+  tabs.addEventListener('sl-tab-show', e => { detailTab = e.detail.name; });
+  body.querySelectorAll('[data-goto]').forEach(x => x.addEventListener('click', e => { e.preventDefault(); tabs.show(x.dataset.goto); }));
+  body.querySelectorAll('[data-open]').forEach(x => x.addEventListener('click', () => showDetail(bookings.get(x.dataset.open))));
+  body.querySelector('[data-act="cancel"]')?.addEventListener('click', () => { closeDlg('detail'); openCancel(b); });
   const save = async set => {
     try {
       const d = await api('check', { method: 'POST', body: { stay: b.stay, id: b.id, set } });
-      bookings.set(b.stay + '|' + b.id, d.booking); render();
-      if ($('detail').open) { const y = $('detail').querySelector('.dlg').scrollTop; showDetail(d.booking); $('detail').querySelector('.dlg').scrollTop = y; }
-    } catch (e) { toast(e.message); showDetail(b); }
+      bookings.set(key, d.booking); render();
+      if ($('detail').open) showDetail(d.booking);
+    } catch (e) { toast(e.message, 'danger'); showDetail(b); }
   };
-  body.querySelectorAll('input[type="checkbox"][data-set]').forEach(c => c.addEventListener('change', () => save({ [c.dataset.set]: c.checked })));
-  body.querySelectorAll('select[data-set], input[type="email"][data-set], input[type="tel"][data-set], textarea[data-set]').forEach(c => c.addEventListener('change', () => save({ [c.dataset.set]: c.value })));
-  body.querySelectorAll('[data-do]').forEach(x => x.addEventListener('click', () => { x.disabled = true; save({ [x.dataset.do]: true }); }));
-  body.querySelectorAll('[data-undo]').forEach(x => x.addEventListener('click', () => { x.disabled = true; save({ [x.dataset.undo]: false }); }));
-  if (!$('detail').open) $('detail').showModal();
+  body.querySelectorAll('sl-checkbox[data-set]').forEach(c => c.addEventListener('sl-change', () => save({ [c.dataset.set]: c.checked })));
+  body.querySelectorAll('sl-select[data-set], sl-input[data-set], sl-textarea[data-set]').forEach(c => c.addEventListener('sl-change', () => save({ [c.dataset.set]: c.value })));
+  body.querySelectorAll('[data-do]').forEach(x => x.addEventListener('click', () => { x.loading = true; save({ [x.dataset.do]: true }); }));
+  body.querySelectorAll('[data-undo]').forEach(x => x.addEventListener('click', () => { x.loading = true; save({ [x.dataset.undo]: false }); }));
+  if (!$('detail').open) openDlg('detail');
   if (b.kind === 'paid' || b.kind === 'pending') showPayment(b);
 }
 async function showPayment(b) {
@@ -777,8 +959,12 @@ async function showPayment(b) {
   try {
     const p = payments[key] ||= await api(`payment?stay=${b.stay}&id=${encodeURIComponent(b.id)}`);
     const el = $('payInfo'); if (!el) return;
-    const m = p.method, what = m.type === 'card' ? `${m.brand ? m.brand[0].toUpperCase() + m.brand.slice(1) : 'Targeta'} ···· ${m.last4}${m.wallet ? ` (${WALLET[m.wallet] || m.wallet})` : ''}` : (PAYTYPE[m.type] || m.type || 'Mètode desconegut') + (m.last4 ? ` ···· ${m.last4}` : '') + (m.bank ? ` · ${m.bank}` : '');
-    el.innerHTML = `${esc(what)} · ${p.status === 'succeeded' ? `cobrat ${esc(stamp(p.created * 1000))}` : p.status === 'processing' ? 'en procés' : esc(p.status)}${p.refunded ? ` · retornats ${euro(p.refunded)}` : ''}${p.receipt ? ` · <a href="${esc(p.receipt)}" target="_blank" rel="noopener">Rebut</a>` : ''}`;
+    const m = p.method;
+    const what = m.type === 'card'
+      ? `${m.brand ? m.brand[0].toUpperCase() + m.brand.slice(1) : 'Targeta'}${m.last4 ? ` acabada en ${m.last4}` : ''}${m.wallet ? ` amb ${WALLET[m.wallet] || m.wallet}` : ''}`
+      : (PAYTYPE[m.type] || m.type || 'Mètode desconegut') + (m.last4 ? ` acabada en ${m.last4}` : '') + (m.bank ? `, ${m.bank}` : '');
+    const when = p.status === 'succeeded' ? `cobrat ${stamp(p.created * 1000)}` : p.status === 'processing' ? 'en procés' : p.status;
+    el.innerHTML = `${esc(what)}, ${esc(when)}.${p.refunded ? ` Retornats ${euro(p.refunded)}.` : ''}${p.receipt ? ` <a href="${esc(p.receipt)}" target="_blank" rel="noopener">Veure el rebut</a>` : ''}`;
   } catch (e) {
     delete payments[key];
     if ($('payInfo')) $('payInfo').textContent = "No s'ha pogut consultar Stripe.";
@@ -787,45 +973,47 @@ async function showPayment(b) {
 // Closed nights and entries from Google Calendar
 function showOther(b) {
   const future = b.until >= TODAY;
-  $('detailBody').innerHTML = `<h2>${esc(b.kind === 'block' ? b.title || 'Tancat' : b.kind === 'other' ? b.title : b.name || b.title)}</h2>
-    <p class="d-meta">${esc(stayName(b.stay))} · ${esc(day(b.first, { weekday: 'short', day: 'numeric', month: 'short' }))} → ${esc(day(b.until, { weekday: 'short', day: 'numeric', month: 'short' }))} · ${nitsTxt(nightsBetween(b.first, b.until))} · ${pill(b)}</p>
+  $('detail').label = b.kind === 'block' ? b.title || 'Tancat' : b.kind === 'other' ? b.title : b.name || b.title;
+  $('detailBody').innerHTML = `
+    <div class="meta d-meta">${parts(esc(stayName(b.stay)), `${esc(longDay(b.first))} → ${esc(longDay(b.until))}`, nitsTxt(nightsBetween(b.first, b.until)), pill(b))}</div>
     ${b.amount != null ? `<p class="d-note">Import: ${euro(b.amount)}${b.refunded ? ` (retornats ${euro(b.refunded)})` : ''}</p>` : ''}
-    ${b.kind === 'other' ? '<p class="hint">Aquesta entrada es va crear directament a Google Calendar. Es canvia des d\'allà.</p>' : ''}
+    ${b.kind === 'other' ? "<p class=\"hint\" style=\"margin:0 0 14px\">Aquesta entrada es va crear directament a Google Calendar. Es canvia des d'allà.</p>" : ''}
     <div class="actions">
-      ${b.stripe ? `<a class="btn" href="${esc(b.stripe)}" target="_blank" rel="noopener">Stripe</a>` : ''}
-      ${b.link ? `<a class="btn" href="${esc(b.link)}" target="_blank" rel="noopener">Google Calendar</a>` : ''}
-      ${b.kind === 'block' && future ? '<button class="btn danger" data-act="unblock">Obre aquestes nits</button>' : ''}
+      ${b.stripe ? `<sl-button size="small" href="${esc(b.stripe)}" target="_blank">Stripe</sl-button>` : ''}
+      ${b.link ? `<sl-button size="small" href="${esc(b.link)}" target="_blank">Google Calendar</sl-button>` : ''}
+      ${b.kind === 'block' && future ? '<sl-button size="small" variant="danger" data-act="unblock">Obre aquestes nits</sl-button>' : ''}
     </div>`;
   $('detailBody').querySelector('[data-act="unblock"]')?.addEventListener('click', async e => {
-    e.target.disabled = true;
-    try { await api('cancel', { method: 'POST', body: { stay: b.stay, id: b.id } }); $('detail').close(); toast('Nits obertes'); await reload(); }
-    catch (err) { toast(err.message); e.target.disabled = false; }
+    const btn = e.currentTarget; btn.loading = true;
+    try { await api('cancel', { method: 'POST', body: { stay: b.stay, id: b.id } }); closeDlg('detail'); toast('Nits obertes', 'success'); await reload(); }
+    catch (err) { toast(err.message, 'danger'); btn.loading = false; }
   });
-  $('detail').showModal();
+  if (!$('detail').open) openDlg('detail');
 }
 
 // ---- Forms ----
-document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
 function formError(form, msg) { const p = form.querySelector('.err'); p.textContent = msg || ''; p.hidden = !msg; }
 async function submit(form, fn) {
-  const btn = form.querySelector('[type="submit"]');
-  btn.disabled = true; formError(form);
+  const btn = form.querySelector('sl-button[type="submit"]');
+  btn.loading = true; formError(form);
   try { await fn(); } catch (e) { formError(form, e.message); }
-  btn.disabled = false;
+  btn.loading = false;
 }
 
 function openBook({ stay, first, until }) {
-  const f = $('bookForm'); f.reset(); formError(f);
-  f.stay.innerHTML = STAYS.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  const f = $('bookForm'); formError(f);
+  for (const k of ['name', 'phone', 'email', 'amount', 'arrival', 'notes']) f[k].value = '';
+  f.settled.checked = false; f.source.value = 'phone'; delete f.amount.dataset.touched;
+  f.stay.innerHTML = STAYS.map(s => `<sl-option value="${s.id}">${esc(s.name)}</sl-option>`).join('');
   f.stay.value = stay || STAYS[0]?.id;
   f.first.value = first || TODAY; f.until.value = until || addDays(f.first.value, 1);
   syncGuests(); suggestAmount();
-  $('bookDlg').showModal();
+  openDlg('bookDlg');
 }
 function syncGuests() {
-  const f = $('bookForm'), max = STAYS.find(s => s.id === f.stay.value)?.max || 2, v = f.guests.value || 2;
-  f.guests.innerHTML = Array.from({ length: max }, (_, i) => `<option>${i + 1}</option>`).join('');
-  f.guests.value = Math.min(v, max);
+  const f = $('bookForm'), max = STAYS.find(s => s.id === f.stay.value)?.max || 2, v = +f.guests.value || 2;
+  f.guests.innerHTML = Array.from({ length: max }, (_, i) => `<sl-option value="${i + 1}">${i + 1}</sl-option>`).join('');
+  f.guests.value = String(Math.min(v, max));
 }
 // Suggests the web price for those nights (special prices and discounts included); it can be changed freely
 let suggestSeq = 0;
@@ -834,58 +1022,59 @@ async function suggestAmount() {
   if (!f.first.value || !(f.until.value > f.first.value) || f.amount.dataset.touched) return;
   try {
     const q = await api(`quote?stay=${f.stay.value}&in=${f.first.value}&out=${f.until.value}`);
-    if (seq === suggestSeq && !f.amount.dataset.touched) f.amount.value = q.total / 100;
+    if (seq === suggestSeq && !f.amount.dataset.touched) f.amount.value = String(q.total / 100);
   } catch (e) {}
 }
-$('bookForm').stay.addEventListener('change', () => { syncGuests(); suggestAmount(); });
-$('bookForm').first.addEventListener('change', e => { const f = $('bookForm'); if (f.until.value <= e.target.value) f.until.value = addDays(e.target.value, 1); suggestAmount(); });
-$('bookForm').until.addEventListener('change', suggestAmount);
-$('bookForm').amount.addEventListener('input', e => { e.target.dataset.touched = 1; });
-$('bookDlg').addEventListener('close', () => { delete $('bookForm').amount.dataset.touched; });
-$('bookForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const f = e.target;
-  submit(f, async () => {
-    const body = Object.fromEntries(new FormData(f)); body.settled = f.settled.checked;
-    await api('bookings', { method: 'POST', body });
-    $('bookDlg').close(); sel = null; toast('Reserva desada'); await reload();
+{
+  const f = $('bookForm');
+  f.stay.addEventListener('sl-change', () => { syncGuests(); suggestAmount(); });
+  f.first.addEventListener('sl-change', () => { if (f.until.value <= f.first.value) f.until.value = addDays(f.first.value, 1); suggestAmount(); });
+  f.until.addEventListener('sl-change', suggestAmount);
+  f.amount.addEventListener('sl-input', () => { f.amount.dataset.touched = 1; });
+  f.addEventListener('submit', e => {
+    e.preventDefault();
+    submit(f, async () => {
+      const body = Object.fromEntries(['stay', 'first', 'until', 'name', 'guests', 'phone', 'email', 'amount', 'source', 'arrival', 'notes'].map(k => [k, f[k].value]));
+      body.settled = f.settled.checked;
+      await api('bookings', { method: 'POST', body });
+      closeDlg('bookDlg'); sel = null; toast('Reserva desada', 'success'); await reload();
+    });
   });
-});
+}
 
 function openBlock({ stays = [], first, until }) {
-  const f = $('blockForm'); f.reset(); formError(f);
-  $('blockStays').innerHTML = STAYS.map(s => `<label><input type="checkbox" name="stays" value="${s.id}"${stays.includes(s.id) ? ' checked' : ''}>${esc(s.name)}</label>`).join('')
-    + '<label><input type="checkbox" id="allStays">Tota la casa</label>';
-  $('allStays').addEventListener('change', e => f.querySelectorAll('[name="stays"]').forEach(c => { c.checked = e.target.checked; }));
-  f.first.value = first || TODAY; f.until.value = until || addDays(f.first.value, 1);
-  $('blockDlg').showModal();
+  const f = $('blockForm'); formError(f);
+  $('blockStays').innerHTML = STAYS.map(s => `<sl-checkbox data-stay="${s.id}"${stays.includes(s.id) ? ' checked' : ''}>${esc(s.name)}</sl-checkbox>`).join('')
+    + '<sl-checkbox id="allStays"><b>Tota la casa</b></sl-checkbox>';
+  $('allStays').addEventListener('sl-change', e => f.querySelectorAll('[data-stay]').forEach(c => { c.checked = e.target.checked; }));
+  f.first.value = first || TODAY; f.until.value = until || addDays(f.first.value, 1); f.note.value = '';
+  openDlg('blockDlg');
 }
-$('blockForm').first.addEventListener('change', e => { const f = $('blockForm'); if (f.until.value <= e.target.value) f.until.value = addDays(e.target.value, 1); });
+$('blockForm').first.addEventListener('sl-change', () => { const f = $('blockForm'); if (f.until.value <= f.first.value) f.until.value = addDays(f.first.value, 1); });
 $('blockForm').addEventListener('submit', e => {
   e.preventDefault();
-  const f = e.target, stays = [...f.querySelectorAll('[name="stays"]:checked')].map(c => c.value);
+  const f = e.target, stays = [...f.querySelectorAll('[data-stay]')].filter(c => c.checked).map(c => c.dataset.stay);
   submit(f, async () => {
     if (!stays.length) throw new Error('Tria almenys un allotjament');
     await api('block', { method: 'POST', body: { stays, first: f.first.value, until: f.until.value, note: f.note.value } });
-    $('blockDlg').close(); sel = null; toast('Nits tancades'); await reload();
+    closeDlg('blockDlg'); sel = null; toast('Nits tancades', 'success'); await reload();
   });
 });
 
 let cancelling = null;
 function openCancel(b) {
   cancelling = b;
-  const f = $('cancelForm'); f.reset(); formError(f);
+  const f = $('cancelForm'); formError(f);
   const paid = b.kind === 'paid';
-  $('cancelText').textContent = `${b.name || b.title}, ${stayName(b.stay)}. Les nits del ${range(b.first, b.until)} quedaran lliures.`
-    + (paid ? ' Pagada amb targeta: indica quant vols retornar (0 si no en retornes res).' : '');
-  $('refundRow').hidden = !paid;
+  $('cancelText').textContent = `${b.name || b.title}, ${stayName(b.stay)}. Les nits del ${range(b.first, b.until)} quedaran lliures.`;
+  $('refundRow').hidden = !paid; $('cancelPolicy').hidden = !paid;
   if (paid) {
     const pol = b.policy || SET.cancel, before = nightsBetween(TODAY, b.first), due = b.amount != null ? refundDue(pol, b.amount, before) : null;
-    f.refund.value = due != null ? due / 100 : ''; f.refund.max = b.amount != null ? b.amount / 100 : '';
-    $('cancelText').textContent += ` ${before <= 0 ? 'Arriba avui o ja és aquí.' : `Falten ${before === 1 ? '1 dia' : before + ' dies'} per a l'arribada.`} ${b.policy ? 'Política que va acceptar' : 'Política actual'}: ${policyText(pol)}`
+    f.refund.value = due != null ? String(due / 100) : ''; f.refund.max = b.amount != null ? b.amount / 100 : '';
+    $('cancelPolicy').textContent = `${before <= 0 ? 'Arriba avui o ja és aquí.' : `Falten ${before === 1 ? '1 dia' : before + ' dies'} per a l'arribada.`} ${b.policy ? 'Política que va acceptar' : 'Política actual'}: ${policyText(pol)}`
       + (due != null ? ` Toca retornar ${euro(due)}.` : '');
   }
-  $('cancelDlg').showModal();
+  openDlg('cancelDlg');
 }
 $('cancelForm').addEventListener('submit', e => {
   e.preventDefault();
@@ -893,7 +1082,7 @@ $('cancelForm').addEventListener('submit', e => {
   submit(f, async () => {
     const refund = b.kind === 'paid' ? Math.round(Number(f.refund.value || 0) * 100) : 0;
     const d = await api('cancel', { method: 'POST', body: { stay: b.stay, id: b.id, refund } });
-    $('cancelDlg').close(); toast(d.refunded ? `Cancel·lada. Retornats ${euro(d.refunded)}.` : 'Reserva cancel·lada'); await reload();
+    closeDlg('cancelDlg'); toast(d.refunded ? `Cancel·lada. Retornats ${euro(d.refunded)}.` : 'Reserva cancel·lada', 'success'); await reload();
   });
 });
 
@@ -901,10 +1090,10 @@ $('cancelForm').addEventListener('submit', e => {
 function policyText(c) {
   const days = n => n === 1 ? '1 dia' : `${n} dies`;
   if (c.fullDays == null && !c.partialPct) return "No es retorna l'import si es cancel·la.";
-  const parts = [];
-  if (c.fullDays != null) parts.push(c.fullDays === 0 ? "Cancel·lació gratuïta fins al dia abans de l'arribada" : `Cancel·lació gratuïta fins a ${days(c.fullDays)} abans de l'arribada`);
-  if (c.partialPct && c.partialDays != null) parts.push(`es retorna el ${c.partialPct} % fins a ${c.partialDays === 0 ? "l'arribada" : days(c.partialDays) + ' abans'}`);
-  return parts.join('; ') + '. Després no es retorna res.';
+  const out = [];
+  if (c.fullDays != null) out.push(c.fullDays === 0 ? "Cancel·lació gratuïta fins al dia abans de l'arribada" : `Cancel·lació gratuïta fins a ${days(c.fullDays)} abans de l'arribada`);
+  if (c.partialPct && c.partialDays != null) out.push(`es retorna el ${c.partialPct} % fins a ${c.partialDays === 0 ? "l'arribada" : days(c.partialDays) + ' abans'}`);
+  return out.join('; ') + '. Després no es retorna res.';
 }
 function refundDue(c, paid, before) {
   if (c.fullDays != null && before >= c.fullDays) return paid;
@@ -922,28 +1111,38 @@ const nightOf = (stay, d) => {
 };
 // The weekend quick pick keeps only Fridays and Saturdays
 const selDates = () => { if (!pcSel) return []; const out = []; for (let d = pcSel.a; d <= (pcSel.b || pcSel.a); d = addDays(d, 1)) if (!pcSel.only || pcSel.only.includes(parse(d).getDay())) out.push(d); return out; };
+const stayRadios = (id, current, label = s => shortName(s.id)) => {
+  const g = $(id);
+  if (g.dataset.stays !== STAYS.map(s => s.id + label(s)).join()) {
+    g.innerHTML = STAYS.map(s => `<sl-radio-button value="${s.id}">${esc(label(s))}</sl-radio-button>`).join('');
+    g.dataset.stays = STAYS.map(s => s.id + label(s)).join();
+  }
+  g.value = current;
+};
 function renderPrices() {
   if (!SET || !STAYS.length) return;
   pcStay ||= STAYS[0].id;
   pcMonth ||= TODAY.slice(0, 7) + '-01';
-  $('pcStays').innerHTML = STAYS.map(s => `<button class="chip" data-stay="${s.id}" aria-pressed="${s.id === pcStay}">${esc(shortName(s.id))}</button>`).join('');
+  stayRadios('pcStays', pcStay);
   const m = parse(pcMonth), title = m.toLocaleDateString('ca-ES', { month: 'long', year: 'numeric' });
   $('pcMonth').textContent = title[0].toUpperCase() + title.slice(1);
   $('pcPrev').disabled = pcMonth <= TODAY.slice(0, 7) + '-01';
   const end = iso(new Date(m.getFullYear(), m.getMonth() + 1, 1)), lead = (m.getDay() + 6) % 7;
   let h = ['dl', 'dt', 'dc', 'dj', 'dv', 'ds', 'dg'].map(w => `<div class="wd">${w}</div>`).join('') + '<div class="pday blank"></div>'.repeat(lead);
-  const sel = new Set(selDates());
+  const chosen = new Set(selDates());
   for (let d = pcMonth; d < end; d = addDays(d, 1)) {
     const n = nightOf(pcStay, d), min = SET.days[pcStay]?.[d]?.min, booked = all().some(b => b.blocks && b.stay === pcStay && b.first <= d && b.until > d);
-    const cls = ['pday', n.special && 'special', booked && 'booked', d === TODAY && 'today', d < TODAY && 'past', sel.has(d) && 'sel'].filter(Boolean).join(' ');
+    const cls = ['pday', n.special && 'special', booked && 'booked', d === TODAY && 'today', d < TODAY && 'past', chosen.has(d) && 'sel'].filter(Boolean).join(' ');
     h += `<button type="button" class="${cls}" data-d="${d}"${d < TODAY ? ' disabled' : ''}><span class="n">${parse(d).getDate()}</span>${min ? `<span class="min">mín. ${min}</span>` : ''}<span class="p">${n.price.toLocaleString('ca-ES')} €</span></button>`;
   }
+  const trail = (7 - (lead + nightsBetween(pcMonth, end)) % 7) % 7;
+  h += '<div class="pday blank"></div>'.repeat(trail);
   $('pcal').innerHTML = h;
-  // Side panel: normal price, or the selected days
+  // Side panel: normal price, or the chosen days
   const st = SET.stays[pcStay], nf = $('normalForm'), df = $('dayForm');
   nf.hidden = !!pcSel; df.hidden = !pcSel;
   if (!pcSel && nf.dataset.stay !== pcStay) {
-    nf.base.value = st.base; nf.weekend.value = st.weekend ?? ''; nf.dataset.stay = pcStay; formError(nf);
+    nf.base.value = String(st.base); nf.weekend.value = st.weekend == null ? '' : String(st.weekend); nf.dataset.stay = pcStay; formError(nf);
     $('normalName').textContent = stayName(pcStay);
   }
   if (pcSel) renderDayForm();
@@ -961,13 +1160,14 @@ function renderDayForm() {
   if (f.dataset.for !== key) {
     f.dataset.for = key; formError(f);
     const specials = [...new Set(ds.map(d => SET.days[pcStay]?.[d]?.price ?? null))];
-    f.price.value = specials.length === 1 && specials[0] != null ? specials[0] : '';
-    f.min.innerHTML = `<option value="">Normal (${nitsTxt(SET.rules.minNights)})</option>` + Array.from({ length: 14 }, (_, i) => `<option value="${i + 1}">${nitsTxt(i + 1)}</option>`).join('');
-    f.min.value = mins.length === 1 && mins[0] ? mins[0] : '';
-    $('dayAlso').innerHTML = '<p class="hint" style="margin:4px 0 6px">Aplica-ho també a:</p>' + STAYS.filter(s => s.id !== pcStay).map(s => `<label><input type="checkbox" value="${s.id}">${esc(s.name)}</label>`).join('');
+    f.price.value = specials.length === 1 && specials[0] != null ? String(specials[0]) : '';
+    // "normal" stands for the general minimum stay (Shoelace options need a non-empty value)
+    f.min.innerHTML = `<sl-option value="normal">Normal (${nitsTxt(SET.rules.minNights)})</sl-option>` + Array.from({ length: 14 }, (_, i) => `<sl-option value="${i + 1}">${nitsTxt(i + 1)}</sl-option>`).join('');
+    f.min.value = mins.length === 1 && mins[0] ? String(mins[0]) : 'normal';
+    $('dayAlso').innerHTML = '<span class="caps" style="color:var(--muted)">Aplica-ho també a</span>' + STAYS.filter(s => s.id !== pcStay).map(s => `<sl-checkbox data-stay="${s.id}">${esc(s.name)}</sl-checkbox>`).join('');
   }
 }
-$('pcStays').addEventListener('click', e => { const c = e.target.closest('[data-stay]'); if (!c) return; pcStay = c.dataset.stay; renderPrices(); });
+$('pcStays').addEventListener('sl-change', e => { pcStay = e.target.value; renderPrices(); });
 $('pcPrev').onclick = () => { const m = parse(pcMonth); pcMonth = iso(new Date(m.getFullYear(), m.getMonth() - 1, 1)); pcSel = null; renderPrices(); };
 $('pcNext').onclick = async () => {
   const m = parse(pcMonth); pcMonth = iso(new Date(m.getFullYear(), m.getMonth() + 1, 1)); pcSel = null;
@@ -978,29 +1178,27 @@ $('pcNext').onclick = async () => {
 $('pcal').addEventListener('click', e => {
   const c = e.target.closest('.pday[data-d]'); if (!c || c.disabled) return;
   const d = c.dataset.d;
-  if (pcSel && !pcSel.b && d > pcSel.a) pcSel.b = d;
-  else if (pcSel && !pcSel.b && d === pcSel.a) pcSel.b = d;
+  if (pcSel && !pcSel.b && d >= pcSel.a) pcSel.b = d;
   else pcSel = { a: d, b: null };
   renderPrices();
 });
 document.querySelector('.quick').addEventListener('click', e => {
   const q = e.target.closest('[data-q]')?.dataset.q; if (!q) return;
   const m = parse(pcMonth), end = iso(new Date(m.getFullYear(), m.getMonth() + 1, 0)), first = pcMonth < TODAY ? TODAY : pcMonth;
-  if (q === 'month') { pcSel = { a: first, b: end }; return renderPrices(); }
-  pcSel = { a: first, b: end, only: [5, 6] };
+  pcSel = q === 'month' ? { a: first, b: end } : { a: first, b: end, only: [5, 6] };
   renderPrices();
 });
 async function saveDays(body) {
-  const f = $('dayForm'), stays = [pcStay, ...[...$('dayAlso').querySelectorAll('input:checked')].map(c => c.value)];
+  const f = $('dayForm'), stays = [pcStay, ...[...$('dayAlso').querySelectorAll('[data-stay]')].filter(c => c.checked).map(c => c.dataset.stay)];
   const r = await api('days', { method: 'POST', body: { stays, dates: selDates(), ...body } });
   SET.days = r.days; pcSel = null; delete f.dataset.for; renderPrices();
 }
 $('dayForm').addEventListener('submit', e => {
   e.preventDefault();
   const f = e.target;
-  submit(f, async () => { await saveDays({ price: f.price.value === '' ? null : f.price.value, min: f.min.value === '' ? null : f.min.value }); toast('Dies actualitzats'); });
+  submit(f, async () => { await saveDays({ price: f.price.value === '' ? null : f.price.value, min: f.min.value === 'normal' || !f.min.value ? null : f.min.value }); toast('Dies actualitzats', 'success'); });
 });
-$('dayReset').onclick = () => submit($('dayForm'), async () => { await saveDays({ price: null, min: null }); toast('Dies tornats al preu normal'); });
+$('dayReset').onclick = () => submit($('dayForm'), async () => { await saveDays({ price: null, min: null }); toast('Dies tornats al preu normal', 'success'); });
 $('dayCancel').onclick = $('pcBarClear').onclick = () => { pcSel = null; renderPrices(); };
 $('pcBarEdit').onclick = () => { $('dayForm').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => $('dayForm').price.focus({ preventScroll: true }), 400); };
 $('normalForm').addEventListener('submit', e => {
@@ -1008,7 +1206,7 @@ $('normalForm').addEventListener('submit', e => {
   const f = e.target;
   submit(f, async () => {
     SET = await api('settings', { method: 'PUT', body: { stays: { [pcStay]: { base: f.base.value, weekend: f.weekend.value === '' ? null : f.weekend.value } } } });
-    toast('Preu desat'); renderPrices();
+    toast('Preu desat', 'success'); renderPrices();
   });
 });
 
@@ -1017,7 +1215,7 @@ let tiers = null;
 function renderDisc() {
   if (!SET) return;
   tiers ||= SET.discounts.map(t => ({ ...t }));
-  $('tiers').innerHTML = tiers.map((t, i) => `<div class="tier" data-i="${i}">A partir de <input data-k="nights" type="number" min="2" max="90" value="${t.nights}" inputmode="numeric"> nits, <input data-k="pct" type="number" min="1" max="90" value="${t.pct}" inputmode="numeric"> % menys<button class="x" type="button" data-del aria-label="Treu aquest descompte">×</button></div>`).join('')
+  $('tiers').innerHTML = tiers.map((t, i) => `<div class="tier" data-i="${i}">A partir de <sl-input size="small" data-k="nights" type="number" min="2" max="90" value="${t.nights}" inputmode="numeric"></sl-input> nits, <sl-input size="small" data-k="pct" type="number" min="1" max="90" value="${t.pct}" inputmode="numeric"></sl-input> % menys<sl-icon-button name="x-lg" label="Treu aquest descompte" data-del></sl-icon-button></div>`).join('')
     || '<p class="hint">Sense descomptes: totes les estades paguen el preu per nit.</p>';
   discExample();
 }
@@ -1027,14 +1225,14 @@ function discExample() {
     const t = tiers.filter(x => n >= x.nights).reduce((b, x) => x.pct > b ? x.pct : b, 0);
     return `<tr><td>${nitsTxt(n)}${t ? ` (−${t} %)` : ''}</td><td>${euro(Math.round(base * n * (100 - t)))}</td></tr>`;
   }).join('');
-  $('discExample').innerHTML = `<b>Exemple: ${esc(s.name)} a ${euro(base * 100)} la nit</b><table>${rows}</table>`;
+  $('discExample').innerHTML = `<span class="caps" style="color:var(--basil)">Exemple: ${esc(s.name)} a ${euro(base * 100)} la nit</span><table>${rows}</table>`;
 }
-$('tiers').addEventListener('input', e => { const i = e.target.closest('.tier')?.dataset.i, k = e.target.dataset.k; if (i != null && k) { tiers[i][k] = Number(e.target.value); discExample(); } });
+$('tiers').addEventListener('sl-input', e => { const i = e.target.closest('.tier')?.dataset.i, k = e.target.dataset.k; if (i != null && k) { tiers[i][k] = Number(e.target.value); discExample(); } });
 $('tiers').addEventListener('click', e => { if (e.target.closest('[data-del]')) { tiers.splice(e.target.closest('.tier').dataset.i, 1); renderDisc(); } });
 $('addTier').onclick = () => { const last = tiers.at(-1); tiers.push({ nights: last ? last.nights + 4 : 2, pct: last ? Math.min(last.pct + 5, 90) : 5 }); renderDisc(); };
 $('discForm').addEventListener('submit', e => {
   e.preventDefault();
-  submit(e.target, async () => { SET = await api('settings', { method: 'PUT', body: { discounts: tiers } }); tiers = null; renderDisc(); toast('Descomptes desats'); });
+  submit(e.target, async () => { SET = await api('settings', { method: 'PUT', body: { discounts: tiers } }); tiers = null; renderDisc(); toast('Descomptes desats', 'success'); });
 });
 
 // ---- Rules and cancellation policy ----
@@ -1046,23 +1244,24 @@ const PRESETS = {
 };
 const samePolicy = (a, b) => (a.fullDays ?? null) === (b.fullDays ?? null) && (a.partialPct || 0) === (b.partialPct || 0) && (!a.partialPct || (a.partialDays ?? null) === (b.partialDays ?? null));
 function formPolicy() {
-  const f = $('rulesForm'), n = v => v === '' ? null : Number(v);
+  const f = $('rulesForm'), n = v => v === '' || v == null ? null : Number(v);
   return { fullDays: n(f.fullDays.value), partialDays: n(f.partialDays.value), partialPct: Number(f.partialPct.value) || 0 };
 }
 function renderRules() {
   if (!SET) return;
   const f = $('rulesForm');
   if (!f.dataset.filled) {
-    for (const k of ['minNights', 'maxNights', 'minAdvance', 'checkin', 'checkout']) f[k].value = SET.rules[k];
-    f.maxAdvance.value = String(SET.rules.maxAdvance);
-    if (f.maxAdvance.value !== String(SET.rules.maxAdvance)) { f.maxAdvance.insertAdjacentHTML('beforeend', `<option value="${SET.rules.maxAdvance}">${SET.rules.maxAdvance} dies abans</option>`); f.maxAdvance.value = String(SET.rules.maxAdvance); }
+    for (const k of ['minNights', 'maxNights', 'minAdvance', 'checkin', 'checkout']) f[k].value = String(SET.rules[k]);
+    const adv = String(SET.rules.maxAdvance);
+    if (!f.maxAdvance.querySelector(`sl-option[value="${adv}"]`)) f.maxAdvance.insertAdjacentHTML('beforeend', `<sl-option value="${adv}">${adv} dies abans</sl-option>`);
+    f.maxAdvance.value = adv;
     setPolicy(SET.cancel); f.dataset.filled = 1;
   }
   syncPolicy();
 }
 function setPolicy(c) {
   const f = $('rulesForm');
-  f.fullDays.value = c.fullDays ?? ''; f.partialPct.value = c.partialPct || 0; f.partialDays.value = c.partialDays ?? '';
+  f.fullDays.value = c.fullDays == null ? '' : String(c.fullDays); f.partialPct.value = String(c.partialPct || 0); f.partialDays.value = c.partialDays == null ? '' : String(c.partialDays);
 }
 function syncPolicy() {
   const c = formPolicy();
@@ -1071,14 +1270,14 @@ function syncPolicy() {
   $('policyText').textContent = policyText(c);
 }
 $('presets').addEventListener('click', e => { const k = e.target.closest('[data-p]')?.dataset.p; if (PRESETS[k]) { setPolicy(PRESETS[k]); syncPolicy(); } else if (k) $('rulesForm').fullDays.focus(); });
-$('rulesForm').addEventListener('input', syncPolicy);
+$('rulesForm').addEventListener('sl-input', syncPolicy);
 $('rulesForm').addEventListener('submit', e => {
   e.preventDefault();
   const f = e.target;
   submit(f, async () => {
     const rules = Object.fromEntries(['minNights', 'maxNights', 'minAdvance', 'maxAdvance', 'checkin', 'checkout'].map(k => [k, f[k].value]));
     SET = await api('settings', { method: 'PUT', body: { rules, cancel: formPolicy() } });
-    delete f.dataset.filled; renderRules(); toast('Normes desades');
+    delete f.dataset.filled; renderRules(); toast('Normes desades', 'success');
   });
 });
 
@@ -1087,18 +1286,18 @@ let CONTENT = null, stStay = null, draft = null, openIcons = null;
 const icon = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${CONTENT.icons[k] || CONTENT.icons.star}</svg>`;
 const photoUrl = src => src.startsWith('/') ? src : '/' + src;
 async function renderStays() {
-  if (!CONTENT) { try { CONTENT = await api('stays'); } catch (e) { return toast(e.message); } }
+  if (!CONTENT) { try { CONTENT = await api('stays'); } catch (e) { return toast(e.message, 'danger'); } }
   stStay ||= STAYS[0]?.id;
   if (!stStay) return;
   if (!draft || draft.stay !== stStay) { draft = { stay: stStay, ...structuredClone(CONTENT.stays[stStay]) }; setDirty(false); fillStay(); }
-  $('stStays').innerHTML = STAYS.map(s => `<button class="chip" type="button" data-stay="${s.id}" aria-pressed="${s.id === stStay}">${esc(CONTENT.stays[s.id].name)}</button>`).join('');
+  stayRadios('stStays', stStay, s => CONTENT.stays[s.id].name);
   drawFeats(); drawPhotos(); preview();
 }
 function fillStay() {
   const f = $('stayForm'); formError(f);
   f.kind.value = draft.kind; f.name.value = draft.name; f.desc.value = draft.desc;
-  f.max.innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1} ${i ? 'persones' : 'persona'}</option>`).join('');
-  f.max.value = draft.max;
+  f.max.innerHTML = Array.from({ length: 12 }, (_, i) => `<sl-option value="${i + 1}">${i + 1} ${i ? 'persones' : 'persona'}</sl-option>`).join('');
+  f.max.value = String(draft.max);
   $('viewSite').href = `${location.protocol}//${location.hostname.replace(/^maite\./, '')}/#${stStay}`;
   $('uploadBtn').hidden = !CONTENT.uploads;
   $('uploadHint').textContent = CONTENT.uploads ? '' : "Per pujar fotos noves cal connectar l'emmagatzematge R2 (vegeu el README). Mentrestant pots triar entre les fotos de la web.";
@@ -1108,15 +1307,15 @@ $('stBarSave').onclick = () => $('stayForm').requestSubmit();
 function drawFeats() {
   $('feats').innerHTML = draft.feats.map((f, i) => `<div class="feat" data-i="${i}">
       <button type="button" class="ico" data-icons title="Canvia la icona" aria-label="Canvia la icona">${icon(f.icon)}</button>
-      <input value="${esc(f.text)}" data-text aria-label="Característica ${i + 1}" maxlength="60">
-      <button type="button" class="mv" data-up aria-label="Puja"${i ? '' : ' disabled'}>↑</button>
-      <button type="button" class="mv" data-down aria-label="Baixa"${i < draft.feats.length - 1 ? '' : ' disabled'}>↓</button>
-      <button type="button" class="mv" data-del aria-label="Treu">×</button>
+      <sl-input size="small" value="${esc(f.text)}" data-text aria-label="Característica ${i + 1}" maxlength="60"></sl-input>
+      <sl-icon-button name="chevron-up" label="Puja" data-up${i ? '' : ' disabled'}></sl-icon-button>
+      <sl-icon-button name="chevron-down" label="Baixa" data-down${i < draft.feats.length - 1 ? '' : ' disabled'}></sl-icon-button>
+      <sl-icon-button name="x-lg" label="Treu" data-del></sl-icon-button>
     </div>${openIcons === i ? `<div class="icons" data-for="${i}">${Object.keys(CONTENT.icons).map(k => `<button type="button" data-icon="${k}" aria-pressed="${k === f.icon}">${icon(k)}${esc(CONTENT.iconNames[k] || k)}</button>`).join('')}</div>` : ''}`).join('');
 }
-$('feats').addEventListener('input', e => { const i = e.target.closest('.feat')?.dataset.i; if (i != null && e.target.hasAttribute('data-text')) { draft.feats[i].text = e.target.value; setDirty(true); preview(); } });
+$('feats').addEventListener('sl-input', e => { const i = e.target.closest('.feat')?.dataset.i; if (i != null && e.target.hasAttribute('data-text')) { draft.feats[i].text = e.target.value; setDirty(true); preview(); } });
 $('feats').addEventListener('click', e => {
-  const t = e.target.closest('button'); if (!t) return;
+  const t = e.target.closest('button, sl-icon-button'); if (!t || t.disabled) return;
   const i = +(e.target.closest('.feat')?.dataset.i ?? e.target.closest('.icons')?.dataset.for);
   if (t.dataset.icon) { draft.feats[i].icon = t.dataset.icon; openIcons = null; }
   else if (t.hasAttribute('data-icons')) openIcons = openIcons === i ? null : i;
@@ -1126,7 +1325,11 @@ $('feats').addEventListener('click', e => {
   else return;
   setDirty(true); drawFeats(); preview();
 });
-$('addFeat').onclick = () => { draft.feats.push({ icon: 'star', text: '' }); openIcons = draft.feats.length - 1; drawFeats(); $('feats').querySelectorAll('[data-text]')[openIcons].focus(); };
+$('addFeat').onclick = async () => {
+  draft.feats.push({ icon: 'star', text: '' }); openIcons = draft.feats.length - 1; drawFeats();
+  const input = $('feats').querySelectorAll('[data-text]')[openIcons];
+  await customElements.whenDefined('sl-input'); await input.updateComplete; input.focus();
+};
 
 let uploading = 0, dragFrom = null;
 function drawPhotos() {
@@ -1144,13 +1347,13 @@ $('photos').addEventListener('click', e => {
   if (t.hasAttribute('data-right')) movePhoto(i, i + 1);
   if (t.hasAttribute('data-cover')) movePhoto(i, 0);
   if (t.hasAttribute('data-del')) {
-    if (draft.photos.length === 1) return toast('Cal almenys una foto');
+    if (draft.photos.length === 1) return toast('Cal almenys una foto', 'warning');
     draft.photos.splice(i, 1); setDirty(true); drawPhotos(); preview();
   }
 });
 $('photos').addEventListener('dragstart', e => { const ph = e.target.closest('.ph[data-i]'); if (!ph) return; dragFrom = +ph.dataset.i; ph.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
 $('photos').addEventListener('dragover', e => { const ph = e.target.closest('.ph[data-i]'); if (dragFrom == null || !ph) return; e.preventDefault(); $('photos').querySelectorAll('.over').forEach(x => x.classList.remove('over')); ph.classList.add('over'); });
-$('photos').addEventListener('drop', e => { const ph = e.target.closest('.ph[data-i]'); if (dragFrom == null || !ph) return; e.preventDefault(); const to = +ph.dataset.i; const from = dragFrom; dragFrom = null; if (to !== from) movePhoto(from, to); else drawPhotos(); });
+$('photos').addEventListener('drop', e => { const ph = e.target.closest('.ph[data-i]'); if (dragFrom == null || !ph) return; e.preventDefault(); const to = +ph.dataset.i, from = dragFrom; dragFrom = null; if (to !== from) movePhoto(from, to); else drawPhotos(); });
 $('photos').addEventListener('dragend', () => { if (dragFrom != null) { dragFrom = null; drawPhotos(); } });
 
 // Photos are resized in the browser (longest side 2000 px, JPEG) before going up
@@ -1160,6 +1363,7 @@ async function shrink(file) {
   c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
   return new Promise(ok => c.toBlob(ok, 'image/jpeg', .85));
 }
+$('uploadBtn').onclick = () => $('upload').click();
 $('upload').addEventListener('change', async e => {
   const files = [...e.target.files]; e.target.value = '';
   uploading += files.length; drawPhotos();
@@ -1170,7 +1374,7 @@ $('upload').addEventListener('change', async e => {
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(ERRORS[d.error] || "No s'ha pogut pujar la foto");
       draft.photos.push(d.src); setDirty(true);
-    } catch (err) { toast(`${file.name}: ${err.message}`); }
+    } catch (err) { toast(`${file.name}: ${err.message}`, 'danger'); }
     uploading--; drawPhotos(); preview();
   }
 });
@@ -1178,25 +1382,25 @@ let libPick = new Set();
 $('libBtn').onclick = () => {
   libPick = new Set();
   $('lib').innerHTML = CONTENT.library.map(src => `<button type="button" class="ph${draft.photos.includes(src) ? ' in' : ''}" data-src="${esc(src)}" aria-pressed="false"${draft.photos.includes(src) ? ' disabled' : ''}><img src="${esc(photoUrl(src))}" alt="" loading="lazy"></button>`).join('');
-  $('libDlg').showModal();
+  openDlg('libDlg');
 };
 $('lib').addEventListener('click', e => { const b = e.target.closest('[data-src]'); if (!b || b.disabled) return; const on = !libPick.has(b.dataset.src); on ? libPick.add(b.dataset.src) : libPick.delete(b.dataset.src); b.setAttribute('aria-pressed', on); });
-$('libAdd').onclick = () => { if (libPick.size) { draft.photos.push(...libPick); setDirty(true); drawPhotos(); preview(); } $('libDlg').close(); };
+$('libAdd').onclick = () => { if (libPick.size) { draft.photos.push(...libPick); setDirty(true); drawPhotos(); preview(); } closeDlg('libDlg'); };
 
 function preview() {
   $('pvImg').src = draft.photos[0] ? photoUrl(draft.photos[0]) : '';
   $('pvKind').textContent = draft.kind; $('pvName').textContent = draft.name; $('pvDesc').textContent = draft.desc;
   $('pvFeats').innerHTML = draft.feats.filter(f => f.text.trim()).map(f => `<li>${icon(f.icon)}${esc(f.text)}</li>`).join('');
 }
-$('stayForm').addEventListener('input', e => {
-  const k = e.target.name;
-  if (['kind', 'name', 'desc'].includes(k)) { draft[k] = e.target.value; setDirty(true); preview(); }
-});
-$('stayForm').max.addEventListener('change', e => { draft.max = +e.target.value; setDirty(true); });
-$('stStays').addEventListener('click', e => {
-  const c = e.target.closest('[data-stay]'); if (!c || c.dataset.stay === stStay) return;
-  if (!$('stDirty').hidden && !confirm('Hi ha canvis sense desar. Els vols descartar?')) return;
-  stStay = c.dataset.stay; openIcons = null; renderStays();
+{
+  const f = $('stayForm');
+  for (const k of ['kind', 'name', 'desc']) f[k].addEventListener('sl-input', () => { draft[k] = f[k].value; setDirty(true); preview(); });
+  f.max.addEventListener('sl-change', () => { draft.max = +f.max.value; setDirty(true); });
+}
+$('stStays').addEventListener('sl-change', e => {
+  const next = e.target.value; if (next === stStay) return;
+  if (!$('stDirty').hidden && !confirm('Hi ha canvis sense desar. Els vols descartar?')) { e.target.value = stStay; return; }
+  stStay = next; openIcons = null; renderStays();
 });
 $('stayForm').addEventListener('submit', e => {
   e.preventDefault();
@@ -1204,7 +1408,7 @@ $('stayForm').addEventListener('submit', e => {
   submit(f, async () => {
     if (uploading) throw new Error('Espera que acabin de pujar les fotos');
     const d = await api('stays', { method: 'PUT', body: { ...draft, feats: draft.feats.filter(x => x.text.trim()) } });
-    CONTENT.stays[stStay] = d.stay; draft = null; toast('Allotjament desat');
+    CONTENT.stays[stStay] = d.stay; draft = null; toast('Allotjament desat', 'success');
     const st = STAYS.find(x => x.id === stStay); if (st) Object.assign(st, { name: `${d.stay.kind} ${d.stay.name}`, short: d.stay.name, max: d.stay.max });
     renderStays();
   });
@@ -1220,13 +1424,13 @@ function render() {
   if (tab === 'stays') renderStays();
 }
 
-(async () => {
-  try { const t = localStorage.getItem('maite-tab'); if (t && t !== 'cal') document.querySelector(`[data-tab="${t}"]`)?.click(); } catch (e) {}
-  document.body.classList.add('loading');
-  try { await reload(); }
-  catch (e) { $('notice').hidden = false; $('notice').textContent = e.message; }
-  document.body.classList.remove('loading');
-})();
+// Start once the Shoelace fields on the page are defined, so values set from here land in them
+await Promise.allSettled(['sl-input', 'sl-select', 'sl-option', 'sl-checkbox', 'sl-button', 'sl-dialog', 'sl-radio-group', 'sl-textarea'].map(t => customElements.whenDefined(t)));
+try { const t = localStorage.getItem('maite-tab'); if (t && t !== 'cal' && $('tab-' + t)) showTab(t); } catch (e) {}
+document.body.classList.add('loading');
+try { await reload(); }
+catch (e) { notice(e.message); }
+document.body.classList.remove('loading');
 </script>
 </body>
 </html>

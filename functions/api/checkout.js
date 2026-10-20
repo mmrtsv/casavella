@@ -2,14 +2,14 @@
 // Checks the stay's calendar and opens a Stripe Checkout session in Elements mode:
 // the card form is embedded in our own booking page. Nothing is blocked until the guest pays;
 // the webhook (stripe-webhook.js) writes the booking to the calendar once the payment is complete.
-import { STAYS, quote, configured, calendar, stripe, json, euros } from '../../lib/booking.js';
+import { STAYS, quote, prices, configured, calendar, stripe, json, euros } from '../../lib/booking.js';
 
 const fmt = d => new Date(d + 'T12:00:00Z').toLocaleDateString('ca-ES', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 export async function onRequestPost({ request, env }) {
   let body;
   try { body = await request.json(); } catch { return json({ error: 'bad_request' }, 400); }
-  const q = quote(body.stay, body.in, body.out);
+  const q = quote(body.stay, body.in, body.out, await prices(env));
   if (q.error) return json(q, 400);
   const guests = Math.min(Math.max(parseInt(body.guests, 10) || 1, 1), STAYS[q.stay].max);
   const clip = (v, n) => String(v || '').trim().slice(0, n);

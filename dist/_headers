@@ -1,2 +1,5 @@
 /fonts/*
   Access-Control-Allow-Origin: *
+/maite/*
+  X-Robots-Tag: noindex
+  Cache-Control: no-store

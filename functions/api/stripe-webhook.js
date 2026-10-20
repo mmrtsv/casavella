@@ -39,7 +39,10 @@ export async function onRequestPost({ request, env }) {
       `Stripe: https://dashboard.stripe.com/${s.livemode ? '' : 'test/'}payments/${s.payment_intent}`,
     ].filter(Boolean).join('\n'),
     start: { date: m.checkin }, end: { date: m.checkout },
-    colorId: waiting ? '5' : '10', extendedProperties: { private: { lcv: waiting ? 'pending' : 'paid', session: s.id } },
+    colorId: waiting ? '5' : '10',
+    // Read back by Maite (the back office) to list the booking and refund it
+    extendedProperties: { private: { lcv: waiting ? 'pending' : 'paid', session: s.id, pi: s.payment_intent || '', amount: String(s.amount_total ?? ''),
+      guests: String(m.guests || ''), name: c.name || '', email: c.email || '', phone: c.phone || '' } },
   };
 
   const existing = await mine();
@@ -59,6 +62,7 @@ export async function onRequestPost({ request, env }) {
   // Someone else completed a booking for these dates first
   if (s.payment_intent) await stripe(env, 'refunds', { payment_intent: s.payment_intent, metadata: { reason: 'dates_taken' } });
   await cal.create({ ...booking, summary: `REEMBORSADA: ${STAYS[m.stay].name}, ${c.name || ''}`, transparency: 'transparent', colorId: '11',
+    extendedProperties: { private: { ...booking.extendedProperties.private, lcv: 'refunded' } },
     description: 'Les dates ja estaven reservades quan va arribar el pagament. Stripe ha retornat els diners automàticament.\n\n' + booking.description });
   return json({ ok: true, refunded: true });
 }

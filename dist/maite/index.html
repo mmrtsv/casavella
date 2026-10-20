@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Maite</title>
+<link rel="icon" type="image/png" href="/img/iso-dark.png">
+<style>
+@font-face { font-family: "Le Monde Livre"; src: url(/fonts/LeMondeLivre.woff2) format("woff2"); font-weight: 400 600; font-display: swap; }
+@font-face { font-family: "Halyard Display"; src: url(/fonts/HalyardDisplay.ttf) format("truetype"); font-weight: 300 700; font-display: swap; }
+/* Maite, the back office of La Casa Vella. Same palette and type as the public web, quieter. */
+:root {
+  --ground: #efebe3; --paper: #f7f5f0; --ink: #1a3f20; --text: #26302a; --muted: #5f6a5f; --line: #d6d0c2;
+  --basil: #2e6d2e; --deep: #1a3f20; --on-deep: #f3efe4;
+  --paid: #2e6d2e; --paid-bg: #dbe8d6; --due: #9a6a12; --due-bg: #f3e4c2; --block: #5f6a5f; --block-bg: #e2ded4;
+  --other: #3f5f8a; --other-bg: #dde5ef; --danger: #a33a2a; --today: #c98a2b; --primary: #1a3f20; --on-primary: #f3efe4;
+  --display: "Le Monde Livre", Georgia, serif; --body: "Halyard Display", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #141f17; --paper: #1b281e; --ink: #dfe8d6; --text: #e3e0d6; --muted: #a8b2a3; --line: #2f3d31;
+  --basil: #8fbf8c; --deep: #0f2614; --paid: #a6d1a1; --paid-bg: #26402a; --due: #e7c27a; --due-bg: #4a3a17;
+  --block: #b9bfb2; --block-bg: #313a32; --other: #a9c1e6; --other-bg: #263446; --danger: #f08f7c; --primary: #8fbf8c; --on-primary: #0f2614; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --ground: #141f17; --paper: #1b281e; --ink: #dfe8d6; --text: #e3e0d6; --muted: #a8b2a3; --line: #2f3d31;
+  --basil: #8fbf8c; --deep: #0f2614; --paid: #a6d1a1; --paid-bg: #26402a; --due: #e7c27a; --due-bg: #4a3a17;
+  --block: #b9bfb2; --block-bg: #313a32; --other: #a9c1e6; --other-bg: #263446; --danger: #f08f7c; --primary: #8fbf8c; --on-primary: #0f2614; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ground); color: var(--text); font: 16px/1.45 var(--body); }
+[hidden] { display: none !important; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--basil); }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; color: var(--ink); margin: 0; }
+
+.top { background: var(--deep); color: var(--on-deep); padding: 14px 16px 0; padding-top: max(14px, env(safe-area-inset-top)); }
+.top-row { display: flex; align-items: center; gap: 12px; max-width: 1280px; margin: 0 auto; }
+.top img { width: 30px; height: 30px; }
+.top h1 { color: var(--on-deep); font-size: 26px; line-height: 1; }
+.top small { display: block; font-size: 12px; opacity: .7; letter-spacing: .04em; }
+.who { margin-left: auto; font-size: 13px; opacity: .8; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.tabs { display: flex; gap: 4px; max-width: 1280px; margin: 12px auto 0; overflow-x: auto; }
+.tabs button { background: none; border: 0; color: var(--on-deep); opacity: .7; padding: 10px 14px; border-radius: 8px 8px 0 0; cursor: pointer; white-space: nowrap; }
+.tabs button[aria-selected="true"] { background: var(--ground); color: var(--ink); opacity: 1; }
+
+main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 60px; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+.bar h2 { font-size: 26px; margin-right: auto; }
+.btn { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 8px 16px; cursor: pointer; line-height: 1.2; }
+.btn:hover { border-color: var(--muted); }
+.btn.solid { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.btn.danger { color: var(--danger); border-color: var(--danger); }
+.btn.icon { padding: 8px 12px; }
+.btn:disabled { opacity: .5; cursor: default; }
+.notice { background: var(--due-bg); color: var(--text); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
+
+/* Month grid: one row per stay, one column per night */
+.grid-wrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; }
+.grid { --days: 30; display: grid; grid-template-columns: 132px repeat(var(--days), minmax(34px, 1fr)); min-width: calc(132px + var(--days) * 34px); }
+.grid .h { font-size: 11px; color: var(--muted); text-align: center; padding: 8px 0 6px; border-bottom: 1px solid var(--line); line-height: 1.2; }
+.grid .h b { display: block; font-size: 14px; color: var(--text); font-weight: 500; }
+.grid .h.we { background: color-mix(in srgb, var(--line) 35%, transparent); }
+.grid .h.today b { color: var(--today); }
+.grid .name { position: sticky; left: 0; z-index: 2; background: var(--paper); padding: 0 10px; display: flex; align-items: center; font-size: 14px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); min-height: 52px; }
+.grid .corner { position: sticky; left: 0; z-index: 2; background: var(--paper); border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); }
+.grid .cell { border-bottom: 1px solid var(--line); border-left: 1px solid color-mix(in srgb, var(--line) 55%, transparent); cursor: pointer; min-height: 52px; }
+.grid .cell.we { background: color-mix(in srgb, var(--line) 35%, transparent); }
+.grid .cell.past { cursor: default; background-image: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--line) 50%, transparent) 6px 7px); }
+.grid .cell:not(.past):hover { background: color-mix(in srgb, var(--basil) 12%, transparent); }
+.grid .cell.sel { background: color-mix(in srgb, var(--basil) 28%, transparent); }
+.ev { z-index: 1; margin: 7px 2px; border-radius: 7px; padding: 4px 7px; font-size: 12px; line-height: 1.25; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; border: 0; text-align: left; border-left: 4px solid; align-self: stretch; }
+.ev small { display: block; opacity: .8; overflow: hidden; text-overflow: ellipsis; }
+.k-paid, .k-manual.settled { background: var(--paid-bg); border-color: var(--paid); }
+.k-pending, .k-manual { background: var(--due-bg); border-color: var(--due); }
+.k-block { background: var(--block-bg); border-color: var(--block); }
+.k-other { background: var(--other-bg); border-color: var(--other); }
+.k-cancelled, .k-refunded { background: transparent; border-color: var(--line); color: var(--muted); text-decoration: line-through; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); margin-top: 12px; }
+.legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border-left: 3px solid; }
+.legend .l-paid::before { background: var(--paid-bg); border-color: var(--paid); }
+.legend .l-due::before { background: var(--due-bg); border-color: var(--due); }
+.legend .l-block::before { background: var(--block-bg); border-color: var(--block); }
+.legend .l-other::before { background: var(--other-bg); border-color: var(--other); }
+.hint { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.selbar { position: sticky; bottom: 12px; margin-top: 12px; background: var(--deep); color: var(--on-deep); border-radius: 14px; padding: 10px 12px 10px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+.selbar span { margin-right: auto; }
+.selbar .btn { background: transparent; color: var(--on-deep); border-color: rgba(243,239,228,.4); }
+.selbar .btn.solid { background: var(--on-deep); color: var(--deep); }
+
+/* Bookings list */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 14px; }
+.chip[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.search { flex: 1 1 200px; min-width: 0; max-width: 320px; border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 8px 14px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.stat { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.stat span { font-size: 13px; color: var(--muted); }
+.stat b { display: block; font: 400 28px/1.15 var(--display); color: var(--ink); font-variant-numeric: tabular-nums; }
+.day { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 22px 0 8px; }
+.card { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; background: var(--paper); border: 1px solid var(--line); border-left: 4px solid; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; width: 100%; text-align: left; }
+.card h3 { font: 500 17px/1.3 var(--body); color: var(--text); }
+.card .meta { font-size: 14px; color: var(--muted); }
+.card .amt { text-align: right; font-variant-numeric: tabular-nums; font-size: 17px; }
+.pill { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--block-bg); color: var(--text); white-space: nowrap; }
+.pill.paid { background: var(--paid-bg); color: var(--paid); }
+.pill.due { background: var(--due-bg); color: var(--due); }
+.pill.other { background: var(--other-bg); color: var(--other); }
+.empty { color: var(--muted); padding: 30px 0; text-align: center; }
+
+/* Prices */
+.prices { max-width: 560px; }
+.prices table { width: 100%; border-collapse: collapse; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.prices td { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.prices tr:last-child td { border-bottom: 0; }
+.prices td:last-child { text-align: right; white-space: nowrap; }
+.prices input { width: 90px; text-align: right; }
+.prices h3 { font-size: 20px; margin: 22px 0 8px; }
+.example { font-size: 14px; color: var(--muted); margin: 10px 0 18px; }
+
+/* Dialogs and forms */
+dialog { border: 0; border-radius: 16px; padding: 0; background: var(--paper); color: var(--text); width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+dialog::backdrop { background: rgba(15, 25, 17, .45); }
+dialog form, .dlg { padding: 20px; }
+dialog h2 { font-size: 24px; margin-bottom: 14px; padding-right: 30px; }
+.x { position: absolute; right: 12px; top: 12px; border: 0; background: none; font-size: 24px; line-height: 1; cursor: pointer; color: var(--muted); padding: 4px 8px; }
+label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+input, select, textarea { display: block; width: 100%; margin-top: 4px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--ground); font-size: 16px; }
+input[type="checkbox"] { display: inline-block; width: auto; margin: 0 8px 0 0; vertical-align: -2px; }
+textarea { min-height: 70px; resize: vertical; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+.checks label { color: var(--text); font-size: 15px; margin-bottom: 8px; }
+.actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.err { color: var(--danger); font-size: 14px; margin: 0 0 10px; }
+dl { display: grid; grid-template-columns: 110px 1fr; gap: 6px 12px; margin: 0 0 16px; font-size: 15px; }
+dt { color: var(--muted); }
+dd { margin: 0; overflow-wrap: anywhere; }
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--deep); color: var(--on-deep); padding: 10px 18px; border-radius: 999px; font-size: 14px; z-index: 10; max-width: calc(100vw - 32px); }
+.loading { opacity: .55; pointer-events: none; transition: opacity .2s; }
+
+@media (max-width: 640px) {
+  .grid { grid-template-columns: 92px repeat(var(--days), 34px); min-width: calc(92px + var(--days) * 34px); }
+  .grid .name { font-size: 13px; padding: 0 8px; }
+  .row { grid-template-columns: 1fr; }
+  .card { grid-template-columns: 1fr; }
+  .card .amt { text-align: left; }
+  .who { display: none; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <img src="/img/iso-light.png" alt="">
+    <div><h1>Maite</h1><small>La Casa Vella</small></div>
+    <div class="who" id="who"></div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="cal" aria-selected="true">Calendari</button>
+    <button role="tab" data-tab="list" aria-selected="false">Reserves</button>
+    <button role="tab" data-tab="prices" aria-selected="false">Preus</button>
+  </nav>
+</header>
+
+<main>
+  <div class="notice" id="notice" hidden></div>
+
+  <section id="tab-cal">
+    <div class="bar">
+      <h2 id="month"></h2>
+      <button class="btn icon" id="prev" aria-label="Mes anterior">‹</button>
+      <button class="btn" id="todayBtn">Avui</button>
+      <button class="btn icon" id="next" aria-label="Mes següent">›</button>
+      <button class="btn" id="blockBtn">Tancar dates</button>
+      <button class="btn solid" id="bookBtn">Nova reserva</button>
+    </div>
+    <div class="grid-wrap"><div class="grid" id="grid"></div></div>
+    <div class="legend"><span class="l-paid">Pagada</span><span class="l-due">Pendent de cobrar</span><span class="l-block">Tancat</span><span class="l-other">Altres (Google Calendar)</span></div>
+    <p class="hint">Toca la primera nit i després l'última per tancar dates o afegir una reserva. Toca una reserva per veure'n els detalls.</p>
+    <div class="selbar" id="selbar" hidden><span id="selText"></span><button class="btn" id="selClear">Desfés</button><button class="btn" id="selBlock">Tancar</button><button class="btn solid" id="selBook">Reserva</button></div>
+  </section>
+
+  <section id="tab-list" hidden>
+    <div class="stats" id="stats"></div>
+    <div class="bar">
+      <div class="chips" id="chips">
+        <button class="chip" data-f="next" aria-pressed="true">Properes</button>
+        <button class="chip" data-f="past" aria-pressed="false">Passades</button>
+        <button class="chip" data-f="cancelled" aria-pressed="false">Cancel·lades</button>
+        <button class="chip" data-f="block" aria-pressed="false">Tancaments</button>
+      </div>
+      <input class="search" id="q" type="search" placeholder="Cerca per nom, telèfon o correu">
+    </div>
+    <div id="list"></div>
+  </section>
+
+  <section id="tab-prices" class="prices" hidden>
+    <form id="priceForm">
+      <h3>Preu per nit</h3>
+      <table id="priceTable"></table>
+      <h3>Descomptes</h3>
+      <table>
+        <tr><td>2 nits</td><td><input name="d2" type="number" min="0" max="90" step="1" inputmode="numeric"> %</td></tr>
+        <tr><td>3 nits o més</td><td><input name="d3" type="number" min="0" max="90" step="1" inputmode="numeric"> %</td></tr>
+      </table>
+      <p class="example" id="example"></p>
+      <p class="err" id="priceErr" hidden></p>
+      <div class="actions" style="justify-content:flex-start"><button class="btn solid" type="submit">Desa els preus</button></div>
+      <p class="hint">Els preus nous s'apliquen de seguida a la web i als pagaments. Les reserves ja fetes mantenen el que van pagar. Els preus i descomptes que surten als textos de la web també s'actualitzen sols.</p>
+    </form>
+  </section>
+</main>
+
+<dialog id="detail"><div class="dlg"><button class="x" data-close aria-label="Tanca">×</button><div id="detailBody"></div></div></dialog>
+
+<dialog id="bookDlg">
+  <form id="bookForm" novalidate>
+    <button class="x" type="button" data-close aria-label="Tanca">×</button>
+    <h2>Nova reserva</h2>
+    <label>Allotjament<select name="stay" required></select></label>
+    <div class="row">
+      <label>Arribada<input name="first" type="date" required></label>
+      <label>Sortida<input name="until" type="date" required></label>
+    </div>
+    <div class="row">
+      <label>Nom<input name="name" required autocomplete="off"></label>
+      <label>Persones<select name="guests"></select></label>
+    </div>
+    <div class="row">
+      <label>Telèfon<input name="phone" type="tel" autocomplete="off"></label>
+      <label>Correu<input name="email" type="email" autocomplete="off"></label>
+    </div>
+    <div class="row">
+      <label>Import (€)<input name="amount" type="number" min="0" step="0.01" inputmode="decimal"></label>
+      <label>Via<select name="source"><option value="phone">Telèfon</option><option value="whatsapp">WhatsApp</option><option value="email">Correu</option><option value="door">En persona</option><option value="other">Altres</option></select></label>
+    </div>
+    <label class="checks"><input name="settled" type="checkbox">Ja està cobrada</label>
+    <label>Arribada prevista<input name="arrival" placeholder="Cap a les 18 h" autocomplete="off"></label>
+    <label>Comentaris<textarea name="notes"></textarea></label>
+    <p class="err" hidden></p>
+    <div class="actions"><button class="btn" type="button" data-close>Cancel·la</button><button class="btn solid" type="submit">Desa la reserva</button></div>
+  </form>
+</dialog>
+
+<dialog id="blockDlg">
+  <form id="blockForm" novalidate>
+    <button class="x" type="button" data-close aria-label="Tanca">×</button>
+    <h2>Tancar dates</h2>
+    <div class="checks" id="blockStays"></div>
+    <div class="row">
+      <label>Primera nit<input name="first" type="date" required></label>
+      <label>Fins al dia<input name="until" type="date" required></label>
+    </div>
+    <label>Motiu (opcional)<input name="note" placeholder="Obres, família, vacances…" autocomplete="off"></label>
+    <p class="err" hidden></p>
+    <div class="actions"><button class="btn" type="button" data-close>Cancel·la</button><button class="btn solid" type="submit">Tanca les nits</button></div>
+  </form>
+</dialog>
+
+<dialog id="cancelDlg">
+  <form id="cancelForm" novalidate>
+    <button class="x" type="button" data-close aria-label="Tanca">×</button>
+    <h2>Cancel·lar la reserva</h2>
+    <p id="cancelText"></p>
+    <label id="refundRow">Retornar a la targeta (€)<input name="refund" type="number" min="0" step="0.01" inputmode="decimal"></label>
+    <p class="err" hidden></p>
+    <div class="actions"><button class="btn" type="button" data-close>No</button><button class="btn danger" type="submit">Cancel·la la reserva</button></div>
+  </form>
+</dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); };
+const nightsBetween = (a, b) => Math.round((parse(b) - parse(a)) / 864e5);
+const TODAY = iso(new Date());
+const euro = c => c == null ? '' : (c / 100).toLocaleString('ca-ES', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 }) + ' €';
+const day = (s, opt = { weekday: 'short', day: 'numeric', month: 'short' }) => parse(s).toLocaleDateString('ca-ES', opt);
+const range = (a, b) => `${day(a)} → ${day(b)}`;
+const nitsTxt = n => `${n} ${n === 1 ? 'nit' : 'nits'}`;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const KIND = { paid: 'Pagada a la web', pending: 'Pendent del banc', manual: 'Reserva directa', block: 'Tancat', cancelled: 'Cancel·lada', refunded: 'Reemborsada', other: 'Google Calendar' };
+const SOURCE = { web: 'Web', phone: 'Telèfon', whatsapp: 'WhatsApp', email: 'Correu', door: 'En persona', other: 'Altres' };
+const ERRORS = {
+  unavailable: 'Aquestes nits ja estan ocupades', dates: 'Revisa les dates', name: 'Falta el nom', stay: 'Tria un allotjament',
+  amount: "L'import no és vàlid", pending: 'El banc encara no ha confirmat aquest pagament. Espera que es confirmi per cancel·lar-la.',
+  refund_amount: "No es pot retornar més del que es va pagar", not_configured: 'Aquest allotjament no té el calendari connectat',
+  no_payment: 'No trobo el pagament a Stripe', access: 'La sessió ha caducat. Torna a carregar la pàgina.', discount: 'Els descomptes han de ser entre 0 i 90 %',
+  price: 'Revisa els preus',
+};
+
+let STAYS = [], PRICES = null, bookings = new Map(), loaded = [];
+
+async function api(path, opt = {}) {
+  const r = await fetch('/api/maite/' + path, { ...opt, headers: { 'content-type': 'application/json' }, body: opt.body && JSON.stringify(opt.body) });
+  const d = await r.json().catch(() => ({ error: 'server' }));
+  if (!r.ok) {
+    let msg = ERRORS[d.error] || (d.detail ? 'Error: ' + d.detail : "Alguna cosa no ha anat bé. Torna-ho a provar.");
+    if (d.with?.length) msg += ': ' + d.with.map(b => `${stayName(b.stay)}, ${b.kind === 'block' ? 'tancat' : b.name || b.title} (${range(b.first, b.until)})`).join('; ');
+    throw Object.assign(new Error(msg), { code: d.error });
+  }
+  return d;
+}
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.append(t);
+  setTimeout(() => t.remove(), 3200);
+}
+const stayName = id => STAYS.find(s => s.id === id)?.name || id;
+const shortName = id => stayName(id).replace(/^(Apartament|Habitació) /, '');
+
+// ---- Data: windows of calendar entries, merged by id ----
+async function load(from, to) {
+  const d = await api(`bookings?from=${from}&to=${to}`);
+  STAYS = d.stays; PRICES = d.prices;
+  $('who').textContent = d.user;
+  for (const [k, b] of bookings) if (b.first < to && b.until > from) bookings.delete(k);
+  for (const b of d.bookings) bookings.set(b.stay + '|' + b.id, b);
+  loaded.push([from, to]);
+  const off = d.errors.filter(e => e.error === 'not_configured').map(e => stayName(e.stay));
+  const bad = d.errors.filter(e => e.error !== 'not_configured').map(e => `${stayName(e.stay)} (${e.error})`);
+  const n = $('notice');
+  n.hidden = !off.length && !bad.length;
+  n.textContent = [off.length && `Calendari no connectat: ${off.join(', ')}.`, bad.length && `No s'ha pogut llegir: ${bad.join(', ')}.`].filter(Boolean).join(' ');
+}
+const covered = (from, to) => loaded.some(([a, b]) => a <= from && b >= to);
+async function ensure(from, to) { if (!covered(from, to)) await load(from, to); }
+async function reload() { loaded = []; await load(addDays(TODAY, -120), addDays(TODAY, 280)); if (!covered(view.from, view.to)) await load(view.from, view.to); render(); }
+const all = () => [...bookings.values()];
+
+// ---- Tabs ----
+let tab = 'cal';
+document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
+  tab = b.dataset.tab;
+  document.querySelectorAll('[data-tab]').forEach(x => x.setAttribute('aria-selected', x === b));
+  for (const t of ['cal', 'list', 'prices']) $('tab-' + t).hidden = t !== tab;
+  try { localStorage.setItem('maite-tab', tab); } catch (e) {}
+  render();
+}));
+
+// ---- Calendar ----
+const view = {};
+function setMonth(d) {
+  view.y = d.getFullYear(); view.m = d.getMonth();
+  view.from = iso(new Date(view.y, view.m, 1)); view.to = iso(new Date(view.y, view.m + 1, 1));
+}
+setMonth(new Date());
+let sel = null; // { stay, a, b }  a and b are nights (inclusive)
+let scrollToToday = true;
+
+function renderCal() {
+  const title = new Date(view.y, view.m, 1).toLocaleDateString('ca-ES', { month: 'long', year: 'numeric' });
+  $('month').textContent = title[0].toUpperCase() + title.slice(1);
+  const days = nightsBetween(view.from, view.to), g = $('grid');
+  g.style.setProperty('--days', days);
+  let h = '<div class="corner"></div>';
+  for (let i = 0; i < days; i++) {
+    const d = addDays(view.from, i), dt = parse(d), we = dt.getDay() === 0 || dt.getDay() === 6;
+    h += `<div class="h${we ? ' we' : ''}${d === TODAY ? ' today' : ''}" style="grid-row:1;grid-column:${i + 2}">${dt.toLocaleDateString('ca-ES', { weekday: 'narrow' })}<b>${dt.getDate()}</b></div>`;
+  }
+  STAYS.forEach((s, r) => {
+    const row = r + 2;
+    h += `<div class="name" style="grid-row:${row};grid-column:1" title="${esc(s.name)}">${esc(shortName(s.id))}</div>`;
+    for (let i = 0; i < days; i++) {
+      const d = addDays(view.from, i), dt = parse(d), we = dt.getDay() === 0 || dt.getDay() === 6;
+      const inSel = sel && sel.stay === s.id && d >= sel.a && d <= (sel.b || sel.a);
+      h += `<div class="cell${we ? ' we' : ''}${d < TODAY ? ' past' : ''}${inSel ? ' sel' : ''}" data-stay="${s.id}" data-d="${d}" style="grid-row:${row};grid-column:${i + 2}"></div>`;
+    }
+    for (const b of all().filter(b => b.stay === s.id && b.blocks && b.first < view.to && b.until > view.from)) {
+      const a = Math.max(0, nightsBetween(view.from, b.first)), z = Math.min(days, nightsBetween(view.from, b.until));
+      const who = b.kind === 'block' ? (b.title || 'Tancat') : b.kind === 'other' ? b.title : b.name || b.title;
+      const sub = b.kind === 'block' || b.kind === 'other' ? '' : [b.guests && `${b.guests} pers.`, euro(b.amount)].filter(Boolean).join(' · ');
+      h += `<button class="ev k-${b.kind}${b.settled ? ' settled' : ''}" data-id="${esc(b.stay + '|' + b.id)}" style="grid-row:${row};grid-column:${a + 2}/${z + 2}" title="${esc(who)}">${esc(who)}${sub ? `<small>${esc(sub)}</small>` : ''}</button>`;
+    }
+  });
+  g.innerHTML = h;
+  renderSel();
+  if (scrollToToday && TODAY >= view.from && TODAY < view.to) {
+    const w = g.parentElement, col = g.querySelector('.h.today');
+    w.scrollLeft = Math.max(0, col.offsetLeft - g.querySelector('.corner').offsetWidth - 34);
+  }
+  scrollToToday = false;
+}
+const busyNight = (stay, d) => all().some(b => b.blocks && b.stay === stay && b.first <= d && b.until > d);
+$('grid').addEventListener('click', e => {
+  const ev = e.target.closest('.ev');
+  if (ev) return showDetail(bookings.get(ev.dataset.id));
+  const c = e.target.closest('.cell');
+  if (!c || c.classList.contains('past')) return;
+  const { stay, d } = c.dataset;
+  if (busyNight(stay, d)) return;
+  if (!sel || sel.stay !== stay || sel.b || d < sel.a) sel = { stay, a: d };
+  else {
+    // Stop at the first taken night
+    let b = sel.a;
+    while (b < d && !busyNight(stay, addDays(b, 1))) b = addDays(b, 1);
+    sel.b = b;
+  }
+  renderCal();
+});
+function renderSel() {
+  $('selbar').hidden = !sel;
+  if (!sel) return;
+  const until = addDays(sel.b || sel.a, 1);
+  $('selText').textContent = `${shortName(sel.stay)}: ${range(sel.a, until)}, ${nitsTxt(nightsBetween(sel.a, until))}`;
+}
+$('selClear').onclick = () => { sel = null; renderCal(); };
+$('selBlock').onclick = () => openBlock({ stays: [sel.stay], first: sel.a, until: addDays(sel.b || sel.a, 1) });
+$('selBook').onclick = () => openBook({ stay: sel.stay, first: sel.a, until: addDays(sel.b || sel.a, 1) });
+async function go(d) { setMonth(d); sel = null; scrollToToday = true; $('tab-cal').classList.add('loading'); try { await ensure(view.from, view.to); } catch (e) { toast(e.message); } $('tab-cal').classList.remove('loading'); renderCal(); }
+$('prev').onclick = () => go(new Date(view.y, view.m - 1, 1));
+$('next').onclick = () => go(new Date(view.y, view.m + 1, 1));
+$('todayBtn').onclick = () => go(new Date());
+$('bookBtn').onclick = () => openBook({});
+$('blockBtn').onclick = () => openBlock({});
+
+// ---- List ----
+let filter = 'next';
+$('chips').addEventListener('click', e => {
+  const c = e.target.closest('.chip'); if (!c) return;
+  filter = c.dataset.f;
+  document.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', x === c));
+  renderList();
+});
+$('q').addEventListener('input', () => renderList());
+const isBooking = b => ['paid', 'pending', 'manual'].includes(b.kind);
+function renderList() {
+  const q = $('q').value.trim().toLowerCase();
+  let rows = all().filter(b => {
+    if (filter === 'next') return (isBooking(b) || b.kind === 'other' && b.blocks) && b.until >= TODAY;
+    if (filter === 'past') return (isBooking(b) || b.kind === 'other' && b.blocks) && b.until < TODAY;
+    if (filter === 'cancelled') return b.kind === 'cancelled' || b.kind === 'refunded';
+    return b.kind === 'block' && b.until >= TODAY;
+  });
+  if (q) rows = rows.filter(b => [b.name, b.phone, b.email, b.title, stayName(b.stay)].join(' ').toLowerCase().includes(q));
+  rows.sort((a, b) => filter === 'past' || filter === 'cancelled' ? b.first.localeCompare(a.first) : a.first.localeCompare(b.first));
+  let h = '', last = '';
+  for (const b of rows) {
+    const m = parse(b.first).toLocaleDateString('ca-ES', { month: 'long', year: 'numeric' });
+    if (m !== last) { h += `<div class="day">${esc(m)}</div>`; last = m; }
+    h += card(b);
+  }
+  $('list').innerHTML = h || '<p class="empty">No hi ha res aquí.</p>';
+  // Next 30 days at a glance
+  const in30 = addDays(TODAY, 30), soon = all().filter(b => isBooking(b) && b.first >= TODAY && b.first < in30);
+  const nightsSold = all().filter(isBooking).reduce((n, b) => n + Math.max(0, nightsBetween(b.first < TODAY ? TODAY : b.first, b.until > in30 ? in30 : b.until)), 0);
+  const due = all().filter(b => b.kind === 'manual' && !b.settled && b.until >= TODAY);
+  $('stats').innerHTML = [
+    ['Arribades avui', all().filter(b => isBooking(b) && b.first === TODAY).length],
+    ['Arribades en 30 dies', soon.length],
+    ['Ocupació 30 dies', Math.round(nightsSold / (30 * (STAYS.length || 1)) * 100) + ' %'],
+    ['Pendent de cobrar', euro(due.reduce((s, b) => s + (b.amount || 0), 0)) || '0 €'],
+  ].map(([k, v]) => `<div class="stat"><span>${k}</span><b>${esc(v)}</b></div>`).join('');
+}
+function pill(b) {
+  if (b.kind === 'paid') return '<span class="pill paid">Pagada a la web</span>';
+  if (b.kind === 'pending') return '<span class="pill due">Pendent del banc</span>';
+  if (b.kind === 'manual') return `<span class="pill ${b.settled ? 'paid' : 'due'}">${b.settled ? 'Cobrada' : 'Per cobrar'}</span>`;
+  if (b.kind === 'other') return '<span class="pill other">Google Calendar</span>';
+  return `<span class="pill">${KIND[b.kind]}</span>`;
+}
+function card(b) {
+  const color = { paid: 'var(--paid)', pending: 'var(--due)', manual: b.settled ? 'var(--paid)' : 'var(--due)', other: 'var(--other)' }[b.kind] || 'var(--line)';
+  const who = b.kind === 'block' || b.kind === 'other' ? b.title : b.name || b.title;
+  const meta = [stayName(b.stay), range(b.first, b.until), nitsTxt(nightsBetween(b.first, b.until)), b.guests && `${b.guests} pers.`, b.source && SOURCE[b.source]].filter(Boolean).join(' · ');
+  return `<button class="card" style="border-left-color:${color}" data-id="${esc(b.stay + '|' + b.id)}"><div><h3>${esc(who)}</h3><div class="meta">${esc(meta)}</div></div><div class="amt">${euro(b.amount)}<div>${pill(b)}</div></div></button>`;
+}
+$('list').addEventListener('click', e => { const c = e.target.closest('.card'); if (c) showDetail(bookings.get(c.dataset.id)); });
+
+// ---- Detail ----
+function showDetail(b) {
+  if (!b) return;
+  const rows = [
+    ['Allotjament', esc(stayName(b.stay))],
+    ['Dates', `${esc(day(b.first, { weekday: 'long', day: 'numeric', month: 'long' }))} → ${esc(day(b.until, { weekday: 'long', day: 'numeric', month: 'long' }))}<br>${nitsTxt(nightsBetween(b.first, b.until))}`],
+    b.kind !== 'block' && b.name && ['Nom', esc(b.name)],
+    b.guests && ['Persones', b.guests],
+    b.phone && ['Telèfon', `<a href="tel:${esc(b.phone.replace(/\s/g, ''))}">${esc(b.phone)}</a> · <a href="https://wa.me/${esc(b.phone.replace(/\D/g, ''))}" target="_blank" rel="noopener">WhatsApp</a>`],
+    b.email && ['Correu', `<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`],
+    b.amount != null && ['Import', euro(b.amount) + (b.refunded ? ` (retornats ${euro(b.refunded)})` : '')],
+    ['Estat', pill(b)],
+    b.source && ['Via', SOURCE[b.source] || b.source],
+    b.arrival && ['Arribada', esc(b.arrival)],
+    b.notes && ['Comentaris', esc(b.notes)],
+  ].filter(Boolean);
+  const canCancel = b.kind === 'paid' || b.kind === 'manual', future = b.until >= TODAY;
+  $('detailBody').innerHTML = `<h2>${esc(b.kind === 'block' ? b.title || 'Tancat' : b.kind === 'other' ? b.title : b.name || b.title)}</h2>
+    <dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+    ${b.kind === 'other' ? '<p class="hint">Aquesta entrada es va crear directament a Google Calendar. Es canvia des d\'allà.</p>' : ''}
+    ${b.kind === 'pending' ? '<p class="hint">Pagament per transferència o banc que Stripe encara no ha confirmat. Les nits queden reservades mentrestant.</p>' : ''}
+    <div class="actions">
+      ${b.stripe ? `<a class="btn" href="${esc(b.stripe)}" target="_blank" rel="noopener">Stripe</a>` : ''}
+      ${b.link ? `<a class="btn" href="${esc(b.link)}" target="_blank" rel="noopener">Google Calendar</a>` : ''}
+      ${b.kind === 'block' && future ? '<button class="btn danger" data-act="unblock">Obre aquestes nits</button>' : ''}
+      ${canCancel && future ? '<button class="btn danger" data-act="cancel">Cancel·la la reserva</button>' : ''}
+    </div>`;
+  $('detailBody').querySelector('[data-act="unblock"]')?.addEventListener('click', async e => {
+    e.target.disabled = true;
+    try { await api('cancel', { method: 'POST', body: { stay: b.stay, id: b.id } }); $('detail').close(); toast('Nits obertes'); await reload(); }
+    catch (err) { toast(err.message); e.target.disabled = false; }
+  });
+  $('detailBody').querySelector('[data-act="cancel"]')?.addEventListener('click', () => { $('detail').close(); openCancel(b); });
+  $('detail').showModal();
+}
+
+// ---- Forms ----
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
+function formError(form, msg) { const p = form.querySelector('.err'); p.textContent = msg || ''; p.hidden = !msg; }
+async function submit(form, fn) {
+  const btn = form.querySelector('[type="submit"]');
+  btn.disabled = true; formError(form);
+  try { await fn(); } catch (e) { formError(form, e.message); }
+  btn.disabled = false;
+}
+
+function openBook({ stay, first, until }) {
+  const f = $('bookForm'); f.reset(); formError(f);
+  f.stay.innerHTML = STAYS.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  f.stay.value = stay || STAYS[0]?.id;
+  f.first.value = first || TODAY; f.until.value = until || addDays(f.first.value, 1);
+  syncGuests(); suggestAmount();
+  $('bookDlg').showModal();
+}
+function syncGuests() {
+  const f = $('bookForm'), max = STAYS.find(s => s.id === f.stay.value)?.max || 2, v = f.guests.value || 2;
+  f.guests.innerHTML = Array.from({ length: max }, (_, i) => `<option>${i + 1}</option>`).join('');
+  f.guests.value = Math.min(v, max);
+}
+// Suggests the web price for those dates; it can be changed freely
+function suggestAmount() {
+  const f = $('bookForm'), n = f.first.value && f.until.value ? nightsBetween(f.first.value, f.until.value) : 0;
+  if (!PRICES || !(n > 0) || f.amount.dataset.touched) return;
+  const disc = n >= 3 ? PRICES.d3 : n === 2 ? PRICES.d2 : 0;
+  f.amount.value = Math.round(PRICES.stays[f.stay.value] * n * (100 - disc)) / 100;
+}
+$('bookForm').stay.addEventListener('change', () => { syncGuests(); suggestAmount(); });
+$('bookForm').first.addEventListener('change', e => { const f = $('bookForm'); if (f.until.value <= e.target.value) f.until.value = addDays(e.target.value, 1); suggestAmount(); });
+$('bookForm').until.addEventListener('change', suggestAmount);
+$('bookForm').amount.addEventListener('input', e => { e.target.dataset.touched = 1; });
+$('bookDlg').addEventListener('close', () => { delete $('bookForm').amount.dataset.touched; });
+$('bookForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target;
+  submit(f, async () => {
+    const body = Object.fromEntries(new FormData(f)); body.settled = f.settled.checked;
+    await api('bookings', { method: 'POST', body });
+    $('bookDlg').close(); sel = null; toast('Reserva desada'); await reload();
+  });
+});
+
+function openBlock({ stays = [], first, until }) {
+  const f = $('blockForm'); f.reset(); formError(f);
+  $('blockStays').innerHTML = STAYS.map(s => `<label><input type="checkbox" name="stays" value="${s.id}"${stays.includes(s.id) ? ' checked' : ''}>${esc(s.name)}</label>`).join('')
+    + '<label><input type="checkbox" id="allStays">Tota la casa</label>';
+  $('allStays').addEventListener('change', e => f.querySelectorAll('[name="stays"]').forEach(c => { c.checked = e.target.checked; }));
+  f.first.value = first || TODAY; f.until.value = until || addDays(f.first.value, 1);
+  $('blockDlg').showModal();
+}
+$('blockForm').first.addEventListener('change', e => { const f = $('blockForm'); if (f.until.value <= e.target.value) f.until.value = addDays(e.target.value, 1); });
+$('blockForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target, stays = [...f.querySelectorAll('[name="stays"]:checked')].map(c => c.value);
+  submit(f, async () => {
+    if (!stays.length) throw new Error('Tria almenys un allotjament');
+    await api('block', { method: 'POST', body: { stays, first: f.first.value, until: f.until.value, note: f.note.value } });
+    $('blockDlg').close(); sel = null; toast('Nits tancades'); await reload();
+  });
+});
+
+let cancelling = null;
+function openCancel(b) {
+  cancelling = b;
+  const f = $('cancelForm'); f.reset(); formError(f);
+  const paid = b.kind === 'paid';
+  $('cancelText').textContent = `${b.name || b.title}, ${stayName(b.stay)}, ${range(b.first, b.until)}. Les nits quedaran lliures.`
+    + (paid ? ' Pagada amb targeta: indica quant vols retornar (0 si no en retornes res).' : '');
+  $('refundRow').hidden = !paid;
+  if (paid) { f.refund.value = b.amount != null ? b.amount / 100 : ''; f.refund.max = b.amount != null ? b.amount / 100 : ''; }
+  $('cancelDlg').showModal();
+}
+$('cancelForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target, b = cancelling;
+  submit(f, async () => {
+    const refund = b.kind === 'paid' ? Math.round(Number(f.refund.value || 0) * 100) : 0;
+    const d = await api('cancel', { method: 'POST', body: { stay: b.stay, id: b.id, refund } });
+    $('cancelDlg').close(); toast(d.refunded ? `Cancel·lada. Retornats ${euro(d.refunded)}.` : 'Reserva cancel·lada'); await reload();
+  });
+});
+
+// ---- Prices ----
+function renderPrices() {
+  if (!PRICES) return;
+  const f = $('priceForm');
+  if (!f.dataset.filled) {
+    $('priceTable').innerHTML = STAYS.map(s => `<tr><td>${esc(s.name)}</td><td><input name="p-${s.id}" type="number" min="1" step="1" inputmode="decimal" value="${PRICES.stays[s.id]}"> €</td></tr>`).join('');
+    f.d2.value = PRICES.d2; f.d3.value = PRICES.d3; f.dataset.filled = 1;
+  }
+  example();
+}
+function example() {
+  const f = $('priceForm'), s = STAYS[0]; if (!s) return;
+  const p = Number(f['p-' + s.id]?.value) || 0, d3 = Number(f.d3.value) || 0, d2 = Number(f.d2.value) || 0;
+  $('example').textContent = `Exemple, ${s.name}: 1 nit ${euro(p * 100)}, 2 nits ${euro(Math.round(p * 2 * (100 - d2)))}, 3 nits ${euro(Math.round(p * 3 * (100 - d3)))}.`;
+}
+$('priceForm').addEventListener('input', example);
+$('priceForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target, btn = f.querySelector('[type="submit"]'), err = $('priceErr');
+  btn.disabled = true; err.hidden = true;
+  try {
+    PRICES = await api('prices', { method: 'PUT', body: { stays: Object.fromEntries(STAYS.map(s => [s.id, f['p-' + s.id].value])), d2: f.d2.value, d3: f.d3.value } });
+    toast('Preus desats');
+  } catch (ex) { err.textContent = ex.message; err.hidden = false; }
+  btn.disabled = false;
+});
+
+function render() {
+  if (tab === 'cal') renderCal();
+  if (tab === 'list') renderList();
+  if (tab === 'prices') renderPrices();
+}
+
+(async () => {
+  try { const t = localStorage.getItem('maite-tab'); if (t && t !== 'cal') document.querySelector(`[data-tab="${t}"]`)?.click(); } catch (e) {}
+  document.body.classList.add('loading');
+  try { await reload(); }
+  catch (e) { $('notice').hidden = false; $('notice').textContent = e.message; }
+  document.body.classList.remove('loading');
+})();
+</script>
+</body>
+</html>

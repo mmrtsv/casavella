@@ -34,14 +34,18 @@ Web de La Casa Vella, casa de poble familiar al Bedorc (1898): allotjaments, res
 
 Cada push a `main` publica la web de nou.
 
-## Reserves (Lodgify)
+## Reserves (Stripe + Google Calendar)
 
-A `index.html`, la constant `LODGIFY_URL` és buida. Mentre ho sigui, el formulari de reserva mostra un missatge amb el telèfon i el WhatsApp. Hi ha dues maneres de connectar-lo:
+El formulari calcula el preu (habitació 70 €, apartament 90 € la nit; 5 % de descompte per a 2 nits i 10 % a partir de 3) i obre el pagament de Stripe. Ho fan les funcions de `functions/api/` (Cloudflare Pages Functions), amb la lògica compartida a `lib/booking.js`:
 
-- Posar a `LODGIFY_URL` l'enllaç de la pàgina de reserves de Lodgify. El formulari hi envia les dates i el nombre de persones.
-- Substituir el formulari pel widget de reserves de Lodgify (Website → Booking widget).
+- `quote`: preu i disponibilitat.
+- `checkout`: bloqueja les dates al calendari de l'allotjament durant 45 minuts i obre Stripe Checkout.
+- `stripe-webhook`: quan es paga, el bloqueig passa a ser la reserva; si la sessió caduca, s'esborra. Si les dates s'han ocupat mentrestant, retorna els diners.
+- `release`: si l'hoste torna enrere des de Stripe, allibera les dates a l'acte.
 
-Després, torna a executar `build.py`.
+Cada allotjament té un Google Calendar a info@casavellarural.com, compartit amb un compte de servei de Google. Per bloquejar dates a mà, n'hi ha prou amb crear un esdeveniment al calendari.
+
+Variables a Cloudflare Pages (Settings → Variables and secrets): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `GOOGLE_SA_EMAIL`, `GOOGLE_SA_KEY`, `CAL_MONTSERRAT`, `CAL_LA_PINEDA`, `CAL_LES_VINYES`, `CAL_FIGAROT`, `SITE_URL`. Mentre no hi siguin, el formulari mostra el preu i remet al telèfon i al WhatsApp.
 
 ## Pendent
 

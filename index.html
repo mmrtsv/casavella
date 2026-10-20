@@ -85,7 +85,7 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 
 /* Booking bar */
 .booking { position: relative; z-index: 4; margin-top: -64px; }
-.booking form { background: var(--paper); border: 1px solid var(--line); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; }
+.booking form { background: var(--paper); border: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 1fr)) auto; }
 .booking .field { display: flex; flex-direction: column; gap: 4px; padding: 16px 22px; border-right: 1px solid var(--line); min-width: 0; }
 .booking label { font-size: 11px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
 .booking input, .booking select { border: 0; background: transparent; font: 400 16px var(--body); color: var(--text); padding: 2px 0; min-width: 0; width: 100%; }
@@ -93,8 +93,10 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .booking .note { font-size: 13px; color: var(--muted); padding: 10px 2px 0; min-height: 1.7em; }
 @media (max-width: 760px) {
   .booking form { grid-template-columns: 1fr 1fr; }
-  .booking .field:nth-child(2) { border-right: 0; }
-  .booking .field:nth-child(3) { grid-column: 1 / -1; border-right: 0; border-top: 1px solid var(--line); }
+  .booking .field:nth-child(1) { grid-column: 1 / -1; border-right: 0; }
+  .booking .field:nth-child(2) { border-top: 1px solid var(--line); }
+  .booking .field:nth-child(3) { border-right: 0; border-top: 1px solid var(--line); }
+  .booking .field:nth-child(4) { grid-column: 1 / -1; border-right: 0; border-top: 1px solid var(--line); }
   .booking .btn { grid-column: 1 / -1; }
 }
 
@@ -149,6 +151,9 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .feats li { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--text); }
 .feats svg { width: 20px; height: 20px; fill: none; stroke: var(--basil); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .stay-body p { color: var(--muted); font-size: 15.5px; max-width: 52ch; }
+.stay-body .price { font-family: var(--display); font-size: 22px; color: var(--ink); }
+.stay-body .price span { font-family: var(--body); font-size: 13px; color: var(--muted); }
+.booking .note b { font-weight: 600; color: var(--text); }
 .stay-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
 .stays .btn { padding: 12px 18px; }
 @media (max-width: 760px) { .stays { grid-template-columns: 1fr; } }
@@ -508,12 +513,15 @@ footer { padding-bottom: 32px !important; }
 
 <div class="wrap booking" id="reservar">
   <form id="bookForm" aria-label="Consultar disponibilitat">
+    <div class="field"><label for="stay">Allotjament</label>
+      <select id="stay" required><option value="" selected disabled>Tria on dormir</option><option value="montserrat">Montserrat · apartament</option><option value="la-pineda">La Pineda · apartament</option><option value="les-vinyes">Les Vinyes · habitació</option><option value="figarot">Figarot · habitació</option></select>
+    </div>
     <div class="field"><label for="in">Arribada</label><input id="in" type="date" required></div>
     <div class="field"><label for="out">Sortida</label><input id="out" type="date" required></div>
     <div class="field"><label for="guests">Hostes</label>
       <select id="guests"><option>1 adult</option><option selected>2 adults</option><option>2 adults + 1 nen</option><option>2 adults + 2 nens</option><option>3 adults</option><option>4 adults</option></select>
     </div>
-    <button class="btn solid" type="submit">Veure disponibilitat</button>
+    <button class="btn solid" type="submit">Reservar</button>
   </form>
   <p class="note" id="bookNote" aria-live="polite"></p>
 </div>
@@ -544,7 +552,7 @@ footer { padding-bottom: 32px !important; }
       <div><span class="label">Allotjaments</span><h2 data-script="les nostres estances">Dos apartaments i dues habitacions</h2></div>
       <a class="btn" href="#reservar">Consultar disponibilitat</a>
     </div>
-    <p class="stays-intro">Habitacions amb bany privat, apartaments complets per a estades més llargues i un jardí amb terrassa per gaudir de l'aire lliure.</p>
+    <p class="stays-intro">Habitacions amb bany privat, apartaments complets per a estades més llargues i un jardí amb terrassa per gaudir de l'aire lliure. Com més dies us quedeu, millor: un 5 % menys per a dues nits i un 10 % a partir de tres.</p>
     <div class="stays">
       <article class="stay" id="montserrat">
         <button class="stay-cover" type="button" data-stay="montserrat" aria-label="Veure les fotos de Montserrat">
@@ -555,9 +563,10 @@ footer { padding-bottom: 32px !important; }
         <div class="stay-body">
           <span class="label">Apartament</span>
           <h3>Montserrat</h3>
+          <p class="price">90 € <span>la nit</span></p>
           <ul class="feats"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 18v-3.5A3.5 3.5 0 0 0 17.5 11H11v3"/><circle cx="7" cy="11.5" r="1.8"/></svg>1 dormitori</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-1.7 1-3 3.2-3 6h3v12"/></svg>Cuina equipada</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-2Z"/><path d="M6 12V6a2 2 0 0 1 3.7-1M7 19l-1 2M17 19l1 2"/></svg>Bany privat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r=".9" fill="currentColor"/></svg>Wifi gratuït</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg>Aire condicionat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg>Smart TV</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M10 17V7.5h3.2a3 3 0 0 1 0 6H10"/></svg>Aparcament</li></ul>
           <p>La muntanya que es veu des del Bedorc, i el seu nom. Un apartament complet per a estades més llargues.</p>
-          <div class="stay-actions"><button class="btn" type="button" data-stay="montserrat">Veure fotos</button><a class="btn solid" href="#reservar">Reservar</a></div>
+          <div class="stay-actions"><button class="btn" type="button" data-stay="montserrat">Veure fotos</button><a class="btn solid" href="#reservar" data-book>Reservar</a></div>
         </div>
       </article>
       <article class="stay" id="la-pineda">
@@ -569,9 +578,10 @@ footer { padding-bottom: 32px !important; }
         <div class="stay-body">
           <span class="label">Apartament</span>
           <h3>La Pineda</h3>
+          <p class="price">90 € <span>la nit</span></p>
           <ul class="feats"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 18v-3.5A3.5 3.5 0 0 0 17.5 11H11v3"/><circle cx="7" cy="11.5" r="1.8"/></svg>Dormitori doble</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-1.7 1-3 3.2-3 6h3v12"/></svg>Cuina equipada</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-2Z"/><path d="M6 12V6a2 2 0 0 1 3.7-1M7 19l-1 2M17 19l1 2"/></svg>Bany privat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r=".9" fill="currentColor"/></svg>Wifi gratuït</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg>Aire condicionat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg>Smart TV</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M10 17V7.5h3.2a3 3 0 0 1 0 6H10"/></svg>Aparcament</li></ul>
           <p>Amb el nom dels pins que envolten el poble. Espai, cuina pròpia i calma per quedar-s'hi uns dies.</p>
-          <div class="stay-actions"><button class="btn" type="button" data-stay="la-pineda">Veure fotos</button><a class="btn solid" href="#reservar">Reservar</a></div>
+          <div class="stay-actions"><button class="btn" type="button" data-stay="la-pineda">Veure fotos</button><a class="btn solid" href="#reservar" data-book>Reservar</a></div>
         </div>
       </article>
       <article class="stay" id="les-vinyes">
@@ -583,9 +593,10 @@ footer { padding-bottom: 32px !important; }
         <div class="stay-body">
           <span class="label">Habitació</span>
           <h3>Les Vinyes</h3>
+          <p class="price">70 € <span>la nit</span></p>
           <ul class="feats"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.5c1.9.8 3.2 2.8 3.5 5.5"/></svg>2 persones</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 18v-3.5A3.5 3.5 0 0 0 17.5 11H11v3"/><circle cx="7" cy="11.5" r="1.8"/></svg>Llit doble</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-2Z"/><path d="M6 12V6a2 2 0 0 1 3.7-1M7 19l-1 2M17 19l1 2"/></svg>Bany privat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r=".9" fill="currentColor"/></svg>Wifi gratuït</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg>Aire condicionat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg>Smart TV</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M10 17V7.5h3.2a3 3 0 0 1 0 6H10"/></svg>Aparcament</li></ul>
           <p>Per la tradició vitivinícola que ha modelat el paisatge. Llit de forja, terra hidràulic i l'armari antic de la casa.</p>
-          <div class="stay-actions"><button class="btn" type="button" data-stay="les-vinyes">Veure fotos</button><a class="btn solid" href="#reservar">Reservar</a></div>
+          <div class="stay-actions"><button class="btn" type="button" data-stay="les-vinyes">Veure fotos</button><a class="btn solid" href="#reservar" data-book>Reservar</a></div>
         </div>
       </article>
       <article class="stay" id="figarot">
@@ -597,9 +608,10 @@ footer { padding-bottom: 32px !important; }
         <div class="stay-body">
           <span class="label">Habitació</span>
           <h3>Figarot</h3>
+          <p class="price">70 € <span>la nit</span></p>
           <ul class="feats"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.5c1.9.8 3.2 2.8 3.5 5.5"/></svg>2 persones</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 18v-3.5A3.5 3.5 0 0 0 17.5 11H11v3"/><circle cx="7" cy="11.5" r="1.8"/></svg>Llit doble</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-2Z"/><path d="M6 12V6a2 2 0 0 1 3.7-1M7 19l-1 2M17 19l1 2"/></svg>Bany privat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r=".9" fill="currentColor"/></svg>Wifi gratuït</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg>Aire condicionat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg>Smart TV</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M10 17V7.5h3.2a3 3 0 0 1 0 6H10"/></svg>Aparcament</li></ul>
           <p>Amb el nom de la figuera, l'arbre de les cases de pagès. Una habitació tranquil·la amb bany privat.</p>
-          <div class="stay-actions"><button class="btn" type="button" data-stay="figarot">Veure fotos</button><a class="btn solid" href="#reservar">Reservar</a></div>
+          <div class="stay-actions"><button class="btn" type="button" data-stay="figarot">Veure fotos</button><a class="btn solid" href="#reservar" data-book>Reservar</a></div>
         </div>
       </article>
     </div>
@@ -894,30 +906,79 @@ const menuBtn = document.getElementById('menuBtn'), nav = document.getElementByI
 menuBtn.addEventListener('click', () => { const o = nav.classList.toggle('open'); menuBtn.setAttribute('aria-expanded', o); });
 nav.addEventListener('click', e => { if (e.target.tagName === 'A') { nav.classList.remove('open'); menuBtn.setAttribute('aria-expanded', false); } });
 
-// Lodgify: paste the booking page link from Lodgify (Website → Booking page, or the "Book now" link).
-// While it is empty, the form only shows a summary of the stay.
-const LODGIFY_URL = '';
-// Booking: default dates, then hand the search over to Lodgify
+// Booking: live price, then Stripe Checkout through /api/checkout (Cloudflare Pages Functions).
+// Where /api is not available (the review preview), the form falls back to phone and WhatsApp.
+const STAY_INFO = {
+  'montserrat': { price: 90, max: 4 }, 'la-pineda': { price: 90, max: 4 },
+  'les-vinyes': { price: 70, max: 2 }, 'figarot': { price: 70, max: 2 },
+};
+const CONTACT_MSG = "Truca'ns o escriu-nos per WhatsApp al +34 667 40 98 59 i t'ho preparem.";
+const fstay = document.getElementById('stay'), fguests = document.getElementById('guests');
 const fin = document.getElementById('in'), fout = document.getElementById('out'), note = document.getElementById('bookNote');
+const bookBtn = document.querySelector('#bookForm button[type="submit"]');
 const iso = d => d.toISOString().slice(0, 10);
+const euro = n => n.toLocaleString('ca-ES', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' €';
 const t = new Date(); t.setDate(t.getDate() + 14); fin.value = iso(t); t.setDate(t.getDate() + 2); fout.value = iso(t);
 fin.min = iso(new Date());
-document.getElementById('bookForm').addEventListener('submit', e => {
-  e.preventDefault();
+function fillGuests() {
+  const max = (STAY_INFO[fstay.value] || { max: 4 }).max, cur = parseInt(fguests.value, 10) || 2;
+  fguests.innerHTML = Array.from({ length: max }, (_, i) => `<option value="${i + 1}">${i + 1} ${i ? 'persones' : 'persona'}</option>`).join('');
+  fguests.value = String(Math.min(cur, max));
+}
+fillGuests();
+function price() {
+  const s = STAY_INFO[fstay.value];
   const n = Math.round((new Date(fout.value) - new Date(fin.value)) / 864e5);
-  if (!(n > 0)) { note.textContent = "La data de sortida ha de ser posterior a la d'arribada."; return; }
-  const g = document.getElementById('guests').value;
-  const adults = parseInt(g, 10) || 2, kids = parseInt((g.split('+')[1] || '0'), 10) || 0;
-  if (LODGIFY_URL) {
-    const u = new URL(LODGIFY_URL);
-    u.searchParams.set('arrival', fin.value); u.searchParams.set('departure', fout.value);
-    u.searchParams.set('adults', adults); if (kids) u.searchParams.set('children', kids);
-    note.textContent = 'Obrint la reserva…';
-    location.assign(u.toString());
-    return;
-  }
-  note.textContent = `${n} ${n === 1 ? 'nit' : 'nits'}, ${g}. La reserva en línia s'activarà aviat; mentrestant, truca'ns o escriu-nos per WhatsApp al +34 667 40 98 59.`;
+  if (!s || !(n > 0)) return null;
+  const discount = n >= 3 ? 10 : n === 2 ? 5 : 0, subtotal = s.price * n;
+  return { n, discount, subtotal, total: Math.round(subtotal * (100 - discount)) / 100 };
+}
+let quoteSeq = 0;
+async function showQuote() {
+  const q = price();
+  if (!fstay.value) { note.textContent = ''; return; }
+  if (!q) { note.textContent = "La data de sortida ha de ser posterior a la d'arribada."; return; }
+  const line = `${q.n} ${q.n === 1 ? 'nit' : 'nits'}` + (q.discount ? ` · ${euro(q.subtotal)} − ${q.discount} %` : '');
+  note.innerHTML = `${line} · <b>Total ${euro(q.total)}</b>`;
+  const seq = ++quoteSeq;
+  try {
+    const r = await fetch(`/api/quote?stay=${fstay.value}&in=${fin.value}&out=${fout.value}`);
+    const d = await r.json();
+    if (seq === quoteSeq && d.available === false) note.innerHTML = `${line} · <b>Total ${euro(q.total)}</b>. Aquestes dates ja estan reservades: prova'n unes altres.`;
+  } catch (e) {}
+}
+fstay.addEventListener('change', () => { fillGuests(); showQuote(); });
+fin.addEventListener('change', () => {
+  if (fout.value <= fin.value) { const d = new Date(fin.value); d.setDate(d.getDate() + 1); fout.value = iso(d); }
+  fout.min = fin.value; showQuote();
 });
+fout.addEventListener('change', showQuote);
+document.querySelectorAll('[data-book]').forEach(a => a.addEventListener('click', () => {
+  fstay.value = a.closest('.stay').id; fillGuests(); showQuote();
+}));
+document.getElementById('bookForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!fstay.value) { note.textContent = 'Tria primer on vols dormir.'; fstay.focus(); return; }
+  const q = price();
+  if (!q) { note.textContent = "La data de sortida ha de ser posterior a la d'arribada."; return; }
+  bookBtn.disabled = true; note.textContent = 'Preparant el pagament…';
+  try {
+    const r = await fetch('/api/checkout', { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ stay: fstay.value, in: fin.value, out: fout.value, guests: fguests.value }) });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok && d.url) { location.assign(d.url); return; }
+    note.textContent = r.status === 409 ? "Aquestes dates ja estan reservades. Prova'n unes altres o escriu-nos." : `${q.n} ${q.n === 1 ? 'nit' : 'nits'}, total ${euro(q.total)}. ${CONTACT_MSG}`;
+  } catch (err) {
+    note.textContent = `${q.n} ${q.n === 1 ? 'nit' : 'nits'}, total ${euro(q.total)}. ${CONTACT_MSG}`;
+  }
+  bookBtn.disabled = false;
+});
+{
+  const r = new URLSearchParams(location.search).get('reserva');
+  if (r === 'ok') note.textContent = "Gràcies! La reserva està confirmada i t'hem enviat el rebut per correu. Ens fa molta il·lusió rebre't a casa.";
+  if (r === 'cancel') note.textContent = "El pagament no s'ha completat i no s'ha cobrat res. Quan vulguis, pots tornar-ho a provar.";
+  if (r) try { history.replaceState(null, '', location.pathname + '#reservar'); } catch (e) {}
+}
 
 document.getElementById('contactForm').addEventListener('submit', e => {
   e.preventDefault();

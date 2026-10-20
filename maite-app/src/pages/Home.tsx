@@ -79,44 +79,55 @@ const Open = ({ to, children }: { to: Parameters<typeof go>[0]; children: ReactN
   <button type="button" onClick={() => go(to)} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-accent outline-none hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-focus">{children}<ArrowRight size={15} aria-hidden="true" /></button>
 );
 
-// What is still to do for stays from now to 30 days out, grouped by kind, with a ring of how much is done
+// What is still to do for stays from now to 30 days out, grouped by kind; the groups cover everything the count does
+const TODO: { title: string; color: string; has: (k: string) => boolean }[] = [
+  { title: 'per cobrar', color: 'bg-danger', has: k => k === 'pay' },
+  { title: 'sense documents', color: 'bg-warning', has: k => k === 'docs' },
+  { title: 'sense correu o telèfon', color: 'bg-[var(--brand-cava)]', has: k => k === 'email' || k === 'phone' },
+  { title: "sense l'entrada marcada", color: 'bg-accent', has: k => k === 'checkin' },
+  { title: 'sense la sortida marcada', color: 'bg-accent', has: k => k === 'checkout' },
+];
 function Todo({ all }: { all: Booking[] }) {
   const soon = all.filter(b => b.until >= TODAY && b.first < addDays(TODAY, 30));
-  const groups = [
-    { k: 'pay', title: 'per cobrar', color: 'bg-danger' },
-    { k: 'docs', title: 'sense documents', color: 'bg-warning' },
-    { k: 'contact', title: 'sense correu o telèfon', color: 'bg-[var(--brand-cava)]' },
-  ].map(g => ({ ...g, list: soon.filter(b => missing(b).some(c => g.k === 'contact' ? c.k === 'email' || c.k === 'phone' : c.k === g.k)) })).filter(g => g.list.length);
-  const open = soon.filter(b => missing(b).length).length, pct = soon.length ? (soon.length - open) / soon.length : 1;
-  const R = 34, C = 2 * Math.PI * R;
+  const groups = TODO.map(g => ({ ...g, list: soon.filter(b => missing(b).some(c => g.has(c.k))) })).filter(g => g.list.length);
+  const open = soon.filter(b => missing(b).length).length, done = soon.length - open;
+  const R = 34, C = 2 * Math.PI * R, pct = soon.length ? done / soon.length : 1;
+  const ring = (
+    <svg viewBox="0 0 80 80" className="size-20 shrink-0 -rotate-90" aria-hidden="true">
+      <circle cx="40" cy="40" r={R} fill="none" stroke="var(--border)" strokeWidth="7" />
+      {pct > 0 && <circle cx="40" cy="40" r={R} fill="none" stroke="var(--accent)" strokeWidth="7" strokeLinecap="round" strokeDasharray={`${C * pct} ${C}`} />}
+    </svg>
+  );
   return (
     <Section title="Per fer" action={<Open to="bookings">Reserves</Open>}>
-      <div className="grid overflow-hidden rounded-3xl bg-surface shadow-[var(--surface-shadow)] ring-1 ring-border md:grid-cols-[280px_minmax(0,1fr)]">
-        <div className="flex items-center gap-5 bg-accent/8 p-6">
-          <svg viewBox="0 0 80 80" className="size-20 shrink-0 -rotate-90" aria-hidden="true">
-            <circle cx="40" cy="40" r={R} fill="none" stroke="var(--border)" strokeWidth="7" />
-            <circle cx="40" cy="40" r={R} fill="none" stroke={open ? 'var(--warning)' : 'var(--accent)'} strokeWidth="7" strokeLinecap="round" strokeDasharray={`${C * pct} ${C}`} />
-          </svg>
-          <div><div className="text-4xl font-semibold tracking-tight tnum">{open}</div><div className="text-sm text-muted">{open ? `${open === 1 ? 'reserva' : 'reserves'} amb coses pendents, de ${soon.length} en 30 dies` : 'Tot al dia'}</div></div>
+      {!open ? (
+        <div className="flex items-center gap-5 rounded-3xl bg-surface p-6 shadow-[var(--surface-shadow)] ring-1 ring-border">
+          {ring}
+          <div><div className="text-xl font-semibold tracking-tight">Tot al dia</div><div className="text-sm text-muted">{soon.length ? 'No falta res per a les reserves dels propers 30 dies.' : 'No hi ha reserves els propers 30 dies.'}</div></div>
         </div>
-        {groups.length ? (
+      ) : (
+        <div className="grid overflow-hidden rounded-3xl bg-surface shadow-[var(--surface-shadow)] ring-1 ring-border md:grid-cols-[260px_minmax(0,1fr)]">
+          <div className="flex items-center gap-5 bg-accent/8 p-6">
+            {ring}
+            <div><div className="text-4xl font-semibold tracking-tight tnum">{open}</div><div className="text-sm text-muted">{open === 1 ? 'reserva amb coses pendents' : 'reserves amb coses pendents'}</div><div className="mt-1 text-xs text-muted tnum">{done} de {soon.length} al dia</div></div>
+          </div>
           <ul className="divide-y divide-separator">
             {groups.map(g => (
-              <li key={g.k}>
+              <li key={g.title}>
                 <button type="button" onClick={() => openDetail(keyOf(g.list[0]))} className="flex w-full items-center gap-4 px-5 py-4 text-left outline-none hover:bg-[var(--row-hover)] focus-visible:bg-[var(--row-hover)]">
                   <span className={`h-9 w-1 shrink-0 rounded-full ${g.color}`} aria-hidden="true" />
                   <span className="w-8 text-xl font-semibold tnum">{g.list.length}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-medium">{g.list.length === 1 ? 'Reserva' : 'Reserves'} {g.title}</span>
-                    <span className="block truncate text-xs text-muted">La més propera: {who(g.list[0])}, {day(g.list[0].first)}</span>
+                    <span className="block truncate text-xs text-muted">{g.list.length === 1 ? '' : 'La més propera: '}{who(g.list[0])}, {day(g.list[0].first)}</span>
                   </span>
                   <ArrowRight size={16} className="shrink-0 text-muted" aria-hidden="true" />
                 </button>
               </li>
             ))}
           </ul>
-        ) : <p className="self-center p-6 text-sm text-muted">No falta res per a les reserves dels propers 30 dies.</p>}
-      </div>
+        </div>
+      )}
     </Section>
   );
 }

@@ -25,7 +25,7 @@ function Loading() {
   return (
     <div aria-busy="true" aria-label="Carregant" className="animate-pulse motion-reduce:animate-none">
       <div className="mb-4 h-9 w-64 rounded-xl bg-default" />
-      <div className="h-[380px] w-full rounded-3xl bg-default/70" />
+      <div className="h-[380px] w-full rounded-2xl bg-default/70" />
     </div>
   );
 }

@@ -88,7 +88,7 @@ export function Calendar() {
       </div>
 
       <div ref={wrap}>
-      <div ref={scroller} className={`overflow-x-auto rounded-3xl border border-border bg-surface shadow-[var(--surface-shadow)] transition-opacity ${busy ? 'opacity-60' : ''}`}>
+      <div ref={scroller} className={`card overflow-x-auto transition-opacity ${busy ? 'opacity-60' : ''}`}>
         <div role="group" aria-label="Ocupació" className="grid" style={{ ['--names' as string]: `${(width < 640 ? 104 : NAMES) + 12}px`, gridTemplateColumns: `${width < 640 ? 104 : NAMES}px repeat(${SPAN}, minmax(${width < 640 ? 56 : COL}px, 1fr))`, minWidth: (width < 640 ? 104 : NAMES) + SPAN * (width < 640 ? 56 : COL) }}>
           <div className="contents" aria-hidden="true">
             <div className="sticky left-0 z-20 border-b border-separator bg-surface" />

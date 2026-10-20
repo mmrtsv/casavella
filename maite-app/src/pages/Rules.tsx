@@ -51,7 +51,7 @@ export default function Rules() {
   };
   useGuard(dirty, save);
   return (
-    <div className="fade-in rounded-3xl bg-surface p-5 shadow-[var(--surface-shadow)] ring-1 ring-border sm:p-8">
+    <div className="fade-in card p-5 sm:p-8">
       <Section title="Estada" hint="El mínim es pot canviar per a dies concrets (agost, ponts…) des de Preus.">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Mínim de nits" value={f.minNights} onChange={set('minNights')} inputMode="numeric" />

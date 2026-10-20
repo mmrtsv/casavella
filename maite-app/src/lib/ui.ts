@@ -1,5 +1,6 @@
 // Which window is open (client file, new booking, close dates, cancel, command palette) and the toasts
 import { useSyncExternalStore } from 'react';
+import { go } from './route';
 
 export interface BookDraft { stay?: string; first?: string; until?: string }
 export interface BlockDraft { stays?: string[]; first?: string; until?: string }
@@ -20,3 +21,8 @@ export const openCancel = (key: string) => set({ cancel: key, detail: null });
 export const closeCancel = () => set({ cancel: null });
 export const setPalette = (palette: boolean) => set({ palette });
 export const getPalette = () => ui.palette;
+
+// Inici can open Reserves on a filter ("Per fer"); the page takes it once, when it opens
+let bookingsFilter = '';
+export function openBookings(filter: string) { bookingsFilter = filter; go('bookings'); }
+export function takeBookingsFilter() { const f = bookingsFilter; bookingsFilter = ''; return f; }

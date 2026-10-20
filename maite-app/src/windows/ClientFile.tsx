@@ -9,7 +9,7 @@ import { api, uploadDoc } from '../lib/api';
 import { allBookings, keyOf, setBooking, shortName, stayName, reload, useStore } from '../lib/store';
 import { closeDetail, openCancel, openDetail, useUI } from '../lib/ui';
 import { day, euro, longDay, nightsBetween, nitsTxt, range, stamp, TODAY, cap } from '../lib/dates';
-import { atHome, checklist, isBooking, METHOD, PAYTYPE, policyText, SOURCE, WALLET, who } from '../lib/words';
+import { atHome, checklist, hasDocs, isBooking, METHOD, PAYTYPE, policyText, SOURCE, WALLET, who } from '../lib/words';
 import type { Booking, Payment } from '../lib/types';
 
 const btn = (variant: 'secondary' | 'tertiary' | 'ghost' = 'secondary') => buttonVariants({ variant, size: 'sm' }) as unknown as string;
@@ -58,14 +58,14 @@ function Row({ ok, title, sub, children, control }: { ok?: boolean; title: React
     </div>
   );
 }
-function Tick({ b, k, label }: { b: Booking; k: 'docs' | 'police' | 'settled'; label: string }) {
+function Tick({ b, k, label }: { b: Booking; k: 'settled'; label: string }) {
   return (
     <Checkbox isSelected={!!b[k]} onChange={v => save(b, { [k]: v })} aria-label={label} className="shrink-0">
       <Checkbox.Content><Checkbox.Control className="!size-[22px] !rounded-full [&_svg]:!size-3"><Checkbox.Indicator /></Checkbox.Control></Checkbox.Content>
     </Checkbox>
   );
 }
-// ID documents: tick by hand, or upload photos or PDFs, which go to the booking's folder in Google Drive and tick it
+// ID documents: done only once photos or PDFs are uploaded to the booking's folder in Google Drive (no ticking by hand)
 function Docs({ b }: { b: Booking }) {
   const input = useRef<HTMLInputElement>(null);
   const [left, setLeft] = useState(0);
@@ -81,7 +81,7 @@ function Docs({ b }: { b: Booking }) {
     if (ok) done(ok === 1 ? 'Document desat a Drive' : `${ok} documents desats a Drive`);
   };
   return (
-    <Row title="Documents d'identitat" sub={b.docsFolder ? `A Google Drive${b.ref ? `, reserva ${b.ref}` : ''}` : 'DNI o passaport de tots els hostes adults.'} control={<Tick b={b} k="docs" label="Documents d'identitat" />}>
+    <Row ok={hasDocs(b)} title="Documents d'identitat" sub={hasDocs(b) ? `A Google Drive${b.ref ? `, reserva ${b.ref}` : ''}` : 'Puja el DNI o passaport de tots els hostes adults.'}>
       <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
         {b.docsFolder && <a className={btn()} href={b.docsFolder} target="_blank" rel="noopener"><FolderOpen size={15} />Carpeta</a>}
         <Button size="sm" variant="secondary" isPending={left > 0} onPress={() => input.current?.click()}>

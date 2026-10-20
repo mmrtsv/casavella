@@ -909,7 +909,7 @@ nav.addEventListener('click', e => { if (e.target.tagName === 'A') { nav.classLi
 // Booking: live price, then Stripe Checkout through /api/checkout (Cloudflare Pages Functions).
 // Where /api is not available (the review preview), the form falls back to phone and WhatsApp.
 const STAY_INFO = {
-  'montserrat': { price: 90, max: 4 }, 'la-pineda': { price: 90, max: 4 },
+  'montserrat': { price: 90, max: 3 }, 'la-pineda': { price: 90, max: 3 },
   'les-vinyes': { price: 70, max: 2 }, 'figarot': { price: 70, max: 2 },
 };
 const CONTACT_MSG = "Truca'ns o escriu-nos per WhatsApp al +34 667 40 98 59 i t'ho preparem.";
@@ -921,7 +921,7 @@ const euro = n => n.toLocaleString('ca-ES', { minimumFractionDigits: n % 1 ? 2 :
 const t = new Date(); t.setDate(t.getDate() + 14); fin.value = iso(t); t.setDate(t.getDate() + 2); fout.value = iso(t);
 fin.min = iso(new Date());
 function fillGuests() {
-  const max = (STAY_INFO[fstay.value] || { max: 4 }).max, cur = parseInt(fguests.value, 10) || 2;
+  const max = (STAY_INFO[fstay.value] || { max: 3 }).max, cur = parseInt(fguests.value, 10) || 2;
   fguests.innerHTML = Array.from({ length: max }, (_, i) => `<option value="${i + 1}">${i + 1} ${i ? 'persones' : 'persona'}</option>`).join('');
   fguests.value = String(Math.min(cur, max));
 }

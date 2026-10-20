@@ -185,6 +185,18 @@ label.inline { display: block; color: var(--text); font-size: 15px; margin: 0; c
 .ml-vars { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
 .ml-vars .chip { font-family: ui-monospace, monospace; font-size: 13px; }
 .ml label { margin-top: 12px; }
+.ml-lock { display: flex; align-items: center; gap: 12px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
+.ml-lock > div { flex: 1; }
+.ml-lock.editing { border-color: var(--due); background: color-mix(in srgb, var(--due) 8%, var(--paper)); }
+.ml-lock-ico { font-size: 20px; }
+.ml.locked .ml-edit-only { display: none; }
+.ml.locked input, .ml.locked textarea { background: transparent; border-style: dashed; color: var(--muted); cursor: default; }
+.ml-tags { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.ml-tags code { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 0 5px; }
+.ml-tags .missing { color: var(--danger); }
+#mlChanges { margin: 0 0 14px; padding-left: 20px; font-size: 15px; }
+label.check { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; margin: 6px 0 12px; }
+label.check input { width: auto; margin: 3px 0 0; }
 .feat { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
 .feat .ico { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); cursor: pointer; padding: 0; }
 .feat svg, .pv-feats svg, .icons svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -397,15 +409,26 @@ dd { margin: 0; overflow-wrap: anywhere; }
   </section>
   <section id="tab-mail" hidden>
     <div class="bar"><div class="chips" id="mlKinds"></div><span class="dirty" id="mlDirty" hidden>Canvis sense desar</span></div>
-    <form id="mailForm" class="st ml" novalidate>
+    <div class="ml-lock" id="mlLocked">
+      <span class="ml-lock-ico" aria-hidden="true">🔒</span>
+      <div><b>Només lectura.</b> Aquests textos els reben tots els hostes. Per canviar-los cal desbloquejar-los.</div>
+      <button class="btn" type="button" id="mlUnlock">Desbloqueja per editar</button>
+    </div>
+    <div class="ml-lock editing" id="mlEditing" hidden>
+      <span class="ml-lock-ico" aria-hidden="true">🔓</span>
+      <div><b>Mode edició.</b> Els canvis no arriben als hostes fins que es desen i es confirmen.</div>
+      <button class="btn" type="button" id="mlRelock">Bloqueja sense desar</button>
+    </div>
+    <form id="mailForm" class="st ml locked" novalidate>
       <div>
         <p class="hint" id="mlWhen" style="margin:0"></p>
-        <p class="hint">Toca una etiqueta per afegir-la on és el cursor; al correu es canvia per la dada de cada hoste. Una línia en blanc comença un paràgraf nou.</p>
-        <div class="ml-vars" id="mlVars"></div>
+        <div class="ml-edit-only">
+          <p class="hint">Les etiquetes entre claus, com <code>{nom}</code>, es canvien per la dada de cada hoste. Toca'n una per afegir-la on és el cursor. Esborrar-ne una demana confirmació. Una línia en blanc comença un paràgraf nou.</p>
+          <div class="ml-vars" id="mlVars"></div>
+        </div>
         <div id="mlFields"></div>
-        <p class="hint">Les dades de la reserva, l'adreça, la política de cancel·lació i el peu amb el telèfon s'hi posen sols.</p>
         <p class="err" hidden></p>
-        <div class="actions left"><button class="btn solid" type="submit">Desa els textos</button><button class="btn" type="button" id="mlReset">Torna al text original</button></div>
+        <div class="actions left ml-edit-only"><button class="btn solid" type="submit">Desa els textos…</button><button class="btn" type="button" id="mlReset">Torna al text original</button></div>
       </div>
       <aside class="st-side">
         <p class="hint" style="margin:0 0 8px">Així el rep l'hoste (amb dades d'exemple) · <b id="mlSubject"></b></p>
@@ -506,6 +529,26 @@ dd { margin: 0; overflow-wrap: anywhere; }
   </div>
 </dialog>
 
+<dialog id="mlUnlockDlg">
+  <form id="mlUnlockForm" novalidate>
+    <button class="x" type="button" data-close aria-label="Tanca">×</button>
+    <h2>Editar els correus</h2>
+    <p>Aquests textos els reben <b>tots els hostes</b> que reserven o escriuen a la web. Un error aquí (una etiqueta esborrada, una data que no surt) arriba a tothom.</p>
+    <label>Per continuar, escriu <b>EDITAR</b><input name="word" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+    <div class="actions"><button class="btn" type="button" data-close>Cancel·la</button><button class="btn solid" type="submit" disabled>Desbloqueja</button></div>
+  </form>
+</dialog>
+<dialog id="mlSaveDlg">
+  <form id="mlSaveForm" novalidate>
+    <button class="x" type="button" data-close aria-label="Tanca">×</button>
+    <h2>Desar els textos?</h2>
+    <p>A partir d'ara, els hostes rebran els correus amb aquests canvis:</p>
+    <ul id="mlChanges"></ul>
+    <label class="check"><input type="checkbox" name="ok"> He revisat la vista prèvia de cada correu que he canviat</label>
+    <p class="err" hidden></p>
+    <div class="actions"><button class="btn" type="button" data-close>Encara no</button><button class="btn solid" type="submit" disabled>Desa i bloqueja</button></div>
+  </form>
+</dialog>
 <dialog id="cancelDlg">
   <form id="cancelForm" novalidate>
     <button class="x" type="button" data-close aria-label="Tanca">×</button>
@@ -538,6 +581,7 @@ const ERRORS = {
   refund_amount: "No es pot retornar més del que es va pagar", not_configured: 'Aquest allotjament no té el calendari connectat',
   no_payment: 'No trobo el pagament a Stripe', access: 'La sessió ha caducat. Torna a carregar la pàgina.', discount: 'Revisa els descomptes: de 2 nits en amunt, entre 1 i 90 %, sense repetir nits',
   price: 'Revisa els preus',
+  tag: 'Hi ha una etiqueta que no existeix o està incompleta. Revisa les claus { }.',
 };
 
 let STAYS = [], SET = null, bookings = new Map(), loaded = [];
@@ -1243,28 +1287,45 @@ $('stayForm').addEventListener('submit', e => {
 addEventListener('beforeunload', e => { if (!$('stDirty').hidden) e.preventDefault(); });
 
 // ---- Emails: the wording of what the guest receives ----
+// Read-only until unlocked (typing EDITAR); saving asks for confirmation and locks again.
+// Deleting a {tag}, even one letter of it, asks first and is undone if not confirmed.
 const MAIL_KINDS = {
-  confirm: { name: 'Reserva confirmada', when: "S'envia quan l'hoste ha pagat la reserva a la web.", vars: ['nom', 'allotjament', 'arribada', 'sortida'],
+  confirm: { name: 'Reserva confirmada', when: "S'envia quan l'hoste ha pagat la reserva a la web.",
     fields: [['subject', 'Assumpte'], ['title', 'Títol'], ['subtitle', 'Subtítol'], ['body', 'Text'], ['before', "Abans d'arribar (opcional: aparcament, claus, què portar…)"], ['closing', 'Comiat (també al correu de pagament pendent)']] },
-  pending: { name: 'Pagament pendent', when: "S'envia quan l'hoste paga amb un mètode que el banc confirma més tard (transferència). Quan arriba el pagament, rep el de reserva confirmada.", vars: ['nom', 'allotjament', 'arribada', 'sortida'],
+  pending: { name: 'Pagament pendent', when: "S'envia quan l'hoste paga amb un mètode que el banc confirma més tard (transferència). Quan arriba el pagament, rep el de reserva confirmada.",
     fields: [['subject', 'Assumpte'], ['title', 'Títol'], ['subtitle', 'Subtítol'], ['body', 'Text']] },
-  contact: { name: 'Formulari de contacte', when: "S'envia a qui escriu des del formulari de contacte de la web, amb una còpia del seu missatge.", vars: ['nom'],
+  contact: { name: 'Formulari de contacte', when: "S'envia a qui escriu des del formulari de contacte de la web, amb una còpia del seu missatge.",
     fields: [['subject', 'Assumpte'], ['title', 'Títol'], ['subtitle', 'Subtítol'], ['body', 'Text']] },
 };
-let MAIL = null, mlKind = 'confirm', mlDraft = null, mlTimer = null, mlLastField = null;
+const TAG_INFO = { nom: 'el nom de l\'hoste', allotjament: 'el nom de l\'allotjament', arribada: 'la data d\'arribada', sortida: 'la data de sortida' };
+let MAIL = null, mlKind = 'confirm', mlDraft = null, mlTimer = null, mlLastField = null, mlEditing = false;
+const tagCount = (str, kind) => Object.fromEntries(MAIL.vars[kind].map(v => [v, (str.match(new RegExp(`\\{${v}\\}`, 'g')) || []).length]));
+const mlChanged = () => Object.entries(MAIL_KINDS).flatMap(([k, x]) => x.fields.filter(([f]) => mlDraft[k][f] !== MAIL.texts[k][f]).map(([, name]) => `${x.name} · ${name}`));
 async function renderMail() {
   if (!MAIL) { try { MAIL = await api('emails'); } catch (e) { return toast(e.message); } mlDraft = structuredClone(MAIL.texts); fillMail(); }
+}
+function setEditing(on) {
+  mlEditing = on;
+  $('mlLocked').hidden = on; $('mlEditing').hidden = !on;
+  $('mailForm').classList.toggle('locked', !on);
+  $('mlFields').querySelectorAll('[data-f]').forEach(el => { el.readOnly = !on; });
+  if (!on) { mlDraft = structuredClone(MAIL.texts); mlSetDirty(false); fillMail(); }
+}
+function fieldTags(f) {
+  const k = mlKind, have = tagCount(mlDraft[k][f], k), had = tagCount(MAIL.defaults[k][f], k);
+  const tags = MAIL.vars[k].filter(v => have[v] || had[v]);
+  return tags.length ? 'Etiquetes: ' + tags.map(v => have[v] ? `<code>{${v}}</code>` : `<span class="missing"><code>{${v}}</code> treta</span>`).join(' ') : '';
 }
 function fillMail() {
   const k = MAIL_KINDS[mlKind];
   $('mlKinds').innerHTML = Object.entries(MAIL_KINDS).map(([id, x]) => `<button type="button" class="chip" data-kind="${id}" aria-pressed="${id === mlKind}">${x.name}</button>`).join('');
   $('mlWhen').textContent = k.when;
   $('mlFields').innerHTML = k.fields.map(([f, name]) => {
-    const long = MAIL.limits[f] > 200, v = esc(mlDraft[mlKind][f]);
-    return `<label>${name}${long ? `<textarea data-f="${f}" rows="${f === 'subject' ? 1 : 4}" maxlength="${MAIL.limits[f]}">${v}</textarea>` : `<input data-f="${f}" maxlength="${MAIL.limits[f]}" value="${v}">`}</label>`;
+    const long = MAIL.limits[f] > 200, v = esc(mlDraft[mlKind][f]), ro = mlEditing ? '' : ' readonly';
+    return `<label>${name}${long ? `<textarea data-f="${f}" rows="4" maxlength="${MAIL.limits[f]}"${ro}>${v}</textarea>` : `<input data-f="${f}" maxlength="${MAIL.limits[f]}" value="${v}"${ro}>`}<div class="ml-tags" data-tags="${f}">${fieldTags(f)}</div></label>`;
   }).join('');
-  $('mlVars').innerHTML = k.vars.map(v => `<button type="button" class="chip" data-var="${v}">{${v}}</button>`).join('');
-  mlLastField = null; previewMail();
+  $('mlVars').innerHTML = MAIL.vars[mlKind].map(v => `<button type="button" class="chip" data-var="${v}" title="${TAG_INFO[v]}">{${v}}</button>`).join('');
+  mlLastField = null; formError($('mailForm')); previewMail();
 }
 const mlSetDirty = d => { $('mlDirty').hidden = !d; };
 function previewMail() {
@@ -1274,25 +1335,69 @@ function previewMail() {
     catch (e) { toast(e.message); }
   }, 350);
 }
+// Braces that don't form a known tag: a tag typed wrong or half deleted
+function badTags() {
+  for (const [k, x] of Object.entries(MAIL_KINDS)) for (const [f, name] of x.fields) {
+    const rest = mlDraft[k][f].replace(/\{(\w+)\}/g, (all, v) => MAIL.vars[k].includes(v) ? '' : '\u0000');
+    if (/[{}\u0000]/.test(rest)) return `${x.name} · ${name}: hi ha una etiqueta que no existeix o està incompleta. Fes servir només ${MAIL.vars[k].map(v => `{${v}}`).join(', ')}.`;
+  }
+  return '';
+}
 $('mlKinds').addEventListener('click', e => { const c = e.target.closest('[data-kind]'); if (c) { mlKind = c.dataset.kind; fillMail(); } });
-$('mlFields').addEventListener('input', e => { const f = e.target.dataset.f; if (!f) return; mlDraft[mlKind][f] = e.target.value; mlSetDirty(true); previewMail(); });
+$('mlFields').addEventListener('input', e => {
+  const el = e.target, f = el.dataset.f; if (!f || !mlEditing) return;
+  const before = mlDraft[mlKind][f], now = tagCount(el.value, mlKind), was = tagCount(before, mlKind);
+  const lost = MAIL.vars[mlKind].filter(v => now[v] < was[v]);
+  if (lost.length) {
+    // Put the text back first, so nothing is lost unless confirmed
+    const next = el.value, pos = el.selectionStart;
+    el.value = before;
+    const what = lost.map(v => `{${v}} (${TAG_INFO[v]})`).join(', ');
+    if (!confirm(`Estàs esborrant ${what}.\n\nSense aquesta etiqueta, el correu ja no mostrarà aquesta dada. Segur que la vols treure?`)) { el.focus(); return; }
+    el.value = next; el.setSelectionRange(pos, pos);
+  }
+  mlDraft[mlKind][f] = el.value;
+  el.closest('label').querySelector('[data-tags]').innerHTML = fieldTags(f);
+  mlSetDirty(mlChanged().length > 0); previewMail();
+});
 $('mlFields').addEventListener('focusin', e => { if (e.target.dataset.f) mlLastField = e.target; });
 $('mlVars').addEventListener('click', e => {
-  const v = e.target.closest('[data-var]')?.dataset.var; if (!v) return;
+  const v = e.target.closest('[data-var]')?.dataset.var; if (!v || !mlEditing) return;
   const el = mlLastField || $('mlFields').querySelector('[data-f="body"]');
   const a = el.selectionStart ?? el.value.length, b = el.selectionEnd ?? a, ins = `{${v}}`;
   el.value = el.value.slice(0, a) + ins + el.value.slice(b); el.focus(); el.setSelectionRange(a + ins.length, a + ins.length);
   el.dispatchEvent(new Event('input', { bubbles: true }));
 });
+$('mlUnlock').addEventListener('click', () => { const f = $('mlUnlockForm'); f.reset(); f.querySelector('[type=submit]').disabled = true; $('mlUnlockDlg').showModal(); f.word.focus(); });
+$('mlUnlockForm').addEventListener('input', e => { e.currentTarget.querySelector('[type=submit]').disabled = e.currentTarget.word.value.trim().toUpperCase() !== 'EDITAR'; });
+$('mlUnlockForm').addEventListener('submit', e => { e.preventDefault(); if (e.target.word.value.trim().toUpperCase() !== 'EDITAR') return; $('mlUnlockDlg').close(); setEditing(true); });
+$('mlRelock').addEventListener('click', () => {
+  if (mlChanged().length && !confirm('Hi ha canvis sense desar. Si bloqueges ara, es perdran. Continuar?')) return;
+  setEditing(false);
+});
 $('mlReset').addEventListener('click', () => {
   if (!confirm(`Tornar als textos originals de «${MAIL_KINDS[mlKind].name}»? Encara caldrà desar-los.`)) return;
   for (const [f] of MAIL_KINDS[mlKind].fields) mlDraft[mlKind][f] = MAIL.defaults[mlKind][f];
-  mlSetDirty(true); fillMail();
+  mlSetDirty(mlChanged().length > 0); fillMail();
 });
 $('mailForm').addEventListener('submit', e => {
   e.preventDefault();
-  submit(e.target, async () => { MAIL = await api('emails', { method: 'PUT', body: { texts: mlDraft } }); mlDraft = structuredClone(MAIL.texts); mlSetDirty(false); fillMail(); toast('Textos desats'); });
+  if (!mlEditing) return;
+  const changes = mlChanged();
+  if (!changes.length) return formError(e.target, 'No hi ha cap canvi per desar.');
+  const bad = badTags(); if (bad) return formError(e.target, bad);
+  formError(e.target);
+  const f = $('mlSaveForm'); f.reset(); formError(f); f.querySelector('[type=submit]').disabled = true;
+  $('mlChanges').innerHTML = changes.map(c => `<li>${esc(c)}</li>`).join('');
+  $('mlSaveDlg').showModal();
 });
+$('mlSaveForm').addEventListener('change', e => { e.currentTarget.querySelector('[type=submit]').disabled = !e.currentTarget.ok.checked; });
+$('mlSaveForm').addEventListener('submit', e => {
+  e.preventDefault();
+  if (!e.target.ok.checked) return;
+  submit(e.target, async () => { MAIL = await api('emails', { method: 'PUT', body: { texts: mlDraft } }); $('mlSaveDlg').close(); setEditing(false); toast('Textos desats. Els propers correus ja els faran servir.'); });
+});
+addEventListener('beforeunload', e => { if (mlEditing && MAIL && mlChanged().length) { e.preventDefault(); e.returnValue = ''; } });
 
 function render() {
   if (tab === 'cal') renderCal();

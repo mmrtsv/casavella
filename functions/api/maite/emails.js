@@ -2,7 +2,7 @@
 // PUT  /api/maite/emails  { texts }  Saves them (each email's fields; missing ones go back to the default)
 // POST /api/maite/emails  { kind, texts }  Preview: the email rendered with these texts and sample data
 import { json, settings, policyText } from '../../../lib/booking.js';
-import { DEFAULT_TEXTS, TEXT_LIMITS, texts, contactReply, bookingConfirmation } from '../../../lib/email.js';
+import { DEFAULT_TEXTS, TEXT_LIMITS, TEXT_VARS, texts, contactReply, bookingConfirmation } from '../../../lib/email.js';
 
 function clean(b) {
   return Object.fromEntries(Object.entries(DEFAULT_TEXTS).map(([k, d]) => [k, Object.fromEntries(Object.keys(d).map(f => {
@@ -12,15 +12,25 @@ function clean(b) {
   }))]));
 }
 
-export const onRequestGet = async ({ env }) => json({ texts: await texts(env), defaults: DEFAULT_TEXTS, limits: TEXT_LIMITS });
+// A tag the email can't fill, or a brace left over from a half-deleted one
+function badTag(T) {
+  for (const [k, fields] of Object.entries(T)) for (const [f, v] of Object.entries(fields)) {
+    const rest = v.replace(/\{(\w+)\}/g, (all, name) => TEXT_VARS[k].includes(name) ? '' : '\u0000');
+    if (/[{}\u0000]/.test(rest)) return { kind: k, field: f };
+  }
+  return null;
+}
+
+export const onRequestGet = async ({ env }) => json({ texts: await texts(env), defaults: DEFAULT_TEXTS, limits: TEXT_LIMITS, vars: TEXT_VARS });
 
 export async function onRequestPut({ request, env, data }) {
   if (!env.MAITE) return json({ error: 'not_configured' }, 503);
   const b = await request.json().catch(() => null);
   if (!b?.texts) return json({ error: 'bad_request' }, 400);
-  const T = clean(b.texts);
+  const T = clean(b.texts), bad = badTag(T);
+  if (bad) return json({ error: 'tag', ...bad }, 400);
   await env.MAITE.put('emails', JSON.stringify({ ...T, by: data.user, at: new Date().toISOString() }));
-  return json({ texts: T, defaults: DEFAULT_TEXTS, limits: TEXT_LIMITS });
+  return json({ texts: T, defaults: DEFAULT_TEXTS, limits: TEXT_LIMITS, vars: TEXT_VARS });
 }
 
 export async function onRequestPost({ request, env }) {

@@ -38,7 +38,7 @@
 @import "@heroui/styles/variants";
 
 /* Maite. Brand colours only (from the web): Verd fosc #1a3f20, Verd alfàbrega #2e6d2e, Verd sàlvia #79a57a, Cava #c6bfaf.
-   Neutrals are those greens mixed towards black or white, so every surface stays on-brand. Dark first, light on request. */
+   Neutrals are those greens mixed towards black or white, so every surface stays on-brand. Light by default, dark on request. */
 :root {
   --brand-deep: #1a3f20;
   --brand-basil: #2e6d2e;

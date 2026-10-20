@@ -1,18 +1,17 @@
 <!doctype html>
-<html lang="ca" class="dark" data-theme="dark">
+<html lang="ca" class="light" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0b100c" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#f6f4ef">
 <title>Maite</title>
 <link rel="icon" type="image/png" href="/img/iso-dark.png">
 <script>
-  // Theme before first paint (dark unless the viewer chose light), so nothing flashes or shifts
-  try { if (localStorage.getItem('maite-theme') === 'light') { document.documentElement.className = 'light'; document.documentElement.dataset.theme = 'light'; } } catch (e) {}
+  // Theme before first paint (light unless the viewer chose dark), so nothing flashes or shifts
+  try { if (localStorage.getItem('maite-theme') === 'dark') { document.documentElement.className = 'dark'; document.documentElement.dataset.theme = 'dark'; } } catch (e) {}
 </script>
-  <script type="module" crossorigin src="/maite/assets/index-Cp9scWhn.js"></script>
+  <script type="module" crossorigin src="/maite/assets/index-BHQ0wgNW.js"></script>
   <link rel="modulepreload" crossorigin href="/maite/assets/jsx-runtime-JyyJTaK-.js">
   <link rel="modulepreload" crossorigin href="/maite/assets/shim-fGDO43t9.js">
   <style>/*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
@@ -26,7 +25,7 @@
   <div class="min-w-0 flex-1 pb-28 lg:pb-8">
     <header class="glass sticky top-2 z-30 lg:top-4" style="border-radius:22px"><span class="glass-tint" style="border-radius:22px"></span>
       <div class="glass-body"><div class="flex min-h-14 items-center gap-2 px-3 py-2 sm:px-4">
-        <div class="lg:hidden"><img id="boot-iso" src="/img/iso-light.png" alt="" width="28" height="28" style="width:28px;height:28px"></div>
+        <div class="lg:hidden"><img id="boot-iso" src="/img/iso-dark.png" alt="" width="28" height="28" style="width:28px;height:28px"></div>
         <h1 id="boot-title" class="mr-auto truncate text-lg font-semibold tracking-tight sm:text-xl">Maite</h1>
       </div></div>
     </header>
@@ -40,7 +39,7 @@
     var h = location.hash.replace(/^#\/?/, ''), saved = null;
     try { saved = localStorage.getItem('maite-page'); } catch (e) {}
     document.getElementById('boot-title').textContent = t[h] || t[saved] || 'Calendari';
-    if (document.documentElement.classList.contains('light')) document.getElementById('boot-iso').src = '/img/iso-dark.png';
+    if (document.documentElement.classList.contains('dark')) document.getElementById('boot-iso').src = '/img/iso-light.png';
   })();
 </script>
 </body>

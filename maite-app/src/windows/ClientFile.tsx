@@ -6,10 +6,10 @@ import { SideSheet } from '../parts/Sheet';
 import { Status } from '../parts/Status';
 import { toastError, done } from '../parts/toast';
 import { api, uploadDoc } from '../lib/api';
-import { allBookings, keyOf, setBooking, shortName, stayName, reload, useStore } from '../lib/store';
+import { allBookings, getState, keyOf, setBooking, shortName, stayName, reload, useStore } from '../lib/store';
 import { closeDetail, openCancel, openDetail, useUI } from '../lib/ui';
 import { day, euro, longDay, nightsBetween, nitsTxt, range, stamp, TODAY, cap } from '../lib/dates';
-import { atHome, checklist, isBooking, METHOD, PAYTYPE, policyText, SOURCE, WALLET, who } from '../lib/words';
+import { atHome, dueList, hasDocs, isBooking, METHOD, PAYTYPE, policyText, SOURCE, WALLET, who } from '../lib/words';
 import type { Booking, Payment } from '../lib/types';
 
 const btn = (variant: 'secondary' | 'tertiary' | 'ghost' = 'secondary') => buttonVariants({ variant, size: 'sm' }) as unknown as string;
@@ -44,9 +44,21 @@ export function ClientFile() {
 }
 
 // Saves a checklist change on the booking's calendar event and refreshes the row
+// The change shows at once; the calendar is updated in the background (it takes a second or two).
+// Only the answer to the latest change on a booking is applied, and a failure puts back what was there.
+const latest = new Map<string, number>();
 async function save(b: Booking, set: Record<string, unknown>) {
-  try { const d = await api<{ booking: Booking }>('check', { method: 'POST', body: { stay: b.stay, id: b.id, set } }); setBooking(d.booking); }
-  catch (e) { toastError(e); }
+  const key = keyOf(b), was = getState().bookings.get(key) || b, n = (latest.get(key) || 0) + 1;
+  const now: Partial<Booking> = {};
+  for (const [k, v] of Object.entries(set)) (now as Record<string, unknown>)[k] = k === 'checkin' || k === 'checkout' ? (v ? new Date().toISOString() : '') : v;
+  latest.set(key, n); setBooking({ ...was, ...now });
+  try {
+    const d = await api<{ booking: Booking }>('check', { method: 'POST', body: { stay: b.stay, id: b.id, set } });
+    if (latest.get(key) === n) setBooking(d.booking);
+  } catch (e) {
+    if (latest.get(key) === n) setBooking(was);
+    toastError(e);
+  }
 }
 
 function Row({ ok, title, sub, children, control }: { ok?: boolean; title: ReactNode; sub?: ReactNode; children?: ReactNode; control?: ReactNode }) {
@@ -58,14 +70,14 @@ function Row({ ok, title, sub, children, control }: { ok?: boolean; title: React
     </div>
   );
 }
-function Tick({ b, k, label }: { b: Booking; k: 'docs' | 'police' | 'settled'; label: string }) {
+function Tick({ b, k, label }: { b: Booking; k: 'settled'; label: string }) {
   return (
     <Checkbox isSelected={!!b[k]} onChange={v => save(b, { [k]: v })} aria-label={label} className="shrink-0">
       <Checkbox.Content><Checkbox.Control className="!size-[22px] !rounded-full [&_svg]:!size-3"><Checkbox.Indicator /></Checkbox.Control></Checkbox.Content>
     </Checkbox>
   );
 }
-// ID documents: tick by hand, or upload photos or PDFs, which go to the booking's folder in Google Drive and tick it
+// ID documents: done only once photos or PDFs are uploaded to the booking's folder in Google Drive (no ticking by hand)
 function Docs({ b }: { b: Booking }) {
   const input = useRef<HTMLInputElement>(null);
   const [left, setLeft] = useState(0);
@@ -81,11 +93,11 @@ function Docs({ b }: { b: Booking }) {
     if (ok) done(ok === 1 ? 'Document desat a Drive' : `${ok} documents desats a Drive`);
   };
   return (
-    <Row title="Documents d'identitat" sub={b.docsFolder ? `A Google Drive${b.ref ? `, reserva ${b.ref}` : ''}` : 'DNI o passaport de tots els hostes adults.'} control={<Tick b={b} k="docs" label="Documents d'identitat" />}>
+    <Row ok={hasDocs(b)} title="Documents d'identitat" sub={hasDocs(b) ? `A Google Drive${b.ref ? `, reserva ${b.ref}` : ''}` : 'Puja el DNI o passaport de tots els hostes adults.'}>
       <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
         {b.docsFolder && <a className={btn()} href={b.docsFolder} target="_blank" rel="noopener"><FolderOpen size={15} />Carpeta</a>}
         <Button size="sm" variant="secondary" isPending={left > 0} onPress={() => input.current?.click()}>
-          {left > 0 ? <><Spinner size="sm" color="current" />Pujant{left > 1 ? ` (${left})` : ''}</> : <><Upload size={15} />Puja</>}
+          {left > 0 ? <><Spinner size="sm" color="current" />Pujant{left > 1 ? ` (${left})` : ''}</> : <><Upload size={15} />{b.docsFolder ? "Puja'n més" : 'Puja'}</>}
         </Button>
         <input ref={input} type="file" multiple accept="image/*,application/pdf" className="hidden" aria-label="Documents d'identitat" onChange={e => upload(e.target.files)} />
       </div>
@@ -93,13 +105,12 @@ function Docs({ b }: { b: Booking }) {
   );
 }
 function Moment({ b, k, label, when }: { b: Booking; k: 'checkin' | 'checkout'; label: string; when: string }) {
-  const [busy, setBusy] = useState(false);
-  const run = async (v: boolean) => { setBusy(true); await save(b, { [k]: v }); setBusy(false); };
+  const run = (v: boolean) => save(b, { [k]: v });
   return (
     <Row ok={!!b[k]} title={label} sub={b[k] ? `Fet ${stamp(b[k])}` : `Previst ${when}`}>
       {b[k]
-        ? <Button size="sm" variant="ghost" isPending={busy} onPress={() => run(false)}>Desfés</Button>
-        : <Button size="sm" isPending={busy} onPress={() => run(true)}>{busy && <Spinner size="sm" color="current" />}Marca {label.toLowerCase()}</Button>}
+        ? <Button size="sm" variant="ghost" onPress={() => run(false)}>Desfés</Button>
+        : <Button size="sm" onPress={() => run(true)}>Marca {label.toLowerCase()}</Button>}
     </Row>
   );
 }
@@ -115,7 +126,7 @@ function Memo({ b }: { b: Booking }) {
 }
 
 function Overview({ b, toClient }: { b: Booking; toClient: () => void }) {
-  const list = checklist(b), doneN = list.filter(c => c.ok).length;
+  const list = dueList(b), doneN = list.filter(c => c.ok).length;
   const rules = useStore(s => s.settings?.rules);
   const kpi = (label: string, value: ReactNode) => <div className="rounded-2xl bg-default/60 px-4 py-3"><div className="text-xs text-muted">{label}</div><div className="mt-1 text-xl font-semibold tnum">{value}</div></div>;
   return (
@@ -142,8 +153,8 @@ function Overview({ b, toClient }: { b: Booking; toClient: () => void }) {
         <Row ok={!!b.email} title="Correu" sub={b.email || 'Falta'}><Button size="sm" variant="ghost" onPress={toClient}>{b.email ? 'Canvia' : 'Afegeix'}</Button></Row>
         <Row ok={!!b.phone} title="Telèfon" sub={b.phone || 'Falta'}><Button size="sm" variant="ghost" onPress={toClient}>{b.phone ? 'Canvia' : 'Afegeix'}</Button></Row>
         <Docs b={b} />
-        <Moment b={b} k="checkin" label="Entrada" when={`${day(b.first)}, a partir de les ${rules?.checkin || '15:00'}`} />
-        <Moment b={b} k="checkout" label="Sortida" when={`${day(b.until)}, abans de les ${rules?.checkout || '11:00'}`} />
+        <Moment b={b} k="checkin" label="Check-in" when={`${day(b.first)}, a partir de les ${rules?.checkin || '15:00'}`} />
+        <Moment b={b} k="checkout" label="Check-out" when={`${day(b.until)}, abans de les ${rules?.checkout || '11:00'}`} />
       </div>
       <Memo b={b} />
     </div>
@@ -179,8 +190,8 @@ function BookingTab({ b }: { b: Booking }) {
     <div className="fade-in">
       <dl className="border-t border-separator">
         <Fact k="Allotjament">{stayName(b.stay)}</Fact>
-        <Fact k="Arribada">{cap(longDay(b.first))}<div className="text-[13px] text-muted">A partir de les {S?.rules.checkin || '15:00'}{b.arrival ? `. L'hoste diu: ${b.arrival}` : ''}</div></Fact>
-        <Fact k="Sortida">{cap(longDay(b.until))}<div className="text-[13px] text-muted">Abans de les {S?.rules.checkout || '11:00'}</div></Fact>
+        <Fact k="Check-in">{cap(longDay(b.first))}<div className="text-[13px] text-muted">A partir de les {S?.rules.checkin || '15:00'}{b.arrival ? `. L'hoste diu: ${b.arrival}` : ''}</div></Fact>
+        <Fact k="Check-out">{cap(longDay(b.until))}<div className="text-[13px] text-muted">Abans de les {S?.rules.checkout || '11:00'}</div></Fact>
         <Fact k="Estada">{nitsTxt(nightsBetween(b.first, b.until))}{b.guests ? `, ${b.guests} ${b.guests === 1 ? 'persona' : 'persones'}` : ''}</Fact>
         <Fact k="Via">{SOURCE[b.source] || b.source || '–'}</Fact>
         <Fact k="Import"><span className="tnum">{b.amount != null ? euro(b.amount) : 'Sense import'}</span>{b.refunded ? <div className="text-[13px] text-muted">Retornats {euro(b.refunded)}</div> : null}</Fact>

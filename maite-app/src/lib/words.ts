@@ -19,6 +19,7 @@ export const ERRORS: Record<string, string> = {
   docs_not_configured: 'Falta connectar la carpeta de Google Drive dels documents', drive: 'Google Drive no ha deixat desar el document',
 };
 
+export const hasDocs = (b: Booking) => b.docs && !!b.docsFolder;
 export const isBooking = (b: Booking) => b.kind === 'paid' || b.kind === 'pending' || b.kind === 'manual';
 export const atHome = (b: Booking) => !!b.checkin && !b.checkout;
 export const who = (b: Booking) => b.kind === 'block' ? (b.title || 'Tancat') : b.kind === 'other' ? b.title : (b.name || b.title);
@@ -29,16 +30,19 @@ export function checklist(b: Booking): Check[] {
     { k: 'pay', label: 'Pagament', ok: b.kind === 'paid' || (b.kind === 'manual' && b.settled) },
     { k: 'email', label: 'Correu', ok: !!b.email },
     { k: 'phone', label: 'Telèfon', ok: !!b.phone },
-    { k: 'docs', label: 'Documents', ok: b.docs },
-    { k: 'checkin', label: 'Entrada', ok: !!b.checkin },
-    { k: 'checkout', label: 'Sortida', ok: !!b.checkout },
+    // Only an upload counts: the server ticks it once a file is in the booking's Drive folder
+    { k: 'docs', label: 'Documents', ok: hasDocs(b) },
+    { k: 'checkin', label: 'Check-in', ok: !!b.checkin },
+    { k: 'checkout', label: 'Check-out', ok: !!b.checkout },
   ];
 }
-// What is still missing and already matters: before arrival the paperwork, from arrival day the check-in, from departure day the check-out
-export function missing(b: Booking) {
+// What already matters: the paperwork always, the check-in from arrival day, the check-out from departure day.
+// Progress counts only these (plus anything already done), so a check-out that is not due yet never shows as pending.
+export function dueList(b: Booking) {
   const due: Record<Check['k'], boolean> = { pay: true, email: true, phone: true, docs: true, checkin: b.first <= TODAY, checkout: b.until <= TODAY };
-  return checklist(b).filter(c => !c.ok && due[c.k]);
+  return checklist(b).filter(c => c.ok || due[c.k]);
 }
+export const missing = (b: Booking) => dueList(b).filter(c => !c.ok);
 
 // Cancellation policy (same rules as lib/booking.js)
 export function policyText(c: Policy) {

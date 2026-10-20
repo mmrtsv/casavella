@@ -5,7 +5,7 @@ import { Glass } from '../lib/glass';
 import { addDays, day, euro, nightsBetween, TODAY } from '../lib/dates';
 import { keyOf, shortName, stayName, useStore } from '../lib/store';
 import { openDetail, takeBookingsFilter } from '../lib/ui';
-import { atHome, checklist, isBooking, KIND, missing, SOURCE, who } from '../lib/words';
+import { atHome, dueList, isBooking, KIND, missing, SOURCE, who } from '../lib/words';
 import { Status, Tag } from '../parts/Status';
 import type { Booking } from '../lib/types';
 
@@ -18,7 +18,7 @@ const short = (d: string) => day(d, { weekday: 'short', day: 'numeric', month: '
 const SORT: Record<string, (b: Booking) => string | number> = {
   guest: b => who(b).toLowerCase(), stay: b => shortName(b.stay), first: b => b.first, until: b => b.until,
   nights: b => nightsBetween(b.first, b.until), guests: b => b.guests || 0, source: b => SOURCE[b.source] || '',
-  amount: b => b.amount ?? -1, state: b => KIND[b.kind] + (b.settled ? 1 : 0), done: b => isBooking(b) ? checklist(b).filter(c => c.ok).length : -1,
+  amount: b => b.amount ?? -1, state: b => KIND[b.kind] + (b.settled ? 1 : 0), done: b => isBooking(b) ? dueList(b).filter(c => c.ok).length : -1,
 };
 
 export default function Bookings() {
@@ -105,7 +105,7 @@ function Stat({ label, value, accent, children }: { label: string; value: ReactN
 
 function Progress({ b }: { b: Booking }) {
   if (!isBooking(b)) return null;
-  const list = checklist(b), n = list.filter(c => c.ok).length;
+  const list = dueList(b), n = list.filter(c => c.ok).length;
   return (
     <span className="inline-flex items-center gap-2" title={`${n} de ${list.length} fet`}>
       <span className="h-1.5 w-12 overflow-hidden rounded-full bg-border" aria-hidden="true"><span className="block h-full rounded-full bg-accent" style={{ width: `${n / list.length * 100}%` }} /></span>
@@ -115,8 +115,8 @@ function Progress({ b }: { b: Booking }) {
 }
 
 const COLS: { id: string; label: string; num?: boolean; row?: boolean; className?: string }[] = [
-  { id: 'guest', label: 'Hoste', row: true, className: 'min-w-[220px]' }, { id: 'stay', label: 'Allotjament' }, { id: 'first', label: 'Arribada' },
-  { id: 'until', label: 'Sortida' }, { id: 'nights', label: 'Nits', num: true }, { id: 'guests', label: 'Pers.', num: true },
+  { id: 'guest', label: 'Hoste', row: true, className: 'min-w-[220px]' }, { id: 'stay', label: 'Allotjament' }, { id: 'first', label: 'Check-in' },
+  { id: 'until', label: 'Check-out' }, { id: 'nights', label: 'Nits', num: true }, { id: 'guests', label: 'Pers.', num: true },
   { id: 'source', label: 'Via' }, { id: 'amount', label: 'Import', num: true }, { id: 'state', label: 'Estat' }, { id: 'done', label: 'Llista' },
 ];
 

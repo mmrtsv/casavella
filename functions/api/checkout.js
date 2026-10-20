@@ -36,7 +36,6 @@ export async function onRequestPost({ request, env }) {
     const session = await stripe(env, 'checkout/sessions', {
       mode: 'payment',
       locale: 'auto',
-      payment_method_types: ['card'],
       line_items: [{ quantity: 1, price_data: { currency: 'eur', unit_amount: q.total, product_data: {
         name: `${q.name}, La Casa Vella`,
         description: q.discount ? `${label}. ${q.price} € la nit amb un ${q.discount} % de descompte (abans ${euros(q.subtotal)})` : `${label}. ${q.price} € la nit`,
@@ -53,6 +52,6 @@ export async function onRequestPost({ request, env }) {
     return json({ url: session.url });
   } catch (e) {
     if (hold) await cal.remove(hold.id).catch(() => {});
-    return json({ error: 'server', detail: String(e.message || e) }, 502);
+    return json({ error: 'server', detail: String(e.message || e) }, 500);
   }
 }

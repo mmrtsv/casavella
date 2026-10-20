@@ -1,5 +1,6 @@
-// POST /api/stripe-webhook  (Stripe → checkout.session.completed / checkout.session.expired)
-// Paid: the calendar hold becomes the booking. Expired: the hold is removed.
+// POST /api/stripe-webhook  (Stripe → checkout.session.completed / .expired / .async_payment_succeeded / .async_payment_failed)
+// Paid: the calendar hold becomes the booking. Expired or failed: the hold is removed.
+// Paid later (bank payments): the hold stays as "pending" until Stripe confirms or fails it.
 // If a paid session's hold is gone and the dates were taken meanwhile, the payment is refunded.
 import { STAYS, calendar, stripe, verifyStripe, json, euros } from '../../lib/booking.js';
 
@@ -11,12 +12,17 @@ export async function onRequestPost({ request, env }) {
   if (!STAYS[m.stay]) return json({ ignored: true });
   const cal = await calendar(env, m.stay);
 
-  if (event.type === 'checkout.session.expired') {
+  if (event.type === 'checkout.session.expired' || event.type === 'checkout.session.async_payment_failed') {
     const ev = m.event && await cal.get(m.event);
-    if (ev && ev.extendedProperties?.private?.lcv === 'hold') await cal.remove(m.event);
+    if (ev && ['hold', 'pending'].includes(ev.extendedProperties?.private?.lcv)) await cal.remove(m.event);
     return json({ ok: true });
   }
-  if (event.type !== 'checkout.session.completed' || s.payment_status !== 'paid') return json({ ignored: true });
+  if (event.type === 'checkout.session.completed' && s.payment_status !== 'paid') {
+    // A payment that confirms later: keep the dates blocked while Stripe waits for it
+    if (m.event) await cal.patch(m.event, { summary: `Pendent de cobrament: ${STAYS[m.stay].name}, ${m.name || ''}`, extendedProperties: { private: { lcv: 'pending', session: s.id } } }).catch(() => {});
+    return json({ ok: true, pending: true });
+  }
+  if (!['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type) || s.payment_status !== 'paid') return json({ ignored: true });
 
   const cd = s.customer_details || {};
   const c = { name: m.name || cd.name, email: m.email || cd.email, phone: m.phone || cd.phone };

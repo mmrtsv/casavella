@@ -84,9 +84,9 @@ export default function Rules() {
           })}
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          <Field label="Retorn complet fins a" value={c.fullDays} onChange={setc('fullDays')} inputMode="numeric" placeholder="Mai" help="Dies abans de l'arribada" />
+          <Field label="Retorn complet fins a" value={c.fullDays} onChange={setc('fullDays')} inputMode="numeric" placeholder="Mai" help="Dies abans del check-in" />
           <Field label="Després es retorna (%)" value={c.partialPct} onChange={setc('partialPct')} inputMode="numeric" />
-          <Field label="Fins a" value={c.partialDays} onChange={setc('partialDays')} inputMode="numeric" help="Dies abans de l'arribada" />
+          <Field label="Fins a" value={c.partialDays} onChange={setc('partialDays')} inputMode="numeric" help="Dies abans del check-in" />
         </div>
         <div className="mt-4 rounded-2xl bg-default/50 p-4">
           <div className="text-xs font-medium text-muted">El que veu l'hoste</div>

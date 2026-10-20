@@ -60,7 +60,7 @@ export default function Home() {
   const say: Seg[] = [
     ...(arrive.length ? [`Avui ${arrive.length === 1 ? 'arriba' : 'arriben'}`, ...listOf(arrive, b => [b, `a ${shortName(b.stay)}`]), '.'] : ['Avui no arriba ningú.']),
     ...(leave.length ? [leave.length === 1 ? 'Marxa' : 'Marxen', ...listOf(leave, b => [b]), '.'] : []),
-    ...(!arrive.length && next ? ['La propera arribada és', next, `, ${day(next.first, { weekday: 'long', day: 'numeric', month: 'long' })}.`] : []),
+    ...(!arrive.length && next ? ['El proper check-in és el de', next, `, ${day(next.first, { weekday: 'long', day: 'numeric', month: 'long' })}.`] : []),
   ];
   const [anim] = useState(() => !played && !matchMedia('(prefers-reduced-motion: reduce)').matches);
   useEffect(() => { played = true; }, []);
@@ -199,8 +199,8 @@ function Week() {
                 const k = b.kind === 'manual' && b.settled ? 'settled' : b.kind;
                 return (
                   <button key={keyOf(b)} type="button" onClick={() => openDetail(keyOf(b))} style={{ gridRow: r + 2, gridColumn: `${a + 2} / ${z + 2}` }}
-                    className={`relative z-[1] mx-1 my-2 flex min-w-0 items-center overflow-hidden rounded-xl pl-4 pr-2 text-left text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-focus ${tone[k] || tone.block}`}>
-                    <span className={`absolute left-1.5 top-2 bottom-2 w-1 rounded-full ${bar[k] || bar.block}`} aria-hidden="true" />
+                    className={`relative z-[1] mx-1 my-2 flex min-w-0 items-center gap-1.5 overflow-hidden rounded-xl pl-3 pr-2 text-left text-[13px] font-semibold outline-none focus-visible:ring-2 focus-visible:ring-focus ${tone[k] || tone.block}`}>
+                    <span className={`size-2 shrink-0 rounded-full ${bar[k] || bar.block}`} aria-hidden="true" />
                     <span className="truncate">{who(b)}</span>
                   </button>
                 );

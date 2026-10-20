@@ -132,7 +132,7 @@ export function Cancel() {
         <p className="text-sm">{b.name || b.title}, {stayName(b.stay)}. Les nits del {range(b.first, b.until)} quedaran lliures.</p>
         {paid && pol && (
           <p className="mt-3 rounded-2xl bg-default/60 px-4 py-3 text-sm text-muted">
-            {before <= 0 ? 'Arriba avui o ja és aquí.' : `Falten ${before === 1 ? '1 dia' : before + ' dies'} per a l'arribada.`} {b.policy ? 'Política que va acceptar' : 'Política actual'}: {policyText(pol)}{due != null ? ` Toca retornar ${euro(due)}.` : ''}
+            {before <= 0 ? 'Arriba avui o ja és aquí.' : `Falten ${before === 1 ? '1 dia' : before + ' dies'} per al check-in.`} {b.policy ? 'Política que va acceptar' : 'Política actual'}: {policyText(pol)}{due != null ? ` Toca retornar ${euro(due)}.` : ''}
           </p>
         )}
         {paid && <Field label="Retornar a la targeta (€)" value={refund} onChange={setRefund} inputMode="decimal" help="0 si no se li retorna res." className="mt-4" />}

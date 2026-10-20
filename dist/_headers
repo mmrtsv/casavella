@@ -2,4 +2,9 @@
   Access-Control-Allow-Origin: *
 /maite/*
   X-Robots-Tag: noindex
+/maite/
   Cache-Control: no-store
+/maite/index.html
+  Cache-Control: no-store
+/maite/assets/*
+  Cache-Control: public, max-age=31536000, immutable

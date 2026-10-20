@@ -80,7 +80,6 @@ export default function Prices() {
                   <span className="flex items-start justify-between gap-1">
                     <span className="flex items-center gap-1.5">
                       <span className={`text-xs tnum ${d === TODAY ? 'font-bold text-accent' : 'text-muted'}`}>{parse(d).getDate()}</span>
-                      {bk && <span className="rounded-md bg-accent px-1.5 text-[10px] leading-4 font-semibold text-accent-foreground max-sm:hidden" aria-hidden="true">Ocupat</span>}
                     </span>
                     {min ? <span className="rounded-md bg-foreground/10 px-1 text-xs font-semibold">{min}n</span> : null}
                   </span>

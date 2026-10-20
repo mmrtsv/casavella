@@ -1,13 +1,13 @@
 // The frame: glass sidebar (desktop), glass top bar, glass tab bar (phone). Pages render in the scrolling column.
-import { type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@heroui/react';
-import { CalendarDays, Table2, Tag, Percent, ScrollText, BedDouble, Search, Moon, Sun, Command } from 'lucide-react';
+import { CalendarDays, Table2, Tag, Percent, ScrollText, BedDouble, Search, Moon, Sun, Command, MoreHorizontal } from 'lucide-react';
 import { Glass } from '../lib/glass';
 import { go, usePage, type Page } from '../lib/route';
 import { setTheme, useTheme } from '../lib/theme';
 import { useStore } from '../lib/store';
 
-export const NAV: { page: Page; label: string; icon: typeof CalendarDays; hint: string }[] = [
+export const NAV: { page: Page; label: string; short?: string; icon: typeof CalendarDays; hint: string }[] = [
   { page: 'calendar', label: 'Calendari', icon: CalendarDays, hint: 'Ocupació de les properes setmanes' },
   { page: 'bookings', label: 'Reserves', icon: Table2, hint: 'Totes les reserves i la seva llista' },
   { page: 'prices', label: 'Preus', icon: Tag, hint: 'Preu per nit i dies especials' },
@@ -77,7 +77,7 @@ function Sidebar({ onSearch }: { onSearch: () => void }) {
 
 function TopBar({ title, actions, onSearch }: { title: string; actions?: ReactNode; onSearch: () => void }) {
   return (
-    <Glass as="header" radius={22} className="sticky top-2 z-30 lg:top-4">
+    <Glass as="header" radius={22} className="glass-dense sticky top-2 z-30 lg:top-4">
       <div className="flex min-h-14 items-center gap-2 px-3 py-2 sm:px-4">
         <div className="lg:hidden"><Iso size={28} /></div>
         <h1 className="mr-auto truncate text-lg font-semibold tracking-tight sm:text-xl">{title}</h1>
@@ -93,21 +93,51 @@ function TopBar({ title, actions, onSearch }: { title: string; actions?: ReactNo
 
 function TabBar() {
   const page = usePage();
+  const [more, setMore] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const main = NAV.filter(n => n.page !== 'discounts' && n.page !== 'rules'), extra = NAV.filter(n => n.page === 'discounts' || n.page === 'rules');
+  const extraOn = extra.some(n => n.page === page);
+  useEffect(() => {
+    if (!more) return;
+    const close = (e: Event) => { if (e instanceof KeyboardEvent ? e.key === 'Escape' : !moreRef.current?.contains(e.target as Node)) setMore(false); };
+    addEventListener('keydown', close); addEventListener('pointerdown', close);
+    moreRef.current?.querySelector('a')?.focus();
+    return () => { removeEventListener('keydown', close); removeEventListener('pointerdown', close); };
+  }, [more]);
+  const item = (on: boolean, Icon: typeof CalendarDays, label: string) => (
+    <><span className={`grid h-7 w-12 place-items-center rounded-full transition-colors duration-150 ${on ? 'bg-accent/20 text-accent' : ''}`}><Icon size={19} aria-hidden="true" /></span><span>{label}</span></>
+  );
+  const cell = 'flex h-16 flex-col items-center justify-center gap-1 rounded-[22px] text-[11px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-focus';
   return (
-    <Glass as="nav" radius={26} strength="strong" aria-label="Seccions" className="fixed inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-40 lg:hidden">
-      <div className="grid grid-cols-6">
-        {NAV.map(({ page: p, label, icon: Icon }) => {
-          const on = p === page;
-          return (
-            <a key={p} href={'#/' + p} onClick={e => { e.preventDefault(); go(p); }} aria-current={on ? 'page' : undefined}
-              className={`flex h-16 flex-col items-center justify-center gap-1 rounded-[22px] text-[10.5px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-focus ${on ? 'text-foreground' : 'text-muted'}`}>
-              <span className={`grid h-7 w-12 place-items-center rounded-full transition-colors duration-150 ${on ? 'bg-accent/20 text-accent' : ''}`}><Icon size={19} aria-hidden="true" /></span>
-              <span className="max-w-full truncate px-0.5">{label}</span>
-            </a>
-          );
-        })}
-      </div>
-    </Glass>
+    <div ref={moreRef} className="fixed inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-40 lg:hidden">
+      {more && (
+        <Glass radius={22} strength="strong" className="absolute right-0 bottom-[calc(100%+.5rem)] w-56 fade-in">
+          <nav aria-label="Més seccions" className="p-1.5">
+            {extra.map(({ page: p, label, icon: Icon }) => (
+              <a key={p} href={'#/' + p} onClick={e => { e.preventDefault(); go(p); setMore(false); }} aria-current={p === page ? 'page' : undefined}
+                className={`flex h-12 items-center gap-3 rounded-2xl px-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-focus ${p === page ? 'bg-accent/15' : 'hover:bg-default/60'}`}>
+                <Icon size={18} aria-hidden="true" className={p === page ? 'text-accent' : 'text-muted'} />{label}
+              </a>
+            ))}
+          </nav>
+        </Glass>
+      )}
+      <Glass as="nav" radius={26} strength="strong" className="glass-dense" aria-label="Seccions">
+        <div className="grid grid-cols-5">
+          {main.map(({ page: p, label, short, icon: Icon }) => {
+            const on = p === page;
+            return (
+              <a key={p} href={'#/' + p} onClick={e => { e.preventDefault(); go(p); }} aria-current={on ? 'page' : undefined} className={`${cell} ${on ? 'text-foreground' : 'text-muted'}`}>
+                {item(on, Icon, short || label)}
+              </a>
+            );
+          })}
+          <button type="button" aria-expanded={more} aria-haspopup="true" onClick={() => setMore(m => !m)} className={`${cell} ${extraOn || more ? 'text-foreground' : 'text-muted'}`}>
+            {item(extraOn, MoreHorizontal, 'Més')}
+          </button>
+        </div>
+      </Glass>
+    </div>
   );
 }
 

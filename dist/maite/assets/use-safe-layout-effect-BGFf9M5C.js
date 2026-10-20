@@ -1,0 +1,1 @@
+import{i as e,n as t}from"./jsx-runtime-JyyJTaK-.js";var n=e(t(),1),r=globalThis?.document?n.useLayoutEffect:n.useEffect;export{r as t};

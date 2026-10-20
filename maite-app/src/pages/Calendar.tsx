@@ -10,7 +10,7 @@ import { who } from '../lib/words';
 import type { Booking } from '../lib/types';
 import { toastError } from '../parts/toast';
 
-const SPAN = 21, STEP = 14;
+const COL = 76, NAMES = 132; // a night is at least 76 px wide; the stay names take 132 px
 type Sel = { stay: string; a: string; b?: string } | null;
 
 const tone: Record<string, string> = {
@@ -24,8 +24,8 @@ const bar: Record<string, string> = { paid: 'bg-accent', settled: 'bg-accent', p
 export function CalendarActions() {
   return (
     <>
-      <Button variant="secondary" size="sm" onPress={() => openBlock()}><Lock size={15} />Tancar dates</Button>
-      <Button size="sm" onPress={() => openBook()}><Plus size={16} />Nova reserva</Button>
+      <Button variant="secondary" size="sm" aria-label="Tancar dates" onPress={() => openBlock()} className="max-sm:!w-9 max-sm:!px-0"><Lock size={15} /><span className="max-sm:hidden">Tancar dates</span></Button>
+      <Button size="sm" aria-label="Nova reserva" onPress={() => openBook()} className="max-sm:!w-9 max-sm:!px-0"><Plus size={16} /><span className="max-sm:hidden">Nova reserva</span></Button>
     </>
   );
 }
@@ -34,24 +34,35 @@ export function Calendar() {
   const stays = useStore(s => s.stays);
   const bookingsMap = useStore(s => s.bookings);
   const [from, setFrom] = useState(() => addDays(TODAY, -2));
+  const wrap = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width));
+    if (wrap.current) ro.observe(wrap.current);
+    return () => ro.disconnect();
+  }, []);
+  // Phones scroll sideways through two weeks; wider screens show as many whole nights as fit
+  const SPAN = width < 640 ? 14 : Math.max(7, Math.min(28, Math.floor((width - NAMES) / COL)));
+  const STEP = Math.max(7, SPAN - 2);
   const [sel, setSel] = useState<Sel>(null);
   const [busy, setBusy] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
   const to = addDays(from, SPAN), last = addDays(to, -1);
-  const days = useMemo(() => Array.from({ length: SPAN }, (_, i) => addDays(from, i)), [from]);
+  const days = useMemo(() => Array.from({ length: SPAN }, (_, i) => addDays(from, i)), [from, SPAN]);
   const bookings = useMemo(() => [...bookingsMap.values()].filter(b => b.blocks && b.first < to && b.until > from), [bookingsMap, from, to]);
   const busyNight = (stay: string, d: string) => bookings.some(b => b.stay === stay && b.first <= d && b.until > d);
 
+  useEffect(() => { ensure(from, addDays(from, SPAN)).catch(toastError); }, [SPAN]);
   async function move(next: string) {
     setFrom(next); setSel(null); setBusy(true);
     try { await ensure(next, addDays(next, SPAN)); } catch (e) { toastError(e); }
     setBusy(false);
   }
-  // Phones: open with today in view
+  // When the three weeks don't fit (phones), open with today in view
   useEffect(() => {
     const el = scroller.current, col = el?.querySelector<HTMLElement>('[data-today]');
-    if (el && col) el.scrollLeft = Math.max(0, col.offsetLeft - 120 - col.offsetWidth);
-  }, [from, stays.length]);
+    if (el && col && el.scrollWidth > el.clientWidth) el.scrollLeft = Math.max(0, col.offsetLeft - NAMES - col.offsetWidth);
+  }, [from, stays.length, SPAN]);
 
   function pick(stay: string, d: string) {
     if (d < TODAY || busyNight(stay, d)) return;
@@ -76,14 +87,15 @@ export function Calendar() {
         </div>
       </div>
 
+      <div ref={wrap}>
       <div ref={scroller} className={`overflow-x-auto rounded-3xl border border-border bg-surface shadow-[var(--surface-shadow)] transition-opacity ${busy ? 'opacity-60' : ''}`}>
-        <div role="grid" aria-label="Ocupació" className="grid min-w-max" style={{ gridTemplateColumns: `minmax(104px,140px) repeat(${SPAN}, minmax(48px, 1fr))` }}>
-          <div role="row" className="contents">
-            <div role="columnheader" className="sticky left-0 z-20 border-b border-separator bg-surface" />
+        <div role="group" aria-label="Ocupació" className="grid" style={{ ['--names' as string]: `${(width < 640 ? 104 : NAMES) + 12}px`, gridTemplateColumns: `${width < 640 ? 104 : NAMES}px repeat(${SPAN}, minmax(${width < 640 ? 56 : COL}px, 1fr))`, minWidth: (width < 640 ? 104 : NAMES) + SPAN * (width < 640 ? 56 : COL) }}>
+          <div className="contents" aria-hidden="true">
+            <div className="sticky left-0 z-20 border-b border-separator bg-surface" />
             {days.map(d => {
               const dt = parse(d), we = dt.getDay() === 0 || dt.getDay() === 6, today = d === TODAY;
               return (
-                <div key={d} role="columnheader" data-today={today || undefined} className={`border-b border-separator py-2.5 text-center ${we ? 'bg-default/40' : ''}`}>
+                <div key={d} data-today={today || undefined} className={`border-b border-separator py-2.5 text-center ${we ? 'bg-default/40' : ''}`}>
                   <div className="text-[11px] font-medium uppercase tracking-wide text-muted">{dt.toLocaleDateString('ca-ES', { weekday: 'short' }).replace('.', '')}</div>
                   <div className={`mx-auto mt-1 grid size-7 place-items-center rounded-full text-sm font-semibold tnum ${today ? 'bg-accent text-accent-foreground' : ''}`}>{dt.getDate()}</div>
                 </div>
@@ -91,22 +103,25 @@ export function Calendar() {
             })}
           </div>
           {stays.map((s, r) => (
-            <div role="row" key={s.id} className="contents">
-              <div role="rowheader" className="sticky left-0 z-10 flex items-center border-b border-separator bg-surface px-4 text-sm font-semibold" style={{ gridRow: r + 2, gridColumn: 1 }}>{shortName(s.id)}</div>
+            <div key={s.id} className="contents">
+              <div className="sticky left-0 z-10 flex items-center border-b border-separator bg-surface px-4 text-sm font-semibold" style={{ gridRow: r + 2, gridColumn: 1 }}>{shortName(s.id)}</div>
               {days.map((d, i) => {
                 const dt = parse(d), we = dt.getDay() === 0 || dt.getDay() === 6, past = d < TODAY;
                 const inSel = sel && sel.stay === s.id && d >= sel.a && d <= (sel.b || sel.a);
+                const cls = `h-[84px] border-b border-l border-separator ${we && !past ? 'bg-default/40' : ''}`;
+                // Only free nights from today on can be picked; past and taken nights are just the background
+                if (past || busyNight(s.id, d)) return <div key={d} aria-hidden="true" style={{ gridRow: r + 2, gridColumn: i + 2 }} className={`${cls} ${past ? 'bg-[repeating-linear-gradient(135deg,transparent_0_6px,var(--separator)_6px_7px)]' : ''}`} />;
                 return (
-                  <div key={d} role="gridcell" aria-selected={!!inSel} style={{ gridRow: r + 2, gridColumn: i + 2 }}
-                    tabIndex={past ? -1 : 0} aria-label={`${s.name}, ${day(d, { weekday: 'long', day: 'numeric', month: 'long' })}`}
-                    onClick={() => pick(s.id, d)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(s.id, d); } }}
-                    className={`h-[72px] border-b border-l border-separator outline-none transition-colors duration-100 focus-visible:bg-accent/15 ${past ? 'cursor-default bg-[repeating-linear-gradient(135deg,transparent_0_6px,var(--separator)_6px_7px)]' : 'cursor-pointer hover:bg-accent/10'} ${we && !past ? 'bg-default/40' : ''} ${inSel ? '!bg-accent/25' : ''}`} />
+                  <button key={d} type="button" aria-pressed={!!inSel} style={{ gridRow: r + 2, gridColumn: i + 2 }}
+                    aria-label={`${s.name}, ${day(d, { weekday: 'long', day: 'numeric', month: 'long' })}, lliure`} onClick={() => pick(s.id, d)}
+                    className={`${cls} cursor-pointer outline-none transition-colors duration-100 hover:bg-accent/10 focus-visible:bg-accent/15 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus ${inSel ? '!bg-accent/25' : ''}`} />
                 );
               })}
-              {bookings.filter(b => b.stay === s.id).map(b => <Bar key={keyOf(b)} b={b} row={r + 2} from={from} />)}
+              {bookings.filter(b => b.stay === s.id).map(b => <Bar key={keyOf(b)} b={b} row={r + 2} from={from} span={SPAN} />)}
             </div>
           ))}
         </div>
+      </div>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted">
@@ -132,17 +147,21 @@ function Legend({ c, t }: { c: string; t: string }) {
   return <span className="inline-flex items-center gap-2"><span className={`size-2.5 rounded-full ${c}`} />{t}</span>;
 }
 
-function Bar({ b, row, from }: { b: Booking; row: number; from: string }) {
-  const a = Math.max(0, nightsBetween(from, b.first)), z = Math.min(SPAN, nightsBetween(from, b.until));
+function Bar({ b, row, from, span }: { b: Booking; row: number; from: string; span: number }) {
+  const a = Math.max(0, nightsBetween(from, b.first)), z = Math.min(span, nightsBetween(from, b.until));
   const k = b.kind === 'manual' && b.settled ? 'settled' : b.kind;
   const sub = b.kind === 'block' || b.kind === 'other' ? null : [b.guests && `${b.guests} pers.`, euro(b.amount)].filter(Boolean);
   return (
     <button type="button" onClick={() => openDetail(keyOf(b))} style={{ gridRow: row, gridColumn: `${a + 2} / ${z + 2}` }}
-      className={`relative z-[5] mx-1 my-2.5 flex min-w-0 flex-col justify-center overflow-hidden rounded-xl py-1.5 pl-4 pr-2 text-left outline-none transition-transform duration-150 hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-focus ${tone[k] || tone.block}`}
-      title={who(b)} aria-label={`${who(b)}, ${shortName(b.stay)}, ${range(b.first, b.until)}`}>
+      className={`relative z-[5] mx-1 my-2.5 flex min-w-0 max-w-full flex-col justify-center overflow-hidden rounded-xl py-1.5 pl-4 pr-2 text-left outline-none transition-transform duration-150 hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-focus ${tone[k] || tone.block}`}
+      title={who(b)}>
       <span className={`absolute left-1.5 top-2 bottom-2 w-1 rounded-full ${bar[k] || bar.block}`} aria-hidden="true" />
-      <span className="truncate text-[13px] font-semibold">{who(b)}</span>
-      {sub && <span className="flex gap-2 truncate text-[11.5px] text-muted tnum">{sub.map(x => <span key={String(x)}>{x}</span>)}</span>}
+      {/* the text stays in view next to the stay names when the bar starts before the visible nights */}
+      <span className="sticky left-[var(--names)] min-w-0 max-w-full">
+        <span className="block truncate text-[13px] font-semibold">{who(b)}</span>
+        {sub && <span className="flex gap-2 truncate text-[11.5px] text-muted tnum">{sub.map(x => <span key={String(x)}>{x}</span>)}</span>}
+        <span className="sr-only">, {shortName(b.stay)}, {range(b.first, b.until)}</span>
+      </span>
     </button>
   );
 }

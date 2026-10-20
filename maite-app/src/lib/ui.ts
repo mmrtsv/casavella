@@ -19,3 +19,4 @@ export const closeBlock = () => set({ block: null });
 export const openCancel = (key: string) => set({ cancel: key, detail: null });
 export const closeCancel = () => set({ cancel: null });
 export const setPalette = (palette: boolean) => set({ palette });
+export const getPalette = () => ui.palette;

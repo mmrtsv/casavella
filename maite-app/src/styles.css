@@ -1,5 +1,41 @@
+/* HeroUI, only the parts Maite uses (same order and layers as @heroui/styles/dist/index.css), to keep the first paint light */
+@layer theme, base, components, utilities;
 @import "tailwindcss";
-@import "@heroui/styles";
+@import "tw-animate-css";
+@import "@heroui/styles/base/base.css" layer(base);
+@import "@heroui/styles/base/scrollbar.css" layer(base);
+@import "@heroui/styles/components/close-button.css" layer(components);
+@import "@heroui/styles/components/description.css" layer(components);
+@import "@heroui/styles/components/error-message.css" layer(components);
+@import "@heroui/styles/components/field-error.css" layer(components);
+@import "@heroui/styles/components/label.css" layer(components);
+@import "@heroui/styles/components/tabs.css" layer(components);
+@import "@heroui/styles/components/button.css" layer(components);
+@import "@heroui/styles/components/button-group.css" layer(components);
+@import "@heroui/styles/components/toggle-button.css" layer(components);
+@import "@heroui/styles/components/toggle-button-group.css" layer(components);
+@import "@heroui/styles/components/list-box-item.css" layer(components);
+@import "@heroui/styles/components/list-box-section.css" layer(components);
+@import "@heroui/styles/components/list-box.css" layer(components);
+@import "@heroui/styles/components/table.css" layer(components);
+@import "@heroui/styles/components/alert.css" layer(components);
+@import "@heroui/styles/components/skeleton.css" layer(components);
+@import "@heroui/styles/components/spinner.css" layer(components);
+@import "@heroui/styles/components/toast.css" layer(components);
+@import "@heroui/styles/components/checkbox.css" layer(components);
+@import "@heroui/styles/components/input.css" layer(components);
+@import "@heroui/styles/components/textfield.css" layer(components);
+@import "@heroui/styles/components/search-field.css" layer(components);
+@import "@heroui/styles/components/textarea.css" layer(components);
+@import "@heroui/styles/components/select.css" layer(components);
+@import "@heroui/styles/components/popover.css" layer(components);
+@import "@heroui/styles/components/modal.css" layer(components);
+@import "@heroui/styles/components/drawer.css" layer(components);
+@import "@heroui/styles/components/kbd.css" layer(components);
+@import "@heroui/styles/components/surface.css" layer(components);
+@import "@heroui/styles/themes/default" layer(theme);
+@import "@heroui/styles/utilities";
+@import "@heroui/styles/variants";
 
 /* Maite. Brand colours only (from the web): Verd fosc #1a3f20, Verd alfàbrega #2e6d2e, Verd sàlvia #79a57a, Cava #c6bfaf.
    Neutrals are those greens mixed towards black or white, so every surface stays on-brand. Dark first, light on request. */
@@ -43,7 +79,7 @@
     --field-shadow: none;
     /* Glass: the tint keeps text at AA contrast whatever is behind it */
     --glass-tint: color-mix(in oklab, var(--brand-deep) 34%, rgb(10 14 11 / .74));
-    --glass-tint-liquid: rgb(12 17 13 / .52);
+    --glass-tint-liquid: rgb(12 17 13 / .7);
     --glass-tint-solid: color-mix(in oklab, var(--brand-deep) 30%, #0e130f);
     --glass-edge: rgb(255 255 255 / .09);
     --glow-a: color-mix(in oklab, var(--brand-basil) 55%, transparent);
@@ -79,7 +115,7 @@
     --surface-shadow: 0 1px 2px rgb(26 63 32 / .06), 0 8px 24px -12px rgb(26 63 32 / .14);
     --overlay-shadow: 0 24px 64px -16px rgb(26 63 32 / .28);
     --glass-tint: rgb(255 255 255 / .72);
-    --glass-tint-liquid: rgb(255 255 255 / .55);
+    --glass-tint-liquid: rgb(255 255 255 / .72);
     --glass-tint-solid: #ffffff;
     --glass-edge: rgb(26 63 32 / .10);
     --glow-a: color-mix(in oklab, var(--brand-sage) 34%, transparent);
@@ -103,6 +139,7 @@
   :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 }
 
+@layer components {
 /* ---------- Glass ---------- */
 .glass { position: relative; isolation: isolate; box-shadow: 0 0 0 1px var(--glass-edge) inset, var(--overlay-shadow); }
 .glass-refraction, .glass-tint { position: absolute; inset: 0; pointer-events: none; }
@@ -117,11 +154,15 @@
   }
   .glass.is-liquid > .glass-tint { background: var(--glass-tint-liquid); }
 }
+/* Bars that content scrolls under need a denser tint so nothing reads through */
+.glass.glass-dense > .glass-tint { background: color-mix(in oklab, var(--glass-tint-solid) 90%, transparent) !important; }
 /* The library's own wrapper: keep it a pure backdrop layer */
 .glass-refraction > div, .glass-refraction > span { pointer-events: none !important; }
 @media (prefers-reduced-transparency: reduce) {
   .glass > .glass-tint { background: var(--glass-tint-solid) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
   .glass-refraction { display: none; }
+}
+
 }
 
 /* ---------- Motion: fast and quiet, and none when asked ---------- */
@@ -131,6 +172,7 @@
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 
+@layer components {
 /* ---------- Status chips ---------- */
 .status { display: inline-flex; align-items: center; gap: .4rem; height: 1.5rem; padding: 0 .6rem; border-radius: 999px; font-size: .75rem; font-weight: 550; white-space: nowrap; }
 .status::before { content: ""; width: .4rem; height: .4rem; border-radius: 50%; background: currentColor; }
@@ -139,6 +181,15 @@
 .status.other { background: color-mix(in oklab, var(--brand-cava) 18%, transparent); color: color-mix(in oklab, var(--brand-cava) 55%, var(--foreground)); }
 .status.neutral { background: var(--default); color: var(--muted); }
 .status.danger { background: color-mix(in oklab, var(--danger) 16%, transparent); color: color-mix(in oklab, var(--danger) 70%, var(--foreground)); }
+
+/* Unticked boxes stay visible on glass and on dark surfaces */
+.checkbox__control { box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--foreground) 38%, transparent); }
+.checkbox[data-selected] .checkbox__control, .checkbox__content[data-selected] .checkbox__control { box-shadow: none; }
+
+}
+
+/* Amber text needs to be darker on light surfaces for AA */
+:is(.light, [data-theme="light"]) .text-warning { color: color-mix(in oklab, var(--warning) 50%, #2a1a00); }
 
 /* Scrollbars that stay out of the way */
 * { scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--foreground) 18%, transparent) transparent; }

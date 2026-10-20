@@ -56,7 +56,8 @@ Variables a Cloudflare Pages (Settings → Variables and secrets): `STRIPE_SECRE
 Maite és el back office, a `maite.casavellarural.com`. Surt del mateix projecte de Cloudflare Pages: `functions/_middleware.js` mira el domini i, a `maite.`, serveix `maite/index.html` i les funcions de `functions/api/maite/` (amb la lògica a `lib/maite.js`). Des de qualsevol altre domini, aquestes rutes donen 404.
 
 - **Calendari**: un mes amb una fila per allotjament. Es toca la primera nit i l'última per tancar dates o afegir una reserva. Tocant una reserva se'n veuen els detalls.
-- **Reserves**: properes, passades, cancel·lades i tancaments, amb cercador i un resum dels pròxims 30 dies.
+- **Reserves**: avui (qui arriba, qui hi és i qui marxa), properes, passades, cancel·lades i tancaments, amb cercador i un resum dels pròxims 30 dies.
+- **Llista de cada reserva**: pagament (per a les de la web, el mètode que diu Stripe: targeta i últimes xifres, Apple Pay, transferència…, i el rebut; per a les directes, si està cobrada i com), correu, telèfon, documents d'identitat, registre de viatgers als Mossos, entrada i sortida (amb l'hora en què es marquen) i una nota interna. Les targetes de la llista diuen què falta.
 - **Reserves directes** (telèfon, WhatsApp, en persona): s'escriuen al calendari de l'allotjament i bloquegen les nits a la web. Proposa el preu de la web, però es pot canviar.
 - **Cancel·lar**: la reserva queda al calendari com a «CANCEL·LADA» i les nits queden lliures. Si es va pagar a la web, es pot retornar tot o una part per Stripe. Les que esperen la confirmació del banc no es poden cancel·lar fins que arriba.
 - **Tancar dates**: un o més allotjaments, o tota la casa. Si alguna nit ja està ocupada, no es tanca res.
@@ -69,6 +70,18 @@ Maite és el back office, a `maite.casavellarural.com`. Surt del mateix projecte
 Tot això s'aplica de seguida a la web i als pagaments. Les reserves fetes a Maite no segueixen les normes (es pot reservar per telèfon el mateix dia o una sola nit).
 
 Tot el que hi ha al calendari continua sent la referència: el que es crea a mà a Google Calendar també surt a Maite (en blau) i bloqueja les nits.
+
+### On es guarda cada cosa
+
+| Què | On | Qui ho llegeix |
+| --- | --- | --- |
+| Reserves, dades dels hostes i la seva llista (entrada, documents…) | Google Calendar, un calendari per allotjament (a l'esdeveniment de cada reserva) | La web (disponibilitat) i Maite |
+| Pagaments i devolucions | Stripe | Maite el consulta en directe |
+| Preus, descomptes, normes, política i textos dels allotjaments | Cloudflare KV, espai `MAITE` (claus `settings` i `stays`) | La web (`/api/settings`) i Maite |
+| Fotos pujades a Maite | Cloudflare R2, bucket `PHOTOS`, servides a `/photos/…` | La web i Maite |
+| Fotos originals, disseny i codi | Aquest repositori (`img/`, `index.html`, `functions/`, `lib/`) | Cloudflare Pages el publica a cada push |
+
+No hi ha cap altra base de dades: tot el que es canvia a Maite es llegeix al moment des de la web.
 
 ### Posar-lo en marxa
 

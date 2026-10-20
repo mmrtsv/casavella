@@ -107,6 +107,31 @@ main { max-width: 1280px; margin: 0 auto; padding: 20px 16px 60px; }
 .pill.other { background: var(--other-bg); color: var(--other); }
 .empty { color: var(--muted); padding: 30px 0; text-align: center; }
 
+/* Booking detail: checklist */
+#detail { width: min(600px, calc(100vw - 32px)); }
+#detail .dlg { max-height: calc(100dvh - 32px); overflow-y: auto; }
+.d-meta { color: var(--muted); font-size: 14px; margin: -8px 0 12px; }
+.d-note { background: var(--ground); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 0 0 14px; }
+.ck-head { display: flex; align-items: baseline; justify-content: space-between; margin: 6px 0 6px; }
+.ck-head h3 { font-size: 20px; }
+.ck-head span { font-size: 13px; color: var(--muted); }
+.ck { border: 1px solid var(--line); border-radius: 12px; margin-bottom: 14px; }
+.ck-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 15px; }
+.ck-row:last-child { border-bottom: 0; }
+.ck-row .grow { flex: 1; min-width: 0; }
+.ck-sub { font-size: 13px; color: var(--muted); }
+.tick { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-size: 13px; color: var(--on-primary); }
+.tick.ok { background: var(--paid); border-color: var(--paid); color: var(--paper); }
+label.inline { display: block; color: var(--text); font-size: 15px; margin: 0; cursor: pointer; }
+.ck-row select { margin-top: 6px; max-width: 240px; padding: 6px 10px; font-size: 14px; }
+.ck-field { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+.ck-field input { flex: 1 1 180px; margin: 0; padding: 6px 10px; font-size: 15px; }
+.btn.small { padding: 5px 12px; font-size: 14px; text-decoration: none; color: inherit; }
+.btn.small.solid { color: var(--on-primary); }
+.flags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.todo { font-size: 13px; color: var(--due); }
+.empty.small { padding: 8px 0; text-align: left; font-size: 14px; }
+
 /* Prices: month calendar for one stay, side panel for the normal price or the selected days */
 .pc { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
 .pc-nav h2 { font-size: 22px; }
@@ -268,6 +293,7 @@ dd { margin: 0; overflow-wrap: anywhere; }
     <div class="stats" id="stats"></div>
     <div class="bar">
       <div class="chips" id="chips">
+        <button class="chip" data-f="today" aria-pressed="false">Avui</button>
         <button class="chip" data-f="next" aria-pressed="true">Properes</button>
         <button class="chip" data-f="past" aria-pressed="false">Passades</button>
         <button class="chip" data-f="cancelled" aria-pressed="false">Cancel·lades</button>
@@ -627,12 +653,14 @@ const isBooking = b => ['paid', 'pending', 'manual'].includes(b.kind);
 function renderList() {
   const q = $('q').value.trim().toLowerCase();
   let rows = all().filter(b => {
+    if (filter === 'today') return isBooking(b) && b.first <= TODAY && b.until >= TODAY;
     if (filter === 'next') return (isBooking(b) || b.kind === 'other' && b.blocks) && b.until >= TODAY;
     if (filter === 'past') return (isBooking(b) || b.kind === 'other' && b.blocks) && b.until < TODAY;
     if (filter === 'cancelled') return b.kind === 'cancelled' || b.kind === 'refunded';
     return b.kind === 'block' && b.until >= TODAY;
   });
   if (q) rows = rows.filter(b => [b.name, b.phone, b.email, b.title, stayName(b.stay)].join(' ').toLowerCase().includes(q));
+  if (filter === 'today') return renderToday(rows);
   rows.sort((a, b) => filter === 'past' || filter === 'cancelled' ? b.first.localeCompare(a.first) : a.first.localeCompare(b.first));
   let h = '', last = '';
   for (const b of rows) {
@@ -650,7 +678,13 @@ function renderList() {
     ['Arribades en 30 dies', soon.length],
     ['Ocupació 30 dies', Math.round(nightsSold / (30 * (STAYS.length || 1)) * 100) + ' %'],
     ['Pendent de cobrar', euro(due.reduce((s, b) => s + (b.amount || 0), 0)) || '0 €'],
+    ['Amb coses pendents', all().filter(b => isBooking(b) && b.until >= TODAY && b.first < in30 && missing(b).length).length],
   ].map(([k, v]) => `<div class="stat"><span>${k}</span><b>${esc(v)}</b></div>`).join('');
+}
+// Today: who arrives, who is staying, who leaves
+function renderToday(rows) {
+  const groups = [['Arriben avui', rows.filter(b => b.first === TODAY)], ['A casa', rows.filter(b => b.first < TODAY && b.until > TODAY)], ['Marxen avui', rows.filter(b => b.until === TODAY)]];
+  $('list').innerHTML = groups.map(([t, g]) => `<div class="day">${t} (${g.length})</div>` + (g.map(card).join('') || '<p class="empty small">Ningú.</p>')).join('');
 }
 function pill(b) {
   if (b.kind === 'paid') return '<span class="pill paid">Pagada a la web</span>';
@@ -663,43 +697,117 @@ function card(b) {
   const color = { paid: 'var(--paid)', pending: 'var(--due)', manual: b.settled ? 'var(--paid)' : 'var(--due)', other: 'var(--other)' }[b.kind] || 'var(--line)';
   const who = b.kind === 'block' || b.kind === 'other' ? b.title : b.name || b.title;
   const meta = [stayName(b.stay), range(b.first, b.until), nitsTxt(nightsBetween(b.first, b.until)), b.guests && `${b.guests} pers.`, b.source && SOURCE[b.source]].filter(Boolean).join(' · ');
-  return `<button class="card" style="border-left-color:${color}" data-id="${esc(b.stay + '|' + b.id)}"><div><h3>${esc(who)}</h3><div class="meta">${esc(meta)}</div></div><div class="amt">${euro(b.amount)}<div>${pill(b)}</div></div></button>`;
+  const todo = isBooking(b) && b.until >= addDays(TODAY, -3) ? missing(b) : [];
+  const flags = (isBooking(b) && atHome(b) ? '<span class="pill paid">A casa</span> ' : '') + (todo.length ? `<span class="todo">Falta: ${todo.map(c => esc(c.label.toLowerCase())).join(', ')}</span>` : '');
+  return `<button class="card" style="border-left-color:${color}" data-id="${esc(b.stay + '|' + b.id)}"><div><h3>${esc(who)}</h3><div class="meta">${esc(meta)}</div>${flags ? `<div class="flags">${flags}</div>` : ''}</div><div class="amt">${euro(b.amount)}<div>${pill(b)}</div></div></button>`;
 }
 $('list').addEventListener('click', e => { const c = e.target.closest('.card'); if (c) showDetail(bookings.get(c.dataset.id)); });
 
-// ---- Detail ----
+// ---- Detail: booking info, checklist (payment, contact, documents, police register, check-in and out) ----
+const METHOD = { cash: 'Efectiu', transfer: 'Transferència', bizum: 'Bizum', card: 'Targeta (TPV)', other: 'Altres' };
+const PAYTYPE = { card: 'Targeta', sepa_debit: 'Domiciliació SEPA', customer_balance: 'Transferència', bancontact: 'Bancontact', ideal: 'iDEAL', paypal: 'PayPal', klarna: 'Klarna', link: 'Link', revolut_pay: 'Revolut Pay', amazon_pay: 'Amazon Pay', sofort: 'Sofort', giropay: 'Giropay', eps: 'EPS', p24: 'Przelewy24' };
+const WALLET = { apple_pay: 'Apple Pay', google_pay: 'Google Pay', samsung_pay: 'Samsung Pay', link: 'Link' };
+function checklist(b) {
+  return [
+    { k: 'pay', label: 'Pagament', ok: b.kind === 'paid' || b.kind === 'manual' && b.settled },
+    { k: 'email', label: 'Correu', ok: !!b.email },
+    { k: 'phone', label: 'Telèfon', ok: !!b.phone },
+    { k: 'docs', label: 'Documents', ok: b.docs },
+    { k: 'police', label: 'Registre de viatgers', ok: b.police },
+    { k: 'checkin', label: 'Entrada', ok: !!b.checkin },
+    { k: 'checkout', label: 'Sortida', ok: !!b.checkout },
+  ];
+}
+// What is still missing and already matters: before arrival the paperwork, from arrival day the check-in, from departure day the check-out
+function missing(b) {
+  const due = { pay: true, email: true, phone: true, docs: true, police: b.first <= TODAY, checkin: b.first <= TODAY, checkout: b.until <= TODAY };
+  return checklist(b).filter(c => !c.ok && due[c.k]);
+}
+const atHome = b => !!b.checkin && !b.checkout;
+const stamp = t => new Date(t).toLocaleString('ca-ES', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const payments = {};
+
 function showDetail(b) {
   if (!b) return;
-  const rows = [
-    ['Allotjament', esc(stayName(b.stay))],
-    ['Dates', `${esc(day(b.first, { weekday: 'long', day: 'numeric', month: 'long' }))} → ${esc(day(b.until, { weekday: 'long', day: 'numeric', month: 'long' }))}<br>${nitsTxt(nightsBetween(b.first, b.until))}`],
-    b.kind !== 'block' && b.name && ['Nom', esc(b.name)],
-    b.guests && ['Persones', b.guests],
-    b.phone && ['Telèfon', `<a href="tel:${esc(b.phone.replace(/\s/g, ''))}">${esc(b.phone)}</a> · <a href="https://wa.me/${esc(b.phone.replace(/\D/g, ''))}" target="_blank" rel="noopener">WhatsApp</a>`],
-    b.email && ['Correu', `<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`],
-    b.amount != null && ['Import', euro(b.amount) + (b.refunded ? ` (retornats ${euro(b.refunded)})` : '')],
-    ['Estat', pill(b)],
-    b.source && ['Via', SOURCE[b.source] || b.source],
-    b.arrival && ['Arribada', esc(b.arrival)],
-    b.notes && ['Comentaris', esc(b.notes)],
-  ].filter(Boolean);
-  const canCancel = b.kind === 'paid' || b.kind === 'manual', future = b.until >= TODAY;
+  if (!isBooking(b)) return showOther(b);
+  const list = checklist(b), done = list.filter(c => c.ok).length, future = b.until >= TODAY;
+  const tick = ok => `<span class="tick${ok ? ' ok' : ''}" aria-hidden="true">${ok ? '✓' : ''}</span>`;
+  const pay = b.kind === 'paid'
+    ? `<div class="ck-row">${tick(true)}<div><b>Pagada a la web</b> · ${euro(b.amount)}${b.refunded ? ` (retornats ${euro(b.refunded)})` : ''}<div class="ck-sub" id="payInfo">Consultant Stripe…</div></div></div>`
+    : b.kind === 'pending'
+    ? `<div class="ck-row">${tick(false)}<div><b>Pendent del banc</b> · ${euro(b.amount)}<div class="ck-sub">Stripe encara no ha confirmat el pagament. Les nits queden reservades.</div><div class="ck-sub" id="payInfo"></div></div></div>`
+    : `<div class="ck-row">${tick(b.settled)}<div class="grow"><label class="inline"><input type="checkbox" data-set="settled"${b.settled ? ' checked' : ''}> <b>Cobrada</b>${b.amount != null ? ' · ' + euro(b.amount) : ''}</label>
+        <select data-set="method" aria-label="Com s'ha cobrat"><option value="">Com s'ha cobrat?</option>${Object.entries(METHOD).map(([k, v]) => `<option value="${k}"${b.method === k ? ' selected' : ''}>${v}</option>`).join('')}</select></div></div>`;
+  const contact = (k, label, type, link) => `<div class="ck-row">${tick(!!b[k])}<div class="grow"><b>${label}</b>
+      <div class="ck-field"><input type="${type}" data-set="${k}" value="${esc(b[k])}" placeholder="Falta" autocomplete="off">${b[k] ? link : ''}</div></div></div>`;
+  const toggle = (k, label, sub) => `<div class="ck-row">${tick(b[k])}<label class="inline grow"><input type="checkbox" data-set="${k}"${b[k] ? ' checked' : ''}> <b>${label}</b><div class="ck-sub">${sub}</div></label></div>`;
+  const moment = (k, label, when) => `<div class="ck-row">${tick(!!b[k])}<div class="grow"><b>${label}</b><div class="ck-sub">${b[k] ? `Fet ${esc(stamp(b[k]))}` : `Previst ${esc(when)}`}</div></div>
+      ${b[k] ? `<button class="btn small" data-undo="${k}">Desfés</button>` : `<button class="btn small solid" data-do="${k}">Marca ${label.toLowerCase()}</button>`}</div>`;
+  const tel = b.phone.replace(/\s/g, ''), wa = b.phone.replace(/\D/g, '');
+  $('detailBody').innerHTML = `<h2>${esc(b.name || b.title)}</h2>
+    <p class="d-meta">${esc(stayName(b.stay))} · ${esc(day(b.first, { weekday: 'short', day: 'numeric', month: 'short' }))} → ${esc(day(b.until, { weekday: 'short', day: 'numeric', month: 'short' }))} · ${nitsTxt(nightsBetween(b.first, b.until))}${b.guests ? ` · ${b.guests} pers.` : ''}${b.source ? ` · ${SOURCE[b.source] || b.source}` : ''}${atHome(b) ? ' · <span class="pill paid">A casa</span>' : ''}</p>
+    ${b.arrival || b.notes ? `<p class="d-note">${b.arrival ? `<b>Arribada prevista:</b> ${esc(b.arrival)}<br>` : ''}${b.notes ? `<b>Comentaris de l'hoste:</b> ${esc(b.notes)}` : ''}</p>` : ''}
+    <div class="ck-head"><h3>Llista</h3><span>${done} de ${list.length} fet</span></div>
+    <div class="ck" id="ck">
+      ${pay}
+      ${contact('email', 'Correu', 'email', `<a class="btn small" href="mailto:${esc(b.email)}">Escriu</a>`)}
+      ${contact('phone', 'Telèfon', 'tel', `<a class="btn small" href="tel:${esc(tel)}">Truca</a><a class="btn small" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`)}
+      ${toggle('docs', "Documents d'identitat", 'DNI o passaport de tots els hostes adults.')}
+      ${toggle('police', 'Registre de viatgers', 'Comunicat als Mossos d\'Esquadra.')}
+      ${moment('checkin', 'Entrada', `${day(b.first, { weekday: 'short', day: 'numeric', month: 'short' })}, a partir de les ${SET?.rules.checkin || '15:00'}`)}
+      ${moment('checkout', 'Sortida', `${day(b.until, { weekday: 'short', day: 'numeric', month: 'short' })}, abans de les ${SET?.rules.checkout || '11:00'}`)}
+    </div>
+    <label>Nota interna (només a Maite)<textarea data-set="memo" rows="2" placeholder="Claus, llit supletori, al·lèrgies…">${esc(b.memo)}</textarea></label>
+    <div class="actions">
+      ${b.stripe ? `<a class="btn" href="${esc(b.stripe)}" target="_blank" rel="noopener">Stripe</a>` : ''}
+      ${b.link ? `<a class="btn" href="${esc(b.link)}" target="_blank" rel="noopener">Google Calendar</a>` : ''}
+      ${(b.kind === 'paid' || b.kind === 'manual') && future ? '<button class="btn danger" data-act="cancel">Cancel·la la reserva</button>' : ''}
+    </div>`;
+  const body = $('detailBody');
+  body.querySelector('[data-act="cancel"]')?.addEventListener('click', () => { $('detail').close(); openCancel(b); });
+  const save = async set => {
+    try {
+      const d = await api('check', { method: 'POST', body: { stay: b.stay, id: b.id, set } });
+      bookings.set(b.stay + '|' + b.id, d.booking); render();
+      if ($('detail').open) { const y = $('detail').querySelector('.dlg').scrollTop; showDetail(d.booking); $('detail').querySelector('.dlg').scrollTop = y; }
+    } catch (e) { toast(e.message); showDetail(b); }
+  };
+  body.querySelectorAll('input[type="checkbox"][data-set]').forEach(c => c.addEventListener('change', () => save({ [c.dataset.set]: c.checked })));
+  body.querySelectorAll('select[data-set], input[type="email"][data-set], input[type="tel"][data-set], textarea[data-set]').forEach(c => c.addEventListener('change', () => save({ [c.dataset.set]: c.value })));
+  body.querySelectorAll('[data-do]').forEach(x => x.addEventListener('click', () => { x.disabled = true; save({ [x.dataset.do]: true }); }));
+  body.querySelectorAll('[data-undo]').forEach(x => x.addEventListener('click', () => { x.disabled = true; save({ [x.dataset.undo]: false }); }));
+  if (!$('detail').open) $('detail').showModal();
+  if (b.kind === 'paid' || b.kind === 'pending') showPayment(b);
+}
+async function showPayment(b) {
+  const key = b.stay + '|' + b.id;
+  try {
+    const p = payments[key] ||= await api(`payment?stay=${b.stay}&id=${encodeURIComponent(b.id)}`);
+    const el = $('payInfo'); if (!el) return;
+    const m = p.method, what = m.type === 'card' ? `${m.brand ? m.brand[0].toUpperCase() + m.brand.slice(1) : 'Targeta'} ···· ${m.last4}${m.wallet ? ` (${WALLET[m.wallet] || m.wallet})` : ''}` : (PAYTYPE[m.type] || m.type || 'Mètode desconegut') + (m.last4 ? ` ···· ${m.last4}` : '') + (m.bank ? ` · ${m.bank}` : '');
+    el.innerHTML = `${esc(what)} · ${p.status === 'succeeded' ? `cobrat ${esc(stamp(p.created * 1000))}` : p.status === 'processing' ? 'en procés' : esc(p.status)}${p.refunded ? ` · retornats ${euro(p.refunded)}` : ''}${p.receipt ? ` · <a href="${esc(p.receipt)}" target="_blank" rel="noopener">Rebut</a>` : ''}`;
+  } catch (e) {
+    delete payments[key];
+    if ($('payInfo')) $('payInfo').textContent = "No s'ha pogut consultar Stripe.";
+  }
+}
+// Closed nights and entries from Google Calendar
+function showOther(b) {
+  const future = b.until >= TODAY;
   $('detailBody').innerHTML = `<h2>${esc(b.kind === 'block' ? b.title || 'Tancat' : b.kind === 'other' ? b.title : b.name || b.title)}</h2>
-    <dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+    <p class="d-meta">${esc(stayName(b.stay))} · ${esc(day(b.first, { weekday: 'short', day: 'numeric', month: 'short' }))} → ${esc(day(b.until, { weekday: 'short', day: 'numeric', month: 'short' }))} · ${nitsTxt(nightsBetween(b.first, b.until))} · ${pill(b)}</p>
+    ${b.amount != null ? `<p class="d-note">Import: ${euro(b.amount)}${b.refunded ? ` (retornats ${euro(b.refunded)})` : ''}</p>` : ''}
     ${b.kind === 'other' ? '<p class="hint">Aquesta entrada es va crear directament a Google Calendar. Es canvia des d\'allà.</p>' : ''}
-    ${b.kind === 'pending' ? '<p class="hint">Pagament per transferència o banc que Stripe encara no ha confirmat. Les nits queden reservades mentrestant.</p>' : ''}
     <div class="actions">
       ${b.stripe ? `<a class="btn" href="${esc(b.stripe)}" target="_blank" rel="noopener">Stripe</a>` : ''}
       ${b.link ? `<a class="btn" href="${esc(b.link)}" target="_blank" rel="noopener">Google Calendar</a>` : ''}
       ${b.kind === 'block' && future ? '<button class="btn danger" data-act="unblock">Obre aquestes nits</button>' : ''}
-      ${canCancel && future ? '<button class="btn danger" data-act="cancel">Cancel·la la reserva</button>' : ''}
     </div>`;
   $('detailBody').querySelector('[data-act="unblock"]')?.addEventListener('click', async e => {
     e.target.disabled = true;
     try { await api('cancel', { method: 'POST', body: { stay: b.stay, id: b.id } }); $('detail').close(); toast('Nits obertes'); await reload(); }
     catch (err) { toast(err.message); e.target.disabled = false; }
   });
-  $('detailBody').querySelector('[data-act="cancel"]')?.addEventListener('click', () => { $('detail').close(); openCancel(b); });
   $('detail').showModal();
 }
 

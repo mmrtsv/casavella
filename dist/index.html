@@ -211,8 +211,12 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .compare { padding-block: clamp(32px, 5vw, 64px) clamp(64px, 9vw, 112px); }
 .cmp-head { display: flex; justify-content: space-between; align-items: end; gap: 24px 48px; flex-wrap: wrap; margin-bottom: clamp(28px, 4vw, 48px); }
 .cmp-head .bp-head { margin-bottom: 0; }
-.cmp-when { display: grid; gap: 8px; justify-items: end; text-align: right; max-width: 42ch; }
-.cmp-when p { font-family: var(--display); font-size: clamp(19px, 2vw, 23px); line-height: 1.4; color: var(--ink); }
+.cmp-when { display: flex; align-items: center; gap: 18px 28px; padding: 18px 22px; background: var(--paper); border: 1px solid var(--line); }
+.cmp-when-rows { display: grid; gap: 6px; }
+.cmp-when-rows > span { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--text); }
+.cmp-when-rows b { font-family: var(--display); font-weight: 400; font-size: 21px; color: var(--ink); }
+.cmp-when-rows svg { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--basil); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.cmp-edit { padding: 12px 20px; flex: none; }
 .cmp-list { border-top: 1px solid var(--line); }
 .cmp-row { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr) minmax(0, 230px); gap: clamp(24px, 3.5vw, 52px); align-items: center; padding-block: clamp(26px, 3.5vw, 40px); border-bottom: 1px solid var(--line); }
 .cmp-media { position: relative; padding: 0; border: 0; background: none; cursor: zoom-in; text-align: left; }
@@ -235,6 +239,20 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .cmp-no { margin-top: 12px; font-size: 11.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
 .cmp-row.off .cmp-media, .cmp-row.off .cmp-info h3, .cmp-row.off .cmp-total { opacity: .45; }
 .cmp-foot { margin-top: 28px; font-size: 14px; color: var(--muted); }
+.cmp-count { font-size: 13.5px; color: var(--basil); font-weight: 500; min-height: 1.5em; margin-bottom: 12px; }
+.cmp-checking { margin-top: 12px; font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
+.cmp-checking::before { content: ""; width: 12px; height: 12px; border: 1.5px solid var(--sage); border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Notice popup: dates taken and similar moments */
+.notice { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px 16px; background: rgba(10, 22, 12, .72); }
+.nt-box { position: relative; display: grid; gap: 16px; justify-items: center; text-align: center; width: min(540px, 100%); padding: 48px clamp(22px, 5vw, 44px) 36px; background: var(--paper); box-shadow: 0 30px 80px rgba(0, 0, 0, .35); }
+.nt-box .iso { width: 54px; height: 54px; background: var(--sage); -webkit-mask: url(img/iso-dark.png) center / contain no-repeat; mask: url(img/iso-dark.png) center / contain no-repeat; }
+.nt-box h3 { font-size: clamp(26px, 3vw, 34px); }
+.nt-box p { color: var(--muted); max-width: 42ch; }
+.nt-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }
+.nt-actions .btn { padding: 14px 22px; }
+.nt-actions .btn[hidden] { display: none; }
 .cmp-more { background: none; border: 0; padding: 0; font: 500 13.5px var(--body); color: var(--basil); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
 /* Stay details popup (from the compare page) */
@@ -277,7 +295,8 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
   .cmp-badge { justify-self: start; }
 }
 @media (max-width: 640px) {
-  .cmp-when { justify-items: start; text-align: left; }
+  .cmp-when { width: 100%; justify-content: space-between; }
+  .cmp-when-rows b { font-size: 18px; }
   .cmp-row { grid-template-columns: 1fr; gap: 26px; }
   .cmp-buy { grid-column: auto; grid-template-columns: 1fr auto; align-items: end; gap: 4px 16px; }
   .cmp-buy > * { grid-column: 1; }
@@ -285,7 +304,7 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 }
 
 /* Booking page (#reserva): guest details next to the stay summary, then Stripe */
-:root.booking-open body > :not(header.top):not(.subpage):not(footer):not(.lightbox):not(.phone-view):not(.stay-modal) { display: none !important; }
+:root.booking-open body > :not(header.top):not(.subpage):not(footer):not(.lightbox):not(.phone-view):not(.stay-modal):not(.notice) { display: none !important; }
 .bookpage { padding-block: clamp(32px, 5vw, 64px) clamp(64px, 9vw, 112px); }
 .bp-back { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; text-decoration: none; color: var(--muted); }
 .bp-back:hover { color: var(--ink); }
@@ -309,7 +328,9 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .bp-check input:checked { background: var(--basil); border-color: var(--basil); }
 .bp-check input:checked::after { opacity: 1; }
 .bp-check input[aria-invalid="true"] { border-color: #a33b2b; }
-.bp-pay { justify-self: start; padding: 18px 32px; }
+.bp-pay { justify-self: start; padding: 18px 32px; gap: 12px; }
+.bp-pay.loading { cursor: progress; opacity: .85; }
+.bp-pay.loading::before { content: ""; width: 14px; height: 14px; border: 1.5px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
 .bp-payment { display: grid; gap: 18px; border-top: 1px solid var(--line); padding-top: 24px; }
 .bp-pay-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 #payment-element { min-height: 120px; }
@@ -695,10 +716,14 @@ footer { padding-bottom: 32px !important; }
     <div class="cmp-head">
       <div class="bp-head"><span class="label">Disponibilitat</span><h2 id="cmpTitle" data-script="tria el teu racó">On voleu dormir?</h2></div>
       <div class="cmp-when">
-        <p id="cmpWhen"></p>
-        <a href="#reservar" class="bp-change">Canviar dates o hostes</a>
+        <div class="cmp-when-rows">
+          <span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="1.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><b id="cmpDates"></b></span>
+          <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.5c1.9.8 3.2 2.8 3.5 5.5"/></svg><span id="cmpWho"></span></span>
+        </div>
+        <a href="#reservar" class="btn cmp-edit">Canviar</a>
       </div>
     </div>
+    <p class="cmp-count" id="cmpCount" aria-live="polite"></p>
     <div class="cmp-list" id="cmpList"></div>
     <p class="cmp-foot">Com més dies us quedeu, millor: un 5 % menys per a dues nits i un 10 % a partir de tres. Impostos inclosos.</p>
   </div>
@@ -1083,6 +1108,16 @@ footer { padding-bottom: 32px !important; }
   </div>
 </div>
 
+<div class="notice" id="notice" hidden role="alertdialog" aria-modal="true" aria-labelledby="ntTitle" aria-describedby="ntText">
+  <div class="nt-box">
+    <button type="button" class="sm-close" id="ntClose" aria-label="Tancar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <span class="iso" aria-hidden="true"></span>
+    <h3 id="ntTitle"></h3>
+    <p id="ntText"></p>
+    <div class="nt-actions"><button type="button" class="btn solid" id="ntMain"></button><button type="button" class="btn" id="ntAlt"></button></div>
+  </div>
+</div>
+
 <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Foto ampliada">
   <button class="close" id="lbClose">Tancar</button>
   <img id="lbImg" alt="">
@@ -1363,7 +1398,6 @@ async function showQuote() {
     if (d.total) serverQuotes[key] = d;
     if (seq !== quoteSeq) return;
     available = d.available;
-    if (d.available === false) note.textContent = "Aquestes dates ja estan reservades: prova'n unes altres.";
     if (!bp.hidden) renderSummary();
   } catch (e) {}
 }
@@ -1373,7 +1407,8 @@ const av = $('disponibles'), cmpList = $('cmpList'), freeNow = {};
 let searchSeq = 0, cameFrom = '#reservar';
 function drawCompare() {
   const g = +fguests.value || 1;
-  $('cmpWhen').textContent = `${nightsTxt(nights())}, del ${dayLabel(fin.value, true)} al ${dayLabel(fout.value, true)}, per a ${people(g)}`;
+  $('cmpDates').textContent = `Del ${dayLabel(fin.value)} al ${dayLabel(fout.value)}`;
+  $('cmpWho').textContent = `${nightsTxt(nights())}, ${people(g)}`;
   const rows = Object.entries(STAY_INFO).map(([stay, s]) => ({ stay, s, q: price(stay), fits: g <= s.max, free: freeNow[stay] !== false }));
   rows.sort((a, b) => (b.fits && b.free) - (a.fits && a.free));
   cmpList.innerHTML = rows.map(({ stay, s, q, fits, free }) => {
@@ -1391,7 +1426,7 @@ function buyBlock(stay) {
     ${q.discount ? `<span class="cmp-badge">${q.discount} % de descompte</span>` : ''}
     <div class="cmp-total">${q.discount ? `<s>${euro(q.subtotal)}</s>` : ''}<b>${euro(q.total)}</b></div>
     <span class="cmp-nights">en total, per ${nightsTxt(q.n)}</span>
-    ${ok ? `<button type="button" class="btn solid" data-choose="${stay}">Reservar</button>` : `<span class="cmp-no">${fits ? 'Ocupat aquests dies' : `Només fins a ${people(s.max)}`}</span>`}`;
+    ${!fits ? `<span class="cmp-no">Només fins a ${people(s.max)}</span>` : checking ? '<span class="cmp-checking">Comprovant disponibilitat…</span>' : ok ? `<button type="button" class="btn solid" data-choose="${stay}">Reservar</button>` : '<span class="cmp-no">Ocupat aquests dies</span>'}`;
 }
 
 // Stay details popup: gallery, description, services and the price for the chosen dates
@@ -1440,16 +1475,32 @@ function chooseStay(stay) {
   cameFrom = '#disponibles';
   goToBooking();
 }
+// Until the calendars answer, no row offers "Reservar": showing a stay as free and then taking it back sets false expectations
+let checking = false;
+function drawCount() {
+  if (checking) { $('cmpCount').textContent = ''; return; }
+  const g = +fguests.value || 1, n = Object.entries(STAY_INFO).filter(([stay, s]) => g <= s.max && freeNow[stay] !== false).length;
+  $('cmpCount').textContent = n === 0 ? 'Cap allotjament lliure per a aquestes dates' : n === 1 ? 'Hi ha 1 allotjament lliure per a aquestes dates' : `Hi ha ${n} allotjaments lliures per a aquestes dates`;
+  if (n === 0 && !av.hidden) notice({
+    title: 'Aquests dies ja estem plens',
+    text: `No queda cap allotjament lliure del ${dayLabel(fin.value, true)} al ${dayLabel(fout.value, true)} per a ${people(g)}. Prova unes altres dates, o escriu-nos i mirem com fer-ho.`,
+    main: ['Triar altres dates', () => { location.hash = 'reservar'; setTimeout(() => openCal('in'), 300); }],
+    alt: ['Escriure per WhatsApp', () => open('https://wa.me/34667409859', '_blank', 'noopener')],
+  });
+}
 async function showCompare() {
   Object.keys(freeNow).forEach(k => delete freeNow[k]);
-  drawCompare();
+  checking = true; drawCompare(); drawCount();
   const seq = ++searchSeq, a = fin.value, b = fout.value;
   try {
     const d = await (await fetch(`/api/search?in=${a}&out=${b}&guests=${fguests.value}`)).json();
     (d.results || []).forEach(r => { if (r.total) serverQuotes[`${r.stay}|${a}|${b}`] = r; freeNow[r.stay] = r.available; });
-    if (seq === searchSeq && !av.hidden) { drawCompare(); if (!sm.hidden) $('smBuy').innerHTML = buyBlock(smStay); }
   } catch (e) {}
+  if (seq !== searchSeq) return;
+  checking = false;
+  if (!av.hidden) { drawCompare(); drawCount(); if (!sm.hidden) $('smBuy').innerHTML = buyBlock(smStay); }
 }
+document.querySelector('.cmp-edit').addEventListener('click', () => setTimeout(() => openCal('in'), 350));
 cmpList.addEventListener('click', e => {
   const b = e.target.closest('[data-choose]'), d = e.target.closest('[data-details]');
   if (d) return openStay(d.dataset.details, d);
@@ -1519,11 +1570,50 @@ function goToBooking() {
   bp.classList.remove('done'); $('bpDone').hidden = true; payNote.textContent = '';
   save(); location.hash = 'reserva';
 }
-bookForm.addEventListener('submit', e => {
+// Brand popup for moments that need the guest's attention (dates taken, nothing free)
+const nt = $('notice');
+let ntOpener = null;
+function notice({ title, text, main, alt }) {
+  ntOpener = document.activeElement;
+  $('ntTitle').textContent = title; $('ntText').textContent = text;
+  [['ntMain', main], ['ntAlt', alt]].forEach(([id, a]) => { const b = $(id); b.hidden = !a; if (a) { b.textContent = a[0]; b.onclick = () => { closeNotice(); a[1](); }; } });
+  nt.hidden = false; document.documentElement.style.overflow = 'hidden';
+  $('ntMain').focus();
+}
+function closeNotice() {
+  nt.hidden = true; document.documentElement.style.overflow = '';
+  if (ntOpener && ntOpener.focus) ntOpener.focus();
+}
+$('ntClose').addEventListener('click', closeNotice);
+nt.addEventListener('click', e => { if (e.target === nt) closeNotice(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !nt.hidden) closeNotice(); });
+function datesTaken(stay) {
+  const s = STAY_INFO[stay];
+  notice({
+    title: 'Aquestes dates ja estan reservades',
+    text: `${s.kind} ${s.name} no està lliure del ${dayLabel(fin.value, true)} al ${dayLabel(fout.value, true)}. Pots triar altres dates o mirar si hi ha algun altre racó lliure.`,
+    main: ['Veure què hi ha lliure', () => { stayPick.set('', true); save(); location.hash = 'disponibles'; }],
+    alt: ['Triar altres dates', () => { if (location.hash !== '#reservar') location.hash = 'reservar'; setTimeout(() => openCal('in'), 300); }],
+  });
+}
+const barBtn = bookForm.querySelector('button[type="submit"]');
+async function checkAvailable(stay) {
+  const a = fin.value, b = fout.value;
+  try {
+    const d = await (await fetch(`/api/quote?stay=${stay}&in=${a}&out=${b}`)).json();
+    if (d.total) serverQuotes[`${stay}|${a}|${b}`] = d;
+    return d.available;
+  } catch (e) { return null; }
+}
+bookForm.addEventListener('submit', async e => {
   e.preventDefault();
   if (!(nights() > 0)) { note.textContent = "Tria les dates d'arribada i de sortida."; openCal('in'); return; }
   if (!fstay.value) { save(); location.hash = 'disponibles'; return; }
-  if (available === false) { note.textContent = "Aquestes dates ja estan reservades: prova'n unes altres."; openCal('in'); return; }
+  // Ask the calendar before leaving the bar, so the booking page never opens for taken dates
+  barBtn.disabled = true;
+  const free = await checkAvailable(fstay.value);
+  barBtn.disabled = false;
+  if (free === false) return datesTaken(fstay.value);
   cameFrom = '#reservar';
   goToBooking();
 });
@@ -1565,15 +1655,24 @@ async function startPayment(d) {
   const res = await r.json().catch(() => ({}));
   if (r.status === 409) return 'taken';
   if (!r.ok || !res.clientSecret || !res.publishableKey) return 'fail';
-  await loadStripeJs();
-  const checkout = Stripe(res.publishableKey).initCheckoutElementsSdk({ clientSecret: Promise.resolve(res.clientSecret), elementsOptions: { appearance: APPEARANCE, fonts: FONTS } });
-  $('payStep').hidden = false;
-  const element = checkout.createPaymentElement({ layout: { type: 'accordion', defaultCollapsed: false, radios: false, spacedAccordionItems: true } });
-  element.mount('#payment-element');
-  const loaded = await checkout.loadActions();
-  if (loaded.type !== 'success') { fetch(res.release).catch(() => {}); element.destroy(); $('payStep').hidden = true; return 'fail'; }
-  payStep = { actions: loaded.actions, release: res.release, element };
-  return 'ok';
+  let element = null;
+  try {
+    await loadStripeJs();
+    const checkout = Stripe(res.publishableKey).initCheckoutElementsSdk({ clientSecret: Promise.resolve(res.clientSecret), elementsOptions: { appearance: APPEARANCE, fonts: FONTS } });
+    element = checkout.createPaymentElement({ layout: { type: 'accordion', defaultCollapsed: false, radios: 'never', spacedAccordionItems: true } });
+    $('payStep').hidden = false;
+    element.mount('#payment-element');
+    const loaded = await checkout.loadActions();
+    if (loaded.type !== 'success') throw new Error(loaded.error && loaded.error.message);
+    payStep = { actions: loaded.actions, release: res.release, element };
+    return 'ok';
+  } catch (e) {
+    // Whatever failed, the dates must not stay blocked
+    fetch(res.release).catch(() => {});
+    if (element) try { element.destroy(); } catch (x) {}
+    $('payStep').hidden = true;
+    return 'fail';
+  }
 }
 function cancelPayment() {
   if (!payStep) return;
@@ -1591,10 +1690,10 @@ guestForm.addEventListener('submit', async e => {
   e.preventDefault();
   const q = price();
   if (payStep) {
-    payBtn.disabled = true; confirming = true; payNote.textContent = 'Confirmant el pagament…';
+    payBtn.disabled = true; confirming = true; payNote.textContent = ''; payBtn.classList.add('loading'); payBtn.textContent = 'Confirmant el pagament';
     const result = await payStep.actions.confirm();
     // Only reached on an immediate error; on success Stripe sends the guest to the return page
-    confirming = false; payBtn.disabled = false;
+    confirming = false; payBtn.disabled = false; payBtn.classList.remove('loading'); renderSummary();
     payNote.textContent = result.type === 'error' ? result.error.message : '';
     return;
   }
@@ -1606,15 +1705,16 @@ guestForm.addEventListener('submit', async e => {
   bad.forEach(([el]) => el.setAttribute('aria-invalid', 'true'));
   if (bad.length) { payNote.textContent = 'Ens falta ' + bad.map(b => b[1]).join(', ') + '.'; bad[0][0].focus(); return; }
   if (!G.terms.checked) { G.terms.setAttribute('aria-invalid', 'true'); payNote.textContent = 'Cal acceptar les condicions de reserva.'; G.terms.focus(); return; }
-  payBtn.disabled = true; payNote.textContent = 'Preparant el pagament segur…';
+  payBtn.disabled = true; payNote.textContent = ''; payBtn.classList.add('loading'); payBtn.textContent = 'Preparant el pagament';
   let outcome = 'fail';
   try { save(); outcome = await startPayment(d); } catch (err) {}
-  payBtn.disabled = false;
+  payBtn.disabled = false; payBtn.classList.remove('loading');
   if (outcome === 'ok') {
     lockDetails(true); payNote.textContent = ''; renderSummary();
     $('payStep').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } else {
-    payNote.textContent = outcome === 'taken' ? "Ho sentim, aquestes dates s'acaben de reservar. Torna enrere i prova'n unes altres." : `${nightsTxt(q.n)}, total ${euro(q.total)}. ${CONTACT_MSG}`;
+    if (outcome === 'taken') { payNote.textContent = ''; datesTaken(fstay.value); }
+    else payNote.textContent = `${nightsTxt(q.n)}, total ${euro(q.total)}. ${CONTACT_MSG}`;
     renderSummary();
   }
 });

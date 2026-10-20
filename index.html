@@ -1352,24 +1352,18 @@ calPop.addEventListener('mouseover', e => {
 });
 calPop.addEventListener('mouseleave', () => paintRange());
 
-// ---- Live price and availability under the bar ----
+// ---- Price and availability for the chosen stay (the bar shows only a warning when the dates are taken) ----
 let available = null, quoteSeq = 0;
-function quoteLine(q) {
-  return nightsTxt(q.n) + (q.discount ? `, ${euro(q.subtotal)} amb un ${q.discount} % de descompte` : '') + `: <b>total ${euro(q.total)}</b>`;
-}
 async function showQuote() {
-  available = null;
-  if (!fstay.value) { note.textContent = ''; return; }
-  const q = price();
-  if (!q) { note.textContent = ''; return; }
-  note.innerHTML = quoteLine(q);
+  available = null; note.textContent = '';
+  if (!fstay.value || !price()) return;
   const seq = ++quoteSeq, stay = fstay.value, key = `${stay}|${fin.value}|${fout.value}`;
   try {
     const d = await (await fetch(`/api/quote?stay=${stay}&in=${fin.value}&out=${fout.value}`)).json();
     if (d.total) serverQuotes[key] = d;
     if (seq !== quoteSeq) return;
     available = d.available;
-    note.innerHTML = quoteLine(price()) + (d.available === false ? ". Aquestes dates ja estan reservades: prova'n unes altres." : '');
+    if (d.available === false) note.textContent = "Aquestes dates ja estan reservades: prova'n unes altres.";
     if (!bp.hidden) renderSummary();
   } catch (e) {}
 }
@@ -1529,7 +1523,7 @@ bookForm.addEventListener('submit', e => {
   e.preventDefault();
   if (!(nights() > 0)) { note.textContent = "Tria les dates d'arribada i de sortida."; openCal('in'); return; }
   if (!fstay.value) { save(); location.hash = 'disponibles'; return; }
-  if (available === false) { note.innerHTML = "Aquestes dates ja estan reservades: prova'n unes altres."; openCal('in'); return; }
+  if (available === false) { note.textContent = "Aquestes dates ja estan reservades: prova'n unes altres."; openCal('in'); return; }
   cameFrom = '#reservar';
   goToBooking();
 });

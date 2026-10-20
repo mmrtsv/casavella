@@ -20,7 +20,7 @@ Web de La Casa Vella, casa de poble familiar al Bedorc (1898): allotjaments, res
 2. Regenera la versió publicable:
 
    ```bash
-   python3 build.py https://www.el-teu-domini.com
+   python3 build.py https://casavellarural.com
    ```
 
    L'URL és opcional. Serveix per a l'enllaç canònic i la imatge que es veu quan es comparteix la web.

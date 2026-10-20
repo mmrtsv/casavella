@@ -14,7 +14,7 @@ export const ERRORS: Record<string, string> = {
   pending: 'El banc encara no ha confirmat aquest pagament. Espera que es confirmi per cancel·lar-la.',
   refund_amount: 'No es pot retornar més del que es va pagar', not_configured: 'Aquest allotjament no té el calendari connectat',
   no_payment: 'No trobo el pagament a Stripe', access: 'La sessió ha caducat. Torna a carregar la pàgina.',
-  discount: 'Revisa els descomptes: de 2 nits en amunt, entre 1 i 90 %, sense repetir nits', price: 'Revisa els preus', email: 'Revisa el correu',
+  discount: 'Revisa els descomptes: de 2 nits en amunt, entre 1 i 90 %, sense repetir nits', price: 'Revisa els preus', email: 'Revisa el correu', note: 'Escriu el motiu',
   doc_type: 'Només es poden pujar fotos (JPG, PNG, HEIC) o PDF', doc_size: 'El document és massa gran (màxim 15 MB)',
   docs_not_configured: 'Falta connectar la carpeta de Google Drive dels documents', drive: 'Google Drive no ha deixat desar el document',
 };

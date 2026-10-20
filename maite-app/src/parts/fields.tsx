@@ -2,12 +2,12 @@
 import type { ReactNode } from 'react';
 import { Checkbox, Description, Input, Label, ListBox, Select, TextArea, TextField, type Key } from '@heroui/react';
 
-export function Field({ label, value, onChange, type = 'text', placeholder, help, area, className = '', inputMode, onBlur }: {
+export function Field({ label, value, onChange, type = 'text', placeholder, help, area, className = '', inputMode, onBlur, isRequired }: {
   label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; help?: ReactNode; area?: boolean;
-  className?: string; inputMode?: 'numeric' | 'decimal' | 'text' | 'tel' | 'email'; onBlur?: () => void;
+  className?: string; inputMode?: 'numeric' | 'decimal' | 'text' | 'tel' | 'email'; onBlur?: () => void; isRequired?: boolean;
 }) {
   return (
-    <TextField type={type} value={value} onChange={onChange} onBlur={onBlur} fullWidth className={className}>
+    <TextField type={type} value={value} onChange={onChange} onBlur={onBlur} fullWidth className={className} isRequired={isRequired}>
       <Label>{label}</Label>
       {area ? <TextArea rows={2} placeholder={placeholder} /> : <Input placeholder={placeholder} inputMode={inputMode} autoComplete="off" />}
       {help && <Description>{help}</Description>}

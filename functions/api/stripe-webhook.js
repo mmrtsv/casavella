@@ -2,9 +2,10 @@
 // Only completed bookings reach the calendar. Paid: the booking is written to the stay's calendar.
 // Paid later (bank payments): the dates are kept as "pending" until Stripe confirms or fails it.
 // If the dates were taken meanwhile (two guests paying at once), the payment is refunded.
-import { STAYS, calendar, stripe, verifyStripe, json, euros } from '../../lib/booking.js';
+import { STAYS, calendar, stripe, verifyStripe, json, euros, settings, policyText } from '../../lib/booking.js';
+import { send, bookingConfirmation, bookingNotice } from '../../lib/email.js';
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, waitUntil }) {
   const body = await request.text();
   if (!env.STRIPE_WEBHOOK_SECRET || !(await verifyStripe(env, body, request.headers.get('stripe-signature')))) return json({ error: 'signature' }, 400);
   const event = JSON.parse(body);
@@ -44,19 +45,35 @@ export async function onRequestPost({ request, env }) {
     extendedProperties: { private: { lcv: waiting ? 'pending' : 'paid', session: s.id, pi: s.payment_intent || '', amount: String(s.amount_total ?? ''),
       guests: String(m.guests || ''), policy: m.policy || '', name: c.name || '', email: c.email || '', phone: c.phone || '' } },
   };
+  // Confirmation to the guest and a notice to the house; a failed email never fails the webhook
+  const notify = () => waitUntil((async () => {
+    const meta = { ...m, ...c }, S = await settings(env);
+    // The policy the guest accepted at checkout ("fullDays/partialDays/partialPct"), else today's
+    const [f, d, pct] = (m.policy || '').split('/');
+    const cancel = m.policy ? { fullDays: f === '' ? null : +f, partialDays: d === '' ? null : +d, partialPct: +pct || 0 } : S.cancel;
+    const extra = { checkin: S.rules.checkin, checkout: S.rules.checkout, policy: policyText(cancel) };
+    await Promise.all([
+      c.email && send(env, bookingConfirmation(env, meta, s.amount_total, waiting, extra)),
+      send(env, bookingNotice(env, meta, s.amount_total, waiting)),
+    ]);
+  })().catch(() => {}));
 
   const existing = await mine();
   if (existing) {
-    if (existing.extendedProperties.private.lcv !== 'paid') await cal.patch(existing.id, booking);
+    const was = existing.extendedProperties.private.lcv;
+    if (was !== 'paid') await cal.patch(existing.id, booking);
+    if (was === 'pending' && paidNow) notify(); // the bank payment has cleared
     return json({ ok: true });
   }
   const old = m.event && await cal.get(m.event);
   if (old && old.status !== 'cancelled' && old.extendedProperties?.private?.lcv === 'hold') {
     await cal.patch(m.event, booking);
+    notify();
     return json({ ok: true });
   }
   if ((await cal.conflicts(m.checkin, m.checkout)).length === 0) {
     await cal.create(booking);
+    notify();
     return json({ ok: true });
   }
   // Someone else completed a booking for these dates first

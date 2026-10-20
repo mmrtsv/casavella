@@ -51,6 +51,15 @@ Cada allotjament té un Google Calendar a info@casavellarural.com, compartit amb
 
 Variables a Cloudflare Pages (Settings → Variables and secrets): `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `GOOGLE_SA_EMAIL`, `GOOGLE_SA_KEY`, `CAL_MONTSERRAT`, `CAL_LA_PINEDA`, `CAL_LES_VINYES`, `CAL_FIGAROT`, `SITE_URL`. Mentre no hi siguin, el formulari mostra el preu i remet al telèfon i al WhatsApp.
 
+## Correus (Resend)
+
+`lib/email.js` té les plantilles, amb els colors i la tipografia de la marca, i les envia amb [Resend](https://resend.com) (pla gratuït: 100 correus al dia).
+
+- Formulari de contacte (`functions/api/contact.js`): el missatge arriba a info@casavellarural.com (respondre'l li arriba a l'hoste) i l'hoste rep una còpia. Mentre no hi hagi clau, el botó obre el correu de l'hoste amb el missatge ja escrit.
+- Reserva (`functions/api/stripe-webhook.js`): quan el pagament es completa, l'hoste rep la confirmació i la casa un avís amb les dades. Si el banc encara ha de confirmar el pagament, s'envia «reserva rebuda» i, quan es cobra, la confirmació.
+
+Per activar-ho: compte a Resend amb info@casavellarural.com → Domains → afegir casavellarural.com (amb Cloudflare, el botó «Auto configure» hi posa els registres DNS) → API Keys → crear una clau amb permís d'enviament → a Cloudflare Pages, variable `RESEND_API_KEY`. Opcionals: `CONTACT_TO` (per defecte info@casavellarural.com) i `CONTACT_FROM` (per defecte `La Casa Vella <info@casavellarural.com>`).
+
 ## Maite (back office)
 
 Maite és el back office, a `maite.casavellarural.com`. Surt del mateix projecte de Cloudflare Pages: `functions/_middleware.js` mira el domini i, a `maite.`, serveix `maite/index.html` i les funcions de `functions/api/maite/` (amb la lògica a `lib/maite.js`). Des de qualsevol altre domini, aquestes rutes donen 404.
@@ -95,6 +104,6 @@ Cada crida de Maite comprova el testimoni de Cloudflare Access, de manera que se
 
 ## Pendent
 
-- Adreça, correu, comptes d'Instagram i Facebook, enllaç a la fitxa de Google i número de registre turístic. Ara surten com a «per confirmar».
+- Comptes d'Instagram i Facebook i número de registre turístic. Ara surten com a «per confirmar».
 - Fotos separades per allotjament i capacitat de cada un.
 - Versions en castellà i anglès.

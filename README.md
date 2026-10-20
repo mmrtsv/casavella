@@ -48,8 +48,12 @@ Cada allotjament té un Google Calendar a info@casavellarural.com, compartit amb
 
 Variables a Cloudflare Pages (Settings → Variables and secrets): `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `GOOGLE_SA_EMAIL`, `GOOGLE_SA_KEY`, `CAL_MONTSERRAT`, `CAL_LA_PINEDA`, `CAL_LES_VINYES`, `CAL_FIGAROT`, `SITE_URL`. Mentre no hi siguin, el formulari mostra el preu i remet al telèfon i al WhatsApp.
 
+## Formulari de contacte
+
+`functions/api/contact.js` envia el missatge a info@casavellarural.com amb [Resend](https://resend.com), amb l'adreça de l'hoste com a resposta. Cal crear un compte a Resend, verificar-hi el domini casavellarural.com i afegir a Cloudflare Pages la variable `RESEND_API_KEY` (opcionals: `CONTACT_TO`, per defecte info@casavellarural.com, i `CONTACT_FROM`, per defecte `La Casa Vella <web@casavellarural.com>`). Mentre no hi sigui, el botó obre el correu de l'hoste amb el missatge ja escrit.
+
 ## Pendent
 
-- Adreça, correu, comptes d'Instagram i Facebook, enllaç a la fitxa de Google i número de registre turístic. Ara surten com a «per confirmar».
+- Comptes d'Instagram i Facebook i número de registre turístic. Ara surten com a «per confirmar».
 - Fotos separades per allotjament i capacitat de cada un.
 - Versions en castellà i anglès.

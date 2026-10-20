@@ -67,9 +67,15 @@ if DIST.exists():
     shutil.rmtree(DIST)
 DIST.mkdir()
 (DIST / 'index.html').write_text(page, encoding='utf-8')
-for folder in ('img', 'fonts', 'maite'):
+for folder in ('img', 'fonts'):
     shutil.copytree(ROOT / folder, DIST / folder)
 # Cloudflare Pages headers: the Stripe payment form (another origin) loads our brand font
-# Maite (the back office, served on maite.casavellarural.com) stays out of search engines
-(DIST / '_headers').write_text('/fonts/*\n  Access-Control-Allow-Origin: *\n/maite/*\n  X-Robots-Tag: noindex\n  Cache-Control: no-store\n', encoding='utf-8')
+# Maite (the back office on maite.casavellarural.com) is built by Vite into dist/maite/ afterwards (npm run build).
+# Its page is never cached, its hashed assets forever; neither is indexed.
+(DIST / '_headers').write_text(
+    '/fonts/*\n  Access-Control-Allow-Origin: *\n'
+    '/maite/*\n  X-Robots-Tag: noindex\n'
+    '/maite/\n  Cache-Control: no-store\n'
+    '/maite/index.html\n  Cache-Control: no-store\n'
+    '/maite/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n', encoding='utf-8')
 print(f'Built {DIST} ({len(page) // 1024} KB html)')

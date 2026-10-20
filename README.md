@@ -9,7 +9,7 @@ Web de La Casa Vella, casa de poble familiar al Bedorc (1898): allotjaments, res
 | `index.html` | Versió de treball. Conté tota la pàgina (HTML, CSS i JavaScript) i les eines de revisió: el selector de propostes, la vista mòbil (tecla M) i la franja d'esborrany. |
 | `build.py` | Genera la versió per al domini a `dist/`. |
 | `dist/` | Versió per publicar: document HTML complet, etiquetes per a Google i xarxes, sense les eines de revisió. |
-| `maite/` | Maite, el back office (vegeu més avall). |
+| `maite-app/` | Maite, el back office (React, Vite, HeroUI). Es construeix a `dist/maite/` (vegeu més avall). |
 | `lib/` | Lògica compartida de les funcions: reserves i preus (`booking.js`), Maite (`maite.js`) i contingut dels allotjaments (`stays.js`). |
 | `img/` | Fotos, logo, isotip i plaques dels allotjaments. |
 | `fonts/` | Tipografies de marca: Le Monde Livre i Halyard Display. |
@@ -22,10 +22,11 @@ Web de La Casa Vella, casa de poble familiar al Bedorc (1898): allotjaments, res
 2. Regenera la versió publicable:
 
    ```bash
-   python3 build.py https://casavellarural.com
+   npm install
+   npm run build:site
    ```
 
-   L'URL és opcional. Serveix per a l'enllaç canònic i la imatge que es veu quan es comparteix la web.
+   Fa `python3 build.py https://casavellarural.com` i després construeix Maite a `dist/maite/` (`npm run build` només refà Maite). L'URL és opcional. Serveix per a l'enllaç canònic i la imatge que es veu quan es comparteix la web.
 3. Fes commit dels canvis, inclosa la carpeta `dist/`, i puja'ls.
 
 ## Publicar a Cloudflare Pages
@@ -62,7 +63,7 @@ Per activar-ho: compte a Resend amb info@casavellarural.com → Domains → afeg
 
 ## Maite (back office)
 
-Maite és el back office, a `maite.casavellarural.com`. Surt del mateix projecte de Cloudflare Pages: `functions/_middleware.js` mira el domini i, a `maite.`, serveix `maite/index.html` i les funcions de `functions/api/maite/` (amb la lògica a `lib/maite.js`). Des de qualsevol altre domini, aquestes rutes donen 404.
+Maite és el back office, a `maite.casavellarural.com`. Surt del mateix projecte de Cloudflare Pages: `functions/_middleware.js` mira el domini i, a `maite.`, serveix `dist/maite/` i les funcions de `functions/api/maite/` (amb la lògica a `lib/maite.js`). Des de qualsevol altre domini, aquestes rutes donen 404.
 
 - **Calendari**: un mes amb una fila per allotjament. Es toca la primera nit i l'última per tancar dates o afegir una reserva. Tocant una reserva se'n veuen els detalls.
 - **Reserves**: avui (qui arriba, qui hi és i qui marxa), properes, passades, cancel·lades i tancaments, amb cercador i un resum dels pròxims 30 dies.

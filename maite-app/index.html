@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ca" class="light" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f6f4ef">
+<title>Maite</title>
+<link rel="icon" type="image/png" href="/img/iso-dark.png">
+<script>
+  // Theme before first paint (light unless the viewer chose dark), so nothing flashes or shifts
+  try { if (localStorage.getItem('maite-theme') === 'dark') { document.documentElement.className = 'dark'; document.documentElement.dataset.theme = 'dark'; } } catch (e) {}
+</script>
+</head>
+<body class="bg-background text-foreground">
+<!-- Static outline of the frame, painted before the app's code arrives; the app replaces it in place -->
+<div id="root"><div class="mx-auto flex max-w-[1600px] gap-4 px-2 sm:px-4 lg:py-4">
+  <aside class="glass sticky top-4 hidden h-[calc(100dvh-2rem)] w-64 shrink-0 lg:block" style="border-radius:28px"><span class="glass-tint" style="border-radius:28px"></span></aside>
+  <div class="min-w-0 flex-1 pb-28 lg:pb-8">
+    <header class="glass sticky top-2 z-30 lg:top-4" style="border-radius:22px"><span class="glass-tint" style="border-radius:22px"></span>
+      <div class="glass-body"><div class="flex min-h-14 items-center gap-2 px-3 py-2 sm:px-4">
+        <div class="lg:hidden"><img id="boot-iso" src="/img/iso-dark.png" alt="" width="28" height="28" style="width:28px;height:28px"></div>
+        <h1 id="boot-title" class="mr-auto truncate text-lg font-semibold tracking-tight sm:text-xl">Maite</h1>
+      </div></div>
+    </header>
+    <main class="pt-4 sm:pt-6"><div class="animate-pulse motion-reduce:animate-none"><div class="mb-4 h-9 w-64 rounded-xl bg-default"></div><div class="h-[380px] w-full rounded-3xl bg-default/70"></div></div></main>
+  </div>
+  <nav class="glass fixed inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-40 h-16 lg:hidden" style="border-radius:26px"><span class="glass-tint" style="border-radius:26px"></span></nav>
+</div></div>
+<script>
+  (function () {
+    var t = { calendar: 'Calendari', bookings: 'Reserves', prices: 'Preus', discounts: 'Descomptes', rules: 'Normes', stays: 'Allotjaments' };
+    var h = location.hash.replace(/^#\/?/, ''), saved = null;
+    try { saved = localStorage.getItem('maite-page'); } catch (e) {}
+    document.getElementById('boot-title').textContent = t[h] || t[saved] || 'Calendari';
+    if (document.documentElement.classList.contains('dark')) document.getElementById('boot-iso').src = '/img/iso-light.png';
+  })();
+</script>
+<script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

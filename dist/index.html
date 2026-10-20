@@ -1658,7 +1658,7 @@ async function startPayment(d) {
   let element = null;
   try {
     await loadStripeJs();
-    const checkout = Stripe(res.publishableKey, { locale: 'ca' }).initCheckoutElementsSdk({ clientSecret: Promise.resolve(res.clientSecret), elementsOptions: { appearance: APPEARANCE, fonts: FONTS } });
+    const checkout = Stripe(res.publishableKey, { locale: 'es' }).initCheckoutElementsSdk({ clientSecret: Promise.resolve(res.clientSecret), elementsOptions: { appearance: APPEARANCE, fonts: FONTS } });
     element = checkout.createPaymentElement({ layout: { type: 'accordion', defaultCollapsed: false, radios: 'never', spacedAccordionItems: true } });
     $('payStep').hidden = false;
     element.mount('#payment-element');

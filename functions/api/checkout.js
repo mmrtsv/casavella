@@ -24,6 +24,7 @@ export async function onRequestPost({ request, env }) {
     const session = await stripe(env, 'checkout/sessions', {
       mode: 'payment',
       ui_mode: 'elements',
+      locale: 'es', // Stripe has no Catalan; Spanish is the closest for our guests
       line_items: [{ quantity: 1, price_data: { currency: 'eur', unit_amount: q.total, product_data: {
         name: `${q.name}, La Casa Vella`,
         description: q.discount ? `${label}. ${q.price} € la nit amb un ${q.discount} % de descompte (abans ${euros(q.subtotal)})` : `${label}. ${q.price} € la nit`,

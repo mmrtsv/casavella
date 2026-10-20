@@ -2,7 +2,7 @@
 // Tap the first night and then the last one to close dates or add a booking; tap a booking to open its file.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@heroui/react';
-import { ChevronLeft, ChevronRight, Lock, Plus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, Plus, Users, X } from 'lucide-react';
 import { addDays, day, nightsBetween, nitsTxt, parse, range, TODAY, euro } from '../lib/dates';
 import { ensure, keyOf, shortName, useStore } from '../lib/store';
 import { openBlock, openBook, openDetail } from '../lib/ui';
@@ -153,16 +153,20 @@ function Legend({ c, t }: { c: string; t: string }) {
 function Bar({ b, row, from, span }: { b: Booking; row: number; from: string; span: number }) {
   const a = Math.max(0, nightsBetween(from, b.first)), z = Math.min(span, nightsBetween(from, b.until));
   const k = b.kind === 'manual' && b.settled ? 'settled' : b.kind;
-  const sub = b.kind === 'block' || b.kind === 'other' ? null : [b.guests && `${b.guests} pers.`, euro(b.amount)].filter(Boolean);
+  const guest = b.kind !== 'block' && b.kind !== 'other';
   return (
     <button type="button" onClick={() => openDetail(keyOf(b))} style={{ gridRow: row, gridColumn: `${a + 2} / ${z + 2}` }}
-      className={`relative z-[5] mx-1 my-2.5 flex min-w-0 max-w-full flex-col justify-center overflow-hidden rounded-xl py-1.5 pl-4 pr-2 text-left outline-none transition-transform duration-150 hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-focus ${tone[k] || tone.block}`}
+      className={`relative z-[5] mx-1 my-2.5 flex min-w-0 max-w-full flex-col justify-center overflow-hidden rounded-xl py-1.5 pl-3 pr-2 text-left outline-none transition-transform duration-150 hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-focus ${tone[k] || tone.block}`}
       title={who(b)}>
-      <span className={`absolute left-1.5 top-2 bottom-2 w-1 rounded-full ${bar[k] || bar.block}`} aria-hidden="true" />
       {/* the text stays in view next to the stay names when the bar starts before the visible nights */}
       <span className="sticky left-[var(--names)] min-w-0 max-w-full">
-        <span className="block truncate text-[13px] font-semibold">{who(b)}</span>
-        {sub && <span className="flex gap-2 truncate text-[11.5px] text-muted tnum">{sub.map(x => <span key={String(x)}>{x}</span>)}</span>}
+        <span className="flex items-center gap-1.5 text-[13px] font-semibold"><span className={`size-2 shrink-0 rounded-full ${bar[k] || bar.block}`} aria-hidden="true" /><span className="truncate">{who(b)}</span></span>
+        {guest && (b.guests || b.amount != null) && (
+          <span className="mt-0.5 flex items-center gap-2.5 truncate pl-3.5 text-[11.5px] text-muted tnum">
+            {b.guests ? <span className="inline-flex items-center gap-1"><Users size={12} aria-hidden="true" />{b.guests}<span className="sr-only"> {b.guests === 1 ? 'persona' : 'persones'}</span></span> : null}
+            {b.amount != null && <span>{euro(b.amount)}</span>}
+          </span>
+        )}
         <span className="sr-only">, {shortName(b.stay)}, {range(b.first, b.until)}</span>
       </span>
     </button>

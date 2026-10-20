@@ -49,8 +49,8 @@ export function policyText(c: Policy) {
   const days = (n: number) => n === 1 ? '1 dia' : `${n} dies`;
   if (c.fullDays == null && !c.partialPct) return "No es retorna l'import si es cancel·la.";
   const out: string[] = [];
-  if (c.fullDays != null) out.push(c.fullDays === 0 ? "Cancel·lació gratuïta fins al dia abans de l'arribada" : `Cancel·lació gratuïta fins a ${days(c.fullDays)} abans de l'arribada`);
-  if (c.partialPct && c.partialDays != null) out.push(`es retorna el ${c.partialPct} % fins a ${c.partialDays === 0 ? "l'arribada" : days(c.partialDays) + ' abans'}`);
+  if (c.fullDays != null) out.push(c.fullDays === 0 ? 'Cancel·lació gratuïta fins al dia abans del check-in' : `Cancel·lació gratuïta fins a ${days(c.fullDays)} abans del check-in`);
+  if (c.partialPct && c.partialDays != null) out.push(`es retorna el ${c.partialPct} % fins a ${c.partialDays === 0 ? 'el check-in' : days(c.partialDays) + ' abans'}`);
   return out.join('; ') + '. Després no es retorna res.';
 }
 export function refundDue(c: Policy, paid: number, before: number) {

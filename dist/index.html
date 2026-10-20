@@ -495,6 +495,10 @@ footer a:hover { color: #fff; }
 .foot-brand p { max-width: 32ch; color: #C6BFAF; }
 footer h3 { font-family: var(--body); font-size: 11.5px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: #79A57A; margin-bottom: 14px; }
 footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.foot-phone { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.foot-ico { display: inline-grid; place-items: center; width: 32px; height: 32px; border: 1px solid rgba(198, 191, 175, .4); border-radius: 50%; transition: border-color .2s; }
+.foot-ico svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
+.foot-ico:hover { border-color: #fff; }
 .social { display: flex; gap: 10px; }
 .social a { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid rgba(198, 191, 175, .4); border-radius: 50%; transition: background .2s, border-color .2s; }
 .social a:hover { background: #2E6D2E; border-color: #2E6D2E; }
@@ -761,7 +765,7 @@ footer { padding-bottom: 32px !important; }
         <div class="bp-done" id="bpDone" hidden>
           <span class="iso" aria-hidden="true"></span>
           <h3>Gràcies! Ja us esperem a casa</h3>
-          <p>La reserva està confirmada i t'hem enviat el rebut per correu. Uns dies abans de l'arribada et escriurem amb tot el que necessites saber per arribar al Bedorc.</p>
+          <p>La reserva està confirmada i t'hem enviat el rebut per correu. Uns dies abans del check-in et escriurem amb tot el que necessites saber per arribar al Bedorc.</p>
           <p>Si vols qualsevol cosa, truca'ns o escriu-nos per WhatsApp al <a href="https://wa.me/34667409859" target="_blank" rel="noopener">+34 667 40 98 59</a>.</p>
           <a class="btn" href="#inici">Tornar a l'inici</a>
         </div>
@@ -772,8 +776,8 @@ footer { padding-bottom: 32px !important; }
           <div class="bp-id"><span class="label" id="bpKind"></span><h3 id="bpName"></h3><button type="button" class="cmp-more" id="bpDetails">Veure fotos i detalls</button></div>
         </div>
         <dl class="bp-lines">
-          <div><dt>Arribada</dt><dd id="bpIn"></dd></div>
-          <div><dt>Sortida</dt><dd id="bpOut"></dd></div>
+          <div><dt>Check-in</dt><dd id="bpIn"></dd></div>
+          <div><dt>Check-out</dt><dd id="bpOut"></dd></div>
           <div><dt>Hostes</dt><dd id="bpGuests"></dd></div>
         </dl>
         <div class="bp-price" id="bpPrice"></div>
@@ -798,8 +802,8 @@ footer { padding-bottom: 32px !important; }
 <div class="wrap booking" id="reservar">
   <form id="bookForm" aria-label="Consultar disponibilitat">
     <div class="field"><label id="lbStay">Allotjament</label><button type="button" class="pick" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbStay stayVal" data-placeholder="Tots els allotjaments"><span class="val" id="stayVal">Tots els allotjaments</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><input type="hidden" id="stay"></div>
-    <div class="field"><label id="lbIn">Arribada</label><button type="button" class="pick" aria-haspopup="dialog" aria-expanded="false" aria-labelledby="lbIn inVal"><span class="val" id="inVal"></span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="1.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></button><input type="hidden" id="in"></div>
-    <div class="field"><label id="lbOut">Sortida</label><button type="button" class="pick" aria-haspopup="dialog" aria-expanded="false" aria-labelledby="lbOut outVal"><span class="val" id="outVal"></span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="1.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></button><input type="hidden" id="out"></div>
+    <div class="field"><label id="lbIn">Check-in</label><button type="button" class="pick" aria-haspopup="dialog" aria-expanded="false" aria-labelledby="lbIn inVal"><span class="val" id="inVal"></span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="1.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></button><input type="hidden" id="in"></div>
+    <div class="field"><label id="lbOut">Check-out</label><button type="button" class="pick" aria-haspopup="dialog" aria-expanded="false" aria-labelledby="lbOut outVal"><span class="val" id="outVal"></span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="1.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></button><input type="hidden" id="out"></div>
     <div class="field"><label id="lbGuests">Hostes</label><button type="button" class="pick" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbGuests guestsVal"><span class="val" id="guestsVal">2 persones</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><input type="hidden" id="guests" value="2"></div>
     <button class="btn solid" type="submit">Reservar</button>
   </form>
@@ -1065,9 +1069,10 @@ footer { padding-bottom: 32px !important; }
       <h3>Contacte</h3>
       <ul>
         <li><a href="https://www.google.com/maps/search/?api=1&amp;query=La+Casa+Vella+El+Bedorc&amp;query_place_id=ChIJK6vlrrVlpBIRBAeTHj5ufvE" target="_blank" rel="noopener">Carrer Munné Orpí, 23<br>08784 El Bedorc (Barcelona)</a></li>
-        <li>+34 667 40 98 59</li>
-        <li><a href="https://wa.me/34667409859" target="_blank" rel="noopener">WhatsApp: +34 667 40 98 59</a></li>
-        <li>info@casavellarural.com</li>
+        <li class="foot-phone"><a href="tel:+34667409859">+34 667 40 98 59</a>
+          <a class="foot-ico" href="tel:+34667409859" aria-label="Truca'ns"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3.5h2.6l1.4 4.1-2 1.3a12 12 0 0 0 6.5 6.5l1.3-2 4.1 1.4v2.6a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2Z"/></svg></a>
+          <a class="foot-ico" href="https://wa.me/34667409859" target="_blank" rel="noopener" aria-label="Escriu-nos per WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.1A8 8 0 1 1 8.3 19Z"/><path d="M9 8.6c0 3.4 2.9 6.4 6.4 6.4l1.1-1.3-1.8-1-1 .9a4.6 4.6 0 0 1-2.7-2.7l.9-1-1-1.8Z"/></svg></a></li>
+        <li><a href="mailto:info@casavellarural.com">info@casavellarural.com</a></li>
       </ul>
     </div>
     <div>
@@ -1221,7 +1226,7 @@ fetch('/api/settings').then(r => r.ok ? r.json() : null).then(p => {
   document.querySelectorAll('[data-discounts]').forEach(el => { el.textContent = `Com més dies us quedeu, millor: ${text}.`; el.hidden = !t.length; });
   const hour = t => { const [h, m] = t.split(':'); return `${+h}${m === '00' ? '' : '.' + m} h`; };
   if (p.content) applyContent(p.content);
-  const pol = $('policy'); if (pol) pol.textContent = `${p.policy} Entrada a partir de les ${hour(p.rules.checkin)} i sortida abans de les ${hour(p.rules.checkout)}.`;
+  const pol = $('policy'); if (pol) pol.textContent = `${p.policy} Check-in a partir de les ${hour(p.rules.checkin)} i check-out abans de les ${hour(p.rules.checkout)}.`;
 }).catch(() => {});
 const CONTACT_MSG = "Truca'ns o escriu-nos per WhatsApp al +34 667 40 98 59 i t'ho preparem.";
 const $ = id => document.getElementById(id);
@@ -1381,7 +1386,7 @@ function drawCal() {
     html += '</div></div>';
   }
   const p = price();
-  const hint = picking === 'in' ? "Tria el dia d'arribada" : fout.value && p ? `<b>${nightsTxt(p.n)}</b>, del ${dayLabel(fin.value)} al ${dayLabel(fout.value)}` : 'Ara tria el dia de sortida';
+  const hint = picking === 'in' ? 'Tria el dia del check-in' : fout.value && p ? `<b>${nightsTxt(p.n)}</b>, del ${dayLabel(fin.value)} al ${dayLabel(fout.value)}` : 'Ara tria el dia del check-out';
   html += `</div><div class="cal-foot"><span>${hint}</span>${busyNights().size ? '<span class="legend"><s>12</s> Ocupat</span>' : ''}</div>`;
   calPop.innerHTML = html;
   paintRange();
@@ -1677,7 +1682,7 @@ async function checkAvailable(stay) {
 }
 bookForm.addEventListener('submit', async e => {
   e.preventDefault();
-  if (!(nights() > 0)) { note.textContent = "Tria les dates d'arribada i de sortida."; openCal('in'); return; }
+  if (!(nights() > 0)) { note.textContent = 'Tria les dates de check-in i check-out.'; openCal('in'); return; }
   if (!fstay.value) { save(); location.hash = 'disponibles'; return; }
   // Ask the calendar before leaving the bar, so the booking page never opens for taken dates
   barBtn.disabled = true;

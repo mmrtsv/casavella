@@ -1,0 +1,957 @@
+<title>La Casa Vella · El Bedorc</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;1,400&family=Hanken+Grotesk:wght@300;400;500;600&display=swap">
+<style>
+@font-face { font-family: "Le Monde Livre"; src: url(fonts/LeMondeLivreClassic-Normal.otf) format("opentype"); font-weight: 400 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Halyard Display"; src: url(fonts/HalyardDisplay.ttf) format("truetype"); font-weight: 300 700; font-style: normal; font-display: swap; }
+/* Layout: full-bleed photo bands alternating with quiet "cava" text bands; asymmetric two-column splits; deep-green bands for brand moments (hero, quote, contact). */
+:root {
+  --ground: #efebe3;     /* light cava, page ground */
+  --paper: #f7f5f0;      /* raised panels */
+  --cava: #c6bfaf;       /* brand: Cava */
+  --ink: #1a3f20;        /* brand: Verd fosc */
+  --text: #26302a;       /* running text */
+  --muted: #5f6a5f;
+  --line: #d6d0c2;
+  --basil: #2e6d2e;      /* brand: Verd alfàbrega */
+  --sage: #79a57a;       /* brand: Verd sàlvia */
+  --deep: #1a3f20;       /* green bands, same in both themes */
+  --on-deep: #f3efe4;
+  --display: "Le Monde Livre", "Crimson Pro", Georgia, serif;
+  --body: "Halyard Display", "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #141f17; --paper: #1b281e; --cava: #4a4b40; --ink: #dfe8d6; --text: #e3e0d6; --muted: #a8b2a3;
+  --line: #2f3d31; --basil: #8fbf8c; --sage: #8fbf8c; --deep: #0f2614; --on-deep: #f3efe4; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --ground: #141f17; --paper: #1b281e; --cava: #4a4b40; --ink: #dfe8d6; --text: #e3e0d6; --muted: #a8b2a3;
+  --line: #2f3d31; --basil: #8fbf8c; --sage: #8fbf8c; --deep: #0f2614; --on-deep: #f3efe4; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+body { background: var(--ground); color: var(--text); font-family: var(--body); font-weight: 300; font-size: 17px; line-height: 1.7; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--ground); }
+a { color: inherit; }
+img { display: block; max-width: 100%; }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; line-height: 1.12; text-wrap: balance; margin: 0; color: var(--ink); }
+p { margin: 0; }
+:focus-visible { outline: 2px solid var(--sage); outline-offset: 3px; }
+
+.wrap { width: 100%; max-width: 1240px; margin-inline: auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+@media (min-width: 720px) { .wrap { padding-left: max(40px, env(safe-area-inset-left, 0px)); padding-right: max(40px, env(safe-area-inset-right, 0px)); } }
+.label { font-weight: 600; font-size: 11.5px; letter-spacing: .26em; text-transform: uppercase; color: var(--basil); }
+.section { padding-block: clamp(64px, 10vw, 128px); }
+.lede { font-family: var(--display); font-size: clamp(23px, 2.7vw, 31px); line-height: 1.45; color: var(--ink); }
+.btn { display: inline-flex; align-items: center; justify-content: center; font: 600 11.5px/1 var(--body); letter-spacing: .22em; text-transform: uppercase; padding: 16px 26px; border: 1px solid currentColor; background: transparent; color: var(--ink); cursor: pointer; text-decoration: none; transition: background .25s, color .25s, border-color .25s; }
+.btn:hover { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.btn.solid { background: var(--basil); color: #f3efe4; border-color: var(--basil); }
+.btn.solid:hover { background: var(--deep); border-color: var(--deep); color: #f3efe4; }
+.draft { background: var(--sage); color: #10260f; font-size: 13px; font-weight: 500; text-align: center; padding-block: 8px; }
+
+.photo { position: relative; overflow: hidden; background: var(--cava); max-width: 100%; }
+.photo img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Header */
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--ground); border-bottom: 1px solid var(--line); }
+.top .wrap { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; padding-block: 12px; }
+.top nav { display: flex; gap: 26px; flex-wrap: nowrap; white-space: nowrap; }
+.top nav .nav-extra { display: none; }
+.top nav.open .nav-extra { display: block; }
+.top nav a, .top .lang { font-size: 11.5px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; text-decoration: none; color: var(--muted); }
+.top nav a:hover { color: var(--ink); }
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+.logo .iso { width: 34px; height: 34px; background: var(--ink); -webkit-mask: url(img/iso-dark.png) center / contain no-repeat; mask: url(img/iso-dark.png) center / contain no-repeat; }
+.logo .name { font-family: var(--display); font-size: 21px; letter-spacing: .16em; text-transform: uppercase; line-height: 1; }
+.top .right { display: flex; justify-content: flex-end; align-items: center; gap: 22px; }
+.top .right .btn { padding: 12px 18px; }
+.menu-btn { display: none; background: none; border: 0; color: var(--ink); font: 600 11.5px var(--body); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; padding: 8px 0; }
+@media (max-width: 1100px) {
+  .top .wrap { grid-template-columns: auto 1fr auto; }
+  .top nav { display: none; }
+  .menu-btn { display: block; }
+  .logo { justify-self: center; }
+  .top .lang { display: none; }
+  .top nav.open { display: flex; flex-direction: column; gap: 14px; position: absolute; top: 100%; left: 0; right: 0; background: var(--ground); padding: 20px max(16px, env(safe-area-inset-left, 0px)) 24px; border-bottom: 1px solid var(--line); }
+}
+@media (max-width: 480px) { .logo .name { font-size: 16px; letter-spacing: .1em; } .logo .iso { width: 26px; height: 26px; } .top .right .btn { padding: 10px 12px; letter-spacing: .14em; } }
+
+/* Hero: the brand guide's own composition, logo over the toned El Bedorc photo */
+.hero { position: relative; background: var(--deep); display: grid; place-items: center; text-align: center; min-height: min(84vh, 820px); overflow: hidden; }
+.hero > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 55%; }
+.hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(15, 38, 20, .15), rgba(15, 38, 20, .55)); }
+.hero .copy { position: relative; z-index: 2; display: grid; justify-items: center; gap: 26px; padding-block: 64px 120px; }
+.hero .mark { width: min(300px, 62vw); }
+.hero p { color: var(--on-deep); font-size: 13px; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; opacity: .9; }
+
+/* Booking bar */
+.booking { position: relative; z-index: 4; margin-top: -64px; }
+.booking form { background: var(--paper); border: 1px solid var(--line); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; }
+.booking .field { display: flex; flex-direction: column; gap: 4px; padding: 16px 22px; border-right: 1px solid var(--line); min-width: 0; }
+.booking label { font-size: 11px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.booking input, .booking select { border: 0; background: transparent; font: 400 16px var(--body); color: var(--text); padding: 2px 0; min-width: 0; width: 100%; }
+.booking .btn { border: 0; margin: 10px; }
+.booking .note { font-size: 13px; color: var(--muted); padding: 10px 2px 0; min-height: 1.7em; }
+@media (max-width: 760px) {
+  .booking form { grid-template-columns: 1fr 1fr; }
+  .booking .field:nth-child(2) { border-right: 0; }
+  .booking .field:nth-child(3) { grid-column: 1 / -1; border-right: 0; border-top: 1px solid var(--line); }
+  .booking .btn { grid-column: 1 / -1; }
+}
+
+/* Intro */
+.intro .inner { max-width: 780px; margin-inline: auto; display: grid; gap: 26px; justify-items: center; text-align: center; }
+
+/* Split blocks */
+.split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(32px, 6vw, 96px); align-items: center; }
+.split.flip { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+.split.flip .media { order: 2; }
+.split .media .photo { aspect-ratio: 4 / 5; }
+.split .text { display: grid; gap: 22px; max-width: 520px; justify-items: start; }
+.split h2, .head-row h2 { font-size: clamp(34px, 4.6vw, 56px); }
+@media (max-width: 820px) { .split, .split.flip { grid-template-columns: 1fr; } .split.flip .media { order: 0; } .split .media .photo { aspect-ratio: 4 / 3; } }
+
+/* Apartment */
+.head-row { display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; margin-bottom: 44px; }
+.head-row > div { display: grid; gap: 14px; }
+.apt { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(28px, 4vw, 64px); align-items: start; }
+.apt-photos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.apt-photos button { padding: 0; border: 0; background: none; cursor: zoom-in; display: block; min-width: 0; }
+.apt-photos button .photo { aspect-ratio: 1 / 1; }
+.apt-photos button.main .photo { aspect-ratio: 3 / 2; }
+.apt-photos button:hover img { opacity: .9; }
+.apt-info { display: grid; gap: 20px; }
+.apt-info h3 { font-size: 38px; }
+.apt-info .meta { display: flex; gap: 10px 22px; flex-wrap: wrap; font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--basil); }
+.amen { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.amen li { padding-block: 10px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: baseline; }
+.amen li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--sage); flex: none; transform: translateY(-2px); }
+.apt-info .btn { justify-self: start; }
+.units { display: grid; gap: clamp(64px, 9vw, 120px); }
+.apt.flip { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+.apt.flip .apt-photos { order: 2; }
+.apt-photos .main { grid-column: 1 / -1; }
+.apt-photos .more { position: relative; }
+.apt-photos .more span { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(15, 38, 20, .55); color: #f3efe4; font-size: 11.5px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; }
+@media (max-width: 880px) { .apt, .apt.flip { grid-template-columns: 1fr; } .apt.flip .apt-photos { order: 0; } }
+
+/* Stays: four plaques, shared interiors */
+.stays { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(36px, 5vw, 64px) clamp(24px, 3vw, 44px); }
+.stay { display: grid; gap: 20px; align-content: start; }
+.stay-cover { position: relative; display: block; padding: 0; border: 0; background: none; cursor: zoom-in; text-align: left; }
+.stay-cover .photo { display: block; aspect-ratio: 4 / 3; }
+.stay-cover .photo img { transition: transform .6s ease; }
+.stay-cover:hover .photo img { transform: scale(1.03); }
+.stay-cover .plaque { position: absolute; left: 18px; bottom: -22px; width: clamp(92px, 22%, 132px); height: auto; box-shadow: 0 6px 20px rgba(15, 38, 20, .25); }
+.stay-cover .count { position: absolute; right: 14px; top: 14px; background: rgba(15, 38, 20, .72); color: #f3efe4; font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; padding: 8px 12px; }
+.stay-body { display: grid; gap: 12px; justify-items: start; padding-top: 18px; }
+.stay-body h3 { font-size: clamp(28px, 3vw, 38px); }
+.feats { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.feats li { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--text); }
+.feats svg { width: 20px; height: 20px; fill: none; stroke: var(--basil); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.stay-body p { color: var(--muted); font-size: 15.5px; max-width: 52ch; }
+.stay-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.stays .btn { padding: 12px 18px; }
+@media (max-width: 760px) { .stays { grid-template-columns: 1fr; } }
+.inside { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: clamp(32px, 5vw, 80px); align-items: center; margin-top: clamp(64px, 9vw, 112px); }
+.inside .text { display: grid; gap: 20px; justify-items: start; }
+.inside h3 { font-size: clamp(30px, 3.6vw, 44px); }
+.inside-photos { display: grid; grid-template-columns: 1.3fr 1fr; grid-template-rows: 220px 180px; gap: 10px; }
+.inside-photos button { padding: 0; border: 0; background: none; cursor: zoom-in; min-width: 0; }
+.inside-photos .photo { width: 100%; height: 100%; }
+.inside-photos .a { grid-row: span 2; }
+.inside-photos .d { display: none; }
+@media (max-width: 880px) { .inside { grid-template-columns: 1fr; } .inside-photos { grid-template-rows: 200px 160px; } }
+
+.intro-sub { color: var(--muted); max-width: 56ch; }
+.stays-intro { color: var(--muted); max-width: 60ch; margin: -20px 0 36px; }
+
+/* Name plaques */
+.plaques { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+.plaques a { display: block; transition: transform .25s; }
+.plaques a:hover { transform: translateY(-4px); }
+.plaques img { width: 100%; height: auto; }
+.plaques-note { color: var(--muted); max-width: 60ch; margin-top: 22px; margin-bottom: clamp(48px, 7vw, 88px); }
+@media (max-width: 760px) { .plaques { grid-template-columns: 1fr 1fr; } }
+.soon { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.soon article { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 24px; align-items: center; padding: 20px; border: 1px solid var(--line); background: var(--paper); }
+.soon img { width: 100%; height: auto; }
+.soon article > div { display: grid; gap: 10px; justify-items: start; }
+.soon h3 { font-size: 30px; }
+.soon p { color: var(--muted); }
+@media (max-width: 880px) { .soon { grid-template-columns: 1fr; } }
+@media (max-width: 440px) { .soon article { grid-template-columns: 96px minmax(0, 1fr); gap: 16px; padding: 14px; } }
+
+.postcard { margin: clamp(56px, 8vw, 96px) 0 0; display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); align-items: end; }
+.postcard img { width: 100%; height: auto; padding: 12px 12px 14px; background: #fbfaf6; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 10px 30px rgba(26, 63, 32, .12); transform: rotate(-1.2deg); }
+.postcard figcaption { display: grid; gap: 8px; max-width: 36ch; }
+.postcard p { font-family: var(--display); font-style: italic; font-size: 22px; line-height: 1.4; color: var(--ink); }
+@media (max-width: 760px) { .postcard { grid-template-columns: 1fr; } }
+
+/* History timeline */
+.timeline { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); width: 100%; }
+.timeline li { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 18px; padding-block: 16px; border-bottom: 1px solid var(--line); }
+.timeline .year { font-family: var(--display); font-size: 22px; color: var(--basil); font-variant-numeric: tabular-nums; line-height: 1.3; }
+.timeline h3 { font-family: var(--body); font-weight: 600; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; margin-bottom: 4px; }
+.timeline p { color: var(--muted); font-size: 16px; }
+.seal-head { display: grid; gap: 8px; margin-top: clamp(56px, 8vw, 96px); }
+.seal-head h3 { font-size: clamp(26px, 3vw, 34px); }
+
+/* Brand symbols = the house's story */
+.history { background: var(--paper); border-block: 1px solid var(--line); }
+.symbols { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); margin-top: 24px; }
+.symbols article { padding: 26px 22px 6px 0; display: grid; gap: 8px; align-content: start; }
+.symbols article + article { padding-left: 22px; border-left: 1px solid var(--line); }
+.symbols h3 { font-size: 24px; }
+.symbols p { font-size: 15px; color: var(--muted); }
+@media (max-width: 980px) { .symbols { grid-template-columns: 1fr 1fr; } .symbols article { padding: 22px 16px 22px 0 !important; border-left: 0 !important; border-bottom: 1px solid var(--line); } .symbols article:nth-child(even) { padding-left: 16px !important; border-left: 1px solid var(--line) !important; } }
+@media (max-width: 520px) { .symbols { grid-template-columns: 1fr; } .symbols article:nth-child(even) { padding-left: 0 !important; border-left: 0 !important; } }
+
+/* Quote band */
+.quote { background: var(--deep); color: var(--on-deep); text-align: center; }
+.quote .inner { max-width: 860px; margin-inline: auto; display: grid; gap: 24px; justify-items: center; }
+.quote .iso { width: 64px; height: 64px; background: var(--sage); -webkit-mask: url(img/iso-dark.png) center / contain no-repeat; mask: url(img/iso-dark.png) center / contain no-repeat; }
+.quote blockquote { margin: 0; font-family: var(--display); font-style: italic; font-size: clamp(24px, 3.2vw, 38px); line-height: 1.4; }
+.quote cite { font-style: normal; font-size: 11.5px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: var(--sage); }
+
+/* Gallery */
+.gallery { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: 150px; gap: 10px; }
+.gallery button { padding: 0; border: 0; cursor: zoom-in; background: none; display: block; min-width: 0; }
+.gallery .photo { width: 100%; height: 100%; }
+.gallery button:hover img { opacity: .9; }
+.g1 { grid-column: span 3; grid-row: span 3; } .g2 { grid-column: span 3; grid-row: span 2; }
+.g3 { grid-column: span 3; grid-row: span 1; } .g4 { grid-column: span 2; grid-row: span 2; }
+.g5 { grid-column: span 2; grid-row: span 2; } .g6 { grid-column: span 2; grid-row: span 2; }
+.g7 { grid-column: span 3; grid-row: span 2; } .g8 { grid-column: span 3; grid-row: span 2; }
+@media (max-width: 720px) { .gallery { grid-template-columns: 1fr 1fr; grid-auto-rows: 160px; } .gallery button { grid-column: span 1 !important; grid-row: span 1 !important; } .gallery .g1 { grid-column: span 2 !important; grid-row: span 2 !important; } }
+.lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(10, 22, 12, .94); display: grid; grid-template-rows: minmax(0, 1fr) auto; padding: calc(env(safe-area-inset-top, 0px) + 56px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 20px) max(16px, env(safe-area-inset-left, 0px)); }
+.lightbox img { width: 100%; height: 100%; object-fit: contain; max-width: 1200px; margin-inline: auto; }
+.lightbox .bar { display: flex; justify-content: space-between; align-items: center; gap: 16px; color: #f3efe4; padding-top: 14px; width: min(1200px, 100%); margin-inline: auto; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
+.lightbox button { background: none; border: 1px solid rgba(243, 239, 228, .35); color: #f3efe4; font: 600 11.5px var(--body); letter-spacing: .2em; text-transform: uppercase; padding: 10px 16px; cursor: pointer; }
+.lightbox .close { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 12px); right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* Surroundings */
+.dist { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); width: 100%; }
+.dist li { display: flex; justify-content: space-between; gap: 16px; padding-block: 12px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.dist li span:last-child { color: var(--muted); white-space: nowrap; }
+
+/* Contact */
+.contact { background: var(--deep); color: var(--on-deep); }
+.contact .inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: start; }
+.contact .brand { display: grid; gap: 26px; justify-items: start; }
+.contact .brand img { width: 200px; }
+.contact h2 { color: var(--on-deep); font-size: clamp(32px, 4.2vw, 50px); }
+.contact .label { color: var(--sage); }
+.contact form { display: grid; gap: 14px; }
+.contact input, .contact textarea { width: 100%; background: transparent; border: 0; border-bottom: 1px solid rgba(243, 239, 228, .4); color: var(--on-deep); font: 300 17px var(--body); padding: 10px 0; }
+.contact input::placeholder, .contact textarea::placeholder { color: rgba(243, 239, 228, .6); }
+.contact .btn { justify-self: start; margin-top: 10px; color: var(--on-deep); }
+.contact .btn:hover { background: var(--on-deep); color: var(--deep); border-color: var(--on-deep); }
+.contact .sent { font-size: 14px; min-height: 1.7em; }
+.contact .lines { display: grid; gap: 6px; }
+.copy-row { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.copy-row button { background: none; border: 0; color: inherit; opacity: .7; font: 600 11px var(--body); letter-spacing: .16em; text-transform: uppercase; cursor: pointer; text-decoration: underline; }
+@media (max-width: 820px) { .contact .inner { grid-template-columns: 1fr; } }
+/* Google reviews */
+.reviews { padding-block: clamp(64px, 9vw, 112px); background: var(--paper); border-top: 1px solid var(--line); text-align: center; }
+.reviews-head { max-width: 640px; margin-inline: auto; display: grid; gap: 16px; justify-items: center; }
+.reviews h2 { font-size: clamp(30px, 4vw, 46px); }
+.reviews p { color: var(--muted); }
+.g-badge { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.g-badge svg { width: 20px; height: 20px; fill: var(--basil); }
+.stars { display: flex; gap: 4px; }
+.stars svg { width: 20px; height: 20px; fill: var(--sage); }
+.reviews-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+/* Footer */
+footer { background: #1A3F20; color: #e3ddd0; font-size: 14px; padding-block: 64px 32px; }
+footer a { color: inherit; text-decoration: none; }
+footer a:hover { color: #fff; }
+.foot-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 40px; }
+.foot-brand { display: grid; gap: 16px; align-content: start; }
+.foot-brand img { width: 150px; }
+.foot-brand p { max-width: 32ch; color: #C6BFAF; }
+footer h3 { font-family: var(--body); font-size: 11.5px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: #79A57A; margin-bottom: 14px; }
+footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.social { display: flex; gap: 10px; }
+.social a { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid rgba(198, 191, 175, .4); border-radius: 50%; transition: background .2s, border-color .2s; }
+.social a:hover { background: #2E6D2E; border-color: #2E6D2E; }
+.social svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.handle { color: #C6BFAF; font-size: 13px; margin-top: 12px; }
+.foot-legal { display: flex; justify-content: space-between; gap: 12px 28px; flex-wrap: wrap; margin-top: 48px; padding-top: 20px; border-top: 1px solid rgba(198, 191, 175, .25); font-size: 12.5px; color: #C6BFAF; }
+.foot-legal div { display: flex; gap: 22px; flex-wrap: wrap; }
+@media (max-width: 900px) { .foot-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .foot-grid { grid-template-columns: 1fr; } }
+
+[hidden] { display: none !important; }
+/* ---------- Design proposals (switcher at the bottom) ---------- */
+.hero-title, .hero .mark-dark, .hero-claim, .hero-word, .rail { display: none; }
+.variants { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; align-items: center; gap: 6px; padding: 6px; background: rgba(20, 32, 22, .92); color: #f3efe4; border-radius: 999px; box-shadow: 0 8px 30px rgba(0,0,0,.25); max-width: calc(100% - 24px); overflow-x: auto; font-family: var(--body); }
+.variants span { font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; padding: 0 10px 0 12px; white-space: nowrap; opacity: .75; }
+.variants button { border: 0; background: transparent; color: inherit; font: 500 13px var(--body); padding: 9px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.variants button[aria-pressed="true"] { background: #f3efe4; color: #1a3f20; }
+.variants button em { font-style: normal; opacity: .7; margin-left: 4px; }
+.variants .sep { border-left: 1px solid rgba(243, 239, 228, .25); margin-left: 4px; }
+.variants button.ph { width: 34px; height: 34px; padding: 0; background: var(--t) center / cover; flex: none; box-shadow: inset 0 0 0 2px transparent; position: relative; }
+.variants button.ph b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; color: #f3efe4; background: rgba(15, 38, 20, .35); border-radius: 999px; }
+.variants button.ph[aria-pressed="true"] { background: var(--t) center / cover; box-shadow: 0 0 0 2px #f3efe4; }
+.variants button.ph[aria-pressed="true"] b { background: transparent; }
+@media (max-width: 640px) { .variants span { display: none; } .variants button { padding: 9px 11px; } .variants button em { display: none; } }
+
+/* shared: header laid over the hero photo */
+:root[data-variant="1"] header.top, :root[data-variant="4"] header.top { position: absolute; left: 0; right: 0; top: env(safe-area-inset-top, 0px); background: transparent; border: 0; }
+:root[data-variant="1"] .top .wrap { border-bottom: 1px solid rgba(243, 239, 228, .45); }
+:root[data-variant="1"] .top .logo, :root[data-variant="1"] .top .menu-btn, :root[data-variant="4"] .top .logo, :root[data-variant="4"] .top .menu-btn { color: #f3efe4; }
+:root[data-variant="1"] .top .logo .iso, :root[data-variant="4"] .top .logo .iso { background: #f3efe4; }
+:root[data-variant="1"] .top nav a, :root[data-variant="1"] .top .lang { color: rgba(243, 239, 228, .85); }
+:root[data-variant="1"] .top nav.open, :root[data-variant="4"] .top nav.open { background: var(--ground); }
+:root[data-variant="1"] .top nav.open a, :root[data-variant="4"] .top nav.open a { color: var(--muted); }
+:root[data-variant="1"] body::before, :root[data-variant="4"] body::before { background: transparent; }
+/* shared: light contact band */
+:root[data-variant="4"] .contact { background: var(--paper); color: var(--text); }
+:root[data-variant="4"] .contact h2 { color: var(--ink); }
+:root[data-variant="4"] .contact .label { color: var(--muted); }
+:root[data-variant="4"] .contact input, :root[data-variant="4"] .contact textarea { color: var(--text); border-bottom-color: var(--line); }
+:root[data-variant="4"] .contact input::placeholder, :root[data-variant="4"] .contact textarea::placeholder { color: var(--muted); }
+:root[data-variant="4"] .contact .btn { color: var(--ink); }
+:root[data-variant="4"] .contact .btn:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+:root[data-variant="4"] .contact .brand img { content: url(img/logo-dark.png); }
+
+:root[data-variant] .hero-claim { letter-spacing: .01em; font-weight: 400; opacity: 1; }
+:root[data-variant="3"] .hero-claim { text-transform: none; }
+:root[data-variant="5"] .hero-claim { text-transform: none; font-style: italic; }
+.hero-claim { max-width: none !important; }
+@media (min-width: 760px) { .hero-claim { white-space: nowrap; font-size: clamp(26px, 3.3vw, 52px) !important; } }
+.variants button.mob { display: inline-flex; align-items: center; gap: 6px; }
+.variants button.mob svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+.phone-view { position: fixed; inset: 0; z-index: 60; background: rgba(10, 26, 14, .88); display: grid; grid-template-rows: auto minmax(0, 1fr); justify-items: center; gap: 14px; padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(env(safe-area-inset-bottom, 0px) + 20px); }
+.phone-bar { display: flex; gap: 18px; align-items: center; color: #f3efe4; font-size: 12px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+.phone-bar button { background: none; border: 1px solid rgba(243, 239, 228, .45); color: #f3efe4; font: 600 11.5px var(--body); letter-spacing: .2em; text-transform: uppercase; padding: 9px 14px; cursor: pointer; }
+.phone { height: 100%; max-height: 860px; aspect-ratio: 406 / 860; max-width: 100%; border: 8px solid #0f2614; border-radius: 42px; overflow: hidden; background: #fff; box-shadow: 0 30px 80px rgba(0, 0, 0, .45); }
+.phone iframe { width: 100%; height: 100%; border: 0; display: block; }
+:root.embedded .variants, :root.embedded .rail { display: none !important; }
+footer { padding-bottom: 32px !important; }
+@media (max-width: 640px) { .variants button.mob { display: none; } }
+/* Final choice made: only the phone preview stays in the bottom bar */
+.variants > span, .variants button[data-v], .variants button[data-h] { display: none !important; }
+.variants { display: none !important; }
+@media (max-width: 640px) { .variants { display: none; } }
+/* 1 · Finca (Mas Grimosach): stone-beige, logo over the landscape, overlapping photo collages */
+:root[data-variant="1"] { --ground: #efebe3; --paper: #f7f5f0; --cava: #C6BFAF; --line: #d6d0c2; --muted: #5f6a5f; color-scheme: light; }
+:root[data-variant="1"] .hero { min-height: min(100vh, 980px); }
+:root[data-variant="1"] .hero::after { background: linear-gradient(180deg, rgba(15, 25, 15, .35), rgba(15, 25, 15, .2) 40%, rgba(15, 25, 15, .45)); }
+:root[data-variant="1"] .hero .mark { width: min(360px, 66vw); }
+:root[data-variant="1"] h2 { font-size: clamp(32px, 3.8vw, 50px) !important; }
+:root[data-variant="1"] .history { background: var(--ground); border-color: transparent; }
+:root[data-variant="1"] .split .media { position: relative; padding: 0 0 clamp(40px, 6vw, 90px) clamp(40px, 6vw, 90px); }
+:root[data-variant="1"] .split.flip .media { padding: 0 clamp(40px, 6vw, 90px) clamp(40px, 6vw, 90px) 0; }
+:root[data-variant="1"] .split .media::before { content: ""; position: absolute; left: 0; bottom: 0; width: 48%; aspect-ratio: 4 / 3; background: var(--collage, var(--cava)) center / cover; z-index: 1; box-shadow: 0 0 0 10px var(--ground); }
+:root[data-variant="1"] .split.flip .media::before { left: auto; right: 0; }
+
+/* 2 · Celler (Oller del Mas): deep-green bands, spaced capitals, booking inside the hero */
+:root[data-variant="2"] { --ground: #ffffff; --paper: #f7f5f0; --cava: #C6BFAF; --ink: #1A3F20; --text: #26302a; --muted: #5f6a5f; --line: #e3dfd5; --basil: #2E6D2E; --sage: #79A57A; --deep: #1A3F20; color-scheme: light; }
+:root[data-variant="2"] header.top { background: #1A3F20; border-color: transparent; }
+:root[data-variant="2"] body::before { background: #1A3F20; }
+:root[data-variant="2"] .top .logo, :root[data-variant="2"] .top .menu-btn { color: #f3efe4; }
+:root[data-variant="2"] .top .logo .iso { background: #f3efe4; }
+:root[data-variant="2"] .top nav a, :root[data-variant="2"] .top .lang { color: rgba(243, 239, 228, .75); }
+:root[data-variant="2"] .top nav.open { background: #1A3F20; }
+:root[data-variant="2"] .hero { min-height: min(92vh, 900px); }
+:root[data-variant="2"] .hero .copy { padding-block: 40px 230px; gap: 22px; }
+:root[data-variant="2"] .hero .mark { width: 92px; content: url(img/iso-light.png); }
+:root[data-variant="2"] .hero-claim { display: block; color: #f3efe4; font-family: var(--display); font-size: clamp(30px, 4.6vw, 64px); text-transform: uppercase; letter-spacing: .04em; line-height: 1.1; max-width: 18ch; }
+:root[data-variant="2"] .hero p:not(.hero-claim) { display: none; }
+:root[data-variant="2"] .booking { margin-top: -180px; max-width: 980px; }
+:root[data-variant="2"] .booking form { background: rgba(15, 38, 20, .6); border-color: rgba(255, 255, 255, .35); backdrop-filter: blur(4px); }
+:root[data-variant="2"] .booking .field { border-color: rgba(255, 255, 255, .25); }
+:root[data-variant="2"] .booking label { color: rgba(243, 239, 228, .75); }
+:root[data-variant="2"] .booking input, :root[data-variant="2"] .booking select { color: #f3efe4; color-scheme: dark; }
+:root[data-variant="2"] .booking .btn.solid { background: #f3efe4; color: #1A3F20; border-color: #f3efe4; }
+:root[data-variant="2"] .booking .note { color: var(--muted); }
+:root[data-variant="2"] .btn { letter-spacing: .45em; font-weight: 400; }
+:root[data-variant="2"] .btn.solid { background: #1A3F20; border-color: #1A3F20; color: #f3efe4; }
+:root[data-variant="2"] h2 { text-transform: uppercase; letter-spacing: .03em; font-size: clamp(30px, 3.8vw, 52px) !important; }
+:root[data-variant="2"] .history { --ink: #f3efe4; --text: #e3ddd0; --muted: #a9b8a6; --line: #2e5435; --paper: #1A3F20; --basil: #C6BFAF; background: #1A3F20; border-color: transparent; }
+:root[data-variant="2"] .quote, :root[data-variant="2"] .contact { background: #143219; }
+:root[data-variant="2"] .quote .iso { background: #C6BFAF; }
+:root[data-variant="2"] .quote cite, :root[data-variant="2"] .contact .label { color: #C6BFAF; }
+
+/* 3 · Santuari (Son Brull): cava tones, large light headings, side booking rail */
+:root[data-variant="3"] { --ground: #e9e5dc; --paper: #ddd7ca; --cava: #C6BFAF; --ink: #1A3F20; --text: #26302a; --muted: #5f6a5f; --line: #cfc8b9; --basil: #2E6D2E; --sage: #79A57A; --deep: #1A3F20; color-scheme: light; }
+:root[data-variant="3"] header.top { background: var(--ground); }
+:root[data-variant="3"] body::before { background: var(--ground); }
+:root[data-variant="3"] .hero::after { background: rgba(15, 38, 20, .3); }
+:root[data-variant="3"] .hero .mark { display: none; }
+:root[data-variant="3"] .hero-claim { display: block; color: #f3efe4; font-family: var(--display); font-size: clamp(36px, 5.4vw, 76px); line-height: 1.05; max-width: 16ch; }
+:root[data-variant="3"] .hero p:not(.hero-claim) { font-style: italic; text-transform: none; letter-spacing: .02em; font-size: 20px; font-family: var(--display); }
+:root[data-variant="3"] h2 { font-size: clamp(38px, 5vw, 70px) !important; line-height: 1.05; }
+:root[data-variant="3"] .head-row { justify-content: center; text-align: center; }
+:root[data-variant="3"] .head-row > div { justify-items: center; }
+:root[data-variant="3"] .head-row .btn { display: none; }
+:root[data-variant="3"] .history { background: var(--paper); border-color: transparent; }
+:root[data-variant="3"] .btn.solid { background: var(--deep); border-color: var(--deep); }
+:root[data-variant="3"] .rail { display: grid; position: fixed; right: env(safe-area-inset-right, 0px); top: 50%; transform: translateY(-50%); z-index: 30; }
+:root[data-variant="3"] .rail a { writing-mode: vertical-rl; transform: rotate(180deg); background: var(--deep); color: #f3efe4; text-decoration: none; font-size: 11px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; padding: 22px 13px; border-bottom: 1px solid rgba(255, 255, 255, .15); }
+:root[data-variant="3"] .rail a:first-child { background: var(--basil); }
+@media (max-width: 760px) { :root[data-variant="3"] .rail { display: none; } }
+
+/* 4 · Respira (Es Racó d'Artà + Off Grid): one word over a full-screen photo, white and quiet */
+:root[data-variant="4"] { --ground: #ffffff; --paper: #f7f5f0; --cava: #C6BFAF; --ink: #1A3F20; --text: #3c463e; --muted: #79A57A; --line: #e6e2d8; --basil: #2E6D2E; --sage: #79A57A; --deep: #f7f5f0; color-scheme: light; }
+:root[data-variant="4"] .top .wrap { display: flex; justify-content: space-between; }
+:root[data-variant="4"] .top nav { display: none; }
+:root[data-variant="4"] .top nav.open { display: flex; flex-direction: column; gap: 14px; position: absolute; top: 100%; left: 0; right: 0; padding: 20px max(16px, env(safe-area-inset-left, 0px)) 24px; }
+:root[data-variant="4"] .menu-btn { display: block; order: 2; }
+:root[data-variant="4"] .top .logo { order: 1; }
+:root[data-variant="4"] .top .right { order: 3; }
+:root[data-variant="4"] .top .lang { display: none; }
+:root[data-variant="4"] .top .right .btn { border-radius: 999px; background: transparent; border-color: rgba(243, 239, 228, .8); color: #f3efe4; }
+:root[data-variant="4"] .hero { min-height: 100vh; }
+:root[data-variant="4"] .hero::after { background: rgba(15, 38, 20, .12); }
+:root[data-variant="4"] .hero .mark, :root[data-variant="4"] .hero p { display: none; }
+:root[data-variant="4"] .hero-word { display: grid; justify-items: center; gap: 18px; }
+:root[data-variant="4"] .hero-word span { color: #f7f5f0; font-family: var(--body); font-weight: 300; font-size: clamp(48px, 8vw, 104px); letter-spacing: .02em; text-transform: uppercase; line-height: 1; }
+:root[data-variant="4"] .hero-word .btn { color: #f7f5f0; border-color: rgba(255, 255, 255, .8); letter-spacing: .08em; text-transform: none; font-weight: 400; font-size: 13px; padding: 10px 16px; }
+:root[data-variant="4"] .booking { margin-top: 0; padding-top: 32px; }
+:root[data-variant="4"] .booking form { border-color: var(--line); }
+:root[data-variant="4"] h2 { font-family: var(--body) !important; font-weight: 300; font-size: clamp(24px, 2.6vw, 32px) !important; letter-spacing: .02em; }
+:root[data-variant="4"] .split .text { justify-items: center; text-align: center; margin-inline: auto; }
+:root[data-variant="4"] .split .media .photo { aspect-ratio: 4 / 3; }
+:root[data-variant="4"] .head-row { justify-content: center; text-align: center; }
+:root[data-variant="4"] .head-row > div { justify-items: center; }
+:root[data-variant="4"] .history { background: var(--ground); border-color: transparent; }
+:root[data-variant="4"] .quote { background: var(--ground); color: var(--text); }
+:root[data-variant="4"] .quote blockquote { color: var(--text); font-size: clamp(20px, 2.2vw, 26px); }
+:root[data-variant="4"] .quote .iso { background: var(--muted); }
+:root[data-variant="4"] .btn.solid { background: var(--ink); border-color: var(--ink); color: #f7f5f0; border-radius: 999px; }
+:root[data-variant="4"] .btn { border-radius: 999px; }
+
+/* 5 · Masia (La Vella Farga + Mas d'en Bruno): dark hero, capitals with an italic word, basil accent */
+:root[data-variant="5"] { --ground: #f7f5f0; --paper: #ffffff; --cava: #C6BFAF; --ink: #1A3F20; --text: #26302a; --muted: #5f6a5f; --line: #e3dfd5; --basil: #2E6D2E; --sage: #79A57A; --deep: #1A3F20; color-scheme: light; }
+:root[data-variant="5"] header.top { background: rgba(15, 38, 20, .95); border-color: transparent; }
+:root[data-variant="5"] body::before { background: #0f2614; }
+:root[data-variant="5"] .top .logo, :root[data-variant="5"] .top .menu-btn { color: #f3efe4; }
+:root[data-variant="5"] .top .logo .iso { background: #f3efe4; }
+:root[data-variant="5"] .top nav a, :root[data-variant="5"] .top .lang { color: rgba(243, 239, 228, .72); }
+:root[data-variant="5"] .top nav.open { background: #0f2614; }
+:root[data-variant="5"] .top .right .btn { background: transparent; border-color: rgba(243, 239, 228, .7); color: #f3efe4; }
+:root[data-variant="5"] .hero { min-height: min(92vh, 900px); }
+:root[data-variant="5"] .hero::after { background: rgba(10, 26, 14, .55); }
+:root[data-variant="5"] .hero .copy { padding-block: 40px 200px; }
+:root[data-variant="5"] .hero .mark { width: 120px; }
+:root[data-variant="5"] .hero-claim { display: block; color: #f3efe4; font-family: var(--display); font-size: clamp(26px, 3.4vw, 46px); max-width: 24ch; line-height: 1.2; }
+:root[data-variant="5"] .booking { margin-top: -110px; }
+:root[data-variant="5"] .booking form { background: rgba(15, 38, 20, .8); border-color: rgba(255, 255, 255, .2); }
+:root[data-variant="5"] .booking .field { border-color: rgba(255, 255, 255, .18); }
+:root[data-variant="5"] .booking label { color: rgba(243, 239, 228, .7); }
+:root[data-variant="5"] .booking input, :root[data-variant="5"] .booking select { color: #f3efe4; color-scheme: dark; }
+:root[data-variant="5"] .booking .note { color: var(--muted); }
+:root[data-variant="5"] h2 { text-transform: uppercase; letter-spacing: .02em; font-size: clamp(30px, 4.4vw, 60px) !important; line-height: 1; }
+:root[data-variant="5"] h2[data-script]::after { content: attr(data-script); display: block; font-family: var(--display); font-style: italic; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--basil); font-size: .6em; line-height: 1.1; margin-top: .1em; }
+:root[data-variant="5"] .head-row { justify-content: center; text-align: center; }
+:root[data-variant="5"] .head-row > div { justify-items: center; }
+:root[data-variant="5"] .head-row .btn { display: none; }
+:root[data-variant="5"] .history { background: var(--paper); }
+:root[data-variant="5"] .btn.solid { background: var(--basil); border-color: var(--basil); }
+:root[data-variant="5"] .quote, :root[data-variant="5"] .contact { background: #1A3F20; }
+:root[data-variant="5"] .quote .iso { background: #79A57A; }
+:root[data-variant="5"] .quote cite, :root[data-variant="5"] .contact .label { color: #C6BFAF; }
+/* Mobile booking: a compact solid card under the hero, same in every proposal */
+@media (max-width: 760px) {
+  :root[data-variant] .booking { margin-top: 0 !important; padding-top: 16px; }
+  :root[data-variant] .booking form { background: var(--paper) !important; border: 1px solid var(--line) !important; backdrop-filter: none; box-shadow: 0 10px 30px rgba(15, 38, 20, .08); grid-template-columns: 1fr 1fr; }
+  :root[data-variant] .booking .field { padding: 10px 14px; gap: 2px; border-color: var(--line) !important; }
+  :root[data-variant] .booking label { font-size: 10px; letter-spacing: .16em; color: var(--muted) !important; }
+  :root[data-variant] .booking input, :root[data-variant] .booking select { font-size: 15px; color: var(--text) !important; color-scheme: light; }
+  :root[data-variant] .booking .btn { margin: 0; padding: 15px; background: var(--deep) !important; border-color: var(--deep) !important; color: #f3efe4 !important; }
+  :root[data-variant="4"] .booking .btn { background: var(--ink) !important; border-color: var(--ink) !important; }
+  :root[data-variant] .hero .copy { padding-block-end: 56px !important; }
+  .hero p:not(.hero-claim) { letter-spacing: .18em; font-size: 11.5px; }
+}
+</style>
+
+
+<header class="top">
+  <div class="wrap">
+    <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainNav">Menú</button>
+    <nav id="mainNav" aria-label="Principal">
+      <a href="#casa">La casa</a>
+      <a href="#apartaments">Allotjaments</a>
+      <a href="#restaurant">Restaurant</a>
+      <a class="nav-extra" href="#historia">Història</a>
+      <a class="nav-extra" href="#galeria">Galeria</a>
+      <a href="#entorn">El Bedorc</a>
+      <a class="nav-extra" href="#contacte">Contacte</a>
+    </nav>
+    <a class="logo" href="#inici" aria-label="La Casa Vella, inici"><span class="iso" aria-hidden="true"></span><span class="name">La Casa Vella</span></a>
+    <div class="right">
+      <span class="lang">CA · ES · EN</span>
+      <a class="btn solid" href="#reservar">Reservar</a>
+    </div>
+  </div>
+</header>
+
+<section class="hero" id="inici" aria-label="Portada">
+  <img id="heroImg" src="img/hero-vinyes-cel.jpg" alt="Vinyes amb la muntanya de Montserrat al fons">
+  <div class="copy wrap">
+    <img class="mark" src="img/logo-light.png" alt="La Casa Vella, 1898, El Bedorc">
+    <img class="mark mark-dark" src="img/logo-dark.png" alt="La Casa Vella, 1898, El Bedorc">
+    <h1 class="hero-title">La Casa Vella</h1>
+    <p class="hero-claim">Un refugi entre vinyes, pinedes i Montserrat</p>
+    <div class="hero-word"><span>Respira</span><a class="btn" href="#casa">Comencem?</a></div>
+    <p>Allotjament rural · Des de 1898</p>
+  </div>
+</section>
+
+<div class="wrap booking" id="reservar">
+  <form id="bookForm" aria-label="Consultar disponibilitat">
+    <div class="field"><label for="in">Arribada</label><input id="in" type="date" required></div>
+    <div class="field"><label for="out">Sortida</label><input id="out" type="date" required></div>
+    <div class="field"><label for="guests">Hostes</label>
+      <select id="guests"><option>1 adult</option><option selected>2 adults</option><option>2 adults + 1 nen</option><option>2 adults + 2 nens</option><option>3 adults</option><option>4 adults</option></select>
+    </div>
+    <button class="btn solid" type="submit">Veure disponibilitat</button>
+  </form>
+  <p class="note" id="bookNote" aria-live="polite"></p>
+</div>
+
+<section class="section intro" id="casa">
+  <div class="wrap inner">
+    <span class="label">La casa</span>
+    <p class="lede">La Casa Vella és la nostra casa de poble familiar al Bedorc, un petit refugi envoltat de vinyes. Murs de pedra originals i tranquil·litat en cada racó.</p>
+    <p class="intro-sub">Barcelona, els cellers del Penedès i els castells de la comarca són a tocar. Però aquí, els matins comencen a poc a poc.</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="wrap split">
+    <div class="media" style="--collage: url(img/gerro.jpg)"><div class="photo"><img src="img/escala-entrada.jpg" alt="Escala de rajola i entrada de la casa, amb la llum càlida del rebedor" loading="lazy"></div></div>
+    <div class="text">
+      <span class="label">Restaurada amb respecte</span>
+      <h2 data-script="restaurada amb amor">Murs que guarden més d'un segle d'històries</h2>
+      <p>Pedra que ha vist passar generacions, sostres de fusta vista i racons restaurats amb paciència i estima. La casa conserva l'ànima de l'arquitectura tradicional, i ara també tot el confort per quedar-s'hi uns dies sense mirar el rellotge.</p>
+      <a class="btn" href="#apartaments">Veure els allotjaments</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="apartaments" style="padding-top:0">
+  <div class="wrap">
+    <div class="head-row">
+      <div><span class="label">Allotjaments</span><h2 data-script="les nostres estances">Dos apartaments i dues habitacions</h2></div>
+      <a class="btn" href="#reservar">Consultar disponibilitat</a>
+    </div>
+    <p class="stays-intro">Habitacions amb bany privat, apartaments complets per a estades més llargues i un jardí amb terrassa per gaudir de l'aire lliure.</p>
+    <div class="stays">
+      <article class="stay" id="montserrat">
+        <button class="stay-cover" type="button" data-stay="montserrat" aria-label="Veure les fotos de Montserrat">
+          <span class="photo"><img src="img/apt-sala-2.jpg" alt="" loading="lazy"></span>
+          <img class="plaque" src="img/nom-montserrat.png" alt="Apartament Montserrat" loading="lazy">
+          <span class="count">Veure fotos</span>
+        </button>
+        <div class="stay-body">
+          <span class="label">Apartament</span>
+          <h3>Montserrat</h3>
+          <ul class="feats"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 18v-3.5A3.5 3.5 0 0 0 17.5 11H11v3"/><circle cx="7" cy="11.5" r="1.8"/></svg>1 dormitori</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-1.7 1-3 3.2-3 6h3v12"/></svg>Cuina equipada</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-2Z"/><path d="M6 12V6a2 2 0 0 1 3.7-1M7 19l-1 2M17 19l1 2"/></svg>Bany privat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r=".9" fill="currentColor"/></svg>Wifi gratuït</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg>Aire condicionat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg>Smart TV</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M10 17V7.5h3.2a3 3 0 0 1 0 6H10"/></svg>Aparcament</li></ul>
+          <p>La muntanya que es veu des del Bedorc, i el seu nom. Un apartament complet per a estades més llargues.</p>
+          <div class="stay-actions"><button class="btn" type="button" data-stay="montserrat">Veure fotos</button><a class="btn solid" href="#reservar">Reservar</a></div>
+        </div>
+      </article>
+      <article class="stay" id="la-pineda">
+        <button class="stay-cover" type="button" data-stay="la-pineda" aria-label="Veure les fotos de La Pineda">
+          <span class="photo"><img src="img/apt-dormitori-3.jpg" alt="" loading="lazy"></span>
+          <img class="plaque" src="img/nom-la-pineda.png" alt="Apartament La Pineda" loading="lazy">
+          <span class="count">Veure fotos</span>
+        </button>
+        <div class="stay-body">
+          <span class="label">Apartament</span>
+          <h3>La Pineda</h3>
+          <ul class="feats"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 18v-3.5A3.5 3.5 0 0 0 17.5 11H11v3"/><circle cx="7" cy="11.5" r="1.8"/></svg>Dormitori doble</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-1.7 1-3 3.2-3 6h3v12"/></svg>Cuina equipada</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-2Z"/><path d="M6 12V6a2 2 0 0 1 3.7-1M7 19l-1 2M17 19l1 2"/></svg>Bany privat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r=".9" fill="currentColor"/></svg>Wifi gratuït</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg>Aire condicionat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg>Smart TV</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M10 17V7.5h3.2a3 3 0 0 1 0 6H10"/></svg>Aparcament</li></ul>
+          <p>Amb el nom dels pins que envolten el poble. Espai, cuina pròpia i calma per quedar-s'hi uns dies.</p>
+          <div class="stay-actions"><button class="btn" type="button" data-stay="la-pineda">Veure fotos</button><a class="btn solid" href="#reservar">Reservar</a></div>
+        </div>
+      </article>
+      <article class="stay" id="les-vinyes">
+        <button class="stay-cover" type="button" data-stay="les-vinyes" aria-label="Veure les fotos de Les Vinyes">
+          <span class="photo"><img src="img/hab-armari.jpg" alt="" loading="lazy"></span>
+          <img class="plaque" src="img/nom-les-vinyes.png" alt="Habitació Les Vinyes" loading="lazy">
+          <span class="count">Veure fotos</span>
+        </button>
+        <div class="stay-body">
+          <span class="label">Habitació</span>
+          <h3>Les Vinyes</h3>
+          <ul class="feats"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.5c1.9.8 3.2 2.8 3.5 5.5"/></svg>2 persones</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 18v-3.5A3.5 3.5 0 0 0 17.5 11H11v3"/><circle cx="7" cy="11.5" r="1.8"/></svg>Llit doble</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-2Z"/><path d="M6 12V6a2 2 0 0 1 3.7-1M7 19l-1 2M17 19l1 2"/></svg>Bany privat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r=".9" fill="currentColor"/></svg>Wifi gratuït</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg>Aire condicionat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg>Smart TV</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M10 17V7.5h3.2a3 3 0 0 1 0 6H10"/></svg>Aparcament</li></ul>
+          <p>Per la tradició vitivinícola que ha modelat el paisatge. Llit de forja, terra hidràulic i l'armari antic de la casa.</p>
+          <div class="stay-actions"><button class="btn" type="button" data-stay="les-vinyes">Veure fotos</button><a class="btn solid" href="#reservar">Reservar</a></div>
+        </div>
+      </article>
+      <article class="stay" id="figarot">
+        <button class="stay-cover" type="button" data-stay="figarot" aria-label="Veure les fotos de Figarot">
+          <span class="photo"><img src="img/rajola-flor.jpg" alt="" loading="lazy"></span>
+          <img class="plaque" src="img/nom-figarot.png" alt="Habitació Figarot" loading="lazy">
+          <span class="count">Veure fotos</span>
+        </button>
+        <div class="stay-body">
+          <span class="label">Habitació</span>
+          <h3>Figarot</h3>
+          <ul class="feats"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.5c1.9.8 3.2 2.8 3.5 5.5"/></svg>2 persones</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18V7M3 14h18v4M21 18v-3.5A3.5 3.5 0 0 0 17.5 11H11v3"/><circle cx="7" cy="11.5" r="1.8"/></svg>Llit doble</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-2Z"/><path d="M6 12V6a2 2 0 0 1 3.7-1M7 19l-1 2M17 19l1 2"/></svg>Bany privat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r=".9" fill="currentColor"/></svg>Wifi gratuït</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg>Aire condicionat</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/><path d="M8 21h8"/></svg>Smart TV</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M10 17V7.5h3.2a3 3 0 0 1 0 6H10"/></svg>Aparcament</li></ul>
+          <p>Amb el nom de la figuera, l'arbre de les cases de pagès. Una habitació tranquil·la amb bany privat.</p>
+          <div class="stay-actions"><button class="btn" type="button" data-stay="figarot">Veure fotos</button><a class="btn solid" href="#reservar">Reservar</a></div>
+        </div>
+      </article>
+    </div>
+    <div class="inside">
+      <div class="text">
+        <span class="label">Com són per dins</span>
+        <h3>Despertar sota bigues centenàries, amb la llum del Bedorc</h3>
+        <p>Cada allotjament conserva les bigues de fusta de la casa, pintades de verd, amb mobles antics i detalls fets a mà. Els apartaments tenen cuina pròpia; les habitacions, bany privat.</p>
+        <ul class="amen">
+          <li>Aire condicionat i calefacció</li>
+          <li>Wifi ràpid gratuït</li>
+          <li>Aparcament gratuït</li>
+          <li>Bany privat a totes les habitacions</li>
+          <li>Smart TV i nevera</li>
+          <li>Cuina equipada als apartaments</li>
+          <li>Tovalloles i roba de llit incloses</li>
+        </ul>
+        <button class="btn" id="allPhotos" type="button">Veure totes les fotos</button>
+      </div>
+      <div class="inside-photos" data-set="all">
+        <button class="a" data-i="0" aria-label="Ampliar foto"><div class="photo"><img src="img/escala-entrada.jpg" alt="Escala de rajola i entrada de la casa" loading="lazy"></div></button>
+        <button class="b" data-i="1" aria-label="Ampliar foto"><div class="photo"><img src="img/rebedor.jpg" alt="Rebedor amb mirall daurat i porta al carrer" loading="lazy"></div></button>
+        <button class="c" data-i="2" aria-label="Ampliar foto"><div class="photo"><img src="img/llibre.jpg" alt="Llibre de La Casa Vella sobre una màquina de cosir antiga" loading="lazy"></div></button>
+        <button class="d" data-i="3" aria-label="Ampliar foto"><div class="photo"><img src="img/rajola-flor.jpg" alt="Flor sobre el terra hidràulic" loading="lazy"></div></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="restaurant" style="padding-top:0">
+  <div class="wrap split flip">
+    <div class="media" style="--collage: url(img/rotul.jpg)"><div class="photo"><img src="img/restaurant-barra.jpg" alt="Barra del restaurant amb taulell de fusta, prestatges il·luminats i el segell de La Casa Vella" loading="lazy"></div></div>
+    <div class="text">
+      <span class="label">Restaurant</span>
+      <h2 data-script="a la planta baixa">Del cafè del matí a la copa de vi</h2>
+      <p>A la planta baixa us espera el nostre restaurant: un espai de llum càlida, pedra i fusta on començar el dia amb un bon cafè i acabar-lo amb una copa de vi del Penedès.</p>
+      <p>Quan arriba la temporada, la terrassa s'omple amb l'olor dels calçots a la brasa. És el racó on sempre hi ha algú de la família, a punt de recomanar-vos rutes i racons de la zona.</p>
+      <a class="btn" href="#contacte">Reservar taula</a>
+    </div>
+  </div>
+</section>
+
+<section class="section history" id="historia">
+  <div class="wrap">
+    <div class="split flip">
+      <div class="media" style="--collage: url(img/postal-bedorc.jpg)"><div class="photo"><img src="img/historia-carrer.jpg" alt="Carrer del Bedorc, foto antiga que es fon amb la foto actual" loading="lazy"></div></div>
+      <div class="text">
+        <span class="label">Història · Casa Parellada</span>
+        <h2 data-script="Casa Parellada">Una casa de pagès que torna a tenir vida</h2>
+        <ol class="timeline">
+          <li><span class="year">1898</span><div><h3>La construcció</h3><p>La casa es va construir entre els anys 1898 i 1900.</p></div></li>
+          <li><span class="year">S. XX</span><div><h3>Anys de pagesia</h3><p>Durant molts anys els propietaris van viure de la pagesia.</p></div></li>
+          <li><span class="year">&nbsp;</span><div><h3>L'ampliació</h3><p>S'hi van afegir una cort, un galliner i una petita quadra pel «Macho», el cavall que treballava la terra i transportava les collites.</p></div></li>
+          <li><span class="year">&nbsp;</span><div><h3>La casa buida</h3><p>La família es va anar fent gran i, sense descendència, la casa va quedar buida.</p></div></li>
+          <li><span class="year">Avui</span><div><h3>La Casa Vella</h3><p>Ara forma part del projecte de la nostra família.</p></div></li>
+        </ol>
+      </div>
+    </div>
+    <figure class="postcard">
+      <img src="img/postal-bedorc.jpg" alt="Postal antiga en blanc i negre d'un carrer del Bedorc amb arbres i balcons" loading="lazy">
+      <figcaption><span class="label">Postal antiga</span><p>El Bedorc, quan els carrers eren de terra i la casa encara vivia de la pagesia.</p></figcaption>
+    </figure>
+    <div class="seal-head"><span class="label">El nostre segell</span><h3>Cinc elements del Bedorc</h3></div>
+    <div class="symbols">
+      <article><span class="label">I</span><h3>Fulla de parra</h3><p>La tradició vitivinícola que ha modelat el paisatge i la vida de la casa durant segles.</p></article>
+      <article><span class="label">II</span><h3>Raïm</h3><p>L'abundància de les collites i la història agrícola de la terra fèrtil del Bedorc.</p></article>
+      <article><span class="label">III</span><h3>Branca d'olivera</h3><p>Pau, longevitat i resistència, i els oliverars que formen part del paisatge des de sempre.</p></article>
+      <article><span class="label">IV</span><h3>Ocell</h3><p>La fauna del Bedorc i l'harmonia entre la casa i la natura que l'envolta.</p></article>
+      <article><span class="label">V</span><h3>Montserrat</h3><p>La silueta que es veu des del Bedorc, vincle espiritual i cultural amb la muntanya.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="section quote" aria-label="Cita">
+  <div class="wrap inner">
+    <span class="iso" aria-hidden="true"></span>
+    <blockquote>«Amb un hisop entintat va marcar cada cosa amb el seu nom: taula, cadira, rellotge, porta, paret, llit, cassola.»</blockquote>
+    <cite>Gabriel García Márquez · Cent anys de solitud</cite>
+  </div>
+</section>
+
+<section class="section" id="galeria">
+  <div class="wrap">
+    <div class="head-row"><div><span class="label">Galeria</span><h2 data-script="racons i detalls">La casa en imatges</h2></div></div>
+    <div class="gallery" id="gallery" data-set="gal">
+      <button class="g1" data-i="0" aria-label="Ampliar foto"><div class="photo"><img src="img/escala-entrada.jpg" alt="Escala de rajola i entrada de la casa" loading="lazy"></div></button>
+      <button class="g2" data-i="1" aria-label="Ampliar foto"><div class="photo"><img src="img/montserrat-vinyes.jpg" alt="Vinyes amb Montserrat al fons" loading="lazy"></div></button>
+      <button class="g3" data-i="2" aria-label="Ampliar foto"><div class="photo"><img src="img/rotul.jpg" alt="Rètol de fusta de La Casa Vella sobre la porta" loading="lazy"></div></button>
+      <button class="g4" data-i="3" aria-label="Ampliar foto"><div class="photo"><img src="img/llibre.jpg" alt="Llibre de La Casa Vella sobre una màquina de cosir antiga" loading="lazy"></div></button>
+      <button class="g5" data-i="4" aria-label="Ampliar foto"><div class="photo"><img src="img/gerro.jpg" alt="Gerro amb flors seques al costat de la finestra" loading="lazy"></div></button>
+      <button class="g6" data-i="5" aria-label="Ampliar foto"><div class="photo"><img src="img/mirall.jpg" alt="Mirall antic de marc daurat" loading="lazy"></div></button>
+      <button class="g7" data-i="6" aria-label="Ampliar foto"><div class="photo"><img src="img/rebedor.jpg" alt="Rebedor amb terra de toves i porta al carrer" loading="lazy"></div></button>
+      <button class="g8" data-i="7" aria-label="Ampliar foto"><div class="photo"><img src="img/rajola-flor.jpg" alt="Flor sobre el terra hidràulic" loading="lazy"></div></button>
+    </div>
+  </div>
+</section>
+
+<section class="section history" id="entorn">
+  <div class="wrap split">
+    <div class="media" style="--collage: url(img/montserrat-vinyes.jpg)"><div class="photo"><img style="object-position: 18% center" src="img/bedorc-capvespre.jpg" alt="El Bedorc al capvespre, entre pinedes i camps, amb Montserrat al fons" loading="lazy"></div></div>
+    <div class="text">
+      <span class="label">L'entorn</span>
+      <h2 data-script="el nostre entorn">El Bedorc, amb Montserrat a la vista</h2>
+      <p>El Bedorc és un petit paradís al cor de l'Anoia: vinyes, boscos i camps de conreu a tocar dels cellers del Penedès. Des de la casa, la silueta de Montserrat marca l'horitzó.</p>
+      <p>A peu o en bicicleta, les rutes surten de la mateixa porta: camins entre vinyes, ermites i pobles amb història.</p>
+      <ul class="dist">
+        <li><span>Montserrat</span><span>Distància per confirmar</span></li>
+        <li><span>Barcelona</span><span>Molt a prop</span></li>
+        <li><span>Aeroport del Prat</span><span>Distància per confirmar</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="reviews" id="opinions" aria-label="Opinions a Google">
+  <div class="wrap">
+    <div class="reviews-head">
+      <span class="g-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12.2c0-.6-.1-1.2-.2-1.7H12v3.3h4.8a4.2 4.2 0 0 1-1.8 2.7v2.2h2.9c1.7-1.6 2.6-3.9 2.6-6.5Z"/><path d="M12 21c2.4 0 4.4-.8 5.9-2.2L15 16.5c-.8.5-1.8.9-3 .9-2.3 0-4.3-1.6-5-3.7H4v2.3A9 9 0 0 0 12 21Z"/><path d="M7 13.7a5.4 5.4 0 0 1 0-3.4V8H4a9 9 0 0 0 0 8l3-2.3Z"/><path d="M12 6.6c1.3 0 2.5.5 3.4 1.3L18 5.4A9 9 0 0 0 4 8l3 2.3c.7-2.1 2.7-3.7 5-3.7Z"/></svg><span>Opinions a Google</span></span>
+      <div class="stars" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z"/></svg></div>
+      <h2>El que diuen els nostres hostes</h2>
+      <p>Aquí es mostraran les ressenyes reals de Google de La Casa Vella, amb la puntuació i les opinions més recents.</p>
+      <div class="reviews-actions">
+        <a class="btn solid" href="https://www.google.com/maps/search/?api=1&amp;query=La+Casa+Vella+El+Bedorc" target="_blank" rel="noopener">Llegir les ressenyes a Google</a>
+        <a class="btn" href="https://www.google.com/maps/search/?api=1&amp;query=La+Casa+Vella+El+Bedorc" target="_blank" rel="noopener">Deixa'ns la teva opinió</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section contact" id="contacte">
+  <div class="wrap inner">
+    <div class="brand">
+      <img src="img/logo-light.png" alt="La Casa Vella" loading="lazy">
+      <h2>Escriu-nos, t'esperem</h2>
+      <div class="lines">
+        <div class="copy-row"><span>El Bedorc · Adreça per confirmar</span></div>
+        <div class="copy-row"><span id="phone">+34 667 40 98 59</span><button data-copy="phone">Copiar</button></div>
+        <div class="copy-row"><span id="mail">hola@lacasavella.cat</span><button data-copy="mail">Copiar</button></div>
+      </div>
+    </div>
+    <form id="contactForm" aria-label="Formulari de contacte">
+      <label class="label" for="cname">Nom</label><input id="cname" required placeholder="El teu nom">
+      <label class="label" for="cmail">Correu</label><input id="cmail" type="email" required placeholder="tu@correu.com">
+      <label class="label" for="cmsg">Missatge</label><textarea id="cmsg" rows="3" placeholder="Dates, nombre de persones, preguntes…"></textarea>
+      <button class="btn" type="submit">Enviar missatge</button>
+      <p class="sent" id="sent" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<div class="draft" style="margin-top:0">Esborrany · Fotos encara sense separar per allotjament. Falten la capacitat de cada allotjament i les dades de contacte.</div>
+<footer>
+  <div class="wrap foot-grid">
+    <div class="foot-brand">
+      <img src="img/logo-light.png" alt="La Casa Vella, 1898, El Bedorc" loading="lazy">
+      <p>Casa de poble familiar al Bedorc, entre vinyes i amb Montserrat a l'horitzó.</p>
+    </div>
+    <div>
+      <h3>Contacte</h3>
+      <ul>
+        <li>El Bedorc · adreça per confirmar</li>
+        <li>+34 667 40 98 59</li>
+        <li><a href="https://wa.me/34667409859" target="_blank" rel="noopener">WhatsApp: +34 667 40 98 59</a></li>
+        <li>hola@lacasavella.cat</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Segueix-nos</h3>
+      <div class="social">
+        <a href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor"/></svg></a>
+        <a href="https://www.facebook.com/" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 8h3V4h-3a4 4 0 0 0-4 4v3H7v4h3v6h4v-6h3l1-4h-4V8.5a.5.5 0 0 1 .5-.5Z"/></svg></a>
+        <a href="https://wa.me/34667409859" target="_blank" rel="noopener" aria-label="WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7L4 20Z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-1.8-1.8l.8-1-1-2L9 9.5Z"/></svg></a>
+      </div>
+      <p class="handle">@lacasavella · compte per confirmar</p>
+    </div>
+    <div>
+      <h3>Explora</h3>
+      <ul>
+        <li><a href="#apartaments">Allotjaments</a></li>
+        <li><a href="#restaurant">Restaurant</a></li>
+        <li><a href="#historia">Història</a></li>
+        <li><a href="#entorn">El Bedorc</a></li>
+        <li><a href="#opinions">Opinions</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap foot-legal">
+    <span>© 2026 La Casa Vella · El Bedorc · Núm. registre turístic per confirmar</span>
+    <div><a href="#contacte">Avís legal</a><a href="#contacte">Privacitat</a><a href="#contacte">Cookies</a></div>
+  </div>
+</footer>
+
+<div class="phone-view" id="phoneView" hidden role="dialog" aria-modal="true" aria-label="Vista mòbil">
+  <div class="phone-bar"><span>Vista mòbil</span><button type="button" id="phoneClose">Tancar</button></div>
+  <div class="phone"><iframe id="phoneFrame" name="lcv-mobile" title="La Casa Vella en un mòbil"></iframe></div>
+</div>
+
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Foto ampliada">
+  <button class="close" id="lbClose">Tancar</button>
+  <img id="lbImg" alt="">
+  <div class="bar"><button id="lbPrev">Anterior</button><span id="lbCount"></span><button id="lbNext">Següent</button></div>
+</div>
+
+<div class="rail" aria-label="Accés ràpid"><a href="#reservar">Reservar</a><a href="#contacte">Contacte</a></div>
+
+<div class="variants" role="group" aria-label="Propostes de disseny">
+  <span>Propostes</span>
+  <button type="button" data-v="1" title="Inspirada en Mas Grimosach">1<em>Finca</em></button>
+  <button type="button" data-v="2" title="Inspirada en Oller del Mas">2<em>Celler</em></button>
+  <button type="button" data-v="3" title="Inspirada en Son Brull">3<em>Santuari</em></button>
+  <button type="button" data-v="4" title="Inspirada en Es Racó d'Artà i Off Grid">4<em>Respira</em></button>
+  <button type="button" data-v="5" title="Inspirada en La Vella Farga i Mas d'en Bruno">5<em>Masia</em></button>
+  <span class="sep">Portada</span>
+  <button type="button" class="ph" data-h="1" style="--t: url(img/hero-vinyes-cel.jpg)" title="Vinyes i Montserrat, cel blau"><b>A</b></button>
+  <button type="button" class="ph" data-h="2" style="--t: url(img/hero-vinyes-capvespre.jpg)" title="Vinyes al capvespre"><b>B</b></button>
+  <button type="button" class="ph" data-h="3" style="--t: url(img/hero-vinyes-sol.jpg)" title="Vinyes amb llum de tarda"><b>C</b></button>
+  <button type="button" class="ph" data-h="4" style="--t: url(img/montserrat-vinyes.jpg)" title="Vinyes i pinedes"><b>D</b></button>
+  <button type="button" class="ph" data-h="5" style="--t: url(img/bedorc-capvespre.jpg)" title="El Bedorc al capvespre"><b>E</b></button>
+  <span class="sep"></span>
+  <button type="button" id="mobileBtn" class="mob" title="Veure la web com en un mòbil"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg>Mòbil</button>
+</div>
+
+<script>
+// Design proposals and hero photo: #opcio-2 or #opcio-2-foto-3 link straight to a combination
+(() => {
+  const HEROES = { 1: ['hero-vinyes-cel', 'center 62%', 'Vinyes i Montserrat, cel blau'], 2: ['hero-vinyes-capvespre', 'center 40%', 'Vinyes al capvespre amb Montserrat'], 3: ['hero-vinyes-sol', 'center 40%', 'Vinyes amb llum de tarda'], 4: ['montserrat-vinyes', 'center 55%', 'Vinyes i pinedes'], 5: ['bedorc-capvespre', '18% center', 'El Bedorc al capvespre'] };
+  const vBtns = [...document.querySelectorAll('.variants button[data-v]')], hBtns = [...document.querySelectorAll('.variants button[data-h]')];
+  const hero = document.getElementById('heroImg');
+  let v = '1', h = '1';
+  const save = () => { try { localStorage.setItem('lcv-variant', v); localStorage.setItem('lcv-hero', h); } catch (e) {} try { history.replaceState(null, '', '#opcio-' + v + '-foto-' + h); } catch (e) {} };
+  function apply() {
+    document.documentElement.dataset.variant = v;
+    vBtns.forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v));
+    hBtns.forEach(b => b.setAttribute('aria-pressed', b.dataset.h === h));
+    hero.src = 'img/' + HEROES[h][0] + '.jpg'; hero.style.objectPosition = HEROES[h][1];
+    hero.alt = HEROES[h][2];
+  }
+  // Design 5 rotates the cover between photos A, E and B
+  const SLIDES = ['1', '5', '2'];
+  let timer = null;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function slideshow() {
+    clearInterval(timer); timer = null; hero.style.opacity = 1;
+    if (v !== '5' || reduce) return;
+    if (!SLIDES.includes(h)) { h = '1'; apply(); }
+    timer = setInterval(() => {
+      hero.style.opacity = 0;
+      setTimeout(() => { h = SLIDES[(SLIDES.indexOf(h) + 1) % SLIDES.length]; apply(); hero.style.opacity = 1; }, 700);
+    }, 6000);
+  }
+  hero.style.transition = 'opacity .7s ease';
+  vBtns.forEach(b => b.addEventListener('click', () => { v = b.dataset.v; apply(); save(); slideshow(); }));
+  // Phone preview: the same page in a 390px frame
+  if (window.name === 'lcv-mobile') document.documentElement.classList.add('embedded');
+  const pv = document.getElementById('phoneView'), pf = document.getElementById('phoneFrame');
+  if (pv) {
+  document.getElementById('mobileBtn').addEventListener('click', () => {
+    pf.src = location.href.split('#')[0] + '#opcio-' + v + '-foto-' + h;
+    pv.hidden = false; document.getElementById('phoneClose').focus();
+  });
+  document.getElementById('phoneClose').addEventListener('click', () => { pv.hidden = true; pf.src = 'about:blank'; });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !pv.hidden) document.getElementById('phoneClose').click();
+    // Hidden shortcut: the M key toggles the phone preview
+    if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey && !e.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && window.name !== 'lcv-mobile') {
+      if (pv.hidden) document.getElementById('mobileBtn').click(); else document.getElementById('phoneClose').click();
+    }
+  });
+  }
+  hBtns.forEach(b => b.addEventListener('click', () => { h = b.dataset.h; apply(); save(); slideshow(); }));
+  const m = location.hash.match(/^#opcio-([1-5])(?:-foto-([1-5]))?$/);
+  if (m) { v = m[1]; h = m[2] || h; }
+  else { try { v = localStorage.getItem('lcv-variant') || v; h = localStorage.getItem('lcv-hero') || h; } catch (e) {} }
+  // Final design: proposal 5 (Masia) with the A/E/B cover rotation
+  v = '5'; if (!['1', '5', '2'].includes(h)) h = '1';
+  apply();
+  slideshow();
+})();
+const menuBtn = document.getElementById('menuBtn'), nav = document.getElementById('mainNav');
+menuBtn.addEventListener('click', () => { const o = nav.classList.toggle('open'); menuBtn.setAttribute('aria-expanded', o); });
+nav.addEventListener('click', e => { if (e.target.tagName === 'A') { nav.classList.remove('open'); menuBtn.setAttribute('aria-expanded', false); } });
+
+// Lodgify: paste the booking page link from Lodgify (Website → Booking page, or the "Book now" link).
+// While it is empty, the form only shows a summary of the stay.
+const LODGIFY_URL = '';
+// Booking: default dates, then hand the search over to Lodgify
+const fin = document.getElementById('in'), fout = document.getElementById('out'), note = document.getElementById('bookNote');
+const iso = d => d.toISOString().slice(0, 10);
+const t = new Date(); t.setDate(t.getDate() + 14); fin.value = iso(t); t.setDate(t.getDate() + 2); fout.value = iso(t);
+fin.min = iso(new Date());
+document.getElementById('bookForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const n = Math.round((new Date(fout.value) - new Date(fin.value)) / 864e5);
+  if (!(n > 0)) { note.textContent = "La data de sortida ha de ser posterior a la d'arribada."; return; }
+  const g = document.getElementById('guests').value;
+  const adults = parseInt(g, 10) || 2, kids = parseInt((g.split('+')[1] || '0'), 10) || 0;
+  if (LODGIFY_URL) {
+    const u = new URL(LODGIFY_URL);
+    u.searchParams.set('arrival', fin.value); u.searchParams.set('departure', fout.value);
+    u.searchParams.set('adults', adults); if (kids) u.searchParams.set('children', kids);
+    note.textContent = 'Obrint la reserva…';
+    location.assign(u.toString());
+    return;
+  }
+  note.textContent = `${n} ${n === 1 ? 'nit' : 'nits'}, ${g}. La reserva en línia s'activarà aviat; mentrestant, truca'ns o escriu-nos per WhatsApp al +34 667 40 98 59.`;
+});
+
+document.getElementById('contactForm').addEventListener('submit', e => {
+  e.preventDefault();
+  document.getElementById('sent').textContent = "Formulari d'exemple: encara no està connectat a cap correu.";
+});
+document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {
+  const el = document.getElementById(b.dataset.copy);
+  navigator.clipboard.writeText(el.textContent).then(() => { b.textContent = 'Copiat'; setTimeout(() => b.textContent = 'Copiar', 1500); })
+    .catch(() => { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
+}));
+
+// Lightbox: each photo group opens its full set
+const ALL = ['restaurant-barra', 'hab-armari', 'escala-entrada', 'rebedor', 'rotul', 'llibre', 'gerro', 'mirall', 'tirador', 'escala', 'rajola', 'rajola-flor',
+  'apt-sala-2', 'apt-cuina', 'apt-dormitori-3', 'apt-bany', 'apt-sala', 'apt-cuina-detall', 'apt-dormitori-2', 'apt-passadis', 'apt-dormitori-4', 'apt-detall-rosa', 'apt-dormitori-1', 'apt-tovalloles'];
+const SETS = { all: ALL.map(n => [n, 'La Casa Vella']) };
+const APT = ['apt-sala-2', 'apt-cuina', 'apt-dormitori-3', 'apt-bany', 'apt-sala', 'apt-cuina-detall', 'apt-dormitori-2', 'apt-passadis', 'apt-dormitori-4', 'apt-detall-rosa', 'apt-dormitori-1', 'apt-tovalloles'];
+const STAY_SETS = {
+  'montserrat': APT,
+  'la-pineda': ['apt-dormitori-3', 'apt-dormitori-2', 'apt-sala', 'apt-cuina-detall', 'apt-bany', 'apt-passadis', 'apt-sala-2', 'apt-cuina', 'apt-dormitori-4', 'apt-dormitori-1', 'apt-tovalloles', 'apt-detall-rosa'],
+  'les-vinyes': ['hab-armari', 'mirall', 'llibre', 'tirador', 'rajola', 'gerro'],
+  'figarot': ['rajola-flor', 'hab-armari', 'tirador', 'escala', 'mirall', 'rajola'],
+};
+const STAY_NAMES = { 'montserrat': 'Apartament Montserrat', 'la-pineda': 'Apartament La Pineda', 'les-vinyes': 'Habitació Les Vinyes', 'figarot': 'Habitació Figarot' };
+for (const k in STAY_SETS) SETS['stay-' + k] = STAY_SETS[k].map(n => [n, STAY_NAMES[k]]);
+SETS.gal = [...document.querySelectorAll('#gallery img')].map(i => [i.getAttribute('src').slice(4, -4), i.alt]);
+const lb = document.getElementById('lightbox'), lbImg = document.getElementById('lbImg'), lbCount = document.getElementById('lbCount');
+let set = [], cur = 0, opener = null;
+function show(i) {
+  cur = (i + set.length) % set.length;
+  lbImg.src = `img/${set[cur][0]}.jpg`; lbImg.alt = set[cur][1];
+  lbCount.textContent = `${cur + 1} / ${set.length}`;
+}
+document.querySelectorAll('[data-set]').forEach(group => group.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+  set = SETS[group.dataset.set]; opener = b;
+  const n = b.querySelector('img').getAttribute('src').slice(4, -4), i = set.findIndex(x => x[0] === n); show(i < 0 ? 0 : i); lb.hidden = false; document.getElementById('lbClose').focus();
+})));
+document.querySelectorAll('[data-stay]').forEach(b => b.addEventListener('click', () => {
+  set = SETS['stay-' + b.dataset.stay]; opener = b; show(0); lb.hidden = false; document.getElementById('lbClose').focus();
+}));
+document.getElementById('allPhotos').addEventListener('click', e => {
+  set = SETS.all; opener = e.currentTarget; show(0); lb.hidden = false; document.getElementById('lbClose').focus();
+});
+document.getElementById('lbClose').onclick = () => { lb.hidden = true; opener && opener.focus(); };
+document.getElementById('lbPrev').onclick = () => show(cur - 1);
+document.getElementById('lbNext').onclick = () => show(cur + 1);
+document.addEventListener('keydown', e => {
+  if (lb.hidden) return;
+  if (e.key === 'Escape') document.getElementById('lbClose').click();
+  if (e.key === 'ArrowLeft') show(cur - 1);
+  if (e.key === 'ArrowRight') show(cur + 1);
+});
+</script>

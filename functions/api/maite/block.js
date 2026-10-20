@@ -11,6 +11,7 @@ export async function onRequestPost({ request, env, data }) {
   if (!isDate(b.first) || !isDate(b.until) || b.until <= b.first || b.until > addDays(b.first, 400)) return json({ error: 'dates' }, 400);
   if (!stays.every(s => configured(env, s))) return json({ error: 'not_configured' }, 503);
   const note = String(b.note || '').trim().slice(0, 200);
+  if (!note) return json({ error: 'note' }, 400);
   const cals = await Promise.all(stays.map(s => calendar(env, s)));
   const clash = (await Promise.all(cals.map(async (cal, i) => (await cal.conflicts(b.first, b.until)).map(e => asBooking(stays[i], e))))).flat();
   if (clash.length) return json({ error: 'unavailable', with: clash }, 409);

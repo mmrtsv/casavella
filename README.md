@@ -48,9 +48,14 @@ Cada allotjament té un Google Calendar a info@casavellarural.com, compartit amb
 
 Variables a Cloudflare Pages (Settings → Variables and secrets): `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `GOOGLE_SA_EMAIL`, `GOOGLE_SA_KEY`, `CAL_MONTSERRAT`, `CAL_LA_PINEDA`, `CAL_LES_VINYES`, `CAL_FIGAROT`, `SITE_URL`. Mentre no hi siguin, el formulari mostra el preu i remet al telèfon i al WhatsApp.
 
-## Formulari de contacte
+## Correus (Resend)
 
-`functions/api/contact.js` envia el missatge a info@casavellarural.com amb [Resend](https://resend.com), amb l'adreça de l'hoste com a resposta. Cal crear un compte a Resend, verificar-hi el domini casavellarural.com i afegir a Cloudflare Pages la variable `RESEND_API_KEY` (opcionals: `CONTACT_TO`, per defecte info@casavellarural.com, i `CONTACT_FROM`, per defecte `La Casa Vella <web@casavellarural.com>`). Mentre no hi sigui, el botó obre el correu de l'hoste amb el missatge ja escrit.
+`lib/email.js` té les plantilles, amb els colors i la tipografia de la marca, i les envia amb [Resend](https://resend.com) (pla gratuït: 100 correus al dia).
+
+- Formulari de contacte (`functions/api/contact.js`): el missatge arriba a info@casavellarural.com (respondre'l li arriba a l'hoste) i l'hoste rep una còpia. Mentre no hi hagi clau, el botó obre el correu de l'hoste amb el missatge ja escrit.
+- Reserva (`functions/api/stripe-webhook.js`): quan el pagament es completa, l'hoste rep la confirmació i la casa un avís amb les dades. Si el banc encara ha de confirmar el pagament, s'envia «reserva rebuda» i, quan es cobra, la confirmació.
+
+Per activar-ho: compte a Resend amb info@casavellarural.com → Domains → afegir casavellarural.com (amb Cloudflare, el botó «Auto configure» hi posa els registres DNS) → API Keys → crear una clau amb permís d'enviament → a Cloudflare Pages, variable `RESEND_API_KEY`. Opcionals: `CONTACT_TO` (per defecte info@casavellarural.com) i `CONTACT_FROM` (per defecte `La Casa Vella <info@casavellarural.com>`).
 
 ## Pendent
 

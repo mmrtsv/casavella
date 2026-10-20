@@ -3,8 +3,9 @@
 // Paid later (bank payments): the dates are kept as "pending" until Stripe confirms or fails it.
 // If the dates were taken meanwhile (two guests paying at once), the payment is refunded.
 import { STAYS, calendar, stripe, verifyStripe, json, euros } from '../../lib/booking.js';
+import { send, bookingConfirmation, bookingNotice } from '../../lib/email.js';
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, waitUntil }) {
   const body = await request.text();
   if (!env.STRIPE_WEBHOOK_SECRET || !(await verifyStripe(env, body, request.headers.get('stripe-signature')))) return json({ error: 'signature' }, 400);
   const event = JSON.parse(body);
@@ -41,19 +42,31 @@ export async function onRequestPost({ request, env }) {
     start: { date: m.checkin }, end: { date: m.checkout },
     colorId: waiting ? '5' : '10', extendedProperties: { private: { lcv: waiting ? 'pending' : 'paid', session: s.id } },
   };
+  // Confirmation to the guest and a notice to the house; a failed email never fails the webhook
+  const notify = () => {
+    const meta = { ...m, ...c };
+    waitUntil(Promise.all([
+      c.email && send(env, bookingConfirmation(env, meta, s.amount_total, waiting)),
+      send(env, bookingNotice(env, meta, s.amount_total, waiting)),
+    ]).catch(() => {}));
+  };
 
   const existing = await mine();
   if (existing) {
-    if (existing.extendedProperties.private.lcv !== 'paid') await cal.patch(existing.id, booking);
+    const was = existing.extendedProperties.private.lcv;
+    if (was !== 'paid') await cal.patch(existing.id, booking);
+    if (was === 'pending' && paidNow) notify(); // the bank payment has cleared
     return json({ ok: true });
   }
   const old = m.event && await cal.get(m.event);
   if (old && old.status !== 'cancelled' && old.extendedProperties?.private?.lcv === 'hold') {
     await cal.patch(m.event, booking);
+    notify();
     return json({ ok: true });
   }
   if ((await cal.conflicts(m.checkin, m.checkout)).length === 0) {
     await cal.create(booking);
+    notify();
     return json({ ok: true });
   }
   // Someone else completed a booking for these dates first

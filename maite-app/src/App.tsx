@@ -6,17 +6,19 @@ import { usePage, type Page } from './lib/route';
 import { reload, useStore } from './lib/store';
 import { setPalette, useUI, getPalette } from './lib/ui';
 import { Calendar, CalendarActions } from './pages/Calendar';
+import Home from './pages/Home';
 
 const Bookings = lazy(() => import('./pages/Bookings'));
 const Prices = lazy(() => import('./pages/Prices'));
 const Discounts = lazy(() => import('./pages/Discounts'));
 const Rules = lazy(() => import('./pages/Rules'));
 const Stays = lazy(() => import('./pages/Stays'));
+const Emails = lazy(() => import('./pages/Emails'));
 const Windows = lazy(() => import('./windows/Windows'));
 const Palette = lazy(() => import('./shell/Palette'));
 const Toasts = lazy(() => import('./parts/Toasts'));
 
-const TITLES: Record<Page, string> = { calendar: 'Calendari', bookings: 'Reserves', prices: 'Preus', discounts: 'Descomptes', rules: 'Normes', stays: 'Allotjaments' };
+const TITLES: Record<Page, string> = { home: 'Inici', calendar: 'Calendari', bookings: 'Reserves', prices: 'Preus', discounts: 'Descomptes', rules: 'Normes', stays: 'Allotjaments', emails: 'Correus' };
 
 // Placeholder with the page's final footprint, so nothing jumps when data arrives
 function Loading() {
@@ -53,12 +55,14 @@ export function App() {
         )}
         {!ready ? <Loading /> : (
           <Suspense fallback={<Loading />}>
+            {page === 'home' && <Home />}
             {page === 'calendar' && <Calendar />}
             {page === 'bookings' && <Bookings />}
             {page === 'prices' && <Prices />}
             {page === 'discounts' && <Discounts />}
             {page === 'rules' && <Rules />}
             {page === 'stays' && <Stays />}
+            {page === 'emails' && <Emails />}
           </Suspense>
         )}
       </Shell>

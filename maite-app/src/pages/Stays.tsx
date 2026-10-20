@@ -8,6 +8,7 @@ import { Choice, Field } from '../parts/fields';
 import { Dialog } from '../parts/Sheet';
 import { done, toastError } from '../parts/toast';
 import type { StayContent } from '../lib/types';
+import { leave, useGuard } from '../lib/guard';
 
 const photoUrl = (src: string) => (src.startsWith('/') ? src : '/' + src);
 const Icon = ({ svg }: { svg: string }) => (
@@ -28,11 +29,8 @@ export default function Stays() {
 
   useEffect(() => { loadContent().catch(toastError); }, []);
   useEffect(() => { if (content && stay) { setDraft(structuredClone(content.stays[stay])); setDirty(false); setIconsFor(null); } }, [content, stay]);
-  useEffect(() => {
-    const warn = (e: BeforeUnloadEvent) => { if (dirty) e.preventDefault(); };
-    addEventListener('beforeunload', warn); return () => removeEventListener('beforeunload', warn);
-  }, [dirty]);
 
+  useGuard(dirty, save);
   if (!content || !draft) return <div><Skeleton className="mb-4 h-9 w-80 rounded-xl" /><Skeleton className="h-[520px] rounded-3xl" /></div>;
   const edit = (patch: Partial<StayContent>) => { setDraft(d => ({ ...d!, ...patch })); setDirty(true); };
   const feats = draft.feats, photos = draft.photos;
@@ -41,8 +39,7 @@ export default function Stays() {
 
   const switchTo = (id: string) => {
     if (id === stay) return;
-    if (dirty && !confirm('Hi ha canvis sense desar. Els vols descartar?')) return;
-    setStay(id);
+    leave(() => setStay(id));
   };
   async function upload(files: FileList | null) {
     const list = [...(files || [])];
@@ -54,15 +51,15 @@ export default function Stays() {
     }
   }
   async function save() {
-    if (uploading) return toastError(new Error('Espera que acabin de pujar les fotos'));
-    setBusy(true);
+    if (uploading) { toastError(new Error('Espera que acabin de pujar les fotos')); return false; }
+    setBusy(true); let ok = false;
     try {
       const d = await api<{ stay: StayContent }>('stays', { method: 'PUT', body: { stay, ...draft, feats: draft!.feats.filter(x => x.text.trim()) } });
       setContent({ ...content!, stays: { ...content!.stays, [stay]: d.stay } });
       setStays(getState().stays.map(s => s.id === stay ? { ...s, name: `${d.stay.kind} ${d.stay.name}`, short: d.stay.name, max: d.stay.max } : s));
-      setDirty(false); done('Allotjament desat');
+      setDirty(false); done('Allotjament desat'); ok = true;
     } catch (e) { toastError(e); }
-    setBusy(false);
+    setBusy(false); return ok;
   }
   const site = `${location.protocol}//${location.hostname.replace(/^maite\./, '')}/#${stay}`;
 

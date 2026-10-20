@@ -1,11 +1,11 @@
 // Client file: Resum (where the stay is at and the checklist), Reserva (dates, payment, policy), Client (contact, papers, other stays)
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button, Checkbox, ListBox, Select, Spinner, Tabs, TextArea, TextField, Label, Input, buttonVariants, type Key } from '@heroui/react';
-import { Mail, Phone, MessageCircle, CreditCard, CalendarDays, Check } from 'lucide-react';
+import { Mail, Phone, MessageCircle, CreditCard, CalendarDays, Check, FolderOpen, Upload } from 'lucide-react';
 import { SideSheet } from '../parts/Sheet';
 import { Status } from '../parts/Status';
 import { toastError, done } from '../parts/toast';
-import { api } from '../lib/api';
+import { api, uploadDoc } from '../lib/api';
 import { allBookings, keyOf, setBooking, shortName, stayName, reload, useStore } from '../lib/store';
 import { closeDetail, openCancel, openDetail, useUI } from '../lib/ui';
 import { day, euro, longDay, nightsBetween, nitsTxt, range, stamp, TODAY, cap } from '../lib/dates';
@@ -52,7 +52,7 @@ async function save(b: Booking, set: Record<string, unknown>) {
 function Row({ ok, title, sub, children, control }: { ok?: boolean; title: ReactNode; sub?: ReactNode; children?: ReactNode; control?: ReactNode }) {
   return (
     <div className="flex items-center gap-3.5 px-4 py-3.5">
-      {control ?? <span className={`grid size-[22px] shrink-0 place-items-center rounded-full ${ok ? 'bg-accent text-accent-foreground' : 'ring-1 ring-inset ring-border'}`} aria-hidden="true">{ok && <Check size={13} strokeWidth={3} />}</span>}
+      {control ?? <span className={`grid size-[22px] shrink-0 place-items-center rounded-full ${ok ? 'bg-accent text-accent-foreground' : 'shadow-[inset_0_0_0_1.5px_color-mix(in_oklab,var(--foreground)_38%,transparent)]'}`} aria-hidden="true">{ok && <Check size={13} strokeWidth={3} />}</span>}
       <div className="min-w-0 flex-1"><div className="text-sm font-medium">{title}</div>{sub && <div className="mt-0.5 text-[13px] text-muted">{sub}</div>}</div>
       {children}
     </div>
@@ -61,8 +61,35 @@ function Row({ ok, title, sub, children, control }: { ok?: boolean; title: React
 function Tick({ b, k, label }: { b: Booking; k: 'docs' | 'police' | 'settled'; label: string }) {
   return (
     <Checkbox isSelected={!!b[k]} onChange={v => save(b, { [k]: v })} aria-label={label} className="shrink-0">
-      <Checkbox.Content><Checkbox.Control className="!rounded-full"><Checkbox.Indicator /></Checkbox.Control></Checkbox.Content>
+      <Checkbox.Content><Checkbox.Control className="!size-[22px] !rounded-full [&_svg]:!size-3"><Checkbox.Indicator /></Checkbox.Control></Checkbox.Content>
     </Checkbox>
+  );
+}
+// ID documents: tick by hand, or upload photos or PDFs, which go to the booking's folder in Google Drive and tick it
+function Docs({ b }: { b: Booking }) {
+  const input = useRef<HTMLInputElement>(null);
+  const [left, setLeft] = useState(0);
+  const upload = async (files: FileList | null) => {
+    const list = [...(files || [])];
+    if (!list.length) return;
+    let ok = 0;
+    for (const [i, f] of list.entries()) {
+      setLeft(list.length - i);
+      try { setBooking(await uploadDoc(b, f)); ok++; } catch (e) { toastError(e); }
+    }
+    setLeft(0); if (input.current) input.current.value = '';
+    if (ok) done(ok === 1 ? 'Document desat a Drive' : `${ok} documents desats a Drive`);
+  };
+  return (
+    <Row title="Documents d'identitat" sub={b.docsFolder ? `A Google Drive${b.ref ? `, reserva ${b.ref}` : ''}` : 'DNI o passaport de tots els hostes adults.'} control={<Tick b={b} k="docs" label="Documents d'identitat" />}>
+      <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
+        {b.docsFolder && <a className={btn()} href={b.docsFolder} target="_blank" rel="noopener"><FolderOpen size={15} />Carpeta</a>}
+        <Button size="sm" variant="secondary" isPending={left > 0} onPress={() => input.current?.click()}>
+          {left > 0 ? <><Spinner size="sm" color="current" />Pujant{left > 1 ? ` (${left})` : ''}</> : <><Upload size={15} />Puja</>}
+        </Button>
+        <input ref={input} type="file" multiple accept="image/*,application/pdf" className="hidden" aria-label="Documents d'identitat" onChange={e => upload(e.target.files)} />
+      </div>
+    </Row>
   );
 }
 function Moment({ b, k, label, when }: { b: Booking; k: 'checkin' | 'checkout'; label: string; when: string }) {
@@ -114,8 +141,7 @@ function Overview({ b, toClient }: { b: Booking; toClient: () => void }) {
         {b.kind === 'manual' && <Row title="Cobrada" sub={`${b.amount != null ? euro(b.amount) : 'Sense import'}${b.method ? `, ${METHOD[b.method]}` : ''}`} control={<Tick b={b} k="settled" label="Cobrada" />} />}
         <Row ok={!!b.email} title="Correu" sub={b.email || 'Falta'}><Button size="sm" variant="ghost" onPress={toClient}>{b.email ? 'Canvia' : 'Afegeix'}</Button></Row>
         <Row ok={!!b.phone} title="Telèfon" sub={b.phone || 'Falta'}><Button size="sm" variant="ghost" onPress={toClient}>{b.phone ? 'Canvia' : 'Afegeix'}</Button></Row>
-        <Row title="Documents d'identitat" sub="DNI o passaport de tots els hostes adults." control={<Tick b={b} k="docs" label="Documents d'identitat" />} />
-        <Row title="Registre de viatgers" sub="Comunicat als Mossos d'Esquadra." control={<Tick b={b} k="police" label="Registre de viatgers" />} />
+        <Docs b={b} />
         <Moment b={b} k="checkin" label="Entrada" when={`${day(b.first)}, a partir de les ${rules?.checkin || '15:00'}`} />
         <Moment b={b} k="checkout" label="Sortida" when={`${day(b.until)}, abans de les ${rules?.checkout || '11:00'}`} />
       </div>
@@ -211,8 +237,7 @@ function ClientTab({ b }: { b: Booking }) {
       <Contact b={b} k="email" label="Correu" type="email" />
       <Contact b={b} k="phone" label="Telèfon" type="tel" />
       <div className="divide-y divide-separator overflow-hidden rounded-2xl bg-surface ring-1 ring-border">
-        <Row title="Documents d'identitat" sub="DNI o passaport de tots els hostes adults." control={<Tick b={b} k="docs" label="Documents d'identitat" />} />
-        <Row title="Registre de viatgers" sub="Comunicat als Mossos d'Esquadra." control={<Tick b={b} k="police" label="Registre de viatgers" />} />
+        <Docs b={b} />
       </div>
       <h3 className="pt-2 text-base font-semibold">Altres estades</h3>
       {history.length ? (

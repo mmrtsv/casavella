@@ -8,6 +8,7 @@ import { ensure, setSettings, stayName, shortName, useStore } from '../lib/store
 import { Check, Choice, Field } from '../parts/fields';
 import { done, toastError } from '../parts/toast';
 import type { Settings } from '../lib/types';
+import { leave, useGuard } from '../lib/guard';
 
 type Sel = { a: string; b?: string; only?: number[] } | null;
 
@@ -55,7 +56,7 @@ export default function Prices() {
   return (
     <div className="fade-in">
       <ToggleButtonGroup aria-label="Allotjament" selectionMode="single" disallowEmptySelection selectedKeys={new Set([stay])}
-        onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) { setStay(String(v)); setSel(null); } }} size="sm" className="mb-5 max-w-full overflow-x-auto">
+        onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) leave(() => { setStay(String(v)); setSel(null); }); }} size="sm" className="mb-5 max-w-full overflow-x-auto">
         {stays.map(s => <ToggleButton key={s.id} id={s.id}>{shortName(s.id)}</ToggleButton>)}
       </ToggleButtonGroup>
 
@@ -120,12 +121,14 @@ function NormalPanel({ stay, S }: { stay: string; S: Settings }) {
   const st = S.stays[stay];
   const [base, setBase] = useState(String(st.base)); const [weekend, setWeekend] = useState(st.weekend == null ? '' : String(st.weekend));
   const [busy, setBusy] = useState(false);
+  const dirty = base !== String(st.base) || weekend !== (st.weekend == null ? '' : String(st.weekend));
   const save = async () => {
-    setBusy(true);
-    try { setSettings(await api<Settings>('settings', { method: 'PUT', body: { stays: { [stay]: { base, weekend: weekend === '' ? null : weekend } } } })); done('Preu desat'); }
+    setBusy(true); let ok = false;
+    try { setSettings(await api<Settings>('settings', { method: 'PUT', body: { stays: { [stay]: { base, weekend: weekend === '' ? null : weekend } } } })); done('Preu desat'); ok = true; }
     catch (e) { toastError(e); }
-    setBusy(false);
+    setBusy(false); return ok;
   };
+  useGuard(dirty, save);
   return (
     <Panel title="Preu normal" sub={stayName(stay)}>
       <Field label="Preu per nit (€)" value={base} onChange={setBase} inputMode="decimal" />
@@ -141,8 +144,9 @@ function DaysPanel({ stay, dates, sel, S, nightOf, onDone }: { stay: string; dat
   const specials = [...new Set(dates.map(d => S.days[stay]?.[d]?.price ?? null))];
   const mins = [...new Set(dates.map(d => S.days[stay]?.[d]?.min ?? null))];
   const prices = [...new Set(dates.map(d => nightOf(d).price))];
-  const [price, setPrice] = useState(specials.length === 1 && specials[0] != null ? String(specials[0]) : '');
-  const [min, setMin] = useState(mins.length === 1 && mins[0] ? String(mins[0]) : 'normal');
+  const price0 = specials.length === 1 && specials[0] != null ? String(specials[0]) : '', min0 = mins.length === 1 && mins[0] ? String(mins[0]) : 'normal';
+  const [price, setPrice] = useState(price0);
+  const [min, setMin] = useState(min0);
   const [also, setAlso] = useState<string[]>([]);
   const [busy, setBusy] = useState<'' | 'save' | 'reset'>('');
   useEffect(() => { setAlso([]); }, [stay]);
@@ -150,11 +154,13 @@ function DaysPanel({ stay, dates, sel, S, nightOf, onDone }: { stay: string; dat
   const title = sel.only ? `Divendres i dissabtes (${dates.length} nits)` : dates.length === 1 ? cap(day(a, { weekday: 'long', day: 'numeric', month: 'long' })) : `${day(a, { day: 'numeric', month: 'short' })} – ${day(z, { day: 'numeric', month: 'short' })} (${dates.length} dies)`;
   const now = `${stayName(stay)}. Ara: ${prices.length === 1 ? euro(prices[0] * 100) : `entre ${euro(Math.min(...prices) * 100)} i ${euro(Math.max(...prices) * 100)}`} la nit${mins.length === 1 && mins[0] ? `, mínim ${nitsTxt(mins[0])}` : ''}.`;
   const send = async (body: { price: string | null; min: string | null }, kind: 'save' | 'reset', msg: string) => {
-    setBusy(kind);
-    try { const r = await api<{ days: Settings['days'] }>('days', { method: 'POST', body: { stays: [stay, ...also], dates, ...body } }); setSettings({ ...S, days: r.days }); done(msg); onDone(); }
+    setBusy(kind); let ok = false;
+    try { const r = await api<{ days: Settings['days'] }>('days', { method: 'POST', body: { stays: [stay, ...also], dates, ...body } }); setSettings({ ...S, days: r.days }); done(msg); ok = true; onDone(); }
     catch (e) { toastError(e); }
-    setBusy('');
+    setBusy(''); return ok;
   };
+  const apply = () => send({ price: price === '' ? null : price, min: min === 'normal' ? null : min }, 'save', 'Dies actualitzats');
+  useGuard(price !== price0 || min !== min0, apply);
   return (
     <Panel title={title} sub={now}>
       <Field label="Preu per nit (€)" value={price} onChange={setPrice} inputMode="decimal" placeholder="Preu normal" />
@@ -165,7 +171,7 @@ function DaysPanel({ stay, dates, sel, S, nightOf, onDone }: { stay: string; dat
         {stays.filter(s => s.id !== stay).map(s => <Check key={s.id} isSelected={also.includes(s.id)} onChange={v => setAlso(x => v ? [...x, s.id] : x.filter(y => y !== s.id))}>{s.name}</Check>)}
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button isPending={busy === 'save'} onPress={() => send({ price: price === '' ? null : price, min: min === 'normal' ? null : min }, 'save', 'Dies actualitzats')}>{busy === 'save' && <Spinner size="sm" color="current" />}Aplica</Button>
+        <Button isPending={busy === 'save'} onPress={apply}>{busy === 'save' && <Spinner size="sm" color="current" />}Aplica</Button>
         <Button variant="secondary" isPending={busy === 'reset'} onPress={() => send({ price: null, min: null }, 'reset', 'Dies tornats al preu normal')}>Torna al normal</Button>
         <Button variant="ghost" onPress={onDone}><X size={15} />Desfés la selecció</Button>
       </div>

@@ -1,6 +1,6 @@
 // One shared store for what Maite reads: stays, settings, calendar entries (loaded by date windows and merged by id)
 import { useSyncExternalStore } from 'react';
-import { api, setStayNames } from './api';
+import { api, setStayNames, type ApiError } from './api';
 import { addDays, TODAY } from './dates';
 import type { Booking, Settings, Stay, Content } from './types';
 
@@ -37,14 +37,20 @@ export async function ensure(from: string, to: string) { if (!covered(from, to))
 let extra: [string, string] | null = null;
 export async function reload(window?: [string, string]) {
   if (window) extra = window;
-  loaded = [];
-  try {
-    const settings = await api<Settings>('settings');
-    emit({ settings });
-    await load(addDays(TODAY, -120), addDays(TODAY, 280));
-    if (extra && !covered(...extra)) await load(...extra);
-    emit({ ready: true, error: '' });
-  } catch (e) { emit({ ready: true, error: (e as Error).message }); }
+  // A busy moment at Google or Cloudflare (often right after a save) gets one more try before it shows
+  for (let attempt = 0; ; attempt++) {
+    loaded = [];
+    try {
+      const settings = await api<Settings>('settings');
+      emit({ settings });
+      await load(addDays(TODAY, -120), addDays(TODAY, 280));
+      if (extra && !covered(...extra)) await load(...extra);
+      return emit({ ready: true, error: '' });
+    } catch (e) {
+      if (attempt < 1 && (e as ApiError).code !== 'access') { await new Promise(r => setTimeout(r, 1200)); continue; }
+      return emit({ ready: true, error: (e as Error).message });
+    }
+  }
 }
 export const setBooking = (b: Booking) => { const map = new Map(state.bookings); map.set(keyOf(b), b); emit({ bookings: map }); };
 export const setSettings = (settings: Settings) => emit({ settings });

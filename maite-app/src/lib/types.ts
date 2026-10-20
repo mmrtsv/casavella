@@ -5,7 +5,7 @@ export interface Booking {
   id: string; stay: string; first: string; until: string; kind: Kind; title: string; blocks: boolean;
   name: string; email: string; phone: string; guests: number | null; amount: number | null;
   settled: boolean; refunded: number; was: string; source: string; arrival: string; notes: string;
-  stripe: string; link: string; checkin: string; checkout: string; docs: boolean; police: boolean;
+  stripe: string; link: string; checkin: string; checkout: string; docs: boolean; police: boolean; docsFolder: string; ref: string;
   method: string; memo: string; policy: Policy | null;
 }
 export interface Stay { id: string; name: string; short: string; max: number }

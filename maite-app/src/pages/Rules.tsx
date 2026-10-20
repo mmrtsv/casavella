@@ -6,6 +6,7 @@ import { setSettings, useStore } from '../lib/store';
 import { Choice, Field } from '../parts/fields';
 import { done } from '../parts/toast';
 import { policyText } from '../lib/words';
+import { useGuard } from '../lib/guard';
 import type { Policy, Settings } from '../lib/types';
 
 const PRESETS: Record<string, Policy & { name: string }> = {
@@ -38,12 +39,17 @@ export default function Rules() {
   const advance = ADVANCE.some(a => a.id === f.maxAdvance) ? ADVANCE : [...ADVANCE, { id: f.maxAdvance, name: `${f.maxAdvance} dies abans` }];
   const choose = (p: Policy) => setC({ fullDays: p.fullDays == null ? '' : String(p.fullDays), partialPct: String(p.partialPct || 0), partialDays: p.partialDays == null ? '' : String(p.partialDays) });
   const custom = !Object.values(PRESETS).some(p => same(p, policy));
+  const was = S.cancel;
+  const dirty = f.minNights !== String(r.minNights) || f.maxNights !== String(r.maxNights) || f.minAdvance !== String(r.minAdvance) || f.maxAdvance !== String(r.maxAdvance)
+    || f.checkin !== r.checkin || f.checkout !== r.checkout
+    || (policy.fullDays ?? null) !== (was.fullDays ?? null) || policy.partialPct !== (was.partialPct || 0) || (policy.partialPct > 0 && (policy.partialDays ?? null) !== (was.partialDays ?? null));
   const save = async () => {
-    setBusy(true); setErr('');
-    try { setSettings(await api<Settings>('settings', { method: 'PUT', body: { rules: f, cancel: policy } })); done('Normes desades'); }
+    setBusy(true); setErr(''); let ok = false;
+    try { setSettings(await api<Settings>('settings', { method: 'PUT', body: { rules: f, cancel: policy } })); done('Normes desades'); ok = true; }
     catch (e) { setErr((e as Error).message); }
-    setBusy(false);
+    setBusy(false); return ok;
   };
+  useGuard(dirty, save);
   return (
     <div className="fade-in rounded-3xl bg-surface p-5 shadow-[var(--surface-shadow)] ring-1 ring-border sm:p-8">
       <Section title="Estada" hint="El mínim es pot canviar per a dies concrets (agost, ponts…) des de Preus.">

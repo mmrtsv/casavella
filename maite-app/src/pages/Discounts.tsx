@@ -8,6 +8,7 @@ import { setSettings, useStore } from '../lib/store';
 import { Field } from '../parts/fields';
 import { Glass } from '../lib/glass';
 import { done } from '../parts/toast';
+import { useGuard } from '../lib/guard';
 import type { Settings } from '../lib/types';
 
 type Tier = { nights: string; pct: string };
@@ -19,14 +20,16 @@ export default function Discounts() {
   const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
   const set = (i: number, k: keyof Tier) => (v: string) => setTiers(ts => ts.map((t, j) => j === i ? { ...t, [k]: v } : t));
   const add = () => setTiers(ts => { const last = ts[ts.length - 1]; return [...ts, { nights: String(last ? +last.nights + 4 : 2), pct: String(last ? Math.min(+last.pct + 5, 90) : 5) }]; });
+  const dirty = JSON.stringify(tiers) !== JSON.stringify(S.discounts.map(t => ({ nights: String(t.nights), pct: String(t.pct) })));
   const save = async () => {
-    setBusy(true); setErr('');
+    setBusy(true); setErr(''); let ok = false;
     try {
       const next = await api<Settings>('settings', { method: 'PUT', body: { discounts: tiers.map(t => ({ nights: Number(t.nights), pct: Number(t.pct) })) } });
-      setSettings(next); setTiers(next.discounts.map(t => ({ nights: String(t.nights), pct: String(t.pct) }))); done('Descomptes desats');
+      setSettings(next); setTiers(next.discounts.map(t => ({ nights: String(t.nights), pct: String(t.pct) }))); done('Descomptes desats'); ok = true;
     } catch (e) { setErr((e as Error).message); }
-    setBusy(false);
+    setBusy(false); return ok;
   };
+  useGuard(dirty, save);
   const s = stays[0], base = s ? S.stays[s.id].base : 0;
   const pctFor = (n: number) => tiers.filter(t => n >= +t.nights).reduce((b, t) => Math.max(b, +t.pct || 0), 0);
 

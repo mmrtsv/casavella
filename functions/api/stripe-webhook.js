@@ -2,7 +2,7 @@
 // Only completed bookings reach the calendar. Paid: the booking is written to the stay's calendar.
 // Paid later (bank payments): the dates are kept as "pending" until Stripe confirms or fails it.
 // If the dates were taken meanwhile (two guests paying at once), the payment is refunded.
-import { STAYS, calendar, stripe, verifyStripe, json, euros } from '../../lib/booking.js';
+import { STAYS, calendar, stripe, verifyStripe, json, euros, settings, policyText } from '../../lib/booking.js';
 import { send, bookingConfirmation, bookingNotice } from '../../lib/email.js';
 
 export async function onRequestPost({ request, env, waitUntil }) {
@@ -40,16 +40,23 @@ export async function onRequestPost({ request, env, waitUntil }) {
       `Stripe: https://dashboard.stripe.com/${s.livemode ? '' : 'test/'}payments/${s.payment_intent}`,
     ].filter(Boolean).join('\n'),
     start: { date: m.checkin }, end: { date: m.checkout },
-    colorId: waiting ? '5' : '10', extendedProperties: { private: { lcv: waiting ? 'pending' : 'paid', session: s.id } },
+    colorId: waiting ? '5' : '10',
+    // Read back by Maite (the back office) to list the booking and refund it
+    extendedProperties: { private: { lcv: waiting ? 'pending' : 'paid', session: s.id, pi: s.payment_intent || '', amount: String(s.amount_total ?? ''),
+      guests: String(m.guests || ''), policy: m.policy || '', name: c.name || '', email: c.email || '', phone: c.phone || '' } },
   };
   // Confirmation to the guest and a notice to the house; a failed email never fails the webhook
-  const notify = () => {
-    const meta = { ...m, ...c };
-    waitUntil(Promise.all([
-      c.email && send(env, bookingConfirmation(env, meta, s.amount_total, waiting)),
+  const notify = () => waitUntil((async () => {
+    const meta = { ...m, ...c }, S = await settings(env);
+    // The policy the guest accepted at checkout ("fullDays/partialDays/partialPct"), else today's
+    const [f, d, pct] = (m.policy || '').split('/');
+    const cancel = m.policy ? { fullDays: f === '' ? null : +f, partialDays: d === '' ? null : +d, partialPct: +pct || 0 } : S.cancel;
+    const extra = { checkin: S.rules.checkin, checkout: S.rules.checkout, policy: policyText(cancel) };
+    await Promise.all([
+      c.email && send(env, bookingConfirmation(env, meta, s.amount_total, waiting, extra)),
       send(env, bookingNotice(env, meta, s.amount_total, waiting)),
-    ]).catch(() => {}));
-  };
+    ]);
+  })().catch(() => {}));
 
   const existing = await mine();
   if (existing) {
@@ -72,6 +79,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // Someone else completed a booking for these dates first
   if (s.payment_intent) await stripe(env, 'refunds', { payment_intent: s.payment_intent, metadata: { reason: 'dates_taken' } });
   await cal.create({ ...booking, summary: `REEMBORSADA: ${STAYS[m.stay].name}, ${c.name || ''}`, transparency: 'transparent', colorId: '11',
+    extendedProperties: { private: { ...booking.extendedProperties.private, lcv: 'refunded' } },
     description: 'Les dates ja estaven reservades quan va arribar el pagament. Stripe ha retornat els diners automàticament.\n\n' + booking.description });
   return json({ ok: true, refunded: true });
 }

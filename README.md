@@ -110,6 +110,6 @@ Cada crida de Maite comprova el testimoni de Cloudflare Access, de manera que se
 
 ## Pendent
 
-- Comptes d'Instagram i Facebook i número de registre turístic. Ara surten com a «per confirmar».
+- Número de registre turístic. Ara surt com a «per confirmar».
 - Fotos separades per allotjament i capacitat de cada un.
 - Versions en castellà i anglès.

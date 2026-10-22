@@ -108,7 +108,7 @@ No hi ha cap altra base de dades: tot el que es canvia a Maite es llegeix al mom
 
    En tots dos casos, posa la variable `DOCS_FOLDER` amb l'ID de la carpeta (el tros de l'URL després de `/folders/`). Cada reserva hi té una carpeta numerada, «05.01.07 - Nom (20/10/2026 - 23/10/2026)», que es crea quan s'hi puja el primer document. Un compte de servei no pot desar fitxers a «La meva unitat» d'una altra persona sense una d'aquestes dues opcions.
 
-7. **Copies amb Claude** (Xarxes socials): posa el secret `ANTHROPIC_API_KEY` amb una clau de l'API d'Anthropic (console.anthropic.com). Sense ella, Maite proposa els copies de referència de la pestanya Copies.
+7. **Copies amb Claude** (Xarxes socials): posa el secret `ANTHROPIC_API_KEY` amb una clau de l'API d'Anthropic (console.anthropic.com). Sense ella, Maite proposa els copies de referència de la pestanya Copies. Fa servir Claude Haiku 5.5, el model més barat: cada vegada que es demanen tres opcions costa uns 0,0005 $ (mil peticions, uns 50 cèntims), i les opcions ja escrites es guarden mentre la pàgina és oberta.
 
 Cada crida de Maite comprova el testimoni de Cloudflare Access, de manera que sense els passos 2 i 4 no s'hi pot entrar. Sense el pas 3, Maite funciona però no deixa desar preus ni normes, i la web fa servir els valors per defecte de `lib/booking.js`.
 

@@ -1,5 +1,7 @@
 // POST /api/maite/social-copy  { title, onImage, photo, n, used: [first lines of captions already chosen] }
 // Three Instagram caption options for one post of the grid, written by Claude (Anthropic API, ANTHROPIC_API_KEY).
+// Kept cheap on purpose: Claude Haiku 5.5 at low effort, a short prompt and a capped answer. One request is about
+// 600 tokens in and 800 out, so roughly $0.0005 (a thousand requests cost about half a dollar).
 // Answers { options: [{ caption, hashtags }] }. Without the key: 503 ai_not_configured, and Maite shows the copy library instead.
 import { json } from '../../../lib/booking.js';
 
@@ -36,16 +38,17 @@ export async function onRequestPost({ request, env }) {
 
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01', 'content-type': 'application/json' },
+    headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-opus-5-5', max_tokens: 8000, fallbacks: 'default',
+      // Low effort lets the model skip thinking; the cap leaves room for three captions in three languages
+      model: 'claude-haiku-5-5', max_tokens: 2500,
       output_config: { effort: 'low', format: { type: 'json_schema', schema: SCHEMA } },
       system: SYSTEM, messages: [{ role: 'user', content: post }],
     }),
   });
   const d = await r.json().catch(() => null);
   if (r.status === 429) return json({ error: 'ai_busy' }, 429);
-  if (!r.ok || !d || d.stop_reason === 'refusal') return json({ error: 'ai', detail: d?.error?.message || d?.stop_reason || r.status }, 502);
+  if (!r.ok || !d || d.stop_reason === 'refusal' || d.stop_reason === 'max_tokens') return json({ error: 'ai', detail: d?.error?.message || d?.stop_reason || r.status }, 502);
   let out;
   try { out = JSON.parse((d.content || []).find(c => c.type === 'text')?.text || ''); } catch { return json({ error: 'ai' }, 502); }
   const options = [].concat(out?.options || []).filter(o => o?.caption).slice(0, 3).map(o => ({ caption: String(o.caption).trim(), hashtags: String(o.hashtags || '').trim() }));

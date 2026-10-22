@@ -231,9 +231,12 @@ function libraryFor(t: Template): Option[] {
   return (own ? [own, ...all.filter(c => c !== own)] : all).slice(0, 3);
 }
 
+// Options Claude already wrote, per post, so closing and reopening a panel doesn't pay for them again
+const written = new Map<string, Option[]>();
+
 function CopyPanel({ post, n, data, setData, posts }: { post: Post; n: number; data: Data; setData: (d: Data) => void; posts: Post[] }) {
   const t = byId.get(post.tpl)!;
-  const [options, setOptions] = useState<Option[] | null>(null);
+  const [options, setOptions] = useState<Option[] | null>(written.get(post.id) || null);
   const [text, setText] = useState(data.copies[post.id] || '');
   const [busy, setBusy] = useState<'' | 'gen' | 'save'>('');
   const saved = data.copies[post.id] || '';
@@ -244,7 +247,7 @@ function CopyPanel({ post, n, data, setData, posts }: { post: Post; n: number; d
     try {
       const used = posts.filter(p => p.id !== post.id && data.copies[p.id]).map(p => data.copies[p.id].split('\n')[0]);
       const d = await api<{ options: Option[] }>('social-copy', { method: 'POST', body: { title: t.title, onImage: onImage(t, post.v), photo: photoAlt(t, post.v, !!post.photo), n, used } });
-      setOptions(d.options);
+      written.set(post.id, d.options); setOptions(d.options);
     } catch (e) { toastError(e); setOptions(libraryFor(t)); }
     setBusy('');
   }

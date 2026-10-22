@@ -27,8 +27,8 @@ Captions from stays we admire, for the tone only (never copy them, never name th
 Facts you may use, and no others (never invent sizes, materials, objects, dishes or prices): a village house from 1898 in El Bedorc (Anoia), one hour from Barcelona; restored to be lived slowly; among vineyards and olive groves, with Montserrat on the horizon; original stone walls, wooden beams, hydraulic tiles and a garden; two apartments, two rooms and a restaurant; Penedès wine and cava (in Catalan "el cava") close by. Plus whatever the post details say.
 
 Format:
-- Catalan first, then English, separated by a line that contains only "~". Both say the same thing naturally, not word for word. No Spanish.
-- At most one soft emoji in the whole caption (🌿 🍇 🤍 ☀️ 🍂), at the end of a line.
+- Catalan first, then English, separated by an empty line, a line that contains only "~", and another empty line. Both say the same thing naturally, not word for word. No Spanish.
+- No emojis.
 - No call to action ("book", "reserva", "link in bio", "DM"). The only exception: when the post details are about something specific to book (a dinner, a menu, a date, a weekend, a price), end every option with one gentle line: "Reserva per DM" / "DM us to book".
 - hashtags: exactly 5 on one line, niche and local, for example #LaCasaVella #ElBedorc #Anoia #slowtravel #escapadarural.
 - Never use "·" as a separator (the "l·l" of Catalan words is spelling and stays).
@@ -74,7 +74,9 @@ export async function onRequestPost({ request, env }) {
   try { out = JSON.parse((d.content || []).find(c => c.type === 'text')?.text || ''); } catch { return json({ error: 'ai' }, 502); }
   // The one slip the model still makes now and then: "a El Bedorc" for "al Bedorc"
   const village = s => s.replace(/\b(a|de) El Bedorc/g, (_, p) => (p === 'a' ? 'al' : 'del') + ' Bedorc');
-  const options = [].concat(out?.options || []).filter(o => o?.caption).slice(0, 3).map(o => ({ caption: village(String(o.caption).trim()), hashtags: String(o.hashtags || '').trim() }));
+  // House style the model doesn't always keep: no emojis, and a blank line on each side of the "~" between languages
+  const tidy = s => s.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '').replace(/[ \t]+$/gm, '').replace(/\s*\n\s*~\s*\n\s*/g, '\n\n~\n\n').trim();
+  const options = [].concat(out?.options || []).filter(o => o?.caption).slice(0, 3).map(o => ({ caption: tidy(village(String(o.caption))), hashtags: String(o.hashtags || '').trim() }));
   if (!options.length) return json({ error: 'ai' }, 502);
   return json({ options });
 }

@@ -313,31 +313,31 @@ export const PROFILE_HEAD = "<div style=\"width: 1080px;  box-sizing: border-box
 export const COPIES: Copy[] = [
  {
   "label": "Foto + logo",
-  "caption": "Una casa de poble de 1898 al cor del Bedorc, entre vinyes i oliveres, amb Montserrat a l'horitzó. 🌿\n~\nUna casa de pueblo de 1898 en el corazón del Bedorc, entre viñas y olivos, con Montserrat en el horizonte.\n~\nAn 1898 village house in the heart of El Bedorc, among vineyards and olive groves, with Montserrat on the horizon.",
+  "caption": "Hi ha cases que t'esperen. Aquesta ho fa des del 1898, entre vinyes i oliveres, amb Montserrat mirant-la de lluny. 🌿\n~\nHay casas que te esperan. Esta lo hace desde 1898, entre viñas y olivos, con Montserrat mirándola desde lejos.\n~\nSome houses wait for you. This one has since 1898, among vines and olive trees, with Montserrat watching from afar.",
   "note": "",
   "hashtags": "#LaCasaVella #ElBedorc #Anoia #escapadarural #slowtravel"
  },
  {
   "label": "Degradat verd + logo",
-  "caption": "Bon dia des del Bedorc. ☀️\n~\nBuenos días desde el Bedorc.\n~\nGood morning from El Bedorc.",
+  "caption": "La primera llum toca les vinyes i el poble encara dorm. ☀️\n~\nLa primera luz toca las viñas y el pueblo aún duerme.\n~\nFirst light on the vines, and the village still asleep.",
   "note": "Una sola línia, com Mas Grimosach i Off Grid a les fotos d'ambient.",
   "hashtags": "#LaCasaVella #ElBedorc #Anoia #casadepoble #slowliving"
  },
  {
   "label": "Cita",
-  "caption": "Murs de pedra originals, un jardí i tranquil·litat en cada racó. Aquí el temps passa a poc a poc.\n~\nMuros de piedra originales, un jardín y tranquilidad en cada rincón. Aquí el tiempo pasa despacio.\n~\nOriginal stone walls, a garden and quiet in every corner. Here, time slows down.",
+  "caption": "Aquí el temps no corre: s'asseu al jardí amb tu, entre murs de pedra que fa més d'un segle que escolten.\n~\nAquí el tiempo no corre: se sienta contigo en el jardín, entre muros de piedra que llevan más de un siglo escuchando.\n~\nHere time doesn't run. It sits with you in the garden, between stone walls that have been listening for more than a century.",
   "note": "",
   "hashtags": "#LaCasaVella #casadepoble #Anoia #slowtravel #escapadarural"
  },
  {
   "label": "Estança",
-  "caption": "Us presentem la Figarot, una de les nostres habitacions. Bigues de fusta, llum de matí i bany privat. 🤍\n~\nOs presentamos la Figarot, una de nuestras habitaciones. Vigas de madera, luz de mañana y baño privado.\n~\nMeet Figarot, one of our rooms. Wooden beams, morning light and a private bathroom.\nReserva directa a l'enllaç de la bio",
+  "caption": "La Figarot. Un llit de forja, la llum del matí a la paret i cap motiu per llevar-se aviat. 🤍\n~\nLa Figarot. Una cama de forja, la luz de la mañana en la pared y ningún motivo para madrugar.\n~\nFigarot. A wrought-iron bed, morning light on the wall and no reason to get up early.",
   "note": "",
   "hashtags": "#LaCasaVella #hotelambencant #boutiquestay #Anoia #escapadarural"
  },
  {
   "label": "Carrusel",
-  "caption": "Una casa de 1898, restaurada per viure-la a poc a poc. Bigues de fusta, rajola hidràulica i parets de pedra. Llisca per descobrir-ne els racons →\n~\nUna casa de 1898, restaurada para vivirla despacio. Vigas de madera, baldosa hidráulica y paredes de piedra.\n~\nAn 1898 house, restored to be lived slowly. Wooden beams, hydraulic tiles and stone walls.",
+  "caption": "Una casa de 1898 que es deixa descobrir a poc a poc: la rajola hidràulica, les bigues, la pedra. Llisca i entra.\n~\nUna casa de 1898 que se deja descubrir despacio: la baldosa hidráulica, las vigas, la piedra. Desliza y entra.\n~\nAn 1898 house that reveals itself slowly: the hydraulic tiles, the beams, the stone. Swipe and come in.",
   "note": "",
   "hashtags": "#LaCasaVella #casadepoble #patrimoni #Anoia #slowtravel"
  },

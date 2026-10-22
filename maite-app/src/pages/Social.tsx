@@ -240,6 +240,10 @@ function CopyPanel({ post, n, data, setData, posts }: { post: Post; n: number; d
   const [text, setText] = useState(data.copies[post.id] || '');
   const [busy, setBusy] = useState<'' | 'gen' | 'save'>('');
   const saved = data.copies[post.id] || '';
+  const editor = useRef<HTMLTextAreaElement>(null);
+  const dirty = text.trim() !== saved;
+  // An option goes into the editor first, so it can be changed before it is saved
+  const choose = (o: Option) => { setText(joinCopy(o)); requestAnimationFrame(() => { editor.current?.focus(); editor.current?.setSelectionRange(0, 0); editor.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }); };
 
   async function generate() {
     if (!data.ai) { setOptions(libraryFor(t)); return; }
@@ -274,17 +278,18 @@ function CopyPanel({ post, n, data, setData, posts }: { post: Post; n: number; d
           {options.map((o, k) => (
             <li key={k} className="flex flex-col gap-2 rounded-xl bg-surface p-3 ring-1 ring-border">
               <p className="flex-1 text-sm whitespace-pre-wrap">{joinCopy(o)}</p>
-              <Button size="sm" variant="secondary" className="self-start" onPress={() => keep(joinCopy(o))}><Check size={15} />Fes servir aquesta</Button>
+              <Button size="sm" variant="secondary" className="self-start" onPress={() => choose(o)}><Check size={15} />Tria aquesta</Button>
             </li>
           ))}
         </ul>
       )}
       <TextField value={text} onChange={setText} fullWidth>
-        <Label>{saved ? 'Copy del post' : 'Copy del post (encara sense desar)'}</Label>
-        <TextArea rows={9} />
+        <div className="flex items-center gap-2"><Label>Copy del post</Label>{dirty && text.trim() && <Tag tone="due">Sense desar</Tag>}</div>
+        <TextArea ref={editor} rows={9} placeholder="Tria una opció o escriu-lo aquí" />
       </TextField>
       <div className="flex gap-2">
-        <Button size="sm" isPending={busy === 'save'} isDisabled={!text.trim() || text.trim() === saved} onPress={() => keep(text)}>Desa</Button>
+        <Button size="sm" isPending={busy === 'save'} isDisabled={!text.trim() || !dirty} onPress={() => keep(text)}>Desa</Button>
+        {dirty && saved && <Button size="sm" variant="ghost" onPress={() => setText(saved)}>Torna al desat</Button>}
         <Button size="sm" variant="secondary" isDisabled={!text.trim()} onPress={copy}><CopyIcon size={15} />Copia</Button>
       </div>
     </div>

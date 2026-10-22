@@ -11,8 +11,10 @@ import { Art, Wide } from '../social/Art';
 import { byId, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Kind, type Template } from '../social/templates';
 
-type Post = { id: string; tpl: string; v: number; photo: string; at: string; date?: string; published?: { at: string; url: string } };
-type Insta = { connected: boolean; username?: string; detail?: string };
+type Post = { id: string; tpl: string; v: number; photo: string; at: string; date?: string; published?: { at: string; url: string; media?: string } };
+type Insta = { connected: boolean; username?: string; detail?: string; media?: Live[] };
+// A post on the Instagram account, published from Maite or from the app
+type Live = { id: string; at: string; url: string; image: string; caption: string };
 type Data = { posts: Post[]; copies: Record<string, string>; ai: boolean };
 type Option = { caption: string; hashtags: string };
 type Tab = 'posts' | 'stories' | 'highlights' | 'profile' | 'calendar' | 'copies';
@@ -285,6 +287,11 @@ function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
     return Array.from({ length: Math.ceil((lead + count) / 7) * 7 }, (_, i) => new Date(month.getFullYear(), month.getMonth(), i - lead + 1));
   }, [month]);
   const on = (day: string) => all.filter(p => (p.published ? ymd(new Date(p.published.at)) : p.date) === day);
+  // What is on Instagram, whoever published it; posts Maite published are already shown from the grid
+  const [live, setLive] = useState<Live[]>([]);
+  useEffect(() => { api<Insta>('instagram?media=1').then(d => setLive(d.media || [])).catch(() => {}); }, []);
+  const ours = new Set(all.map(p => p.published?.media).filter(Boolean));
+  const liveOn = (day: string) => live.filter(m => !ours.has(m.id) && ymd(new Date(m.at)) === day);
 
   async function plan(p: Post, date: string) {
     const before = data;
@@ -320,13 +327,17 @@ function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
                 <div className="grid gap-1 sm:grid-cols-2">
                   {list.map(p => {
                     const t = byId.get(p.tpl)!;
-                    return (
-                      <div key={p.id} title={`${t.title}${p.published ? ', publicat' : ''}`} className={p.published ? 'opacity-55' : ''}>
-                        <Art t={t} v={p.v} photo={p.photo} fit="cover" className="aspect-[3/4] w-full rounded-md" />
-                        <span className="sr-only">{t.title}{p.published ? ', publicat' : ''}</span>
-                      </div>
-                    );
+                    const art = <Art t={t} v={p.v} photo={p.photo} fit="cover" className="aspect-[3/4] w-full rounded-md" />;
+                    return p.published?.url
+                      ? <a key={p.id} href={p.published.url} target="_blank" rel="noopener" title={`${t.title}, publicat`} aria-label={`${t.title}, publicat: obre a Instagram`} className="block rounded-md opacity-60 outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-focus">{art}</a>
+                      : <div key={p.id} title={t.title} className={p.published ? 'opacity-60' : ''}>{art}<span className="sr-only">{t.title}</span></div>;
                   })}
+                  {liveOn(key).map(m => (
+                    <a key={m.id} href={m.url} target="_blank" rel="noopener" title={m.caption.split('\n')[0] || 'Publicat a Instagram'} aria-label="Publicat a Instagram: obre el post"
+                      className="block rounded-md opacity-60 outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-focus">
+                      {m.image ? <img src={m.image} alt="" loading="lazy" className="aspect-[3/4] w-full rounded-md object-cover" /> : <div className="aspect-[3/4] w-full rounded-md bg-default" />}
+                    </a>
+                  ))}
                 </div>
               </div>
             );

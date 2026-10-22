@@ -1,4 +1,5 @@
-// GET  /api/maite/instagram   { connected, username } Whether Maite can publish, and as which account
+// GET  /api/maite/instagram   { connected, username } Whether Maite can publish, and as which account.
+//      ?media=1                adds media: what the account has published (latest 100, kept 30 minutes in KV), for the calendar
 // POST /api/maite/instagram   { id, image }  Publishes a post of the grid with its saved caption. image: its JPEG, already
 //                             uploaded through /api/maite/photos ('/photos/…'); Instagram fetches it from the public web.
 // Instagram API with Instagram Login (a professional account and a Meta app with instagram_business_basic and
@@ -39,11 +40,21 @@ async function ig(env, t, path, body) {
   return d;
 }
 
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ request, env }) {
   const t = await token(env).catch(() => null);
-  if (!t) return json({ connected: false });
-  try { const me = await ig(env, t, '/me?fields=user_id,username'); return json({ connected: true, username: me.username }); }
-  catch (e) { return json({ connected: false, detail: e.message }); }
+  if (!t) return json({ connected: false, media: [] });
+  try {
+    const me = await ig(env, t, '/me?fields=user_id,username');
+    if (!new URL(request.url).searchParams.get('media')) return json({ connected: true, username: me.username });
+    let cached = JSON.parse((await env.MAITE?.get('instagram-media')) || 'null');
+    if (!cached || Date.now() - Date.parse(cached.at) > 30 * 60e3) {
+      const d = await ig(env, t, '/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&limit=100');
+      const media = (d.data || []).map(m => ({ id: m.id, at: m.timestamp, url: m.permalink, image: m.thumbnail_url || m.media_url || '', type: m.media_type, caption: (m.caption || '').slice(0, 200) }));
+      cached = { at: new Date().toISOString(), media };
+      await env.MAITE?.put('instagram-media', JSON.stringify(cached));
+    }
+    return json({ connected: true, username: me.username, media: cached.media });
+  } catch (e) { return json({ connected: false, media: [], detail: e.message }); }
 }
 
 export async function onRequestPost({ request, env, data }) {
@@ -75,6 +86,7 @@ export async function onRequestPost({ request, env, data }) {
     const now = await load(env), p = now.posts.find(x => x.id === post.id);
     if (p) p.published = { at: new Date().toISOString(), media: media.id, url: link.permalink || '', image: b.image };
     await store(env, now, data.user);
+    await env.MAITE.delete('instagram-media');
     return view(now, env);
   } catch (e) {
     return json({ error: 'ig', detail: e.message }, 502);

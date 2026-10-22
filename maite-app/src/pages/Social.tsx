@@ -1,8 +1,8 @@
 // Xarxes socials: the Instagram templates in the brand (posts, stories, highlight covers), the profile grid built from
 // the posts confirmed here, their captions, and PNGs at full size. The posts and captions live in KV (/api/maite/social).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Label, ListBox, Select, Skeleton, Spinner, Tabs, TextArea, TextField, type Key } from '@heroui/react';
-import { Check, Copy as CopyIcon, Download, ExternalLink, ImageUp, MessageSquareText, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
+import { Button, Label, ListBox, Select, Skeleton, Spinner, Tabs, TextArea, TextField, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
+import { Check, ChevronLeft, ChevronRight, Copy as CopyIcon, Download, ExternalLink, ImageUp, MessageSquareText, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
 import { api, uploadPhoto } from '../lib/api';
 import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
@@ -11,15 +11,15 @@ import { Art, Wide } from '../social/Art';
 import { byId, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Kind, type Template } from '../social/templates';
 
-type Post = { id: string; tpl: string; v: number; photo: string; at: string; published?: { at: string; url: string } };
+type Post = { id: string; tpl: string; v: number; photo: string; at: string; date?: string; published?: { at: string; url: string } };
 type Insta = { connected: boolean; username?: string; detail?: string };
 type Data = { posts: Post[]; copies: Record<string, string>; ai: boolean };
 type Option = { caption: string; hashtags: string };
-type Tab = 'posts' | 'stories' | 'highlights' | 'profile' | 'copies';
+type Tab = 'posts' | 'stories' | 'highlights' | 'profile' | 'calendar' | 'copies';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'posts', label: 'Posts' }, { id: 'stories', label: 'Stories i reels' }, { id: 'highlights', label: 'Destacats' },
-  { id: 'profile', label: 'Perfil' }, { id: 'copies', label: 'Copies' },
+  { id: 'profile', label: 'Perfil' }, { id: 'calendar', label: 'Calendari' }, { id: 'copies', label: 'Copies' },
 ];
 const KIND_OF: Partial<Record<Tab, Kind>> = { posts: 'post', stories: 'story', highlights: 'highlight' };
 const HELP: Partial<Record<Tab, string>> = {
@@ -56,6 +56,7 @@ export default function Social() {
           {TEMPLATES.filter(t => t.kind === kind).map(t => <li key={t.id}><TemplateCard t={t} data={data} setData={setData} /></li>)}
         </ul>
       )}
+      {tab === 'calendar' && (data ? <Planner data={data} setData={setData} onEmpty={() => pick('posts')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {tab === 'profile' && (data ? <Profile data={data} setData={setData} onEmpty={() => pick('posts')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {tab === 'copies' && <Library />}
     </div>
@@ -69,7 +70,7 @@ function TemplateCard({ t, data, setData }: { t: Template; data: Data | null; se
   const [busy, setBusy] = useState<'' | 'confirm' | 'png'>('');
   const file = useRef<HTMLInputElement>(null);
   useEffect(() => () => { if (own) URL.revokeObjectURL(own.url); }, [own]);
-  const at = (data?.posts || []).map((p, i) => (p.tpl === t.id ? i + 1 : 0)).filter(Boolean);
+  const at = (data?.posts || []).filter(p => !p.published).map((p, i) => (p.tpl === t.id ? i + 1 : 0)).filter(Boolean);
   const choose = (f?: File) => { if (f) { setOwn({ file: f, url: URL.createObjectURL(f) }); } };
 
   async function confirm() {
@@ -124,15 +125,19 @@ function TemplateCard({ t, data, setData }: { t: Template; data: Data | null; se
 }
 
 function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) => void; onEmpty: () => void }) {
-  const posts = data.posts.filter(p => byId.has(p.tpl));
+  // Published posts leave the plan and the preview; they are listed apart, newest first
+  const all = data.posts.filter(p => byId.has(p.tpl));
+  const posts = all.filter(p => !p.published), published = all.filter(p => p.published).sort((a, b) => b.published!.at.localeCompare(a.published!.at));
+  const [show, setShow] = useState<'planned' | 'published'>('planned');
   const [open, setOpen] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
   const [insta, setInsta] = useState<Insta | null>(null);
   const [publishing, setPublishing] = useState<Post | null>(null);
   useEffect(() => { api<Insta>('instagram').then(setInsta).catch(() => setInsta({ connected: false })); }, []);
 
-  async function order(ids: string[], msg: string) {
-    const before = data;
+  // The order only lists planned posts; published ones are kept at the end so they are never removed by it
+  async function order(planned: string[], msg: string) {
+    const ids = [...planned, ...published.map(p => p.id)], before = data;
     setData({ ...data, posts: ids.map(id => data.posts.find(p => p.id === id)!).filter(Boolean) });
     try { setData(await api<Data>('social', { method: 'PUT', body: { order: ids } })); done(msg); }
     catch (e) { setData(before); toastError(e); }
@@ -155,14 +160,25 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
     setProgress('');
   }
 
-  if (!posts.length) return (
+  const nothing = (text: string) => (
     <div className="card flex flex-wrap items-center gap-3 p-5">
-      <p className="mr-auto text-sm">Encara no hi ha cap post confirmat.</p>
+      <p className="mr-auto text-sm">{text}</p>
       <Button size="sm" variant="secondary" onPress={onEmpty}>Vés a Posts</Button>
     </div>
   );
+  if (!all.length) return nothing('Encara no hi ha cap post confirmat.');
+  const filter = published.length > 0 && (
+    <ToggleButtonGroup aria-label="Posts" selectionMode="single" disallowEmptySelection selectedKeys={new Set([show])}
+      onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) setShow(v as typeof show); }} size="sm" className="mb-5">
+      <ToggleButton id="planned">Per publicar</ToggleButton>
+      <ToggleButton id="published">Publicats</ToggleButton>
+    </ToggleButtonGroup>
+  );
+  if (show === 'published' && published.length) return <>{filter}<Published posts={published} copies={data.copies} /></>;
+  if (!posts.length) return <>{filter}{nothing('No queda cap post per publicar.')}</>;
 
   return (
+    <>{filter}
     <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
       <section className="card overflow-hidden lg:sticky lg:top-24" aria-label="Com es veurà el perfil">
         <Wide html={PROFILE_HEAD} />
@@ -207,22 +223,140 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
                     <div className="truncate text-sm font-semibold">{t.title}</div>
                     <div className="truncate text-xs text-muted">{p.photo ? 'Amb la teva foto' : `Opció ${p.v + 1}`}</div>
                     <div className="truncate text-xs text-muted">{copy ? copy.split('\n')[0] : 'Sense copy'}</div>
-                    {p.published && <div className="mt-1"><Tag tone="paid">Publicat el {new Date(p.published.at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' })}</Tag></div>}
                   </div>
                   <Button size="sm" variant={open === p.id ? 'secondary' : 'ghost'} isIconOnly aria-expanded={open === p.id} aria-label={`Copy del post ${i + 1}`} onPress={() => setOpen(open === p.id ? null : p.id)}><MessageSquareText size={16} /></Button>
-                  {p.published
-                    ? p.published.url && <a href={p.published.url} target="_blank" rel="noopener" aria-label={`Obre el post ${i + 1} a Instagram`} className="grid size-8 shrink-0 place-items-center rounded-full outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={16} /></a>
-                    : insta?.connected && t.kind === 'post' && <Button size="sm" variant="ghost" isIconOnly aria-label={`Publica el post ${i + 1} a Instagram`} onPress={() => setPublishing(p)}><Send size={16} /></Button>}
+                  {insta?.connected && t.kind === 'post' && <Button size="sm" variant="ghost" isIconOnly aria-label={`Publica el post ${i + 1} a Instagram`} onPress={() => setPublishing(p)}><Send size={16} /></Button>}
                   <DownloadButton label={`Descarrega el post ${i + 1}`} run={() => download(t, p.v, p.photo, i + 1)} />
                   <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${t.title} del perfil`} onPress={() => order(posts.filter(x => x !== p).map(x => x.id), `${t.title} tret del perfil`)}><X size={16} /></Button>
                 </div>
-                {open === p.id && <CopyPanel post={p} n={i + 1} data={data} setData={setData} posts={posts} />}
+                {open === p.id && <CopyPanel post={p} n={i + 1} data={data} setData={setData} posts={all} />}
               </li>
             );
           })}
         </ol>
       </section>
-      {publishing && <Publish post={publishing} n={posts.indexOf(publishing) + 1} caption={data.copies[publishing.id] || ''} onClose={() => setPublishing(null)} setData={setData} />}
+      {publishing && <Publish post={publishing} n={posts.indexOf(publishing) + 1} caption={data.copies[publishing.id] || ''} onClose={() => { setPublishing(null); }} setData={setData} />}
+    </div>
+    </>
+  );
+}
+
+const day = (iso: string) => new Date(iso).toLocaleDateString('ca-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+
+function Published({ posts, copies }: { posts: Post[]; copies: Record<string, string> }) {
+  return (
+    <section className="card" aria-label="Posts publicats">
+      <ol className="divide-y divide-separator">
+        {posts.map(p => {
+          const t = byId.get(p.tpl)!, copy = copies[p.id];
+          return (
+            <li key={p.id} className="flex items-center gap-3 p-3 sm:px-5">
+              <Art t={t} v={p.v} photo={p.photo} fit="cover" className="aspect-[3/4] w-11 shrink-0 rounded-md" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold">{t.title}</div>
+                <div className="truncate text-xs text-muted">Publicat el {day(p.published!.at)}</div>
+                <div className="truncate text-xs text-muted">{copy ? copy.split('\n')[0] : 'Sense copy'}</div>
+              </div>
+              {p.published!.url && (
+                <a href={p.published!.url} target="_blank" rel="noopener" className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-medium outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus">
+                  <ExternalLink size={15} />Obre a Instagram
+                </a>
+              )}
+              <DownloadButton label={`Descarrega ${t.title}`} run={() => download(t, p.v, p.photo)} />
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+// Calendari: the day each planned post is meant to go out, on a month, and what was published on each day
+const WEEK = ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'];
+const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const field = 'h-9 rounded-xl bg-field px-3 text-sm outline-none ring-1 ring-[var(--field-border)] focus-visible:ring-2 focus-visible:ring-focus';
+
+function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) => void; onEmpty: () => void }) {
+  const all = data.posts.filter(p => byId.has(p.tpl)), planned = all.filter(p => !p.published);
+  const today = ymd(new Date());
+  const [month, setMonth] = useState(() => { const first = planned.find(p => p.date)?.date; const d = first && first > today ? new Date(first + 'T12:00') : new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const days = useMemo(() => {
+    const lead = (month.getDay() + 6) % 7, count = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+    return Array.from({ length: Math.ceil((lead + count) / 7) * 7 }, (_, i) => new Date(month.getFullYear(), month.getMonth(), i - lead + 1));
+  }, [month]);
+  const on = (day: string) => all.filter(p => (p.published ? ymd(new Date(p.published.at)) : p.date) === day);
+
+  async function plan(p: Post, date: string) {
+    const before = data;
+    setData({ ...data, posts: data.posts.map(x => x.id === p.id ? { ...x, date: date || undefined } : x) });
+    try { setData(await api<Data>('social', { method: 'PUT', body: { date: { id: p.id, date } } })); }
+    catch (e) { setData(before); toastError(e); }
+  }
+
+  if (!all.length) return (
+    <div className="card flex flex-wrap items-center gap-3 p-5">
+      <p className="mr-auto text-sm">Encara no hi ha cap post confirmat.</p>
+      <Button size="sm" variant="secondary" onPress={onEmpty}>Vés a Posts</Button>
+    </div>
+  );
+  const label = month.toLocaleDateString('ca-ES', { month: 'long', year: 'numeric' });
+
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <section className="card overflow-hidden" aria-label={`Calendari de ${label}`}>
+        <div className="flex items-center gap-2 border-b border-separator p-3 sm:px-5">
+          <h2 className="mr-auto text-base font-semibold first-letter:uppercase">{label}</h2>
+          <Button size="sm" variant="ghost" onPress={() => { const d = new Date(); setMonth(new Date(d.getFullYear(), d.getMonth(), 1)); }}>Avui</Button>
+          <Button size="sm" variant="ghost" isIconOnly aria-label="Mes anterior" onPress={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}><ChevronLeft size={16} /></Button>
+          <Button size="sm" variant="ghost" isIconOnly aria-label="Mes següent" onPress={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}><ChevronRight size={16} /></Button>
+        </div>
+        <div className="grid grid-cols-7 border-b border-separator text-center text-xs text-muted">{WEEK.map(w => <div key={w} className="py-2">{w}</div>)}</div>
+        <div className="grid grid-cols-7">
+          {days.map(d => {
+            const key = ymd(d), inMonth = d.getMonth() === month.getMonth(), list = on(key);
+            return (
+              <div key={key} className={`min-h-24 border-r border-b border-separator p-1 sm:p-1.5 [&:nth-child(7n)]:border-r-0 ${inMonth ? '' : 'bg-default/40'}`}>
+                <div className={`tnum mb-1 grid size-6 place-items-center rounded-full text-xs ${key === today ? 'bg-accent font-semibold text-accent-foreground' : inMonth ? '' : 'text-muted'}`}>{d.getDate()}</div>
+                <div className="grid gap-1 sm:grid-cols-2">
+                  {list.map(p => {
+                    const t = byId.get(p.tpl)!;
+                    return (
+                      <div key={p.id} title={`${t.title}${p.published ? ', publicat' : ''}`} className={p.published ? 'opacity-55' : ''}>
+                        <Art t={t} v={p.v} photo={p.photo} fit="cover" className="aspect-[3/4] w-full rounded-md" />
+                        <span className="sr-only">{t.title}{p.published ? ', publicat' : ''}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="card" aria-label="Dates dels posts">
+        <div className="border-b border-separator p-4 sm:px-5">
+          <h2 className="text-base font-semibold">Per publicar</h2>
+          <p className="text-sm text-muted">Tria el dia de cada post. Els posts amb data passen davant, per ordre de dia. Es publiquen quan prems publicar a Perfil.</p>
+        </div>
+        {planned.length ? (
+          <ol className="divide-y divide-separator">
+            {planned.map((p, i) => {
+              const t = byId.get(p.tpl)!;
+              return (
+                <li key={p.id} className="flex items-center gap-3 p-3 sm:px-5">
+                  <Art t={t} v={p.v} photo={p.photo} fit="cover" className="aspect-[3/4] w-9 shrink-0 rounded-md" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold"><span className="tnum text-muted">{i + 1}</span> {t.title}</div>
+                    {p.date && p.date < today && <div className="text-xs text-warning">Aquest dia ja ha passat</div>}
+                  </div>
+                  <input type="date" value={p.date || ''} min={today} onChange={e => plan(p, e.target.value)} aria-label={`Dia del post ${i + 1}, ${t.title}`} className={`${field} w-[9.5rem] shrink-0`} />
+                </li>
+              );
+            })}
+          </ol>
+        ) : <p className="p-5 text-sm">No queda cap post per publicar.</p>}
+      </section>
     </div>
   );
 }

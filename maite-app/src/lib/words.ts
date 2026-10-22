@@ -16,6 +16,8 @@ export const ERRORS: Record<string, string> = {
   no_payment: 'No trobo el pagament a Stripe', access: 'La sessió ha caducat. Torna a carregar la pàgina.',
   discount: 'Revisa els descomptes: de 2 nits en amunt, entre 1 i 90 %, sense repetir nits', price: 'Revisa els preus', email: 'Revisa el correu', note: 'Escriu el motiu',
   doc_type: 'Només es poden pujar fotos (JPG, PNG, HEIC) o PDF', doc_size: 'El document és massa gran (màxim 15 MB)',
+  social_full: 'La graella ja té 150 posts: treu-ne algun abans de confirmar-ne més', ai_busy: 'Massa peticions seguides. Espera un moment i torna-ho a provar.',
+  ai_not_configured: 'Falta la clau de Claude (ANTHROPIC_API_KEY)', ai: "Claude no ha pogut escriure el copy",
   docs_not_configured: 'Falta connectar la carpeta de Google Drive dels documents', drive: 'Google Drive no ha deixat desar el document',
 };
 

@@ -76,6 +76,7 @@ Maite és el back office, a `maite.casavellarural.com`. Surt del mateix projecte
 - **Normes**: estada mínima i màxima, amb quanta antelació es pot reservar, hores d'entrada i sortida, i la política de cancel·lació (Flexible, Moderada, Estricta, No reemborsable o a mida). La web mostra la política al costat de les condicions, i cada reserva guarda la que va acceptar l'hoste: en cancel·lar-la, Maite proposa el retorn que toca.
 
 - **Allotjaments**: tipus, nom, descripció, capacitat, característiques (amb icona) i fotos de cada allotjament, amb una vista prèvia de com es veu a la web. Les fotos es poden pujar (es redueixen al navegador i es guarden a R2), afegir de les que ja té la web, reordenar arrossegant-les o amb fletxes, i la primera és la portada. Les fotos pujades que ja no fa servir cap allotjament s'esborren. La capacitat compta per a la web, els pagaments i les reserves de Maite. El rètol amb el nom (`img/nom-*.png`) és una imatge i no canvia sol.
+- **Xarxes socials**: les plantilles d'Instagram amb la marca, en pestanyes. *Posts* (1080 × 1350) i *Stories i reels* (1080 × 1920): cada plantilla té variacions («Una altra opció»), s'hi pot posar una foto pròpia i es descarrega en PNG a mida real. Els posts (i la portada de reel) es confirmen per a la graella. *Destacats*: les portades dels destacats. *Perfil*: com es veurà el perfil amb els posts confirmats; s'ordenen triant el número de cadascun (l'1 és el primer que es publica), es treuen, es descarreguen d'un en un o tota la graella (`01-detall.png`, `02-…`), i cada post té el seu copy: Claude en proposa tres en català, castellà i anglès, i es pot editar. *Copies*: els textos de referència de cada plantilla, que són els que es proposen si no hi ha la clau de Claude. Les plantilles són a `maite-app/src/social/` (`templates.ts` es genera des del disseny) i les seves fotos a `maite-app/public/social/`.
 
 Tot això s'aplica de seguida a la web i als pagaments. Les reserves fetes a Maite no segueixen les normes (es pot reservar per telèfon el mateix dia o una sola nit).
 
@@ -88,6 +89,7 @@ Tot el que hi ha al calendari continua sent la referència: el que es crea a mà
 | Reserves, dades dels hostes i la seva llista (entrada, documents…) | Google Calendar, un calendari per allotjament (a l'esdeveniment de cada reserva) | La web (disponibilitat) i Maite |
 | Pagaments i devolucions | Stripe | Maite el consulta en directe |
 | Preus, descomptes, normes, política i textos dels allotjaments | Cloudflare KV, espai `MAITE` (claus `settings` i `stays`) | La web (`/api/settings`) i Maite |
+| Posts confirmats per a Instagram, el seu ordre i els seus copies | Cloudflare KV, espai `MAITE` (clau `social`) | Maite |
 | Fotos pujades a Maite | Cloudflare R2, bucket `PHOTOS`, servides a `/photos/…` | La web i Maite |
 | Fotos originals, disseny i codi | Aquest repositori (`img/`, `index.html`, `functions/`, `lib/`) | Cloudflare Pages el publica a cada push |
 
@@ -105,6 +107,8 @@ No hi ha cap altra base de dades: tot el que es canvia a Maite es llegeix al mom
    - **La teva unitat**: a la consola d'administració de Google Workspace → Seguretat → Controls d'API → Delegació a tot el domini, afegeix l'ID de client del compte de servei amb l'àmbit `https://www.googleapis.com/auth/drive`, i posa la variable `GOOGLE_DRIVE_AS` amb el correu del propietari de la carpeta (per exemple `info@casavellarural.com`).
 
    En tots dos casos, posa la variable `DOCS_FOLDER` amb l'ID de la carpeta (el tros de l'URL després de `/folders/`). Cada reserva hi té una carpeta numerada, «05.01.07 - Nom (20/10/2026 - 23/10/2026)», que es crea quan s'hi puja el primer document. Un compte de servei no pot desar fitxers a «La meva unitat» d'una altra persona sense una d'aquestes dues opcions.
+
+7. **Copies amb Claude** (Xarxes socials): posa el secret `ANTHROPIC_API_KEY` amb una clau de l'API d'Anthropic (console.anthropic.com). Sense ella, Maite proposa els copies de referència de la pestanya Copies.
 
 Cada crida de Maite comprova el testimoni de Cloudflare Access, de manera que sense els passos 2 i 4 no s'hi pot entrar. Sense el pas 3, Maite funciona però no deixa desar preus ni normes, i la web fa servir els valors per defecte de `lib/booking.js`.
 

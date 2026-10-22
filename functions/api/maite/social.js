@@ -1,30 +1,9 @@
 // GET  /api/maite/social   The Instagram posts confirmed in Xarxes socials, in grid order (1 is the first to publish), and their captions
 // POST /api/maite/social   { tpl, v, photo }  Adds a post at the end. photo: '' (the template's own) or an upload ('/photos/…')
 // PUT  /api/maite/social   { order: [ids] }  New order; posts left out are removed. Or { copy: { id, text } }  The caption of one post
-// Everything is one KV key, 'social'.
+// Everything is one KV key, 'social' (lib/social.js).
 import { json } from '../../../lib/booking.js';
-
-// The grid planned in the first Instagram mock-up (artifact), in publishing order: Maite starts from it until its own is saved
-const SEED = { posts: [
-  { id: 'grid01', tpl: 'PostLogo', v: 0, photo: '', at: '2026-10-21T22:11:40Z' },
-  { id: 'grid02', tpl: 'CarouselSlide', v: 0, photo: '', at: '2026-10-21T22:12:44Z' },
-  { id: 'grid03', tpl: 'PostRoom', v: 0, photo: '', at: '2026-10-21T22:25:21Z' },
-  { id: 'grid04', tpl: 'PostSplit', v: 0, photo: '', at: '2026-10-21T22:29:15Z' },
-  { id: 'grid05', tpl: 'PostQuote', v: 2, photo: '', at: '2026-10-21T22:20:53Z' },
-  { id: 'grid06', tpl: 'CarouselSlide', v: 3, photo: '', at: '2026-10-21T22:31:01Z' },
-  { id: 'grid07', tpl: 'PostRestaurantPlain', v: 0, photo: '', at: '2026-10-21T22:33:58Z' },
-  { id: 'grid08', tpl: 'PostGradient', v: 1, photo: '', at: '2026-10-21T22:18:20Z' },
-  { id: 'grid09', tpl: 'PostAward', v: 0, photo: '', at: '2026-10-21T22:31:44Z' },
-], copies: {} };
-const EMPTY = { posts: [], copies: {} };
-// Posts confirmed in Maite before the grid was brought over go after it, once; after the next save it is never added again
-async function load(env) {
-  const S = { ...EMPTY, ...JSON.parse((await env.MAITE.get('social')) || 'null') };
-  if (!S.seeded) S.posts = [...SEED.posts, ...S.posts.filter(p => !SEED.posts.some(x => x.id === p.id))];
-  return S;
-}
-const store = (env, S, user) => env.MAITE.put('social', JSON.stringify({ posts: S.posts, copies: S.copies, seeded: true, by: user, at: new Date().toISOString() }));
-const view = (S, env) => json({ posts: S.posts, copies: S.copies, ai: !!env.ANTHROPIC_API_KEY });
+import { SEED, load, store, view } from '../../../lib/social.js';
 
 async function body(request) { try { return await request.json(); } catch { return null; } }
 

@@ -2,15 +2,17 @@
 // the posts confirmed here, their captions, and PNGs at full size. The posts and captions live in KV (/api/maite/social).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Label, ListBox, Select, Skeleton, Spinner, Tabs, TextArea, TextField, type Key } from '@heroui/react';
-import { Check, Copy as CopyIcon, Download, ImageUp, MessageSquareText, Plus, Shuffle, Sparkles, X } from 'lucide-react';
+import { Check, Copy as CopyIcon, Download, ExternalLink, ImageUp, MessageSquareText, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
 import { api, uploadPhoto } from '../lib/api';
+import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
 import { done, toastError } from '../parts/toast';
 import { Art, Wide } from '../social/Art';
 import { byId, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Kind, type Template } from '../social/templates';
 
-type Post = { id: string; tpl: string; v: number; photo: string; at: string };
+type Post = { id: string; tpl: string; v: number; photo: string; at: string; published?: { at: string; url: string } };
+type Insta = { connected: boolean; username?: string; detail?: string };
 type Data = { posts: Post[]; copies: Record<string, string>; ai: boolean };
 type Option = { caption: string; hashtags: string };
 type Tab = 'posts' | 'stories' | 'highlights' | 'profile' | 'copies';
@@ -125,6 +127,9 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
   const posts = data.posts.filter(p => byId.has(p.tpl));
   const [open, setOpen] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
+  const [insta, setInsta] = useState<Insta | null>(null);
+  const [publishing, setPublishing] = useState<Post | null>(null);
+  useEffect(() => { api<Insta>('instagram').then(setInsta).catch(() => setInsta({ connected: false })); }, []);
 
   async function order(ids: string[], msg: string) {
     const before = data;
@@ -179,6 +184,7 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
           <div className="mr-auto">
             <h2 className="text-base font-semibold">Ordre de publicació</h2>
             <p className="text-sm text-muted">El post 1 és el primer que publicaràs; a la graella queda a baix de tot.</p>
+            {insta && <p className="text-sm text-muted">{insta.connected ? `Es publica a @${insta.username}.` : "Per publicar des d'aquí cal connectar el compte d'Instagram."}</p>}
           </div>
           <Button size="sm" variant="secondary" isPending={!!progress} onPress={downloadAll}>
             {progress ? <><Spinner size="sm" color="current" />Descarregant {progress}</> : <><Download size={15} />Descarrega la graella</>}
@@ -201,8 +207,12 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
                     <div className="truncate text-sm font-semibold">{t.title}</div>
                     <div className="truncate text-xs text-muted">{p.photo ? 'Amb la teva foto' : `Opció ${p.v + 1}`}</div>
                     <div className="truncate text-xs text-muted">{copy ? copy.split('\n')[0] : 'Sense copy'}</div>
+                    {p.published && <div className="mt-1"><Tag tone="paid">Publicat el {new Date(p.published.at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' })}</Tag></div>}
                   </div>
                   <Button size="sm" variant={open === p.id ? 'secondary' : 'ghost'} isIconOnly aria-expanded={open === p.id} aria-label={`Copy del post ${i + 1}`} onPress={() => setOpen(open === p.id ? null : p.id)}><MessageSquareText size={16} /></Button>
+                  {p.published
+                    ? p.published.url && <a href={p.published.url} target="_blank" rel="noopener" aria-label={`Obre el post ${i + 1} a Instagram`} className="grid size-8 shrink-0 place-items-center rounded-full outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={16} /></a>
+                    : insta?.connected && t.kind === 'post' && <Button size="sm" variant="ghost" isIconOnly aria-label={`Publica el post ${i + 1} a Instagram`} onPress={() => setPublishing(p)}><Send size={16} /></Button>}
                   <DownloadButton label={`Descarrega el post ${i + 1}`} run={() => download(t, p.v, p.photo, i + 1)} />
                   <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${t.title} del perfil`} onPress={() => order(posts.filter(x => x !== p).map(x => x.id), `${t.title} tret del perfil`)}><X size={16} /></Button>
                 </div>
@@ -212,7 +222,35 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
           })}
         </ol>
       </section>
+      {publishing && <Publish post={publishing} n={posts.indexOf(publishing) + 1} caption={data.copies[publishing.id] || ''} onClose={() => setPublishing(null)} setData={setData} />}
     </div>
+  );
+}
+
+// Publishing: the post as a full-size JPEG on the site's photo storage, then Instagram fetches it and posts it with the saved caption
+function Publish({ post, n, caption, onClose, setData }: { post: Post; n: number; caption: string; onClose: () => void; setData: (d: Data) => void }) {
+  const t = byId.get(post.tpl)!;
+  const [busy, setBusy] = useState(false);
+  async function go() {
+    setBusy(true);
+    try {
+      const image = await uploadPhoto(new File([await png(t, post.v, post.photo)], 'post.png', { type: 'image/png' }));
+      setData(await api<Data>('instagram', { method: 'POST', body: { id: post.id, image } }));
+      done(`Post ${n} publicat a Instagram`); onClose();
+    } catch (e) { toastError(e); }
+    setBusy(false);
+  }
+  return (
+    <Dialog isOpen onClose={onClose} title="Publica a Instagram" subtitle={`Post ${n}: ${t.title}`}
+      footer={<><Button variant="ghost" onPress={onClose} isDisabled={busy}>Cancel·la</Button><Button isPending={busy} onPress={go}>{busy ? <Spinner size="sm" color="current" /> : <Send size={15} />}Publica ara</Button></>}>
+      <div className="grid gap-4 sm:grid-cols-[160px_minmax(0,1fr)]">
+        <Art t={t} v={post.v} photo={post.photo} className="w-40 rounded-xl" />
+        <div className="min-w-0 space-y-2">
+          {caption ? <p className="max-h-72 overflow-y-auto text-sm whitespace-pre-wrap">{caption}</p> : <p className="text-sm text-warning">Aquest post encara no té copy: es publicarà sense text.</p>}
+          <p className="text-xs text-muted">Un cop publicat, es pot editar o esborrar des de l'app d'Instagram.</p>
+        </div>
+      </div>
+    </Dialog>
   );
 }
 

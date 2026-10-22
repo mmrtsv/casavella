@@ -89,7 +89,7 @@ Tot el que hi ha al calendari continua sent la referència: el que es crea a mà
 | Reserves, dades dels hostes i la seva llista (entrada, documents…) | Google Calendar, un calendari per allotjament (a l'esdeveniment de cada reserva) | La web (disponibilitat) i Maite |
 | Pagaments i devolucions | Stripe | Maite el consulta en directe |
 | Preus, descomptes, normes, política i textos dels allotjaments | Cloudflare KV, espai `MAITE` (claus `settings` i `stays`) | La web (`/api/settings`) i Maite |
-| Posts confirmats per a Instagram, el seu ordre i els seus copies | Cloudflare KV, espai `MAITE` (clau `social`) | Maite |
+| Posts confirmats per a Instagram, el seu ordre, els seus copies i si ja s'han publicat | Cloudflare KV, espai `MAITE` (clau `social`; el testimoni renovat d'Instagram, a `instagram`) | Maite |
 | Fotos pujades a Maite | Cloudflare R2, bucket `PHOTOS`, servides a `/photos/…` | La web i Maite |
 | Fotos originals, disseny i codi | Aquest repositori (`img/`, `index.html`, `functions/`, `lib/`) | Cloudflare Pages el publica a cada push |
 
@@ -109,6 +109,13 @@ No hi ha cap altra base de dades: tot el que es canvia a Maite es llegeix al mom
    En tots dos casos, posa la variable `DOCS_FOLDER` amb l'ID de la carpeta (el tros de l'URL després de `/folders/`). Cada reserva hi té una carpeta numerada, «05.01.07 - Nom (20/10/2026 - 23/10/2026)», que es crea quan s'hi puja el primer document. Un compte de servei no pot desar fitxers a «La meva unitat» d'una altra persona sense una d'aquestes dues opcions.
 
 7. **Copies amb Claude** (Xarxes socials): posa el secret `ANTHROPIC_API_KEY` amb una clau de l'API d'Anthropic (console.anthropic.com). Sense ella, Maite proposa els copies de referència de la pestanya Copies. Els copies tenen un to romàntic, inspirat en Mas d'en Bruno, Off Grid, Oller del Mas i Son Brull, i només porten «Reserva per DM» quan el post és d'alguna cosa concreta (un menú, una data, un cap de setmana). L'opció triada es pot editar abans de desar-la. Fa servir Claude Haiku 5.5, el model més barat: cada vegada que es demanen tres opcions costa uns 0,0005 $ (mil peticions, uns 50 cèntims), i les opcions ja escrites es guarden mentre la pàgina és oberta.
+8. **Publicar a Instagram** (Xarxes socials):
+   1. Al mòbil, passa el compte d'Instagram a professional (Configuració → Tipus de compte → Empresa o Creador).
+   2. A [developers.facebook.com](https://developers.facebook.com) crea una app de tipus *Business* i afegeix-hi el producte **Instagram** amb «API setup with Instagram login». No cal pàgina de Facebook ni revisió de Meta: l'app només publica al teu compte.
+   3. A «Generate access tokens», afegeix el compte d'Instagram, accepta els permisos `instagram_business_basic` i `instagram_business_content_publish`, i copia el testimoni.
+   4. Posa'l com a secret `INSTAGRAM_TOKEN` a Cloudflare Pages (Production). Maite el renova cada setmana sol (dura 60 dies) i desa el renovat a KV (clau `instagram`). Si mai caduca, n'hi ha prou amb generar-ne un de nou i canviar el secret.
+
+   Cada post de la graella té el botó de publicar: Maite en fa un JPEG, el desa a R2 i Instagram l'agafa de `SITE_URL/photos/…` amb el copy desat. Sense el secret, el botó no surt.
 
 Cada crida de Maite comprova el testimoni de Cloudflare Access, de manera que sense els passos 2 i 4 no s'hi pot entrar. Sense el pas 3, Maite funciona però no deixa desar preus ni normes, i la web fa servir els valors per defecte de `lib/booking.js`.
 

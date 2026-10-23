@@ -119,10 +119,6 @@ fun Glow() {
     }
 }
 
-@Composable
-fun Iso(size: androidx.compose.ui.unit.Dp) =
-    Image(painterResource(if (T.dark) R.drawable.iso_light else R.drawable.iso_dark), contentDescription = null, modifier = Modifier.size(size))
-
 // ---------- Sign-in ----------
 @Composable
 private fun Welcome(content: @Composable () -> Unit) {
@@ -176,6 +172,7 @@ private val MORE = listOf(Page.Social, Page.Discounts, Page.Stays, Page.Rules, P
 fun App() {
     val activity = LocalContext.current as? Activity
     LaunchedEffect(Unit) { Maite.reload() }
+    LaunchedEffect(Unit) { com.casavellarural.maite.data.Update.check() }
     BackHandler { if (!Ui.back()) activity?.finish() }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }

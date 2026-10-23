@@ -300,7 +300,7 @@ fun ErrorNote(msg: String) {
 
 @Composable
 fun Loading(modifier: Modifier = Modifier) = Box(modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
-    CircularProgressIndicator(Modifier.size(28.dp), color = T.accent, strokeWidth = 3.dp)
+    IsoGrow()
 }
 
 // ---------- Toasts ----------

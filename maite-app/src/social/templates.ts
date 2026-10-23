@@ -313,49 +313,49 @@ export const PROFILE_HEAD = "<div style=\"width: 1080px;  box-sizing: border-box
 export const COPIES: Copy[] = [
  {
   "label": "Foto + logo",
-  "caption": "Hi ha cases que t'esperen. Aquesta ho fa des del 1898, entre vinyes i oliveres, amb Montserrat mirant-la de lluny.\n\n~\n\nSome houses wait for you. This one has since 1898, among vines and olive trees, with Montserrat watching from afar.",
+  "caption": "Hi ha cases que t'esperen. Aquesta ho fa des del 1898, entre vinyes i oliveres, amb Montserrat mirant-la de lluny.",
   "note": "",
   "hashtags": "#LaCasaVella #ElBedorc #Anoia #escapadarural #slowtravel"
  },
  {
   "label": "Degradat verd + logo",
-  "caption": "La primera llum toca les vinyes i el poble encara dorm.\n\n~\n\nFirst light on the vines, and the village still asleep.",
+  "caption": "La primera llum toca les vinyes i el poble encara dorm.",
   "note": "Una sola línia, com Mas Grimosach i Off Grid a les fotos d'ambient.",
   "hashtags": "#LaCasaVella #ElBedorc #Anoia #casadepoble #slowliving"
  },
  {
   "label": "Cita",
-  "caption": "Aquí el temps no corre: s'asseu al jardí amb tu, entre murs de pedra que fa més d'un segle que escolten.\n\n~\n\nHere time doesn't run. It sits with you in the garden, between stone walls that have been listening for more than a century.",
+  "caption": "Aquí el temps no corre: s'asseu al jardí amb tu, entre murs de pedra que fa més d'un segle que escolten.",
   "note": "",
   "hashtags": "#LaCasaVella #casadepoble #Anoia #slowtravel #escapadarural"
  },
  {
   "label": "Estança",
-  "caption": "La Figarot. Un llit de forja, la llum del matí a la paret i cap motiu per llevar-se aviat.\n\n~\n\nFigarot. A wrought-iron bed, morning light on the wall and no reason to get up early.",
+  "caption": "La Figarot. Un llit de forja, la llum del matí a la paret i cap motiu per llevar-se aviat.",
   "note": "",
   "hashtags": "#LaCasaVella #hotelambencant #boutiquestay #Anoia #escapadarural"
  },
  {
   "label": "Carrusel",
-  "caption": "Una casa de 1898 que es deixa descobrir a poc a poc: la rajola hidràulica, les bigues, la pedra. Llisca i entra.\n\n~\n\nAn 1898 house that reveals itself slowly: the hydraulic tiles, the beams, the stone. Swipe and come in.",
+  "caption": "Una casa de 1898 que es deixa descobrir a poc a poc: la rajola hidràulica, les bigues, la pedra. Llisca i entra.",
   "note": "",
   "hashtags": "#LaCasaVella #casadepoble #patrimoni #Anoia #slowtravel"
  },
  {
   "label": "Menú",
-  "caption": "MENÚ DE CALÇOTADA, CADA DIUMENGE\nCalçots a la brasa, [segon plat] i crema catalana, amb vi del Penedès. [PREU] € per persona.\nReserves per DM o al [TELÈFON].\n\n~\n\nCALÇOT MENU, EVERY SUNDAY\nGrilled calçots, [main course] and crema catalana, with Penedès wine. €[PRICE] per person.",
+  "caption": "MENÚ DE CALÇOTADA, CADA DIUMENGE\nCalçots a la brasa, [segon plat] i crema catalana, amb vi del Penedès. [PREU] € per persona.\nReserves per DM o al [TELÈFON].",
   "note": "Titular en majúscules i crida clara, com La Vella Farga.",
   "hashtags": "#calçotada #videlPenedès #cuinacatalana #Anoia #LaCasaVella"
  },
  {
   "label": "Premi / premsa",
-  "caption": "Estem molt contents de compartir-ho: La Casa Vella ha rebut [PREMI] de [ORGANITZACIÓ]. Gràcies a tothom qui ha passat per casa.\n\n~\n\nWe're delighted to share that La Casa Vella has received [AWARD] from [ORGANISATION]. Thank you to everyone who has stayed with us.",
+  "caption": "Estem molt contents de compartir-ho: La Casa Vella ha rebut [PREMI] de [ORGANITZACIÓ]. Gràcies a tothom qui ha passat per casa.",
   "note": "Dues diapositives, una per idioma, com Mas Grimosach.",
   "hashtags": "#LaCasaVella #ElBedorc #Anoia #enoturisme #escapadarural"
  },
  {
   "label": "Portada de Reel",
-  "caption": "Arribar, deixar la maleta i escoltar el silenci.\n\n~\n\nArrive, drop your bag and listen to the quiet.",
+  "caption": "Arribar, deixar la maleta i escoltar el silenci.",
   "note": "Vídeo de 10–20 s, sense posar: mans, llum, portes que s'obren. Com Mas d'en Bruno.",
   "hashtags": "#LaCasaVella #slowliving #escapadarural #Anoia #casadepoble"
  },

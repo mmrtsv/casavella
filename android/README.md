@@ -36,15 +36,24 @@ Les plantilles són les mateixes que a la web (`maite-app/src/social/`). L'app l
 node android/tools/social-assets.mjs
 ```
 
+## Igual que la web
+
+Tot el que canvia a Maite web ha d'arribar a l'app. `npm run check` (o `node android/tools/parity.mjs`) falla si un endpoint de `/api/maite/` no el crida la web o l'app, si una pàgina no té pantalla a l'app, si una pàgina de la web ha canviat després de la seva pantalla a l'app (llevat dels commits que hi ha a `parity-skip.txt`, amb el motiu) o si la còpia de les plantilles és antiga. Claude Code ho comprova sol abans d'acabar (`.claude/settings.json`).
+
 ## Fer-ne una versió nova
 
-Cal la clau `maite.keystore` (no és al repositori), la seva contrasenya, el SDK d'Android i Java 17 o més:
+Cal la clau `maite.keystore` (no és al repositori), la seva contrasenya, el SDK d'Android i Java 17 o més. Puja `versionCode` i `versionName` a `app/build.gradle` i:
 
 ```bash
 cd android
 export ANDROID_HOME=/ruta/al/android-sdk MAITE_KEYSTORE=/ruta/a/maite.keystore MAITE_KEYSTORE_PASSWORD=…
 gradle assembleRelease          # app/build/outputs/apk/release/app-release.apk
 gradle recordRoborazziDebug     # captures a app/screenshots/{titan,xiaomi}
+cd .. && node android/tools/release.mjs "Què hi ha de nou" && npm run build
 ```
 
-Puja `versionCode` a `app/build.gradle` perquè Android l'accepti com a actualització. Si es perd la clau, cal desinstal·lar l'app, fer-ne una de nova i posar la nova empremta SHA-1 al client d'Android de Google.
+`release.mjs` posa l'APK i `version.json` a `maite-app/public/android/`, que es publica amb Maite (darrere de Cloudflare Access). Quan es publica, l'app ho avisa a Inici i amb un toc es baixa i Android demana instal·lar-la. Si es perd la clau, cal desinstal·lar l'app, fer-ne una de nova i posar la nova empremta SHA-1 al client d'Android de Google.
+
+## Logo
+
+El logo de l'app és vectorial: `tools/logo.py` ressegueix `img/logo-light.png` i escriu `res/raw/logo.json` (el dibuixa `ui/Logo.kt`, també l'animació de càrrega: la planta creix i el nom s'escriu) i la icona (`res/drawable/ic_launcher_foreground.xml`).

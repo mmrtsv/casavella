@@ -7,7 +7,8 @@
     "build": "vite build",
     "build:site": "python3 build.py https://casavellarural.com && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p maite-app"
+    "typecheck": "tsc --noEmit -p maite-app",
+    "check": "tsc --noEmit -p maite-app && node android/tools/parity.mjs"
   },
   "dependencies": {
     "@heroui/react": "^3.2.6",

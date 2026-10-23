@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Photos of ID documents taken with the camera, and PNGs of the Instagram templates to share -->
+<!-- Photos of ID documents taken with the camera, PNGs of the Instagram templates to share, and new versions of the app -->
 <paths>
     <cache-path name="shots" path="shots/" />
     <cache-path name="social" path="social/" />
+    <cache-path name="updates" path="updates/" />
 </paths>

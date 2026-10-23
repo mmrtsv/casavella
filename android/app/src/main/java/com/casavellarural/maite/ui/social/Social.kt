@@ -94,6 +94,8 @@ import com.casavellarural.maite.ui.pagePadding
 import com.casavellarural.maite.ui.screens.DateField
 import com.casavellarural.maite.ui.screens.LoadingPage
 import com.casavellarural.maite.ui.screens.jpeg
+import com.casavellarural.maite.ui.Deep
+import com.casavellarural.maite.ui.Ico
 import com.casavellarural.maite.ui.screens.open
 import com.casavellarural.maite.ui.screens.uploadJpeg
 import com.casavellarural.maite.ui.screens.uploadPhoto
@@ -238,7 +240,7 @@ private fun Profile(data: Social, onEmpty: () -> Unit) {
     var head by remember { mutableStateOf<ImageBitmap?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    LaunchedEffect(Unit) { insta = runCatching { Api.get<Insta>("instagram") }.getOrDefault(Insta()) }
+    LaunchedEffect(Unit) { insta = runCatching { Api.get<Insta>("instagram?media=1") }.getOrDefault(Insta()) }
     LaunchedEffect(Unit) { runCatching { Renderer.profile() }.onSuccess { head = it.asImageBitmap() } }
 
     fun order(planned: List<String>, msg: String) {
@@ -256,14 +258,28 @@ private fun Profile(data: Social, onEmpty: () -> Unit) {
 
     Card(Modifier.fillMaxWidth()) {
         Box(Modifier.fillMaxWidth().background(Color.White)) { head?.let { Image(it, null, Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth) } ?: Spacer(Modifier.height(160.dp)) }
-        val rev = posts.reversed()
-        rev.chunked(3).forEach { row ->
+        // The plan on top (the last to publish first, as Instagram will show it), then what is already on Instagram
+        val tiles: List<Any> = posts.reversed() + insta?.media.orEmpty().sortedByDescending { it.at }
+        tiles.chunked(3).forEach { row ->
             Row(Modifier.background(Color.White), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                row.forEach { p ->
+                row.forEach { tile ->
                     Box(Modifier.weight(1f).aspectRatio(3 / 4f).padding(bottom = 2.dp)) {
-                        Art(byId.getValue(p.tpl), p.v, p.photo, Modifier.matchParentSize(), cover = true)
-                        Text("${posts.indexOf(p) + 1}", style = Type.xs, fontWeight = FontWeight.SemiBold, color = Color(0xFFF3EFE4),
-                            modifier = Modifier.padding(5.dp).clip(CircleShape).background(Color(0xD91A3F20)).padding(horizontal = 6.dp, vertical = 1.dp))
+                        if (tile is SocialPost) {
+                            Art(byId.getValue(tile.tpl), tile.v, tile.photo, Modifier.matchParentSize(), cover = true)
+                            Text("${posts.indexOf(tile) + 1}", style = Type.xs, fontWeight = FontWeight.SemiBold, color = Color(0xFFF3EFE4),
+                                modifier = Modifier.padding(5.dp).clip(CircleShape).background(Color(0xD91A3F20)).padding(horizontal = 6.dp, vertical = 1.dp))
+                            tile.schedule?.let { s ->
+                                Row(Modifier.align(Alignment.BottomStart).padding(5.dp).clip(CircleShape).background(if (s.error != null) T.danger else Color(0xE6F3EFE4)).padding(horizontal = 6.dp, vertical = 1.dp),
+                                    verticalAlignment = Alignment.CenterVertically) {
+                                    val c = if (s.error != null) Color.White else Deep
+                                    Ico(R.drawable.ic_clock, tint = c, size = 11.dp); Spacer(Modifier.width(3.dp))
+                                    Text(if (s.error != null) "No publicat" else "${dayMonth(dayOfIso(s.at))} ${hourOf(s.at)}", style = Type.xs, fontWeight = FontWeight.Medium, color = c)
+                                }
+                            }
+                        } else if (tile is com.casavellarural.maite.data.LiveMedia) {
+                            AsyncImage(tile.image, "Publicat el ${dayMonth(tile.at.take(10))}", Modifier.matchParentSize().clickable(enabled = tile.url.isNotEmpty()) { open(context, tile.url) }, contentScale = ContentScale.Crop)
+                            Box(Modifier.align(Alignment.TopEnd).padding(5.dp).clip(CircleShape).background(Color(0xD91A3F20)).padding(3.dp)) { Ico(R.drawable.ic_check, tint = Color(0xFFF3EFE4), size = 11.dp) }
+                        }
                     }
                 }
                 repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
@@ -368,7 +384,7 @@ private fun CopyPanel(post: SocialPost, n: Int, data: Social, posts: List<Social
     val scope = rememberCoroutineScope()
     val dirty = text.trim() != saved
     Panel(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        Muted(if (data.ai) "Claude escriu tres opcions en català i anglès." else "Sense la clau de Claude, et proposo els copies de la pestanya Copies.")
+        Muted(if (data.ai) "Claude escriu tres opcions en català." else "Sense la clau de Claude, et proposo els copies de la pestanya Copies.")
         Btn(if (options != null) "Altres opcions" else "Proposa copies", {
             if (!data.ai) { options = libraryFor(t); return@Btn }
             busy = "gen"

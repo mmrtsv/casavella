@@ -1,0 +1,2 @@
+# Web commits that need nothing in the Android app, one per line: the short hash, then why.
+# android/tools/parity.mjs ignores them when it compares the web's pages with the app's screens.

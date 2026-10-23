@@ -1,6 +1,8 @@
 package com.casavellarural.maite
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.test.onRoot
 import com.casavellarural.maite.data.Api
 import com.casavellarural.maite.data.Auth
@@ -55,6 +57,18 @@ abstract class Shots(private val device: String) {
     @Test fun more() = shot("12-mes") { Ui.more = true }
     @Test fun search() = shot("13-cerca") { Ui.search = true }
     @Test fun social() = shot("14-xarxes") { Ui.page = Page.Social }
+
+    /** The opening animation, frame by frame: the plant grows, the name is written, then the details */
+    @Test fun logo() {
+        compose.mainClock.autoAdvance = false
+        compose.setContent { com.casavellarural.maite.ui.MaiteTheme(false) { androidx.compose.foundation.layout.Box(
+            androidx.compose.ui.Modifier.fillMaxSize().background(com.casavellarural.maite.ui.T.background), contentAlignment = androidx.compose.ui.Alignment.Center) { com.casavellarural.maite.ui.LogoBuild() } } }
+        var at = 0L
+        listOf(400L, 900L, 1400L, 1800L, 2200L, 2700L).forEach { t ->
+            compose.mainClock.advanceTimeBy(t - at); at = t
+            compose.onRoot().captureRoboImage("screenshots/$device/logo-$t.png")
+        }
+    }
 }
 
 @Config(qualifiers = "w411dp-h457dp-xxhdpi", sdk = [34])

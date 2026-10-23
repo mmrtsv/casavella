@@ -27,6 +27,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import com.casavellarural.maite.data.Update
+import com.casavellarural.maite.ui.Btn
+import com.casavellarural.maite.ui.Toasts
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -59,7 +66,6 @@ import com.casavellarural.maite.data.parse
 import com.casavellarural.maite.data.range
 import com.casavellarural.maite.data.weekdayShort
 import com.casavellarural.maite.data.who
-import com.casavellarural.maite.ui.Btn
 import com.casavellarural.maite.ui.Card
 import com.casavellarural.maite.ui.Divider
 import com.casavellarural.maite.ui.Ico
@@ -93,6 +99,7 @@ fun Home() {
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = pagePadding(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item { Errors() }
+        Update.available?.let { u -> item { NewVersion(u) } }
         item {
             Card(Modifier.fillMaxWidth()) {
                 Box {
@@ -151,7 +158,7 @@ fun Rise(delay: Int, content: @Composable () -> Unit) {
 private var risen = false
 
 @Composable
-fun LoadingPage() = Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.casavellarural.maite.ui.Loading() }
+fun LoadingPage() = Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { com.casavellarural.maite.ui.LogoBuild() }
 
 @Composable
 fun Errors() {
@@ -310,3 +317,19 @@ private fun Upcoming(all: List<Booking>) {
     }
 }
 
+
+/** A new version of the app is published with Maite: one tap downloads it and Android asks to install it */
+@Composable
+private fun NewVersion(u: Update.Info) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
+        Text("Hi ha una versió nova de l'app (${u.version})", style = Type.base, fontWeight = FontWeight.SemiBold)
+        if (u.notes.isNotEmpty()) Text(u.notes, style = Type.sm, color = T.muted, modifier = Modifier.padding(top = 6.dp))
+        Btn("Actualitza", {
+            busy = true
+            scope.launch { try { Update.install(context) } catch (e: Exception) { Toasts.error(e) }; busy = false }
+        }, Modifier.padding(top = 12.dp), icon = R.drawable.ic_download, busy = busy)
+    }
+}

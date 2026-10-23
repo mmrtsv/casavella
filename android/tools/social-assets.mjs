@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { build } from 'rolldown';
+import { socialSource } from './parity.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../..');
 const OUT = path.join(ROOT, 'android/app/src/main/assets/social');
@@ -22,6 +23,8 @@ fs.rmSync(tmp); fs.rmSync(entry);
 const meta = {
   templates: S.TEMPLATES.map(t => ({ id: t.id, title: t.title, desc: t.desc, w: t.w, h: t.h, kind: t.kind, photo: t.photo, variants: S.variants(t) })),
   copies: S.COPIES,
+  // What this copy was made from: android/tools/parity.mjs compares it with the web's templates
+  source: socialSource(),
 };
 fs.writeFileSync(path.join(OUT, 'templates.json'), JSON.stringify(meta));
 

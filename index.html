@@ -1,6 +1,19 @@
 <title>La Casa Vella, El Bedorc</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<script>
+// Language: ?lang= or the visitor's earlier choice, else the first of Catalan, Spanish or English in the browser's languages, else English.
+// The page is written in Catalan; until the other language is applied the body stays hidden (at most 2 s).
+(() => {
+  const ok = l => ['ca', 'es', 'en'].includes(l);
+  let l = null;
+  try { l = new URLSearchParams(location.search).get('lang'); if (ok(l)) localStorage.setItem('lcv-lang', l); else l = localStorage.getItem('lcv-lang'); } catch (e) {}
+  if (!ok(l)) l = (navigator.languages || [navigator.language || '']).map(x => String(x).slice(0, 2).toLowerCase()).find(ok) || 'en';
+  window.LANG = l; document.documentElement.lang = l;
+  if (l !== 'ca') { document.documentElement.classList.add('i18n'); setTimeout(() => document.documentElement.classList.remove('i18n'), 2000); }
+})();
+</script>
 <style>
+html.i18n body { visibility: hidden; }
 /* LeMondeLivre.woff2 is the same font with TrueType outlines: Chrome rejects the original CFF file */
 @font-face { font-family: "Le Monde Livre"; src: url(fonts/LeMondeLivre.woff2) format("woff2"), url(fonts/LeMondeLivreClassic-Normal.otf) format("opentype"); font-weight: 400 600; font-style: normal; font-display: swap; }
 @font-face { font-family: "Halyard Display"; src: url(fonts/HalyardDisplay.ttf) format("truetype"); font-weight: 300 700; font-style: normal; font-display: swap; }
@@ -58,8 +71,13 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .top nav { display: flex; gap: 26px; flex-wrap: nowrap; white-space: nowrap; }
 .top nav .nav-extra { display: none; }
 .top nav.open .nav-extra { display: block; }
-.top nav a, .top .lang { font-size: 11.5px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; text-decoration: none; color: var(--muted); }
+.top nav a, .top .lang, .top .nav-lang { font-size: 11.5px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; text-decoration: none; color: var(--muted); }
 .top nav a:hover { color: var(--ink); }
+.top .lang, .top .nav-lang { display: flex; gap: 14px; }
+.top .nav-lang { display: none; padding-top: 6px; }
+.top nav.open .nav-lang { display: flex; }
+.lang button, .nav-lang button { background: none; border: 0; padding: 4px 0; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; cursor: pointer; }
+.lang button:hover, .nav-lang button:hover, .lang button[aria-pressed="true"], .nav-lang button[aria-pressed="true"] { color: var(--ink); }
 .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
 .logo .iso { width: 34px; height: 34px; background: var(--ink); -webkit-mask: url(img/iso-dark.png) center / contain no-repeat; mask: url(img/iso-dark.png) center / contain no-repeat; }
 .logo .name { font-family: var(--display); font-size: 21px; letter-spacing: .16em; text-transform: uppercase; line-height: 1; }
@@ -672,7 +690,8 @@ footer { padding-bottom: 32px !important; }
 :root[data-variant="5"] body::before { background: #0f2614; }
 :root[data-variant="5"] .top .logo, :root[data-variant="5"] .top .menu-btn { color: #f3efe4; }
 :root[data-variant="5"] .top .logo .iso { background: #f3efe4; }
-:root[data-variant="5"] .top nav a, :root[data-variant="5"] .top .lang { color: rgba(243, 239, 228, .72); }
+:root[data-variant="5"] .top nav a, :root[data-variant="5"] .top .lang, :root[data-variant="5"] .top .nav-lang { color: rgba(243, 239, 228, .72); }
+:root[data-variant="5"] .lang button[aria-pressed="true"], :root[data-variant="5"] .nav-lang button[aria-pressed="true"], :root[data-variant="5"] .lang button:hover, :root[data-variant="5"] .nav-lang button:hover { color: #f3efe4; }
 :root[data-variant="5"] .top nav.open { background: #0f2614; }
 :root[data-variant="5"] .top .right .btn { background: transparent; border-color: rgba(243, 239, 228, .7); color: #f3efe4; }
 :root[data-variant="5"] .hero { min-height: min(92vh, 900px); }
@@ -725,10 +744,11 @@ footer { padding-bottom: 32px !important; }
       <a class="nav-extra" href="#galeria">Galeria</a>
       <a href="#entorn">El Bedorc</a>
       <a class="nav-extra" href="#contacte">Contacte</a>
+      <div class="nav-lang" role="group" aria-label="Idioma"><button type="button" data-lang="ca" lang="ca" aria-label="Català">CA</button><button type="button" data-lang="es" lang="es" aria-label="Español">ES</button><button type="button" data-lang="en" lang="en" aria-label="English">EN</button></div>
     </nav>
     <a class="logo" href="#inici" aria-label="La Casa Vella, inici"><span class="iso" aria-hidden="true"></span><span class="name">La Casa Vella</span></a>
     <div class="right">
-      <span class="lang">CA&nbsp;&nbsp;ES&nbsp;&nbsp;EN</span>
+      <div class="lang" role="group" aria-label="Idioma"><button type="button" data-lang="ca" lang="ca" aria-label="Català">CA</button><button type="button" data-lang="es" lang="es" aria-label="Español">ES</button><button type="button" data-lang="en" lang="en" aria-label="English">EN</button></div>
       <a class="btn solid" href="#reservar">Reservar</a>
     </div>
   </div>
@@ -1174,9 +1194,438 @@ footer { padding-bottom: 32px !important; }
 </div>
 
 <script>
+// Spanish and English for the text written in the page (keyed by the Catalan). Text the script builds goes through tr().
+const I18N = { es: {
+"La Casa Vella, allotjament rural al Bedorc": "La Casa Vella, alojamiento rural en El Bedorc",
+"Allotjaments": "Alojamientos",
+"Restaurant": "Restaurante",
+"Història": "Historia",
+"Galeria": "Galería",
+"Contacte": "Contacto",
+"Tornar": "Volver",
+"Disponibilitat": "Disponibilidad",
+"On voleu dormir?": "¿Dónde queréis dormir?",
+"Canviar": "Cambiar",
+"Com més dies us quedeu, millor: un 5 % menys per a dues nits i un 10 % a partir de tres.": "Cuantos más días os quedéis, mejor: un 5 % menos por dos noches y un 10 % a partir de tres.",
+"Impostos inclosos.": "Impuestos incluidos.",
+"La teva reserva": "Tu reserva",
+"Les teves dades": "Tus datos",
+"Nom i cognoms": "Nombre y apellidos",
+"Correu electrònic": "Correo electrónico",
+"Telèfon": "Teléfono",
+"Hora d'arribada aproximada": "Hora de llegada aproximada",
+"Encara no ho sé": "Todavía no lo sé",
+"Algun aspecte rellevant a destacar?": "¿Algo que debamos saber?",
+"Pagament": "Pago",
+"Canviar les dades": "Cambiar los datos",
+"Accepto les": "Acepto las",
+"condicions de reserva": "condiciones de reserva",
+"i la": "y la",
+"política de privacitat": "política de privacidad",
+"Continuar al pagament": "Continuar al pago",
+"Pagament segur amb Stripe.": "Pago seguro con Stripe.",
+"Gràcies! Ja us esperem a casa": "¡Gracias! Ya os esperamos en casa",
+"La reserva està confirmada i t'hem enviat el rebut per correu. Uns dies abans del check-in et escriurem amb tot el que necessites saber per arribar al Bedorc.": "La reserva está confirmada y te hemos enviado el recibo por correo. Unos días antes del check-in te escribiremos con todo lo que necesitas saber para llegar a El Bedorc.",
+"Si vols qualsevol cosa, truca'ns o escriu-nos per WhatsApp al": "Si necesitas cualquier cosa, llámanos o escríbenos por WhatsApp al",
+"Tornar a l'inici": "Volver al inicio",
+"Veure fotos i detalls": "Ver fotos y detalles",
+"Hostes": "Huéspedes",
+"Canviar dates o allotjament": "Cambiar fechas o alojamiento",
+"Un refugi entre vinyes, pinedes i Montserrat": "Un refugio entre viñas, pinares y Montserrat",
+"Comencem?": "¿Empezamos?",
+"Allotjament rural des de 1898": "Alojamiento rural desde 1898",
+"Allotjament": "Alojamiento",
+"Tots els allotjaments": "Todos los alojamientos",
+"La Casa Vella és la nostra casa de poble familiar al Bedorc, un petit refugi envoltat de vinyes. Murs de pedra originals i tranquil·litat en cada racó.": "La Casa Vella es nuestra casa de pueblo familiar en El Bedorc, un pequeño refugio rodeado de viñas. Muros de piedra originales y tranquilidad en cada rincón.",
+"Barcelona, els cellers del Penedès i els castells de la comarca són a tocar. Però aquí, els matins comencen a poc a poc.": "Barcelona, las bodegas del Penedès y los castillos de la comarca están a un paso. Pero aquí, las mañanas empiezan despacio.",
+"Restaurada amb respecte": "Restaurada con respeto",
+"Murs que guarden més d'un segle d'històries": "Muros que guardan más de un siglo de historias",
+"Pedra que ha vist passar generacions, sostres de fusta vista i racons restaurats amb paciència i estima. La casa conserva l'ànima de l'arquitectura tradicional, i ara també tot el confort per quedar-s'hi uns dies sense mirar el rellotge.": "Piedra que ha visto pasar generaciones, techos de madera vista y rincones restaurados con paciencia y cariño. La casa conserva el alma de la arquitectura tradicional, y ahora también todo el confort para quedarse unos días sin mirar el reloj.",
+"Veure els allotjaments": "Ver los alojamientos",
+"Dos apartaments i dues habitacions": "Dos apartamentos y dos habitaciones",
+"Consultar disponibilitat": "Consultar disponibilidad",
+"Habitacions amb bany privat, apartaments complets per a estades més llargues i un jardí amb terrassa per gaudir de l'aire lliure.": "Habitaciones con baño privado, apartamentos completos para estancias más largas y un jardín con terraza para disfrutar del aire libre.",
+"Veure fotos": "Ver fotos",
+"Apartament": "Apartamento",
+"la nit": "la noche",
+"1 dormitori": "1 dormitorio",
+"Cuina equipada": "Cocina equipada",
+"Bany privat": "Baño privado",
+"Wifi gratuït": "Wifi gratuito",
+"Aire condicionat": "Aire acondicionado",
+"Aparcament": "Aparcamiento",
+"La muntanya que es veu des del Bedorc, i el seu nom. Un apartament complet per a estades més llargues.": "La montaña que se ve desde El Bedorc, y su nombre. Un apartamento completo para estancias más largas.",
+"Dormitori doble": "Dormitorio doble",
+"Amb el nom dels pins que envolten el poble. Espai, cuina pròpia i calma per quedar-s'hi uns dies.": "Con el nombre de los pinos que rodean el pueblo. Espacio, cocina propia y calma para quedarse unos días.",
+"Habitació": "Habitación",
+"Llit doble": "Cama doble",
+"Per la tradició vitivinícola que ha modelat el paisatge. Llit de forja, terra hidràulic i l'armari antic de la casa.": "Por la tradición vitivinícola que ha modelado el paisaje. Cama de forja, suelo hidráulico y el armario antiguo de la casa.",
+"Amb el nom de la figuera, l'arbre de les cases de pagès. Una habitació tranquil·la amb bany privat.": "Con el nombre de la higuera, el árbol de las casas de campo. Una habitación tranquila con baño privado.",
+"Com són per dins": "Cómo son por dentro",
+"Despertar sota bigues centenàries, amb la llum del Bedorc": "Despertar bajo vigas centenarias, con la luz de El Bedorc",
+"Cada allotjament conserva les bigues de fusta de la casa, pintades de verd, amb mobles antics i detalls fets a mà. Els apartaments tenen cuina pròpia; les habitacions, bany privat.": "Cada alojamiento conserva las vigas de madera de la casa, pintadas de verde, con muebles antiguos y detalles hechos a mano. Los apartamentos tienen cocina propia; las habitaciones, baño privado.",
+"Aire condicionat i calefacció": "Aire acondicionado y calefacción",
+"Wifi ràpid gratuït": "Wifi rápido gratuito",
+"Aparcament gratuït": "Aparcamiento gratuito",
+"Bany privat a totes les habitacions": "Baño privado en todas las habitaciones",
+"Smart TV i nevera": "Smart TV y nevera",
+"Cuina equipada als apartaments": "Cocina equipada en los apartamentos",
+"Tovalloles i roba de llit incloses": "Toallas y ropa de cama incluidas",
+"Veure totes les fotos": "Ver todas las fotos",
+"Del cafè del matí a la copa de vi": "Del café de la mañana a la copa de vino",
+"A la planta baixa us espera el nostre restaurant: un espai de llum càlida, pedra i fusta on començar el dia amb un bon cafè i acabar-lo amb una copa de vi del Penedès.": "En la planta baja os espera nuestro restaurante: un espacio de luz cálida, piedra y madera donde empezar el día con un buen café y acabarlo con una copa de vino del Penedès.",
+"Quan arriba la temporada, la terrassa s'omple amb l'olor dels calçots a la brasa. És el racó on sempre hi ha algú de la família, a punt de recomanar-vos rutes i racons de la zona.": "Cuando llega la temporada, la terraza se llena con el olor de los calçots a la brasa. Es el rincón donde siempre hay alguien de la familia, a punto para recomendaros rutas y rincones de la zona.",
+"Reservar taula": "Reservar mesa",
+"La història de Casa Parellada": "La historia de Casa Parellada",
+"Una casa de pagès que torna a tenir vida": "Una casa de campo que vuelve a tener vida",
+"La construcció": "La construcción",
+"La casa es va construir entre els anys 1898 i 1900.": "La casa se construyó entre los años 1898 y 1900.",
+"Anys de pagesia": "Años de campo",
+"Durant molts anys els propietaris van viure de la pagesia.": "Durante muchos años los propietarios vivieron del campo.",
+"L'ampliació": "La ampliación",
+"S'hi van afegir una cort, un galliner i una petita quadra pel «Macho», el cavall que treballava la terra i transportava les collites.": "Se añadieron un corral, un gallinero y una pequeña cuadra para el «Macho», el caballo que trabajaba la tierra y transportaba las cosechas.",
+"La casa buida": "La casa vacía",
+"La família es va anar fent gran i, sense descendència, la casa va quedar buida.": "La familia se fue haciendo mayor y, sin descendencia, la casa quedó vacía.",
+"Avui": "Hoy",
+"Ara forma part del projecte de la nostra família.": "Ahora forma parte del proyecto de nuestra familia.",
+"Postal antiga": "Postal antigua",
+"El Bedorc, quan els carrers eren de terra i la casa encara vivia de la pagesia.": "El Bedorc, cuando las calles eran de tierra y la casa aún vivía del campo.",
+"El nostre segell": "Nuestro sello",
+"Cinc elements del Bedorc": "Cinco elementos de El Bedorc",
+"Fulla de parra": "Hoja de parra",
+"La tradició vitivinícola que ha modelat el paisatge i la vida de la casa durant segles.": "La tradición vitivinícola que ha modelado el paisaje y la vida de la casa durante siglos.",
+"Raïm": "Uva",
+"L'abundància de les collites i la història agrícola de la terra fèrtil del Bedorc.": "La abundancia de las cosechas y la historia agrícola de la tierra fértil de El Bedorc.",
+"Branca d'olivera": "Rama de olivo",
+"Pau, longevitat i resistència, i els oliverars que formen part del paisatge des de sempre.": "Paz, longevidad y resistencia, y los olivares que forman parte del paisaje desde siempre.",
+"Ocell": "Pájaro",
+"La fauna del Bedorc i l'harmonia entre la casa i la natura que l'envolta.": "La fauna de El Bedorc y la armonía entre la casa y la naturaleza que la rodea.",
+"La silueta que es veu des del Bedorc, vincle espiritual i cultural amb la muntanya.": "La silueta que se ve desde El Bedorc, vínculo espiritual y cultural con la montaña.",
+"«Amb un hisop entintat va marcar cada cosa amb el seu nom: taula, cadira, rellotge, porta, paret, llit, cassola.»": "«Con un hisopo entintado marcó cada cosa con su nombre: mesa, silla, reloj, puerta, pared, cama, cacerola.»",
+"Gabriel García Márquez, Cent anys de solitud": "Gabriel García Márquez, Cien años de soledad",
+"La casa en imatges": "La casa en imágenes",
+"L'entorn": "El entorno",
+"El Bedorc, amb Montserrat a la vista": "El Bedorc, con Montserrat a la vista",
+"El Bedorc és un petit paradís al cor de l'Anoia: vinyes, boscos i camps de conreu a tocar dels cellers del Penedès. Des de la casa, la silueta de Montserrat marca l'horitzó.": "El Bedorc es un pequeño paraíso en el corazón de l'Anoia: viñas, bosques y campos de cultivo a un paso de las bodegas del Penedès. Desde la casa, la silueta de Montserrat marca el horizonte.",
+"A peu o en bicicleta, les rutes surten de la mateixa porta: camins entre vinyes, ermites i pobles amb història.": "A pie o en bicicleta, las rutas salen de la misma puerta: caminos entre viñas, ermitas y pueblos con historia.",
+"Aeroport del Prat": "Aeropuerto del Prat",
+"A prop de casa": "Cerca de casa",
+"Racons per descobrir": "Rincones por descubrir",
+"Al mateix Bedorc": "En el mismo Bedorc",
+"Castell de la Ventosa": "Castillo de la Ventosa",
+"Les pedres del castell que va veure néixer el poble, documentat fa més de mil anys. Un passeig curt per començar el dia.": "Las piedras del castillo que vio nacer el pueblo, documentado hace más de mil años. Un paseo corto para empezar el día.",
+"La capital del cava. Caves centenàries, tasts entre vinyes i bombolles per brindar al capvespre.": "La capital del cava. Cavas centenarias, catas entre viñas y burbujas para brindar al atardecer.",
+"El Museu Molí Paperer i la Bassa, on l'aigua ha mogut molins durant segles.": "El Museo Molino Papelero y la Bassa, donde el agua ha movido molinos durante siglos.",
+"El cor del Penedès: el Vinseum, el mercat i, per festa major, els castellers a la plaça.": "El corazón del Penedès: el Vinseum, el mercado y, por la fiesta mayor, los castellers en la plaza.",
+"Castell de Claramunt": "Castillo de Claramunt",
+"Una fortalesa medieval dalt del turó, amb tota l'Anoia als peus.": "Una fortaleza medieval en lo alto de la colina, con toda l'Anoia a sus pies.",
+"La muntanya que veieu des de casa: el monestir, l'Escolania i camins fins a Sant Jeroni.": "La montaña que veis desde casa: el monasterio, la Escolanía y caminos hasta Sant Jeroni.",
+"Opinions a Google": "Opiniones en Google",
+"El que diuen els nostres hostes": "Lo que dicen nuestros huéspedes",
+"Aquí es mostraran les ressenyes reals de Google de La Casa Vella, amb la puntuació i les opinions més recents.": "Aquí se mostrarán las reseñas reales de Google de La Casa Vella, con la puntuación y las opiniones más recientes.",
+"Llegir les ressenyes a Google": "Leer las reseñas en Google",
+"Deixa'ns la teva opinió": "Déjanos tu opinión",
+"Escriu-nos, t'esperem": "Escríbenos, te esperamos",
+"Com arribar": "Cómo llegar",
+"Nom": "Nombre",
+"Correu": "Correo",
+"Missatge": "Mensaje",
+"Enviar missatge": "Enviar mensaje",
+"Casa de poble familiar al Bedorc, entre vinyes i amb Montserrat a l'horitzó.": "Casa de pueblo familiar en El Bedorc, entre viñas y con Montserrat en el horizonte.",
+"Segueix-nos": "Síguenos",
+"Opinions": "Opiniones",
+"© 2026 La Casa Vella, El Bedorc. Núm. registre turístic per confirmar": "© 2026 La Casa Vella, El Bedorc. N.º de registro turístico por confirmar",
+"Avís legal": "Aviso legal",
+"Privacitat": "Privacidad",
+"Tancar": "Cerrar",
+"Següent": "Siguiente",
+"La Casa Vella, inici": "La Casa Vella, inicio",
+"tria el teu racó": "elige tu rincón",
+"gairebé ho tenim": "ya casi está",
+"Dades de la reserva": "Datos de la reserva",
+"Com et dius?": "¿Cómo te llamas?",
+"tu@correu.com": "tu@correo.com",
+"Una celebració, una al·lèrgia, si veniu amb bicicleta…": "Una celebración, una alergia, si venís en bicicleta…",
+"Resum de la reserva": "Resumen de la reserva",
+"Veure les fotos i els detalls": "Ver las fotos y los detalles",
+"Vinyes i Montserrat, cel blau": "Viñas y Montserrat, cielo azul",
+"Vinyes al capvespre amb Montserrat": "Viñas al atardecer con Montserrat",
+"Vinyes amb llum de tarda": "Viñas con luz de tarde",
+"Vinyes i pinedes": "Viñas y pinares",
+"El Bedorc al capvespre": "El Bedorc al atardecer",
+"Tria les dates": "Elige las fechas",
+"Escala de rajola i entrada de la casa, amb la llum càlida del rebedor": "Escalera de baldosa y entrada de la casa, con la luz cálida del recibidor",
+"restaurada amb amor": "restaurada con amor",
+"les nostres estances": "nuestras estancias",
+"Veure les fotos de Montserrat": "Ver las fotos de Montserrat",
+"Veure les fotos de La Pineda": "Ver las fotos de La Pineda",
+"Veure les fotos de Les Vinyes": "Ver las fotos de Les Vinyes",
+"Veure les fotos de Figarot": "Ver las fotos de Figarot",
+"Apartament Montserrat": "Apartamento Montserrat",
+"Apartament La Pineda": "Apartamento La Pineda",
+"Habitació Les Vinyes": "Habitación Les Vinyes",
+"Habitació Figarot": "Habitación Figarot",
+"Escala de rajola i entrada de la casa": "Escalera de baldosa y entrada de la casa",
+"Rebedor amb mirall daurat i porta al carrer": "Recibidor con espejo dorado y puerta a la calle",
+"Llibre de La Casa Vella sobre una màquina de cosir antiga": "Libro de La Casa Vella sobre una máquina de coser antigua",
+"Flor sobre el terra hidràulic": "Flor sobre el suelo hidráulico",
+"Barra del restaurant amb taulell de fusta, prestatges il·luminats i el segell de La Casa Vella": "Barra del restaurante con mostrador de madera, estantes iluminados y el sello de La Casa Vella",
+"a la planta baixa": "en la planta baja",
+"Carrer del Bedorc, foto antiga que es fon amb la foto actual": "Calle de El Bedorc, foto antigua que se funde con la actual",
+"Postal antiga en blanc i negre d'un carrer del Bedorc amb arbres i balcons": "Postal antigua en blanco y negro de una calle de El Bedorc con árboles y balcones",
+"racons i detalls": "rincones y detalles",
+"Vinyes amb Montserrat al fons": "Viñas con Montserrat al fondo",
+"Rètol de fusta de La Casa Vella sobre la porta": "Rótulo de madera de La Casa Vella sobre la puerta",
+"Gerro amb flors seques al costat de la finestra": "Jarrón con flores secas junto a la ventana",
+"Mirall antic de marc daurat": "Espejo antiguo de marco dorado",
+"Rebedor amb terra de toves i porta al carrer": "Recibidor con suelo de barro cocido y puerta a la calle",
+"El Bedorc al capvespre, entre pinedes i camps, amb Montserrat al fons": "El Bedorc al atardecer, entre pinares y campos, con Montserrat al fondo",
+"el nostre entorn": "nuestro entorno",
+"Formulari de contacte": "Formulario de contacto",
+"El teu nom": "Tu nombre",
+"Dates, nombre de persones, preguntes…": "Fechas, número de personas, preguntas…",
+"Truca'ns": "Llámanos",
+"Escriu-nos per WhatsApp": "Escríbenos por WhatsApp",
+"Foto següent": "Foto siguiente"
+}, en: {
+"La Casa Vella, allotjament rural al Bedorc": "La Casa Vella, rural stay in El Bedorc",
+"Menú": "Menu",
+"La casa": "The house",
+"Allotjaments": "Stays",
+"Història": "History",
+"Galeria": "Gallery",
+"Contacte": "Contact",
+"Reservar": "Book",
+"Tornar": "Back",
+"Disponibilitat": "Availability",
+"On voleu dormir?": "Where would you like to stay?",
+"Canviar": "Change",
+"Com més dies us quedeu, millor: un 5 % menys per a dues nits i un 10 % a partir de tres.": "The longer you stay, the better: 5% off for two nights and 10% from three.",
+"Impostos inclosos.": "Taxes included.",
+"La teva reserva": "Your booking",
+"Les teves dades": "Your details",
+"Nom i cognoms": "Full name",
+"Correu electrònic": "Email",
+"Telèfon": "Phone",
+"Hora d'arribada aproximada": "Approximate arrival time",
+"Encara no ho sé": "Not sure yet",
+"Algun aspecte rellevant a destacar?": "Anything we should know?",
+"Pagament": "Payment",
+"Canviar les dades": "Change details",
+"Accepto les": "I accept the",
+"condicions de reserva": "booking terms",
+"i la": "and the",
+"política de privacitat": "privacy policy",
+"Continuar al pagament": "Continue to payment",
+"Pagament segur amb Stripe.": "Secure payment with Stripe.",
+"Gràcies! Ja us esperem a casa": "Thank you, we look forward to having you",
+"La reserva està confirmada i t'hem enviat el rebut per correu. Uns dies abans del check-in et escriurem amb tot el que necessites saber per arribar al Bedorc.": "Your booking is confirmed and we've emailed you the receipt. A few days before check-in we'll write with everything you need to know to get to El Bedorc.",
+"Si vols qualsevol cosa, truca'ns o escriu-nos per WhatsApp al": "If you need anything, call us or message us on WhatsApp at",
+"Tornar a l'inici": "Back to home",
+"Veure fotos i detalls": "Photos and details",
+"Hostes": "Guests",
+"Canviar dates o allotjament": "Change dates or stay",
+"Un refugi entre vinyes, pinedes i Montserrat": "A retreat among vineyards, pine woods and Montserrat",
+"Respira": "Breathe",
+"Comencem?": "Shall we start?",
+"Allotjament rural des de 1898": "Rural stay since 1898",
+"Allotjament": "Stay",
+"Tots els allotjaments": "All stays",
+"La Casa Vella és la nostra casa de poble familiar al Bedorc, un petit refugi envoltat de vinyes. Murs de pedra originals i tranquil·litat en cada racó.": "La Casa Vella is our family's village house in El Bedorc, a small retreat surrounded by vineyards. Original stone walls and quiet in every corner.",
+"Barcelona, els cellers del Penedès i els castells de la comarca són a tocar. Però aquí, els matins comencen a poc a poc.": "Barcelona, the Penedès wineries and the castles of the area are close by. But here, mornings start slowly.",
+"Restaurada amb respecte": "Restored with care",
+"Murs que guarden més d'un segle d'històries": "Walls that hold more than a century of stories",
+"Pedra que ha vist passar generacions, sostres de fusta vista i racons restaurats amb paciència i estima. La casa conserva l'ànima de l'arquitectura tradicional, i ara també tot el confort per quedar-s'hi uns dies sense mirar el rellotge.": "Stone that has seen generations come and go, exposed wooden ceilings and corners restored with patience and affection. The house keeps the soul of traditional architecture, and now also all the comfort to stay a few days without watching the clock.",
+"Veure els allotjaments": "See the stays",
+"Dos apartaments i dues habitacions": "Two apartments and two rooms",
+"Consultar disponibilitat": "Check availability",
+"Habitacions amb bany privat, apartaments complets per a estades més llargues i un jardí amb terrassa per gaudir de l'aire lliure.": "Rooms with a private bathroom, whole apartments for longer stays and a garden with a terrace to enjoy the outdoors.",
+"Veure fotos": "See photos",
+"Apartament": "Apartment",
+"la nit": "per night",
+"1 dormitori": "1 bedroom",
+"Cuina equipada": "Equipped kitchen",
+"Bany privat": "Private bathroom",
+"Wifi gratuït": "Free wifi",
+"Aire condicionat": "Air conditioning",
+"Aparcament": "Parking",
+"La muntanya que es veu des del Bedorc, i el seu nom. Un apartament complet per a estades més llargues.": "The mountain you see from El Bedorc, and its name. A whole apartment for longer stays.",
+"Dormitori doble": "Double bedroom",
+"Amb el nom dels pins que envolten el poble. Espai, cuina pròpia i calma per quedar-s'hi uns dies.": "Named after the pines around the village. Space, its own kitchen and calm for a stay of a few days.",
+"Habitació": "Room",
+"Llit doble": "Double bed",
+"Per la tradició vitivinícola que ha modelat el paisatge. Llit de forja, terra hidràulic i l'armari antic de la casa.": "For the winemaking tradition that has shaped the landscape. A wrought-iron bed, hydraulic tile floor and the house's old wardrobe.",
+"Amb el nom de la figuera, l'arbre de les cases de pagès. Una habitació tranquil·la amb bany privat.": "Named after the fig tree, the tree of every farmhouse. A quiet room with a private bathroom.",
+"Com són per dins": "Inside",
+"Despertar sota bigues centenàries, amb la llum del Bedorc": "Waking up under century-old beams, in El Bedorc's light",
+"Cada allotjament conserva les bigues de fusta de la casa, pintades de verd, amb mobles antics i detalls fets a mà. Els apartaments tenen cuina pròpia; les habitacions, bany privat.": "Every stay keeps the house's wooden beams, painted green, with old furniture and handmade details. The apartments have their own kitchen; the rooms, a private bathroom.",
+"Aire condicionat i calefacció": "Air conditioning and heating",
+"Wifi ràpid gratuït": "Fast free wifi",
+"Aparcament gratuït": "Free parking",
+"Bany privat a totes les habitacions": "Private bathroom in every room",
+"Smart TV i nevera": "Smart TV and fridge",
+"Cuina equipada als apartaments": "Equipped kitchen in the apartments",
+"Tovalloles i roba de llit incloses": "Towels and bed linen included",
+"Veure totes les fotos": "See all photos",
+"Del cafè del matí a la copa de vi": "From morning coffee to a glass of wine",
+"A la planta baixa us espera el nostre restaurant: un espai de llum càlida, pedra i fusta on començar el dia amb un bon cafè i acabar-lo amb una copa de vi del Penedès.": "Our restaurant is on the ground floor: a space of warm light, stone and wood to start the day with a good coffee and end it with a glass of Penedès wine.",
+"Quan arriba la temporada, la terrassa s'omple amb l'olor dels calçots a la brasa. És el racó on sempre hi ha algú de la família, a punt de recomanar-vos rutes i racons de la zona.": "In season, the terrace fills with the smell of calçots on the grill. It's the corner where there's always someone from the family, ready to suggest routes and places nearby.",
+"Reservar taula": "Book a table",
+"La història de Casa Parellada": "The story of Casa Parellada",
+"Una casa de pagès que torna a tenir vida": "A farmhouse brought back to life",
+"La construcció": "Building the house",
+"La casa es va construir entre els anys 1898 i 1900.": "The house was built between 1898 and 1900.",
+"S. XX": "20th century",
+"Anys de pagesia": "Years of farming",
+"Durant molts anys els propietaris van viure de la pagesia.": "For many years the owners lived off the land.",
+"L'ampliació": "The extension",
+"S'hi van afegir una cort, un galliner i una petita quadra pel «Macho», el cavall que treballava la terra i transportava les collites.": "A pigsty, a henhouse and a small stable were added for “Macho”, the horse that worked the land and carried the harvest.",
+"La casa buida": "The empty house",
+"La família es va anar fent gran i, sense descendència, la casa va quedar buida.": "The family grew old and, with no one to follow, the house was left empty.",
+"Avui": "Today",
+"Ara forma part del projecte de la nostra família.": "Now it is part of our family's project.",
+"Postal antiga": "Old postcard",
+"El Bedorc, quan els carrers eren de terra i la casa encara vivia de la pagesia.": "El Bedorc, when the streets were dirt and the house still lived off the land.",
+"El nostre segell": "Our seal",
+"Cinc elements del Bedorc": "Five elements of El Bedorc",
+"Fulla de parra": "Vine leaf",
+"La tradició vitivinícola que ha modelat el paisatge i la vida de la casa durant segles.": "The winemaking tradition that has shaped the landscape and the life of the house for centuries.",
+"Raïm": "Grapes",
+"L'abundància de les collites i la història agrícola de la terra fèrtil del Bedorc.": "Abundant harvests and the farming history of El Bedorc's fertile land.",
+"Branca d'olivera": "Olive branch",
+"Pau, longevitat i resistència, i els oliverars que formen part del paisatge des de sempre.": "Peace, long life and resilience, and the olive groves that have always been part of the landscape.",
+"Ocell": "Bird",
+"La fauna del Bedorc i l'harmonia entre la casa i la natura que l'envolta.": "El Bedorc's wildlife and the harmony between the house and the nature around it.",
+"La silueta que es veu des del Bedorc, vincle espiritual i cultural amb la muntanya.": "The silhouette seen from El Bedorc, a spiritual and cultural bond with the mountain.",
+"«Amb un hisop entintat va marcar cada cosa amb el seu nom: taula, cadira, rellotge, porta, paret, llit, cassola.»": "“With an inked brush he marked everything with its name: table, chair, clock, door, wall, bed, pan.”",
+"Gabriel García Márquez, Cent anys de solitud": "Gabriel García Márquez, One Hundred Years of Solitude",
+"La casa en imatges": "The house in pictures",
+"L'entorn": "The area",
+"El Bedorc, amb Montserrat a la vista": "El Bedorc, with Montserrat in view",
+"El Bedorc és un petit paradís al cor de l'Anoia: vinyes, boscos i camps de conreu a tocar dels cellers del Penedès. Des de la casa, la silueta de Montserrat marca l'horitzó.": "El Bedorc is a small paradise in the heart of the Anoia: vineyards, woods and farmland close to the Penedès wineries. From the house, Montserrat's silhouette marks the horizon.",
+"A peu o en bicicleta, les rutes surten de la mateixa porta: camins entre vinyes, ermites i pobles amb història.": "On foot or by bike, routes start at the front door: paths through vineyards, hermitages and villages with history.",
+"Aeroport del Prat": "Barcelona Airport",
+"A prop de casa": "Near the house",
+"Racons per descobrir": "Places to explore",
+"Al mateix Bedorc": "In El Bedorc itself",
+"Castell de la Ventosa": "La Ventosa castle",
+"Les pedres del castell que va veure néixer el poble, documentat fa més de mil anys. Un passeig curt per començar el dia.": "The stones of the castle the village grew around, recorded over a thousand years ago. A short walk to start the day.",
+"La capital del cava. Caves centenàries, tasts entre vinyes i bombolles per brindar al capvespre.": "The capital of cava. Century-old cellars, tastings among the vines and bubbles for a toast at sunset.",
+"El Museu Molí Paperer i la Bassa, on l'aigua ha mogut molins durant segles.": "The Paper Mill Museum and the Bassa pool, where water has turned mills for centuries.",
+"El cor del Penedès: el Vinseum, el mercat i, per festa major, els castellers a la plaça.": "The heart of the Penedès: the Vinseum, the market and, at the town festival, the castellers in the square.",
+"Castell de Claramunt": "Claramunt castle",
+"Una fortalesa medieval dalt del turó, amb tota l'Anoia als peus.": "A medieval fortress on the hilltop, with the whole Anoia at its feet.",
+"La muntanya que veieu des de casa: el monestir, l'Escolania i camins fins a Sant Jeroni.": "The mountain you see from the house: the monastery, the boys' choir and paths up to Sant Jeroni.",
+"Opinions a Google": "Google reviews",
+"El que diuen els nostres hostes": "What our guests say",
+"Aquí es mostraran les ressenyes reals de Google de La Casa Vella, amb la puntuació i les opinions més recents.": "La Casa Vella's real Google reviews will appear here, with the rating and the latest reviews.",
+"Llegir les ressenyes a Google": "Read the reviews on Google",
+"Deixa'ns la teva opinió": "Leave us a review",
+"Escriu-nos, t'esperem": "Write to us",
+"Com arribar": "Directions",
+"Copiar": "Copy",
+"Nom": "Name",
+"Correu": "Email",
+"Missatge": "Message",
+"Enviar missatge": "Send message",
+"Casa de poble familiar al Bedorc, entre vinyes i amb Montserrat a l'horitzó.": "A family village house in El Bedorc, among vineyards with Montserrat on the horizon.",
+"Segueix-nos": "Follow us",
+"Explora": "Explore",
+"Opinions": "Reviews",
+"© 2026 La Casa Vella, El Bedorc. Núm. registre turístic per confirmar": "© 2026 La Casa Vella, El Bedorc. Tourism registration number to be confirmed",
+"Avís legal": "Legal notice",
+"Privacitat": "Privacy",
+"Tancar": "Close",
+"Anterior": "Previous",
+"Següent": "Next",
+"Principal": "Main",
+"La Casa Vella, inici": "La Casa Vella, home",
+"tria el teu racó": "pick your corner",
+"gairebé ho tenim": "almost there",
+"Dades de la reserva": "Booking details",
+"Com et dius?": "Your name",
+"tu@correu.com": "you@email.com",
+"Una celebració, una al·lèrgia, si veniu amb bicicleta…": "A celebration, an allergy, if you're coming by bike…",
+"Resum de la reserva": "Booking summary",
+"Veure les fotos i els detalls": "See the photos and details",
+"Portada": "Cover",
+"Vinyes i Montserrat, cel blau": "Vineyards and Montserrat, blue sky",
+"Vinyes al capvespre amb Montserrat": "Vineyards at dusk with Montserrat",
+"Vinyes amb llum de tarda": "Vineyards in the afternoon light",
+"Vinyes i pinedes": "Vineyards and pine woods",
+"El Bedorc al capvespre": "El Bedorc at dusk",
+"Tria les dates": "Choose your dates",
+"Escala de rajola i entrada de la casa, amb la llum càlida del rebedor": "Tiled staircase and the house entrance, in the warm light of the hall",
+"restaurada amb amor": "restored with love",
+"les nostres estances": "our rooms",
+"Veure les fotos de Montserrat": "See photos of Montserrat",
+"Veure les fotos de La Pineda": "See photos of La Pineda",
+"Veure les fotos de Les Vinyes": "See photos of Les Vinyes",
+"Veure les fotos de Figarot": "See photos of Figarot",
+"Apartament Montserrat": "Montserrat apartment",
+"Apartament La Pineda": "La Pineda apartment",
+"Habitació Les Vinyes": "Les Vinyes room",
+"Habitació Figarot": "Figarot room",
+"Ampliar foto": "Enlarge photo",
+"Escala de rajola i entrada de la casa": "Tiled staircase and the house entrance",
+"Rebedor amb mirall daurat i porta al carrer": "Hall with a gilt mirror and the street door",
+"Llibre de La Casa Vella sobre una màquina de cosir antiga": "La Casa Vella book on an old sewing machine",
+"Flor sobre el terra hidràulic": "Flower on the hydraulic tile floor",
+"Barra del restaurant amb taulell de fusta, prestatges il·luminats i el segell de La Casa Vella": "Restaurant bar with a wooden counter, lit shelves and the La Casa Vella seal",
+"a la planta baixa": "on the ground floor",
+"Carrer del Bedorc, foto antiga que es fon amb la foto actual": "A street in El Bedorc, an old photo fading into today's",
+"Postal antiga en blanc i negre d'un carrer del Bedorc amb arbres i balcons": "Old black-and-white postcard of a street in El Bedorc with trees and balconies",
+"Cita": "Quote",
+"racons i detalls": "corners and details",
+"Vinyes amb Montserrat al fons": "Vineyards with Montserrat behind",
+"Rètol de fusta de La Casa Vella sobre la porta": "La Casa Vella wooden sign above the door",
+"Gerro amb flors seques al costat de la finestra": "Vase of dried flowers by the window",
+"Mirall antic de marc daurat": "Old gilt-framed mirror",
+"Rebedor amb terra de toves i porta al carrer": "Hall with a terracotta floor and the street door",
+"El Bedorc al capvespre, entre pinedes i camps, amb Montserrat al fons": "El Bedorc at dusk, among pine woods and fields, with Montserrat behind",
+"el nostre entorn": "our surroundings",
+"Formulari de contacte": "Contact form",
+"El teu nom": "Your name",
+"Dates, nombre de persones, preguntes…": "Dates, number of guests, questions…",
+"Truca'ns": "Call us",
+"Escriu-nos per WhatsApp": "Message us on WhatsApp",
+"Foto anterior": "Previous photo",
+"Foto següent": "Next photo",
+"Foto ampliada": "Enlarged photo",
+"Idioma": "Language"
+} };
+const T = s => (I18N[LANG] || {})[s] ?? s;
+const tr = (ca, es, en) => LANG === 'es' ? es : LANG === 'en' ? en : ca;
+const LOC = tr('ca-ES', 'es-ES', 'en-GB');
+(() => {
+  document.querySelectorAll('[data-lang]').forEach(b => {
+    b.setAttribute('aria-pressed', b.dataset.lang === LANG);
+    b.addEventListener('click', () => {
+      try { localStorage.setItem('lcv-lang', b.dataset.lang); } catch (e) {}
+      const u = new URL(location.href); u.searchParams.delete('lang');
+      if (u.href !== location.href) history.replaceState(null, '', u.href);
+      location.reload();
+    });
+  });
+  if (LANG === 'ca') return;
+  document.title = T(document.title);
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n; (n = w.nextNode());) {
+    if (n.parentElement.closest('script, style')) continue;
+    const m = n.nodeValue.match(/^(\s*)([\s\S]*?)(\s*)$/), key = m[2].replace(/\s+/g, ' ');
+    if (key && T(key) !== key) n.nodeValue = m[1] + T(key) + m[3];
+  }
+  for (const a of ['placeholder', 'aria-label', 'alt', 'title', 'data-script', 'data-placeholder'])
+    document.querySelectorAll(`[${a}]`).forEach(el => el.setAttribute(a, T(el.getAttribute(a))));
+  // English puts the euro sign first: "€90 per night"
+  if (LANG === 'en') document.querySelectorAll('.price [data-n]').forEach(b => { b.textContent = '€' + b.textContent; b.nextSibling.nodeValue = ' '; });
+  document.documentElement.classList.remove('i18n');
+})();
+</script>
+<script>
 // Design proposals and hero photo: #opcio-2 or #opcio-2-foto-3 link straight to a combination
 (() => {
-  const HEROES = { 1: ['hero-vinyes-cel', 'center 62%', 'Vinyes i Montserrat, cel blau'], 2: ['hero-vinyes-capvespre', 'center 40%', 'Vinyes al capvespre amb Montserrat'], 3: ['hero-vinyes-sol', 'center 40%', 'Vinyes amb llum de tarda'], 4: ['montserrat-vinyes', 'center 55%', 'Vinyes i pinedes'], 5: ['bedorc-capvespre', '18% center', 'El Bedorc al capvespre'] };
+  const HEROES = { 1: ['hero-vinyes-cel', 'center 62%', T('Vinyes i Montserrat, cel blau')], 2: ['hero-vinyes-capvespre', 'center 40%', T('Vinyes al capvespre amb Montserrat')], 3: ['hero-vinyes-sol', 'center 40%', T('Vinyes amb llum de tarda')], 4: ['montserrat-vinyes', 'center 55%', T('Vinyes i pinedes')], 5: ['bedorc-capvespre', '18% center', T('El Bedorc al capvespre')] };
   const vBtns = [...document.querySelectorAll('.variants button[data-v]')], hBtns = [...document.querySelectorAll('.variants button[data-h]')];
   const hero = document.getElementById('heroImg');
   let v = '1', h = '1';
@@ -1254,33 +1703,42 @@ nav.addEventListener('click', e => { if (e.target.tagName === 'A') { nav.classLi
 // then Stripe Checkout through /api/checkout (Cloudflare Pages Functions).
 // Where /api is not available (the review preview), it falls back to phone and WhatsApp.
 const STAY_INFO = {
-  'montserrat': { name: 'Montserrat', kind: 'Apartament', price: 90, max: 3 },
-  'la-pineda': { name: 'La Pineda', kind: 'Apartament', price: 90, max: 3 },
-  'les-vinyes': { name: 'Les Vinyes', kind: 'Habitació', price: 70, max: 2 },
-  'figarot': { name: 'Figarot', kind: 'Habitació', price: 70, max: 2 },
+  'montserrat': { name: 'Montserrat', kind: T('Apartament'), price: 90, max: 3 },
+  'la-pineda': { name: 'La Pineda', kind: T('Apartament'), price: 90, max: 3 },
+  'les-vinyes': { name: 'Les Vinyes', kind: T('Habitació'), price: 70, max: 2 },
+  'figarot': { name: 'Figarot', kind: T('Habitació'), price: 70, max: 2 },
 };
 // Prices, discounts, rules and the cancellation policy set in Maite (the back office).
 // The card labels, the local price guess and the texts about discounts follow them.
 let DISCOUNTS = [{ nights: 2, pct: 5 }, { nights: 3, pct: 10 }], RULES = null;
 const tierFor = n => DISCOUNTS.filter(t => n >= t.nights).reduce((b, t) => t.pct > b.pct ? t : b, { nights: 0, pct: 0 });
-const nitsWord = n => n === 2 ? 'dues nits' : n === 3 ? 'tres nits' : `${n} nits`;
+const nitsWord = n => n === 2 ? tr('dues nits', 'dos noches', 'two nights') : n === 3 ? tr('tres nits', 'tres noches', 'three nights') : nightsTxt(n);
 fetch('/api/settings').then(r => r.ok ? r.json() : null).then(p => {
   if (!p || !p.stays) return;
   for (const [k, v] of Object.entries(p.stays)) if (STAY_INFO[k]) STAY_INFO[k].price = v.base;
   DISCOUNTS = p.discounts; RULES = p.rules;
   document.querySelectorAll('[data-price]').forEach(el => {
     const v = p.stays[el.dataset.price]; if (!v) return;
-    el.querySelector('[data-n]').textContent = (v.varies ? 'des de ' : '') + v.from.toLocaleString('ca-ES');
+    el.querySelector('[data-n]').textContent = (v.varies ? tr('des de ', 'desde ', 'from ') : '') + (LANG === 'en' ? '€' : '') + v.from.toLocaleString(LOC);
   });
   const t = [...DISCOUNTS].sort((a, b) => a.nights - b.nights);
-  const disc = t.map((x, i) => i === 0 ? `un ${x.pct} % menys a partir de ${nitsWord(x.nights)}` : `un ${x.pct} % a partir de ${nitsWord(x.nights)}`);
-  const text = disc.length > 1 ? disc.slice(0, -1).join(', ') + ' i ' + disc.at(-1) : disc[0];
-  document.querySelectorAll('[data-discounts]').forEach(el => { el.textContent = `Com més dies us quedeu, millor: ${text}.`; el.hidden = !t.length; });
-  const hour = t => { const [h, m] = t.split(':'); return `${+h}${m === '00' ? '' : '.' + m} h`; };
+  const disc = t.map((x, i) => i === 0 ? tr(`un ${x.pct} % menys a partir de ${nitsWord(x.nights)}`, `un ${x.pct} % menos a partir de ${nitsWord(x.nights)}`, `${x.pct}% off from ${nitsWord(x.nights)}`) : tr(`un ${x.pct} % a partir de ${nitsWord(x.nights)}`, `un ${x.pct} % a partir de ${nitsWord(x.nights)}`, `${x.pct}% from ${nitsWord(x.nights)}`));
+  const text = disc.length > 1 ? disc.slice(0, -1).join(', ') + tr(' i ', ' y ', ' and ') + disc.at(-1) : disc[0];
+  document.querySelectorAll('[data-discounts]').forEach(el => { el.textContent = tr(`Com més dies us quedeu, millor: ${text}.`, `Cuantos más días os quedéis, mejor: ${text}.`, `The longer you stay, the better: ${text}.`); el.hidden = !t.length; });
+  const hour = t => { const [h, m] = t.split(':'); return LANG === 'en' ? `${h}:${m}` : `${+h}${m === '00' ? '' : '.' + m} h`; };
   if (p.content) applyContent(p.content);
-  const pol = $('policy'); if (pol) pol.textContent = `${p.policy} Check-in a partir de les ${hour(p.rules.checkin)} i check-out abans de les ${hour(p.rules.checkout)}.`;
+  const pol = $('policy'); if (pol) pol.textContent = `${LANG === 'ca' || !p.cancel ? p.policy : policyText(p.cancel)} ${tr(`Check-in a partir de les ${hour(p.rules.checkin)} i check-out abans de les ${hour(p.rules.checkout)}.`, `Check-in a partir de las ${hour(p.rules.checkin)} y check-out antes de las ${hour(p.rules.checkout)}.`, `Check-in from ${hour(p.rules.checkin)}, check-out by ${hour(p.rules.checkout)}.`)}`;
 }).catch(() => {});
-const CONTACT_MSG = "Truca'ns o escriu-nos per WhatsApp al +34 667 40 98 59 i t'ho preparem.";
+const CONTACT_MSG = tr("Truca'ns o escriu-nos per WhatsApp al +34 667 40 98 59 i t'ho preparem.", 'Llámanos o escríbenos por WhatsApp al +34 667 40 98 59 y te lo preparamos.', "Call us or message us on WhatsApp at +34 667 40 98 59 and we'll arrange it.");
+// The cancellation policy in Spanish or English, from the same terms the server words in Catalan (lib/booking.js policyText)
+function policyText(c) {
+  const days = n => n === 1 ? tr('1 dia', '1 día', '1 day') : tr(`${n} dies`, `${n} días`, `${n} days`);
+  if (c.fullDays == null && !c.partialPct) return tr("No es retorna l'import si es cancel·la.", 'No se devuelve el importe si se cancela.', 'No refund on cancellation.');
+  const parts = [];
+  if (c.fullDays != null) parts.push(c.fullDays === 0 ? tr('Cancel·lació gratuïta fins al dia abans del check-in', 'Cancelación gratuita hasta el día antes del check-in', 'Free cancellation until the day before check-in') : tr(`Cancel·lació gratuïta fins a ${days(c.fullDays)} abans del check-in`, `Cancelación gratuita hasta ${days(c.fullDays)} antes del check-in`, `Free cancellation up to ${days(c.fullDays)} before check-in`));
+  if (c.partialPct && c.partialDays != null) parts.push(tr(`es retorna el ${c.partialPct} % fins a ${c.partialDays === 0 ? 'el check-in' : days(c.partialDays) + ' abans'}`, `se devuelve el ${c.partialPct} % hasta ${c.partialDays === 0 ? 'el check-in' : days(c.partialDays) + ' antes'}`, `${c.partialPct}% back up to ${c.partialDays === 0 ? 'check-in' : days(c.partialDays) + ' before'}`));
+  return parts.join('; ') + tr('. Després no es retorna res.', '. Después no se devuelve nada.', '. No refund after that.');
+}
 const $ = id => document.getElementById(id);
 // Anchor jumps land below the sticky header, whatever height it has on this device
 const topBar = document.querySelector('header.top');
@@ -1292,10 +1750,10 @@ const pad = n => String(n).padStart(2, '0');
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); };
-const euro = n => n.toLocaleString('ca-ES', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' €';
-const dayLabel = (s, long) => parse(s).toLocaleDateString('ca-ES', long ? { weekday: 'long', day: 'numeric', month: 'long' } : { weekday: 'short', day: 'numeric', month: 'short' });
-const people = n => `${n} ${+n === 1 ? 'persona' : 'persones'}`;
-const nightsTxt = n => `${n} ${n === 1 ? 'nit' : 'nits'}`;
+const euro = n => { const v = n.toLocaleString(LOC, { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); return LANG === 'en' ? '€' + v : v + ' €'; };
+const dayLabel = (s, long) => parse(s).toLocaleDateString(LOC, long ? { weekday: 'long', day: 'numeric', month: 'long' } : { weekday: 'short', day: 'numeric', month: 'short' });
+const people = n => `${n} ${+n === 1 ? tr('persona', 'persona', 'guest') : tr('persones', 'personas', 'guests')}`;
+const nightsTxt = n => `${n} ${n === 1 ? tr('nit', 'noche', 'night') : tr('nits', 'noches', 'nights')}`;
 
 // Prices come from the server (/api/quote, /api/search) so they can change by date;
 // the local table is only the first guess and the fallback for the review preview.
@@ -1379,20 +1837,26 @@ function makeSelect(input, getOptions) {
   return { set, open, btn };
 }
 
-const stayPick = makeSelect(fstay, () => [{ value: '', text: 'Tots els allotjaments', html: '<span class="o-name">Tots els allotjaments</span><span class="o-sub">Mira què hi ha lliure per a les teves dates</span>' }].concat(Object.entries(STAY_INFO).map(([value, s]) => ({
-  value, text: `${s.kind} ${s.name}`,
-  html: `<span class="o-name">${s.name}</span><span class="o-sub">${s.kind} per a fins a ${people(s.max)}</span>`,
+const stayPick = makeSelect(fstay, () => [{ value: '', text: T('Tots els allotjaments'), html: `<span class="o-name">${T('Tots els allotjaments')}</span><span class="o-sub">${tr('Mira què hi ha lliure per a les teves dates', 'Mira qué hay libre para tus fechas', 'See what is free for your dates')}</span>` }].concat(Object.entries(STAY_INFO).map(([value, s]) => ({
+  value, text: LANG === 'en' ? `${s.name} ${s.kind.toLowerCase()}` : `${s.kind} ${s.name}`,
+  html: `<span class="o-name">${s.name}</span><span class="o-sub">${tr(`${s.kind} per a fins a ${people(s.max)}`, `${s.kind} para hasta ${people(s.max)}`, `${s.kind} for up to ${people(s.max)}`)}</span>`,
 }))));
 const guestsPick = makeSelect(fguests, () => Array.from({ length: (STAY_INFO[fstay.value] || { max: 3 }).max }, (_, i) => ({ value: String(i + 1), text: people(i + 1) })));
-const arrivalPick = makeSelect($('garrival'), () => ["Encara no ho sé", 'Abans de les 16 h', 'Entre les 16 i les 18 h', 'Entre les 18 i les 20 h', 'Entre les 20 i les 22 h', 'Més tard de les 22 h'].map(t => ({ value: t, text: t })));
+// The value stays in Catalan (it is what Maite shows); the guest reads it in their language
+const arrivalPick = makeSelect($('garrival'), () => [
+  ["Encara no ho sé", T('Encara no ho sé')], ['Abans de les 16 h', tr('Abans de les 16 h', 'Antes de las 16 h', 'Before 4 pm')], ['Entre les 16 i les 18 h', tr('Entre les 16 i les 18 h', 'Entre las 16 y las 18 h', '4 to 6 pm')],
+  ['Entre les 18 i les 20 h', tr('Entre les 18 i les 20 h', 'Entre las 18 y las 20 h', '6 to 8 pm')], ['Entre les 20 i les 22 h', tr('Entre les 20 i les 22 h', 'Entre las 20 y las 22 h', '8 to 10 pm')], ['Més tard de les 22 h', tr('Més tard de les 22 h', 'Más tarde de las 22 h', 'After 10 pm')],
+].map(([value, text]) => ({ value, text })));
 
 // ---- Calendar: one panel picks arrival and departure; booked nights are struck through ----
-const MONTHS = ['gener', 'febrer', 'març', 'abril', 'maig', 'juny', 'juliol', 'agost', 'setembre', 'octubre', 'novembre', 'desembre'];
-const WD = ['dl', 'dt', 'dc', 'dj', 'dv', 'ds', 'dg'];
+const MONTHS = tr(['gener', 'febrer', 'març', 'abril', 'maig', 'juny', 'juliol', 'agost', 'setembre', 'octubre', 'novembre', 'desembre'],
+  ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
+  ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']);
+const WD = tr(['dl', 'dt', 'dc', 'dj', 'dv', 'ds', 'dg'], ['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'], ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']);
 const ARROW = d => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
 const inField = fin.closest('.field'), outField = fout.closest('.field');
 const calPop = document.createElement('div');
-calPop.className = 'pop cal'; calPop.hidden = true; calPop.setAttribute('role', 'dialog'); calPop.setAttribute('aria-label', 'Tria les dates');
+calPop.className = 'pop cal'; calPop.hidden = true; calPop.setAttribute('role', 'dialog'); calPop.setAttribute('aria-label', T('Tria les dates'));
 bookForm.appendChild(calPop);
 const busy = {};
 let picking = 'in', view = new Date();
@@ -1425,7 +1889,7 @@ function drawCal() {
   calPop.classList.toggle('two', two);
   const first = new Date(view.getFullYear(), view.getMonth(), 1), now = new Date();
   const prevOff = first.getFullYear() === now.getFullYear() && first.getMonth() === now.getMonth();
-  let html = `<div class="cal-months"><button type="button" class="cal-nav prev" data-nav="-1" aria-label="Mes anterior"${prevOff ? ' disabled' : ''}>${ARROW('M15 6l-6 6 6 6')}</button><button type="button" class="cal-nav next" data-nav="1" aria-label="Mes següent">${ARROW('M9 6l6 6-6 6')}</button>`;
+  let html = `<div class="cal-months"><button type="button" class="cal-nav prev" data-nav="-1" aria-label="${tr('Mes anterior', 'Mes anterior', 'Previous month')}"${prevOff ? ' disabled' : ''}>${ARROW('M15 6l-6 6 6 6')}</button><button type="button" class="cal-nav next" data-nav="1" aria-label="${tr('Mes següent', 'Mes siguiente', 'Next month')}">${ARROW('M9 6l6 6-6 6')}</button>`;
   for (let k = 0; k < (two ? 2 : 1); k++) {
     const m = new Date(first.getFullYear(), first.getMonth() + k, 1);
     html += `<div class="cal-month"><div class="cal-title">${MONTHS[m.getMonth()]} ${m.getFullYear()}</div><div class="cal-grid">${WD.map(w => `<span class="wd">${w}</span>`).join('')}${'<span></span>'.repeat((m.getDay() + 6) % 7)}`;
@@ -1438,15 +1902,15 @@ function drawCal() {
     html += '</div></div>';
   }
   const p = price();
-  const hint = picking === 'in' ? 'Tria el dia del check-in' : fout.value && p ? `<b>${nightsTxt(p.n)}</b>, del ${dayLabel(fin.value)} al ${dayLabel(fout.value)}` : 'Ara tria el dia del check-out';
-  html += `</div><div class="cal-foot"><span>${hint}</span>${busyNights().size ? '<span class="legend"><s>12</s> Ocupat</span>' : ''}</div>`;
+  const hint = picking === 'in' ? tr('Tria el dia del check-in', 'Elige el día del check-in', 'Choose your check-in day') : fout.value && p ? `<b>${nightsTxt(p.n)}</b>, ${tr(`del ${dayLabel(fin.value)} al ${dayLabel(fout.value)}`, `del ${dayLabel(fin.value)} al ${dayLabel(fout.value)}`, `${dayLabel(fin.value)} to ${dayLabel(fout.value)}`)}` : tr('Ara tria el dia del check-out', 'Ahora elige el día del check-out', 'Now choose your check-out day');
+  html += `</div><div class="cal-foot"><span>${hint}</span>${busyNights().size ? `<span class="legend"><s>12</s> ${tr('Ocupat', 'Ocupado', 'Booked')}</span>` : ''}</div>`;
   calPop.innerHTML = html;
   paintRange();
 }
 function setDates(a, b) {
   fin.value = a; fout.value = b;
-  $('inVal').textContent = a ? dayLabel(a) : 'Tria la data';
-  $('outVal').textContent = b ? dayLabel(b) : 'Tria la data';
+  $('inVal').textContent = a ? dayLabel(a) : tr('Tria la data', 'Elige la fecha', 'Choose a date');
+  $('outVal').textContent = b ? dayLabel(b) : tr('Tria la data', 'Elige la fecha', 'Choose a date');
   $('inVal').classList.toggle('ph', !a); $('outVal').classList.toggle('ph', !b);
   showQuote();
 }
@@ -1484,30 +1948,34 @@ function applyContent(C) {
   for (const [k, c] of Object.entries(C)) {
     const art = $(k), info = STAY_INFO[k];
     if (!art || !info) continue;
-    Object.assign(info, { name: c.name, kind: c.kind, max: c.max });
-    art.querySelector('.stay-body .label').textContent = c.kind;
+    // Maite keeps these texts in Catalan only: in Spanish and English the page's translated type, description and features stay
+    const local = LANG === 'ca';
+    Object.assign(info, { name: c.name, max: c.max }, local ? { kind: c.kind } : {});
     art.querySelector('.stay-body h3').textContent = c.name;
-    art.querySelector('.stay-body > p:not(.price)').textContent = c.desc;
-    const ul = art.querySelector('.feats'); ul.textContent = '';
-    for (const f of c.feats) {
-      const li = document.createElement('li');
-      li.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${f.svg}</svg>`; li.append(f.text); ul.append(li);
+    if (local) {
+      art.querySelector('.stay-body .label').textContent = c.kind;
+      art.querySelector('.stay-body > p:not(.price)').textContent = c.desc;
+      const ul = art.querySelector('.feats'); ul.textContent = '';
+      for (const f of c.feats) {
+        const li = document.createElement('li');
+        li.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${f.svg}</svg>`; li.append(f.text); ul.append(li);
+      }
     }
     if (c.photos.length) {
       art.querySelector('.stay-cover .photo img').src = photoSrc(c.photos[0]);
-      STAY_SETS[k] = c.photos; SETS['stay-' + k] = c.photos.map(src => [src, `${c.kind} ${c.name}`]);
+      STAY_SETS[k] = c.photos; SETS['stay-' + k] = c.photos.map(src => [src, `${info.kind} ${c.name}`]);
     }
-    art.querySelectorAll('[data-stay]').forEach(b => b.setAttribute('aria-label', `Veure les fotos de ${c.name}`));
+    art.querySelectorAll('[data-stay]').forEach(b => b.setAttribute('aria-label', tr(`Veure les fotos de ${c.name}`, `Ver las fotos de ${c.name}`, `See photos of ${c.name}`)));
   }
   if (fstay.value) stayPick.set(fstay.value, true);
 }
 // Why some dates can't be booked online (rules set in Maite)
 function ruleText(d) {
   const e = d && d.error;
-  if (e === 'min_nights') return `Per arribar aquest dia, l'estada mínima és de ${nightsTxt(d.min)}.`;
-  if (e === 'too_long') return `L'estada màxima és de ${nightsTxt(d.max)}. ${CONTACT_MSG}`;
-  if (e === 'too_soon') return d.days === 1 ? 'Les reserves en línia es fan com a mínim amb un dia d\'antelació. ' + CONTACT_MSG : `Les reserves en línia es fan com a mínim amb ${d.days} dies d'antelació. ${CONTACT_MSG}`;
-  if (e === 'too_far') return `Encara no tenim obertes aquestes dates. ${CONTACT_MSG}`;
+  if (e === 'min_nights') return tr(`Per arribar aquest dia, l'estada mínima és de ${nightsTxt(d.min)}.`, `Para llegar este día, la estancia mínima es de ${nightsTxt(d.min)}.`, `Arriving on this day, the minimum stay is ${nightsTxt(d.min)}.`);
+  if (e === 'too_long') return tr(`L'estada màxima és de ${nightsTxt(d.max)}.`, `La estancia máxima es de ${nightsTxt(d.max)}.`, `The maximum stay is ${nightsTxt(d.max)}.`) + ' ' + CONTACT_MSG;
+  if (e === 'too_soon') return (d.days === 1 ? tr("Les reserves en línia es fan com a mínim amb un dia d'antelació.", 'Las reservas en línea se hacen como mínimo con un día de antelación.', 'Online bookings need at least one day of notice.') : tr(`Les reserves en línia es fan com a mínim amb ${d.days} dies d'antelació.`, `Las reservas en línea se hacen como mínimo con ${d.days} días de antelación.`, `Online bookings need at least ${d.days} days of notice.`)) + ' ' + CONTACT_MSG;
+  if (e === 'too_far') return tr('Encara no tenim obertes aquestes dates.', 'Todavía no tenemos abiertas estas fechas.', "These dates aren't open yet.") + ' ' + CONTACT_MSG;
   return '';
 }
 // ---- Price and availability for the chosen stay (the bar shows only a warning when the dates are taken) ----
@@ -1532,8 +2000,9 @@ let searchSeq = 0, cameFrom = '#reservar';
 function drawCompare() {
   const g = +fguests.value || 1;
   // No weekday here: "Del 24 al 27 d'octubre" reads at a glance; the month only once when it doesn't change
-  const d1 = parse(fin.value), d2 = parse(fout.value), dm = d => d.toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' });
-  $('cmpDates').textContent = d1.getMonth() === d2.getMonth() ? `Del ${d1.getDate()} al ${dm(d2)}` : `Del ${dm(d1)} al ${dm(d2)}`;
+  const d1 = parse(fin.value), d2 = parse(fout.value), dm = d => d.toLocaleDateString(LOC, { day: 'numeric', month: 'long' });
+  const from = d1.getMonth() === d2.getMonth() ? d1.getDate() : dm(d1);
+  $('cmpDates').textContent = tr(`Del ${from} al ${dm(d2)}`, `Del ${from} al ${dm(d2)}`, `${from} to ${dm(d2)}`);
   $('cmpWho').textContent = `${nightsTxt(nights())}, ${people(g)}`;
   const rows = Object.entries(STAY_INFO).map(([stay, s]) => ({ stay, s, q: price(stay), fits: g <= s.max, free: freeNow[stay] !== false }));
   rows.sort((a, b) => (b.fits && b.free) - (a.fits && a.free));
@@ -1541,19 +2010,19 @@ function drawCompare() {
     const art = $(stay), ok = fits && free;
     const desc = art.querySelector('.stay-body > p:not(.price)').textContent;
     return `<article class="cmp-row${ok ? '' : ' off'}">
-      <button type="button" class="cmp-media" data-details="${stay}" aria-label="Veure les fotos i els detalls de ${s.name}"><span class="photo"><img src="${art.querySelector('.stay-cover .photo img').getAttribute('src')}" alt="" loading="lazy"></span><img class="plaque" src="${art.querySelector('.plaque').getAttribute('src')}" alt="" loading="lazy"></button>
-      <div class="cmp-info"><span class="label">${s.kind}</span><h3>${s.name}</h3><p>${desc}</p><ul class="feats">${art.querySelector('.feats').innerHTML}</ul><button type="button" class="cmp-more" data-details="${stay}">Veure fotos i detalls</button></div>
+      <button type="button" class="cmp-media" data-details="${stay}" aria-label="${tr(`Veure les fotos i els detalls de ${s.name}`, `Ver las fotos y los detalles de ${s.name}`, `See the photos and details of ${s.name}`)}"><span class="photo"><img src="${art.querySelector('.stay-cover .photo img').getAttribute('src')}" alt="" loading="lazy"></span><img class="plaque" src="${art.querySelector('.plaque').getAttribute('src')}" alt="" loading="lazy"></button>
+      <div class="cmp-info"><span class="label">${s.kind}</span><h3>${s.name}</h3><p>${desc}</p><ul class="feats">${art.querySelector('.feats').innerHTML}</ul><button type="button" class="cmp-more" data-details="${stay}">${T('Veure fotos i detalls')}</button></div>
       <div class="cmp-buy">${buyBlock(stay)}</div></article>`;
   }).join('');
 }
 function buyBlock(stay) {
   const s = STAY_INFO[stay], q = price(stay), fits = (+fguests.value || 1) <= s.max, ok = fits && freeNow[stay] !== false;
-  if (q.error) return `<span class="cmp-cap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.5c1.9.8 3.2 2.8 3.5 5.5"/></svg><span class="cap-upto">Fins a </span>${people(s.max)}</span><span class="cmp-no">${ruleText(q.error)}</span>`;
-  return `<span class="cmp-cap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.5c1.9.8 3.2 2.8 3.5 5.5"/></svg><span class="cap-upto">Fins a </span>${people(s.max)}</span>
-    ${q.discount ? `<span class="cmp-badge">${q.discount} % de descompte</span>` : ''}
+  if (q.error) return `<span class="cmp-cap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.5c1.9.8 3.2 2.8 3.5 5.5"/></svg><span class="cap-upto">${tr('Fins a ', 'Hasta ', 'Up to ')}</span>${people(s.max)}</span><span class="cmp-no">${ruleText(q.error)}</span>`;
+  return `<span class="cmp-cap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.5c1.9.8 3.2 2.8 3.5 5.5"/></svg><span class="cap-upto">${tr('Fins a ', 'Hasta ', 'Up to ')}</span>${people(s.max)}</span>
+    ${q.discount ? `<span class="cmp-badge">${tr(`${q.discount} % de descompte`, `${q.discount} % de descuento`, `${q.discount}% off`)}</span>` : ''}
     <div class="cmp-total">${q.discount ? `<s>${euro(q.subtotal)}</s>` : ''}<b>${euro(q.total)}</b></div>
-    <span class="cmp-nights">en total, per ${nightsTxt(q.n)}</span>
-    ${!fits ? `<span class="cmp-no">Només fins a ${people(s.max)}</span>` : checking ? '<span class="cmp-checking">Comprovant disponibilitat…</span>' : ok ? `<button type="button" class="btn solid" data-choose="${stay}">Reservar</button>` : '<span class="cmp-no">Ocupat aquests dies</span>'}`;
+    <span class="cmp-nights">${tr(`en total, per ${nightsTxt(q.n)}`, `en total, por ${nightsTxt(q.n)}`, `in total, for ${nightsTxt(q.n)}`)}</span>
+    ${!fits ? `<span class="cmp-no">${tr(`Només fins a ${people(s.max)}`, `Solo hasta ${people(s.max)}`, `Only up to ${people(s.max)}`)}</span>` : checking ? `<span class="cmp-checking">${tr('Comprovant disponibilitat…', 'Comprobando disponibilidad…', 'Checking availability…')}</span>` : ok ? `<button type="button" class="btn solid" data-choose="${stay}">${T('Reservar')}</button>` : `<span class="cmp-no">${tr('Ocupat aquests dies', 'Ocupado estos días', 'Booked on these dates')}</span>`}`;
 }
 
 // Stay details popup: gallery, description, services and the price for the chosen dates
@@ -1561,7 +2030,7 @@ const sm = $('stayModal'), smImg = $('smImg'), smThumbs = $('smThumbs');
 let smSet = [], smCur = 0, smOpener = null, smStay = '';
 function smShow(i) {
   smCur = (i + smSet.length) % smSet.length;
-  smImg.src = photoSrc(smSet[smCur]); smImg.alt = `${STAY_INFO[smStay].kind} ${STAY_INFO[smStay].name}, foto ${smCur + 1}`;
+  smImg.src = photoSrc(smSet[smCur]); smImg.alt = `${STAY_INFO[smStay].kind} ${STAY_INFO[smStay].name}, ${tr('foto', 'foto', 'photo')} ${smCur + 1}`;
   $('smCount').textContent = `${smCur + 1} / ${smSet.length}`;
   smThumbs.querySelectorAll('button').forEach((b, k) => b.setAttribute('aria-current', k === smCur));
 }
@@ -1573,7 +2042,7 @@ function openStay(stay, from) {
   $('smDesc').textContent = art.querySelector('.stay-body > p:not(.price)').textContent;
   $('smFeats').innerHTML = art.querySelector('.feats').innerHTML;
   $('smBuy').innerHTML = buyBlock(stay);
-  smThumbs.innerHTML = smSet.map((n, k) => `<button type="button" data-k="${k}" aria-label="Foto ${k + 1}"><img src="${photoSrc(n)}" alt="" loading="lazy"></button>`).join('');
+  smThumbs.innerHTML = smSet.map((n, k) => `<button type="button" data-k="${k}" aria-label="${tr('Foto', 'Foto', 'Photo')} ${k + 1}"><img src="${photoSrc(n)}" alt="" loading="lazy"></button>`).join('');
   smShow(0);
   sm.hidden = false; document.documentElement.style.overflow = 'hidden';
   $('smClose').focus();
@@ -1607,12 +2076,13 @@ let checking = false;
 function drawCount() {
   if (checking) { $('cmpCount').textContent = ''; return; }
   const g = +fguests.value || 1, n = Object.entries(STAY_INFO).filter(([stay, s]) => g <= s.max && freeNow[stay] !== false).length;
-  $('cmpCount').textContent = n === 0 ? 'Cap allotjament lliure per a aquestes dates' : n === 1 ? 'Hi ha 1 allotjament lliure per a aquestes dates' : `Hi ha ${n} allotjaments lliures per a aquestes dates`;
+  $('cmpCount').textContent = n === 0 ? tr('Cap allotjament lliure per a aquestes dates', 'Ningún alojamiento libre para estas fechas', 'Nothing free for these dates') : n === 1 ? tr('Hi ha 1 allotjament lliure per a aquestes dates', 'Hay 1 alojamiento libre para estas fechas', '1 stay free for these dates') : tr(`Hi ha ${n} allotjaments lliures per a aquestes dates`, `Hay ${n} alojamientos libres para estas fechas`, `${n} stays free for these dates`);
+  const a = dayLabel(fin.value, true), b = dayLabel(fout.value, true);
   if (n === 0 && !av.hidden) notice({
-    title: 'Aquests dies ja estem plens',
-    text: `No queda cap allotjament lliure del ${dayLabel(fin.value, true)} al ${dayLabel(fout.value, true)} per a ${people(g)}. Prova unes altres dates, o escriu-nos i mirem com fer-ho.`,
-    main: ['Triar altres dates', () => { location.hash = 'reservar'; setTimeout(() => openCal('in'), 300); }],
-    alt: ['Escriure per WhatsApp', () => open('https://wa.me/34667409859', '_blank', 'noopener')],
+    title: tr('Aquests dies ja estem plens', 'Estos días ya estamos llenos', "We're full on these dates"),
+    text: tr(`No queda cap allotjament lliure del ${a} al ${b} per a ${people(g)}. Prova unes altres dates, o escriu-nos i mirem com fer-ho.`, `No queda ningún alojamiento libre del ${a} al ${b} para ${people(g)}. Prueba otras fechas, o escríbenos y vemos cómo hacerlo.`, `Nothing is free from ${a} to ${b} for ${people(g)}. Try other dates, or write to us and we'll see what we can do.`),
+    main: [tr('Triar altres dates', 'Elegir otras fechas', 'Choose other dates'), () => { location.hash = 'reservar'; setTimeout(() => openCal('in'), 300); }],
+    alt: [tr('Escriure per WhatsApp', 'Escribir por WhatsApp', 'Message on WhatsApp'), () => open('https://wa.me/34667409859', '_blank', 'noopener')],
   });
 }
 async function showCompare() {
@@ -1669,10 +2139,10 @@ function renderSummary() {
   $('bpIn').textContent = dayLabel(fin.value, true); $('bpOut').textContent = dayLabel(fout.value, true);
   $('bpGuests').textContent = people(fguests.value);
   if (q.error) return;
-  $('bpPrice').innerHTML = `<div><span>${q.nightly != null ? `${euro(q.nightly)} × ${nightsTxt(q.n)}` : `${nightsTxt(q.n)} (el preu varia segons el dia)`}</span><span>${euro(q.subtotal)}</span></div>`
-    + (q.discount ? `<div class="disc"><span>Descompte de ${q.discountNights} nits o més (${q.discount} %)</span><span>− ${euro(q.subtotal - q.total)}</span></div>` : '')
-    + `<div class="total"><span>Total</span><span>${euro(q.total)}</span></div><small>Impostos inclosos.</small>`;
-  if (!payBtn.disabled) payBtn.textContent = payStep ? `Pagar ${euro(q.total)}` : 'Continuar al pagament';
+  $('bpPrice').innerHTML = `<div><span>${q.nightly != null ? `${euro(q.nightly)} × ${nightsTxt(q.n)}` : `${nightsTxt(q.n)} ${tr('(el preu varia segons el dia)', '(el precio varía según el día)', '(the price varies by day)')}`}</span><span>${euro(q.subtotal)}</span></div>`
+    + (q.discount ? `<div class="disc"><span>${tr(`Descompte de ${q.discountNights} nits o més (${q.discount} %)`, `Descuento de ${q.discountNights} noches o más (${q.discount} %)`, `${q.discountNights} nights or more (${q.discount}% off)`)}</span><span>− ${euro(q.subtotal - q.total)}</span></div>` : '')
+    + `<div class="total"><span>Total</span><span>${euro(q.total)}</span></div><small>${T('Impostos inclosos.')}</small>`;
+  if (!payBtn.disabled) payBtn.textContent = payStep ? `${tr('Pagar', 'Pagar', 'Pay')} ${euro(q.total)}` : T('Continuar al pagament');
 }
 ['bpThumb', 'bpDetails'].forEach(id => $(id).addEventListener('click', e => openStay(fstay.value, e.currentTarget)));
 function showSub(id) {
@@ -1719,10 +2189,10 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !nt.hidden
 function datesTaken(stay) {
   const s = STAY_INFO[stay];
   notice({
-    title: 'Aquestes dates ja estan reservades',
-    text: `${s.kind} ${s.name} no està lliure del ${dayLabel(fin.value, true)} al ${dayLabel(fout.value, true)}. Pots triar altres dates o mirar si hi ha algun altre racó lliure.`,
-    main: ['Veure què hi ha lliure', () => { stayPick.set('', true); save(); location.hash = 'disponibles'; }],
-    alt: ['Triar altres dates', () => { if (location.hash !== '#reservar') location.hash = 'reservar'; setTimeout(() => openCal('in'), 300); }],
+    title: tr('Aquestes dates ja estan reservades', 'Estas fechas ya están reservadas', 'These dates are already booked'),
+    text: tr(`${s.kind} ${s.name} no està lliure del ${dayLabel(fin.value, true)} al ${dayLabel(fout.value, true)}. Pots triar altres dates o mirar si hi ha algun altre racó lliure.`, `${s.kind} ${s.name} no está libre del ${dayLabel(fin.value, true)} al ${dayLabel(fout.value, true)}. Puedes elegir otras fechas o mirar si hay otro rincón libre.`, `${s.name} isn't free from ${dayLabel(fin.value, true)} to ${dayLabel(fout.value, true)}. You can choose other dates or see what else is free.`),
+    main: [tr('Veure què hi ha lliure', 'Ver qué hay libre', 'See what is free'), () => { stayPick.set('', true); save(); location.hash = 'disponibles'; }],
+    alt: [tr('Triar altres dates', 'Elegir otras fechas', 'Choose other dates'), () => { if (location.hash !== '#reservar') location.hash = 'reservar'; setTimeout(() => openCal('in'), 300); }],
   });
 }
 const barBtn = bookForm.querySelector('button[type="submit"]');
@@ -1736,7 +2206,7 @@ async function checkAvailable(stay) {
 }
 bookForm.addEventListener('submit', async e => {
   e.preventDefault();
-  if (!(nights() > 0)) { note.textContent = 'Tria les dates de check-in i check-out.'; openCal('in'); return; }
+  if (!(nights() > 0)) { note.textContent = tr('Tria les dates de check-in i check-out.', 'Elige las fechas de check-in y check-out.', 'Choose your check-in and check-out dates.'); openCal('in'); return; }
   if (!fstay.value) { save(); location.hash = 'disponibles'; return; }
   // Ask the calendar before leaving the bar, so the booking page never opens for taken dates
   barBtn.disabled = true;
@@ -1781,14 +2251,14 @@ function lockDetails(on) {
 }
 async function startPayment(d) {
   const r = await fetch('/api/checkout', { method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ stay: fstay.value, in: fin.value, out: fout.value, guests: fguests.value, ...d }) });
+    body: JSON.stringify({ stay: fstay.value, in: fin.value, out: fout.value, guests: fguests.value, lang: LANG, ...d }) });
   const res = await r.json().catch(() => ({}));
   if (r.status === 409) return 'taken';
   if (!r.ok || !res.clientSecret || !res.publishableKey) return 'fail';
   let element = null;
   try {
     await loadStripeJs();
-    const checkout = Stripe(res.publishableKey, { locale: 'es' }).initCheckoutElementsSdk({ clientSecret: Promise.resolve(res.clientSecret), elementsOptions: { appearance: APPEARANCE, fonts: FONTS } });
+    const checkout = Stripe(res.publishableKey, { locale: LANG === 'en' ? 'en' : 'es' }).initCheckoutElementsSdk({ clientSecret: Promise.resolve(res.clientSecret), elementsOptions: { appearance: APPEARANCE, fonts: FONTS } });
     element = checkout.createPaymentElement({ layout: { type: 'accordion', defaultCollapsed: false, radios: 'never', spacedAccordionItems: true } });
     $('payStep').hidden = false;
     element.mount('#payment-element');
@@ -1820,9 +2290,9 @@ guestForm.addEventListener('submit', async e => {
   e.preventDefault();
   const q = price();
   if (payStep) {
-    if (!G.terms.checked) { G.terms.setAttribute('aria-invalid', 'true'); payNote.textContent = 'Cal acceptar les condicions de reserva.'; G.terms.focus(); return; }
+    if (!G.terms.checked) { G.terms.setAttribute('aria-invalid', 'true'); payNote.textContent = tr('Cal acceptar les condicions de reserva.', 'Hay que aceptar las condiciones de reserva.', 'Please accept the booking terms.'); G.terms.focus(); return; }
     G.terms.removeAttribute('aria-invalid');
-    payBtn.disabled = true; confirming = true; payNote.textContent = ''; payBtn.classList.add('loading'); payBtn.textContent = 'Confirmant el pagament';
+    payBtn.disabled = true; confirming = true; payNote.textContent = ''; payBtn.classList.add('loading'); payBtn.textContent = tr('Confirmant el pagament', 'Confirmando el pago', 'Confirming payment');
     const result = await payStep.actions.confirm();
     // Only reached on an immediate error; on success Stripe sends the guest to the return page
     confirming = false; payBtn.disabled = false; payBtn.classList.remove('loading'); renderSummary();
@@ -1830,13 +2300,13 @@ guestForm.addEventListener('submit', async e => {
     return;
   }
   const d = details(), bad = [];
-  if (d.name.length < 2) bad.push([G.name, 'el teu nom']);
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) bad.push([G.email, 'un correu vàlid']);
-  if (d.phone.replace(/\D/g, '').length < 6) bad.push([G.phone, 'un telèfon de contacte']);
+  if (d.name.length < 2) bad.push([G.name, tr('el teu nom', 'tu nombre', 'your name')]);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) bad.push([G.email, tr('un correu vàlid', 'un correo válido', 'a valid email')]);
+  if (d.phone.replace(/\D/g, '').length < 6) bad.push([G.phone, tr('un telèfon de contacte', 'un teléfono de contacto', 'a contact phone')]);
   Object.values(G).forEach(el => el.removeAttribute('aria-invalid'));
   bad.forEach(([el]) => el.setAttribute('aria-invalid', 'true'));
-  if (bad.length) { payNote.textContent = 'Ens falta ' + bad.map(b => b[1]).join(', ') + '.'; bad[0][0].focus(); return; }
-  payBtn.disabled = true; payNote.textContent = ''; payBtn.classList.add('loading'); payBtn.textContent = 'Preparant el pagament';
+  if (bad.length) { payNote.textContent = tr('Ens falta ', 'Nos falta ', 'We still need ') + bad.map(b => b[1]).join(', ') + '.'; bad[0][0].focus(); return; }
+  payBtn.disabled = true; payNote.textContent = ''; payBtn.classList.add('loading'); payBtn.textContent = tr('Preparant el pagament', 'Preparando el pago', 'Preparing payment');
   let outcome = 'fail';
   try { save(); outcome = await startPayment(d); } catch (err) {}
   payBtn.disabled = false; payBtn.classList.remove('loading');
@@ -1845,26 +2315,27 @@ guestForm.addEventListener('submit', async e => {
     $('payStep').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } else {
     if (outcome === 'taken') { payNote.textContent = ''; datesTaken(fstay.value); }
-    else payNote.textContent = `${nightsTxt(q.n)}, total ${euro(q.total)}. ${CONTACT_MSG}`;
+    else payNote.textContent = `${nightsTxt(q.n)}, ${tr('total', 'total', 'total')} ${euro(q.total)}. ${CONTACT_MSG}`;
     renderSummary();
   }
 });
 
 // ---- Start: default dates, restore a booking in progress, handle the return from Stripe ----
 setDates(iso(new Date()), addDays(iso(new Date()), 1));
+guestsPick.set(fguests.value, true);
 restore();
 {
   const params = new URLSearchParams(location.search), r = params.get('reserva'), sid = params.get('session_id');
   if (r) try { history.replaceState(null, '', location.pathname + '#reserva'); } catch (e) {}
   const markDone = pending => {
-    bp.classList.add('done'); $('bpDone').hidden = false; $('bpTitle').textContent = pending ? 'Reserva rebuda' : 'Reserva confirmada';
-    if (pending) $('bpDone').querySelector('p').textContent = "Hem rebut la reserva i les dates queden guardades. El banc encara ha de confirmar el pagament: t'escriurem quan arribi.";
+    bp.classList.add('done'); $('bpDone').hidden = false; $('bpTitle').textContent = pending ? tr('Reserva rebuda', 'Reserva recibida', 'Booking received') : tr('Reserva confirmada', 'Reserva confirmada', 'Booking confirmed');
+    if (pending) $('bpDone').querySelector('p').textContent = tr("Hem rebut la reserva i les dates queden guardades. El banc encara ha de confirmar el pagament: t'escriurem quan arribi.", 'Hemos recibido la reserva y las fechas quedan guardadas. El banco todavía tiene que confirmar el pago: te escribiremos cuando llegue.', "We've received your booking and the dates are held. The bank still has to confirm the payment: we'll write when it does.");
     try { sessionStorage.removeItem('lcv-booking'); } catch (e) {}
   };
   if (r === 'ok' && sid) {
     fetch('/api/status?session_id=' + encodeURIComponent(sid)).then(x => x.json()).then(st => {
-      if (st.paid || st.pending) { if (price()) { markDone(st.pending); route(); } else note.textContent = "Gràcies! La reserva està confirmada i t'hem enviat el rebut per correu."; }
-      else payNote.textContent = "El pagament no s'ha completat i no s'ha cobrat res. Quan vulguis, pots tornar-ho a provar.";
+      if (st.paid || st.pending) { if (price()) { markDone(st.pending); route(); } else note.textContent = tr("Gràcies! La reserva està confirmada i t'hem enviat el rebut per correu.", '¡Gracias! La reserva está confirmada y te hemos enviado el recibo por correo.', "Thank you. Your booking is confirmed and we've emailed you the receipt."); }
+      else payNote.textContent = tr("El pagament no s'ha completat i no s'ha cobrat res. Quan vulguis, pots tornar-ho a provar.", 'El pago no se ha completado y no se ha cobrado nada. Cuando quieras, puedes volver a intentarlo.', "The payment didn't go through and nothing was charged. You can try again whenever you like.");
     }).catch(() => {});
   }
   route();
@@ -1874,18 +2345,18 @@ document.getElementById('contactForm').addEventListener('submit', async e => {
   e.preventDefault();
   const form = e.currentTarget, sent = document.getElementById('sent'), btn = form.querySelector('button[type=submit]');
   const data = { name: form.cname.value.trim(), email: form.cmail.value.trim(), message: form.cmsg.value.trim(), website: form.cweb.value };
-  btn.disabled = true; sent.textContent = 'Enviant…';
+  btn.disabled = true; sent.textContent = tr('Enviant…', 'Enviando…', 'Sending…');
   let ok = false;
   try { ok = (await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })).ok; } catch {}
   btn.disabled = false;
-  if (ok) { form.reset(); sent.textContent = "Gràcies! Hem rebut el teu missatge i et respondrem aviat."; return; }
+  if (ok) { form.reset(); sent.textContent = tr('Gràcies! Hem rebut el teu missatge i et respondrem aviat.', '¡Gracias! Hemos recibido tu mensaje y te responderemos pronto.', "Thank you. We've received your message and will reply soon."); return; }
   // No mail service yet (or it failed): hand the message to the guest's own mail app
-  location.href = 'mailto:info@casavellarural.com?subject=' + encodeURIComponent('Consulta de ' + data.name) + '&body=' + encodeURIComponent(data.message + '\n\n' + data.name + ' (' + data.email + ')');
-  sent.textContent = "S'ha obert el teu correu amb el missatge. Si no s'obre, escriu-nos a info@casavellarural.com o per WhatsApp.";
+  location.href = 'mailto:info@casavellarural.com?subject=' + encodeURIComponent(tr('Consulta de ', 'Consulta de ', 'Enquiry from ') + data.name) + '&body=' + encodeURIComponent(data.message + '\n\n' + data.name + ' (' + data.email + ')');
+  sent.textContent = tr("S'ha obert el teu correu amb el missatge. Si no s'obre, escriu-nos a info@casavellarural.com o per WhatsApp.", 'Se ha abierto tu correo con el mensaje. Si no se abre, escríbenos a info@casavellarural.com o por WhatsApp.', "Your email app has opened with the message. If it didn't, write to info@casavellarural.com or message us on WhatsApp.");
 });
 document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {
   const el = document.getElementById(b.dataset.copy);
-  navigator.clipboard.writeText(el.textContent).then(() => { b.textContent = 'Copiat'; setTimeout(() => b.textContent = 'Copiar', 1500); })
+  navigator.clipboard.writeText(el.textContent).then(() => { b.textContent = tr('Copiat', 'Copiado', 'Copied'); setTimeout(() => b.textContent = T('Copiar'), 1500); })
     .catch(() => { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
 }));
 
@@ -1900,7 +2371,7 @@ const STAY_SETS = {
   'les-vinyes': ['hab-armari', 'mirall', 'llibre', 'tirador', 'rajola', 'gerro'],
   'figarot': ['rajola-flor', 'hab-armari', 'tirador', 'escala', 'mirall', 'rajola'],
 };
-const STAY_NAMES = { 'montserrat': 'Apartament Montserrat', 'la-pineda': 'Apartament La Pineda', 'les-vinyes': 'Habitació Les Vinyes', 'figarot': 'Habitació Figarot' };
+const STAY_NAMES = { 'montserrat': T('Apartament Montserrat'), 'la-pineda': T('Apartament La Pineda'), 'les-vinyes': T('Habitació Les Vinyes'), 'figarot': T('Habitació Figarot') };
 for (const k in STAY_SETS) SETS['stay-' + k] = STAY_SETS[k].map(n => [n, STAY_NAMES[k]]);
 SETS.gal = [...document.querySelectorAll('#gallery img')].map(i => [i.getAttribute('src').slice(4, -4), i.alt]);
 const lb = document.getElementById('lightbox'), lbImg = document.getElementById('lbImg'), lbCount = document.getElementById('lbCount');

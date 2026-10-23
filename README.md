@@ -31,6 +31,14 @@ Web de La Casa Vella, casa de poble familiar al Bedorc (1898): allotjaments, res
    Fa `python3 build.py https://casavellarural.com` i després construeix Maite a `dist/maite/` (`npm run build` només refà Maite). L'URL és opcional. Serveix per a l'enllaç canònic i la imatge que es veu quan es comparteix la web.
 3. Fes commit dels canvis, inclosa la carpeta `dist/`, i puja'ls.
 
+## Idiomes
+
+La web es veu en català, castellà o anglès. Per defecte agafa el primer d'aquests tres que trobi als idiomes del navegador (si no n'hi ha cap, anglès), i el selector CA ES EN de la capçalera (al menú en mòbil) desa l'elecció. També es pot forçar amb `?lang=es`.
+
+- `index.html` és escrit en català. El diccionari `I18N` (al principi del codi) té el castellà i l'anglès de cada text, amb el text català com a clau: si canvies o afegeixes un text a la pàgina, afegeix-hi l'entrada o sortirà en català.
+- El text que genera el codi (calendari, preus, avisos, reserva) passa per `tr('català', 'castellano', 'English')`.
+- Els textos dels allotjaments que es canvien a Maite només existeixen en català: en castellà i anglès la pàgina mostra els que té traduïts. Els correus de confirmació també surten en català.
+
 ## Publicar a Cloudflare Pages
 
 1. Cloudflare → Workers & Pages → Create → Pages → Connect to Git, i tria aquest repositori.

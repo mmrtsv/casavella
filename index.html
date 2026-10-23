@@ -282,13 +282,24 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
   .cmp-buy { grid-column: 2; justify-items: start; text-align: left; }
   .cmp-badge { justify-self: start; }
 }
+/* Phone: compact rows (small photo beside the name, price and button below) so several stays fit on screen; description and features stay in the details popup */
 @media (max-width: 640px) {
-  .cmp-when { width: 100%; justify-content: space-between; }
+  .compare .bp-head { margin-top: 20px; gap: 10px; }
+  .cmp-head { margin-bottom: 20px; }
+  .cmp-when { width: 100%; justify-content: space-between; padding: 14px 16px; gap: 12px 16px; }
   .cmp-when-rows b { font-size: 18px; }
-  .cmp-row { grid-template-columns: 1fr; gap: 26px; }
-  .cmp-buy { grid-column: auto; grid-template-columns: 1fr auto; align-items: end; gap: 4px 16px; }
+  .cmp-edit { padding: 10px 16px; }
+  .cmp-row { grid-template-columns: 112px minmax(0, 1fr); gap: 14px 16px; align-items: center; padding-block: 18px; }
+  .cmp-media .photo { aspect-ratio: 1; }
+  .cmp-media .plaque, .cmp-info p, .cmp-info .feats, .cmp-buy .cmp-cap { display: none; }
+  .cmp-info { gap: 4px; }
+  .cmp-info h3 { font-size: 28px; }
+  .cmp-buy { grid-column: 1 / -1; grid-template-columns: 1fr auto; align-items: end; gap: 2px 16px; justify-items: start; text-align: left; }
   .cmp-buy > * { grid-column: 1; }
-  .cmp-buy .btn, .cmp-buy .cmp-no { grid-column: 2; grid-row: 1 / span 4; align-self: end; margin: 0; }
+  .cmp-total { margin-top: 0; }
+  .cmp-total b { font-size: 30px; }
+  .cmp-buy .btn, .cmp-buy .cmp-no, .cmp-buy .cmp-checking { grid-column: 2; grid-row: 1 / span 3; align-self: center; margin: 0; }
+  .cmp-buy .btn { padding: 13px 22px; }
 }
 
 /* Booking page (#reserva): guest details next to the stay summary, then Stripe */
@@ -1158,20 +1169,37 @@ footer { padding-bottom: 32px !important; }
     hero.src = 'img/' + HEROES[h][0] + '.jpg'; hero.style.objectPosition = HEROES[h][1];
     hero.alt = HEROES[h][2];
   }
-  // Design 5 rotates the cover between photos A, E and B
+  // Design 5 rotates the cover between photos A, E and B. The next photo loads in a second layer
+  // and fades in over the current one only once it is decoded, so the green behind never shows.
   const SLIDES = ['1', '5', '2'];
-  let timer = null;
+  let timer = null, run = 0;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const next = hero.cloneNode();
+  next.removeAttribute('id'); next.alt = ''; next.setAttribute('aria-hidden', 'true');
+  next.style.opacity = 0; next.style.transition = 'opacity 1.2s ease';
+  hero.after(next);
+  hero.style.transition = 'opacity .6s ease';
+  if (!hero.complete) { hero.style.opacity = 0; hero.addEventListener('load', () => { hero.style.opacity = 1; }, { once: true }); }
+  async function step(id) {
+    const k = SLIDES[(SLIDES.indexOf(h) + 1) % SLIDES.length];
+    next.src = 'img/' + HEROES[k][0] + '.jpg'; next.style.objectPosition = HEROES[k][1];
+    try { await next.decode(); } catch (e) {}
+    if (id !== run) return;
+    next.style.opacity = 1;
+    timer = setTimeout(async () => {
+      h = k; apply();
+      try { await hero.decode(); } catch (e) {}
+      next.style.transition = 'none'; next.style.opacity = 0; next.offsetWidth; next.style.transition = 'opacity 1.2s ease';
+      if (id === run) timer = setTimeout(() => step(id), 6000);
+    }, 1300);
+  }
   function slideshow() {
-    clearInterval(timer); timer = null; hero.style.opacity = 1;
+    clearTimeout(timer); timer = null; run++; next.style.opacity = 0;
     if (v !== '5' || reduce) return;
     if (!SLIDES.includes(h)) { h = '1'; apply(); }
-    timer = setInterval(() => {
-      hero.style.opacity = 0;
-      setTimeout(() => { h = SLIDES[(SLIDES.indexOf(h) + 1) % SLIDES.length]; apply(); hero.style.opacity = 1; }, 700);
-    }, 6000);
+    const id = run;
+    timer = setTimeout(() => step(id), 6000);
   }
-  hero.style.transition = 'opacity .7s ease';
   vBtns.forEach(b => b.addEventListener('click', () => { v = b.dataset.v; apply(); save(); slideshow(); }));
   // Phone preview: the same page in a 390px frame
   if (window.name === 'lcv-mobile') document.documentElement.classList.add('embedded');

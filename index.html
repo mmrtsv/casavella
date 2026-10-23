@@ -283,21 +283,23 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
   .cmp-buy { grid-column: 2; justify-items: start; text-align: left; }
   .cmp-badge { justify-self: start; }
 }
-/* Phone: all four stays in a two-column grid. Each card keeps the type and one feature that tells
-   apartments from rooms (the second in .feats: "Cuina equipada" or "Llit doble"); the rest is in the details popup */
+/* Phone: one row per stay, photo with its plaque on the left, the rest beside it, so all four fit on screen.
+   Each row keeps the type and one feature that tells apartments from rooms (the second in .feats: "Cuina equipada"
+   or "Llit doble"); the description and the other features are in the details popup */
 @media (max-width: 640px) {
   .compare .bp-head { margin-top: 20px; gap: 10px; }
   .cmp-head { margin-bottom: 20px; }
   .cmp-when { width: 100%; justify-content: space-between; padding: 14px 16px; gap: 12px 16px; }
   .cmp-when-rows b { font-size: 18px; }
   .cmp-edit { padding: 10px 16px; }
-  .cmp-list { border-top: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 22px 12px; }
-  .cmp-row { grid-template-columns: 1fr; gap: 6px; padding: 0; border-bottom: 0; align-content: start; align-items: start; }
-  .cmp-media .photo { aspect-ratio: 4 / 3; }
-  .cmp-media .plaque, .cmp-info p, .cmp-info .cmp-more, .cmp-buy .cmp-badge, .cmp-buy .cmp-nights { display: none; }
+  .cmp-row { grid-template-columns: 118px minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 6px 14px; align-items: start; padding-block: 16px; }
+  .cmp-media { grid-row: 1 / span 2; align-self: stretch; }
+  .cmp-media .photo { aspect-ratio: auto; height: 100%; min-height: 150px; }
+  .cmp-media .plaque { left: 8px; bottom: 8px; width: 46px; box-shadow: 0 3px 10px rgba(15, 38, 20, .3); }
+  .cmp-info p, .cmp-info .cmp-more, .cmp-buy .cmp-badge, .cmp-buy .cmp-nights { display: none; }
   .cmp-info { gap: 2px; }
   .cmp-info .label { font-size: 10.5px; letter-spacing: .16em; }
-  .cmp-info h3 { font-size: 21px; line-height: 1.1; }
+  .cmp-info h3 { font-size: 24px; line-height: 1.1; }
   .cmp-info .feats { display: block; margin: 4px 0 0; }
   .cmp-info .feats li { font-size: 13px; }
   .cmp-info .feats svg { width: 18px; height: 18px; }
@@ -305,12 +307,13 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
   .cmp-row .cmp-cap { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text); }
   .cmp-row .cap-upto { display: none; }
   .cmp-row .cmp-cap svg { display: block; width: 18px; height: 18px; flex: none; fill: none; stroke: var(--basil); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
-  .cmp-buy { grid-column: auto; justify-items: stretch; text-align: left; gap: 2px; }
-  .cmp-total { margin-top: 2px; gap: 8px; }
-  .cmp-total b { font-size: 21px; }
+  .cmp-buy { grid-column: 2; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 2px 10px; justify-items: start; text-align: left; }
+  .cmp-buy > * { grid-column: 1; }
+  .cmp-total { margin-top: 2px; gap: 6px; white-space: nowrap; }
+  .cmp-total b { font-size: 22px; }
   .cmp-total s { font-size: 13px; }
-  .cmp-buy .btn { margin-top: 6px; padding: 9px 8px; }
-  .cmp-buy .cmp-no { margin-top: 4px; }
+  .cmp-buy .btn { grid-column: 2; grid-row: 1 / span 2; align-self: end; margin: 0; padding: 9px 12px; letter-spacing: .12em; }
+  .cmp-buy .cmp-no, .cmp-buy .cmp-checking { grid-column: 1 / -1; margin-top: 4px; }
 }
 }
 

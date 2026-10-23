@@ -1,8 +1,9 @@
 // Xarxes socials: the Instagram templates in the brand (posts, stories, highlight covers), the profile grid built from
 // the posts confirmed here, their captions, and PNGs at full size. The posts and captions live in KV (/api/maite/social).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Label, ListBox, Select, Skeleton, Spinner, Tabs, TextArea, TextField, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
-import { Check, ChevronLeft, ChevronRight, Copy as CopyIcon, Download, ExternalLink, ImageUp, MessageSquareText, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
+import { Button, Calendar, DateField, DatePicker, I18nProvider, Label, ListBox, Select, Skeleton, Spinner, Tabs, TextArea, TextField, TimeField, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
+import { getLocalTimeZone, parseDate, parseTime, today as todayIn, type DateValue, type Time } from '@internationalized/date';
+import { Check, ChevronLeft, ChevronRight, Clock, Copy as CopyIcon, Download, ExternalLink, ImageUp, MessageSquareText, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
 import { api, uploadPhoto } from '../lib/api';
 import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
@@ -11,7 +12,9 @@ import { Art, Wide } from '../social/Art';
 import { byId, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Kind, type Template } from '../social/templates';
 
-type Post = { id: string; tpl: string; v: number; photo: string; at: string; date?: string; published?: { at: string; url: string; media?: string } };
+type Post = { id: string; tpl: string; v: number; photo: string; at: string; date?: string; published?: { at: string; url: string; media?: string }; schedule?: Schedule };
+// A program: when the post goes out on its own (the cron in cron/), with its JPEG already uploaded; error, if it failed
+type Schedule = { at: string; image: string; error?: string; started?: string };
 type Insta = { connected: boolean; username?: string; detail?: string; media?: Live[] };
 // A post on the Instagram account, published from Maite or from the app
 type Live = { id: string; at: string; url: string; image: string; caption: string };
@@ -127,7 +130,7 @@ function TemplateCard({ t, data, setData }: { t: Template; data: Data | null; se
 }
 
 function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) => void; onEmpty: () => void }) {
-  // Published posts leave the plan and the preview; they are listed apart, newest first
+  // Published posts leave the plan; the preview shows them below it, marked, and Publicats lists them, newest first
   const all = data.posts.filter(p => byId.has(p.tpl));
   const posts = all.filter(p => !p.published), published = all.filter(p => p.published).sort((a, b) => b.published!.at.localeCompare(a.published!.at));
   const [show, setShow] = useState<'planned' | 'published'>('planned');
@@ -135,7 +138,14 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
   const [progress, setProgress] = useState('');
   const [insta, setInsta] = useState<Insta | null>(null);
   const [publishing, setPublishing] = useState<Post | null>(null);
-  useEffect(() => { api<Insta>('instagram').then(setInsta).catch(() => setInsta({ connected: false })); }, []);
+  const [drag, setDrag] = useState<string | null>(null), [over, setOver] = useState<string | null>(null);
+  useEffect(() => { api<Insta>('instagram?media=1').then(setInsta).catch(() => setInsta({ connected: false })); }, []);
+  // Below the plan the grid goes on with what is already on Instagram, newest first, whoever published it
+  const ours = new Set(published.map(p => p.published!.media).filter(Boolean));
+  const live = [
+    ...published.map(p => ({ id: p.id, at: p.published!.at, url: p.published!.url, post: p })),
+    ...(insta?.media || []).filter(m => !ours.has(m.id)).map(m => ({ id: m.id, at: m.at, url: m.url, image: m.image })),
+  ].sort((a, b) => b.at.localeCompare(a.at));
 
   // The order only lists planned posts; published ones are kept at the end so they are never removed by it
   async function order(planned: string[], msg: string) {
@@ -187,12 +197,32 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
         <div className="grid grid-cols-3 gap-0.5 bg-white">
           {[...posts].reverse().map(p => {
             const n = posts.indexOf(p) + 1;
+            // Dragging a tile onto another gives it that one's number
             return (
-              <div key={p.id} className="relative">
-                <Art t={byId.get(p.tpl)!} v={p.v} photo={p.photo} fit="cover" className="aspect-[3/4]" />
+              <div key={p.id} draggable onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; setDrag(p.id); }} onDragEnd={() => { setDrag(null); setOver(null); }}
+                onDragOver={e => { if (drag) { e.preventDefault(); setOver(p.id); } }} onDragLeave={() => setOver(o => o === p.id ? null : o)}
+                onDrop={e => { e.preventDefault(); const from = posts.find(x => x.id === drag); if (from && from !== p) move(from, n - 1); setDrag(null); setOver(null); }}
+                title={p.schedule ? `Post ${n}, ${programmed(p.schedule)}` : `Post ${n}`}
+                className={`relative cursor-grab ${drag === p.id ? 'opacity-40' : ''} ${over === p.id && drag !== p.id ? 'ring-2 ring-accent ring-inset' : ''}`}>
+                <Art t={byId.get(p.tpl)!} v={p.v} photo={p.photo} fit="cover" className="pointer-events-none aspect-[3/4]" />
                 <span className="tnum absolute top-1.5 left-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[#1a3f20]/85 px-1.5 text-xs font-semibold text-[#f3efe4]">{n}</span>
+                {p.schedule && (
+                  <span className={`tnum absolute bottom-1.5 left-1.5 inline-flex h-5 items-center gap-1 rounded-full px-1.5 text-xs font-medium ${p.schedule.error ? 'bg-danger text-danger-foreground' : 'bg-[#f3efe4]/90 text-[#1a3f20]'}`}>
+                    <Clock size={12} strokeWidth={2.5} aria-hidden />{p.schedule.error ? 'No publicat' : short(p.schedule.at)}
+                  </span>
+                )}
               </div>
             );
+          })}
+          {live.map(m => {
+            const art = 'post' in m
+              ? <Art t={byId.get(m.post.tpl)!} v={m.post.v} photo={m.post.photo} fit="cover" className="aspect-[3/4]" />
+              : m.image ? <img src={m.image} alt="" loading="lazy" className="aspect-[3/4] w-full bg-default object-cover" /> : <div className="aspect-[3/4] bg-default" />;
+            const mark = <span className="absolute top-1.5 left-1.5 grid size-5 place-items-center rounded-full bg-[#f3efe4]/90 text-[#1a3f20]"><Check size={13} strokeWidth={2.5} aria-hidden /></span>;
+            const label = `Publicat el ${day(m.at)}`;
+            return m.url
+              ? <a key={m.id} href={m.url} target="_blank" rel="noopener" title={label} aria-label={`${label}: obre a Instagram`} className="relative block outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-inset">{art}{mark}</a>
+              : <div key={m.id} title={label} className="relative">{art}{mark}<span className="sr-only">{label}</span></div>;
           })}
         </div>
       </section>
@@ -201,7 +231,7 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
         <div className="flex flex-wrap items-center gap-3 border-b border-separator p-4 sm:px-5">
           <div className="mr-auto">
             <h2 className="text-base font-semibold">Ordre de publicació</h2>
-            <p className="text-sm text-muted">El post 1 és el primer que publicaràs; a la graella queda a baix de tot.</p>
+            <p className="text-sm text-muted">El post 1 és el primer que publicaràs; a la graella queda just a sobre dels ja publicats, que porten una marca. Arrossega'ls a la graella per canviar-ne l'ordre.</p>
             {insta && <p className="text-sm text-muted">{insta.connected ? `Es publica a @${insta.username}.` : "Per publicar des d'aquí cal connectar el compte d'Instagram."}</p>}
           </div>
           <Button size="sm" variant="secondary" isPending={!!progress} onPress={downloadAll}>
@@ -225,9 +255,10 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
                     <div className="truncate text-sm font-semibold">{t.title}</div>
                     <div className="truncate text-xs text-muted">{p.photo ? 'Amb la teva foto' : `Opció ${p.v + 1}`}</div>
                     <div className="truncate text-xs text-muted">{copy ? copy.split('\n')[0] : 'Sense copy'}</div>
+                    {p.schedule && <When s={p.schedule} />}
                   </div>
                   <Button size="sm" variant={open === p.id ? 'secondary' : 'ghost'} isIconOnly aria-expanded={open === p.id} aria-label={`Copy del post ${i + 1}`} onPress={() => setOpen(open === p.id ? null : p.id)}><MessageSquareText size={16} /></Button>
-                  {insta?.connected && t.kind === 'post' && <Button size="sm" variant="ghost" isIconOnly aria-label={`Publica el post ${i + 1} a Instagram`} onPress={() => setPublishing(p)}><Send size={16} /></Button>}
+                  {insta?.connected && t.kind === 'post' && <Button size="sm" variant="ghost" isIconOnly aria-label={p.schedule ? `Programa o publica el post ${i + 1}` : `Publica o programa el post ${i + 1}`} onPress={() => setPublishing(p)}><Send size={16} /></Button>}
                   <DownloadButton label={`Descarrega el post ${i + 1}`} run={() => download(t, p.v, p.photo, i + 1)} />
                   <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${t.title} del perfil`} onPress={() => order(posts.filter(x => x !== p).map(x => x.id), `${t.title} tret del perfil`)}><X size={16} /></Button>
                 </div>
@@ -244,6 +275,16 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
 }
 
 const day = (iso: string) => new Date(iso).toLocaleDateString('ca-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+const hour = (iso: string) => new Date(iso).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' });
+const programmed = (s: Schedule) => `es publica el ${new Date(s.at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' })} a les ${hour(s.at)}`;
+// On a grid tile: 28 oct. 19:00
+const short = (iso: string) => `${new Date(iso).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' })} ${hour(iso)}`;
+
+// The program of a post; next to a day picker the day is already there, so only the hour
+function When({ s, hourOnly }: { s: Schedule; hourOnly?: boolean }) {
+  if (s.error) return <div className="truncate text-xs text-danger" title={s.error}>No s'ha pogut publicar: {s.error}</div>;
+  return <div className="truncate text-xs text-accent" title={programmed(s)}>{hourOnly ? `Programat a les ${hour(s.at)}` : `Programat: ${short(s.at)}`}</div>;
+}
 
 function Published({ posts, copies }: { posts: Post[]; copies: Record<string, string> }) {
   return (
@@ -273,10 +314,10 @@ function Published({ posts, copies }: { posts: Post[]; copies: Record<string, st
   );
 }
 
-// Calendari: the day each planned post is meant to go out, on a month, and what was published on each day
+// Calendari: the day each planned post is meant to go out, on a month, and what was published on each day. Planned posts
+// can be dragged onto a day (or back to the list, to take the day away) and programmed to go out on their own
 const WEEK = ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'];
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const field = 'h-9 rounded-xl bg-field px-3 text-sm outline-none ring-1 ring-[var(--field-border)] focus-visible:ring-2 focus-visible:ring-focus';
 
 function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) => void; onEmpty: () => void }) {
   const all = data.posts.filter(p => byId.has(p.tpl)), planned = all.filter(p => !p.published);
@@ -288,17 +329,35 @@ function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
   }, [month]);
   const on = (day: string) => all.filter(p => (p.published ? ymd(new Date(p.published.at)) : p.date) === day);
   // What is on Instagram, whoever published it; posts Maite published are already shown from the grid
-  const [live, setLive] = useState<Live[]>([]);
-  useEffect(() => { api<Insta>('instagram?media=1').then(d => setLive(d.media || [])).catch(() => {}); }, []);
+  const [insta, setInsta] = useState<Insta | null>(null);
+  useEffect(() => { api<Insta>('instagram?media=1').then(setInsta).catch(() => setInsta({ connected: false })); }, []);
   const ours = new Set(all.map(p => p.published?.media).filter(Boolean));
-  const liveOn = (day: string) => live.filter(m => !ours.has(m.id) && ymd(new Date(m.at)) === day);
+  const liveOn = (day: string) => (insta?.media || []).filter(m => !ours.has(m.id) && ymd(new Date(m.at)) === day);
+  const [drag, setDrag] = useState<string | null>(null), [over, setOver] = useState<string | null>(null);
+  const [programming, setProgramming] = useState<Post | null>(null);
 
+  // A programmed post that moves to another day keeps its hour there
   async function plan(p: Post, date: string) {
+    if (date === (p.date || '')) return;
     const before = data;
-    setData({ ...data, posts: data.posts.map(x => x.id === p.id ? { ...x, date: date || undefined } : x) });
+    if (p.schedule && date) {
+      const at = new Date(`${date}T${hour(p.schedule.at)}`);
+      if (at.getTime() < Date.now() + 60e3) { toastError(new Error(`A les ${hour(p.schedule.at)} d'aquell dia ja ha passat: tria una altra hora a Programa`)); return; }
+      setData({ ...data, posts: data.posts.map(x => x.id === p.id ? { ...x, date, schedule: { ...p.schedule!, at: at.toISOString() } } : x) });
+      try { setData(await api<Data>('social', { method: 'PUT', body: { schedule: { id: p.id, at: at.toISOString(), image: p.schedule.image } } })); }
+      catch (e) { setData(before); toastError(e); }
+      return;
+    }
+    setData({ ...data, posts: data.posts.map(x => x.id === p.id ? { ...x, date: date || undefined, schedule: date ? x.schedule : undefined } : x) });
     try { setData(await api<Data>('social', { method: 'PUT', body: { date: { id: p.id, date } } })); }
     catch (e) { setData(before); toastError(e); }
   }
+  const dragged = () => planned.find(p => p.id === drag);
+  const dragProps = (p: Post) => ({
+    draggable: true,
+    onDragStart: (e: React.DragEvent) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', p.id); setDrag(p.id); },
+    onDragEnd: () => { setDrag(null); setOver(null); },
+  });
 
   if (!all.length) return (
     <div className="card flex flex-wrap items-center gap-3 p-5">
@@ -320,17 +379,26 @@ function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
         <div className="grid grid-cols-7 border-b border-separator text-center text-xs text-muted">{WEEK.map(w => <div key={w} className="py-2">{w}</div>)}</div>
         <div className="grid grid-cols-7">
           {days.map(d => {
-            const key = ymd(d), inMonth = d.getMonth() === month.getMonth(), list = on(key);
+            const key = ymd(d), inMonth = d.getMonth() === month.getMonth(), list = on(key), open = key >= today;
             return (
-              <div key={key} className={`min-h-24 border-r border-b border-separator p-1 sm:p-1.5 [&:nth-child(7n)]:border-r-0 ${inMonth ? '' : 'bg-default/40'}`}>
+              <div key={key} onDragOver={e => { if (drag && open) { e.preventDefault(); setOver(key); } }} onDragLeave={() => setOver(o => o === key ? null : o)}
+                onDrop={e => { e.preventDefault(); const p = dragged(); setDrag(null); setOver(null); if (p && open) plan(p, key); }}
+                className={`min-h-24 border-r border-b border-separator p-1 sm:p-1.5 [&:nth-child(7n)]:border-r-0 ${over === key ? 'bg-accent/10 ring-2 ring-accent ring-inset' : inMonth ? '' : 'bg-default/40'}`}>
                 <div className={`tnum mb-1 grid size-6 place-items-center rounded-full text-xs ${key === today ? 'bg-accent font-semibold text-accent-foreground' : inMonth ? '' : 'text-muted'}`}>{d.getDate()}</div>
                 <div className="grid gap-1 sm:grid-cols-2">
                   {list.map(p => {
                     const t = byId.get(p.tpl)!;
                     const art = <Art t={t} v={p.v} photo={p.photo} fit="cover" className="aspect-[3/4] w-full rounded-md" />;
-                    return p.published?.url
+                    if (p.published) return p.published.url
                       ? <a key={p.id} href={p.published.url} target="_blank" rel="noopener" title={`${t.title}, publicat`} aria-label={`${t.title}, publicat: obre a Instagram`} className="block rounded-md opacity-60 outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-focus">{art}</a>
-                      : <div key={p.id} title={t.title} className={p.published ? 'opacity-60' : ''}>{art}<span className="sr-only">{t.title}</span></div>;
+                      : <div key={p.id} title={t.title} className="opacity-60">{art}<span className="sr-only">{t.title}</span></div>;
+                    const label = p.schedule ? `${t.title}, ${programmed(p.schedule)}` : t.title;
+                    return (
+                      <div key={p.id} {...dragProps(p)} title={label} className={`relative cursor-grab ${drag === p.id ? 'opacity-40' : ''}`}>
+                        {art}<span className="sr-only">{label}</span>
+                        {p.schedule && <span className={`tnum absolute inset-x-0.5 bottom-0.5 inline-flex h-4 items-center justify-center gap-0.5 overflow-hidden rounded-full text-xs font-medium ${p.schedule.error ? 'bg-danger text-danger-foreground' : 'bg-[#f3efe4]/90 text-[#1a3f20]'}`}><Clock size={10} strokeWidth={2.5} aria-hidden />{hour(p.schedule.at)}</span>}
+                      </div>
+                    );
                   })}
                   {liveOn(key).map(m => (
                     <a key={m.id} href={m.url} target="_blank" rel="noopener" title={m.caption.split('\n')[0] || 'Publicat a Instagram'} aria-label="Publicat a Instagram: obre el post"
@@ -345,57 +413,145 @@ function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
         </div>
       </section>
 
-      <section className="card" aria-label="Dates dels posts">
+      <section aria-label="Dates dels posts" onDragOver={e => { if (dragged()?.date) { e.preventDefault(); setOver('list'); } }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOver(o => o === 'list' ? null : o); }}
+        onDrop={e => { e.preventDefault(); const p = dragged(); setDrag(null); setOver(null); if (p?.date) plan(p, ''); }}
+        className={`card ${over === 'list' ? 'ring-2 ring-accent' : ''}`}>
         <div className="border-b border-separator p-4 sm:px-5">
           <h2 className="text-base font-semibold">Per publicar</h2>
-          <p className="text-sm text-muted">Tria el dia de cada post. Els posts amb data passen davant, per ordre de dia. Es publiquen quan prems publicar a Perfil.</p>
+          <p className="text-sm text-muted">Tria el dia de cada post o arrossega'l al calendari; per treure'l del calendari, torna'l aquí. Els posts amb data passen davant, per ordre de dia.</p>
+          {insta && <p className="text-sm text-muted">{insta.connected ? 'Programa un post perquè es publiqui sol a una hora.' : "Per programar-los cal connectar el compte d'Instagram."}</p>}
         </div>
         {planned.length ? (
           <ol className="divide-y divide-separator">
             {planned.map((p, i) => {
               const t = byId.get(p.tpl)!;
               return (
-                <li key={p.id} className="flex items-center gap-3 p-3 sm:px-5">
-                  <Art t={t} v={p.v} photo={p.photo} fit="cover" className="aspect-[3/4] w-9 shrink-0 rounded-md" />
+                <li key={p.id} className={`flex items-center gap-3 p-3 sm:px-5 ${drag === p.id ? 'opacity-40' : ''}`}>
+                  <div {...dragProps(p)} className="shrink-0 cursor-grab" title={`Arrossega ${t.title} a un dia`}>
+                    <Art t={t} v={p.v} photo={p.photo} fit="cover" className="pointer-events-none aspect-[3/4] w-9 rounded-md" />
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold"><span className="tnum text-muted">{i + 1}</span> {t.title}</div>
-                    {p.date && p.date < today && <div className="text-xs text-warning">Aquest dia ja ha passat</div>}
+                    {p.schedule ? <When s={p.schedule} hourOnly /> : p.date && p.date < today && <div className="text-xs text-warning">Aquest dia ja ha passat</div>}
                   </div>
-                  <input type="date" value={p.date || ''} min={today} onChange={e => plan(p, e.target.value)} aria-label={`Dia del post ${i + 1}, ${t.title}`} className={`${field} w-[9.5rem] shrink-0`} />
+                  <DayPicker label={`Dia del post ${i + 1}, ${t.title}`} hideLabel clearable value={p.date || ''} onChange={v => plan(p, v)} />
+                  {insta?.connected && t.kind === 'post' && <Button size="sm" variant={p.schedule ? 'secondary' : 'ghost'} isIconOnly aria-label={`Programa el post ${i + 1}`} onPress={() => setProgramming(p)}><Clock size={16} /></Button>}
                 </li>
               );
             })}
           </ol>
         ) : <p className="p-5 text-sm">No queda cap post per publicar.</p>}
       </section>
+      {programming && <Publish later post={programming} n={planned.indexOf(programming) + 1} caption={data.copies[programming.id] || ''} onClose={() => setProgramming(null)} setData={setData} />}
     </div>
   );
 }
 
-// Publishing: the post as a full-size JPEG on the site's photo storage, then Instagram fetches it and posts it with the saved caption
-function Publish({ post, n, caption, onClose, setData }: { post: Post; n: number; caption: string; onClose: () => void; setData: (d: Data) => void }) {
-  const t = byId.get(post.tpl)!;
-  const [busy, setBusy] = useState(false);
+// Publishing: the post as a full-size JPEG on the site's photo storage, then Instagram fetches it and posts it with the saved
+// caption. Now, or at a programmed time: then the JPEG goes up when it is programmed and the cron publishes it (lib/instagram.js)
+function Publish({ post, n, caption, onClose, setData, later = false }: { post: Post; n: number; caption: string; onClose: () => void; setData: (d: Data) => void; later?: boolean }) {
+  const t = byId.get(post.tpl)!, was = post.schedule && new Date(post.schedule.at);
+  const tomorrow = ymd(new Date(Date.now() + 864e5));
+  const [mode, setMode] = useState<'now' | 'later'>(later || post.schedule ? 'later' : 'now');
+  const [date, setDate] = useState(was ? ymd(was) : post.date && post.date > ymd(new Date()) ? post.date : tomorrow);
+  const [time, setTime] = useState(was ? hour(post.schedule!.at) : '19:00');
+  const [busy, setBusy] = useState<'' | 'go' | 'cancel'>('');
+  const at = new Date(`${date}T${time}`), past = !date || !(at.getTime() > Date.now() + 60e3);
+
   async function go() {
-    setBusy(true);
+    setBusy('go');
     try {
       const image = await uploadPhoto(new File([await png(t, post.v, post.photo)], 'post.png', { type: 'image/png' }));
-      setData(await api<Data>('instagram', { method: 'POST', body: { id: post.id, image } }));
-      done(`Post ${n} publicat a Instagram`); onClose();
+      if (mode === 'now') { setData(await api<Data>('instagram', { method: 'POST', body: { id: post.id, image } })); done(`Post ${n} publicat a Instagram`); }
+      else { setData(await api<Data>('social', { method: 'PUT', body: { schedule: { id: post.id, at: at.toISOString(), image } } })); done(`El post ${n} ${programmed({ at: at.toISOString(), image })}`); }
+      onClose();
     } catch (e) { toastError(e); }
-    setBusy(false);
+    setBusy('');
+  }
+  async function cancel() {
+    setBusy('cancel');
+    try { setData(await api<Data>('social', { method: 'PUT', body: { schedule: { id: post.id } } })); done(`El post ${n} ja no està programat`); onClose(); }
+    catch (e) { toastError(e); }
+    setBusy('');
   }
   return (
     <Dialog isOpen onClose={onClose} title="Publica a Instagram" subtitle={`Post ${n}: ${t.title}`}
-      footer={<><Button variant="ghost" onPress={onClose} isDisabled={busy}>Cancel·la</Button><Button isPending={busy} onPress={go}>{busy ? <Spinner size="sm" color="current" /> : <Send size={15} />}Publica ara</Button></>}>
-      <div className="grid gap-4 sm:grid-cols-[160px_minmax(0,1fr)]">
-        <Art t={t} v={post.v} photo={post.photo} className="w-40 rounded-xl" />
-        <div className="min-w-0 space-y-2">
-          {caption ? <p className="max-h-72 overflow-y-auto text-sm whitespace-pre-wrap">{caption}</p> : <p className="text-sm text-warning">Aquest post encara no té copy: es publicarà sense text.</p>}
-          <p className="text-xs text-muted">Un cop publicat, es pot editar o esborrar des de l'app d'Instagram.</p>
+      footer={<>
+        <Button variant="ghost" onPress={onClose} isDisabled={!!busy}>Cancel·la</Button>
+        {post.schedule && <Button variant="danger-soft" onPress={cancel} isPending={busy === 'cancel'} isDisabled={busy === 'go'}>{busy === 'cancel' && <Spinner size="sm" color="current" />}Desprograma</Button>}
+        <Button isPending={busy === 'go'} isDisabled={busy === 'cancel' || mode === 'later' && past} onPress={go}>
+          {busy === 'go' ? <Spinner size="sm" color="current" /> : mode === 'now' ? <Send size={15} /> : <Clock size={15} />}{mode === 'now' ? 'Publica ara' : post.schedule ? 'Desa la programació' : 'Programa'}
+        </Button>
+      </>}>
+      <div className="space-y-4">
+        <ToggleButtonGroup aria-label="Quan" selectionMode="single" disallowEmptySelection selectedKeys={new Set([mode])}
+          onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) setMode(v as typeof mode); }} size="sm">
+          <ToggleButton id="now">Ara</ToggleButton>
+          <ToggleButton id="later">Programa</ToggleButton>
+        </ToggleButtonGroup>
+        {mode === 'later' && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-end gap-3">
+              <DayPicker label="Dia" value={date} onChange={setDate} />
+              <HourField label="Hora" value={time} onChange={setTime} />
+            </div>
+            <p className={`text-xs ${date && past ? 'text-warning' : 'text-muted'}`}>{date && past ? 'Aquesta hora ja ha passat.' : "Es publica sol a aquesta hora, amb el copy que tingui llavors."}</p>
+          </div>
+        )}
+        <div className="grid gap-4 sm:grid-cols-[160px_minmax(0,1fr)]">
+          <Art t={t} v={post.v} photo={post.photo} className="w-40 rounded-xl" />
+          <div className="min-w-0 space-y-2">
+            {caption ? <p className="max-h-72 overflow-y-auto text-sm whitespace-pre-wrap">{caption}</p> : <p className="text-sm text-warning">Aquest post encara no té copy: es publicarà sense text.</p>}
+            <p className="text-xs text-muted">Un cop publicat, es pot editar o esborrar des de l'app d'Instagram.</p>
+          </div>
         </div>
       </div>
     </Dialog>
+  );
+}
+
+// A day, picked on a calendar instead of the browser's own; '' is no day. clearable adds «Sense dia» under the calendar
+function DayPicker({ label, value, onChange, clearable, hideLabel }: { label: string; value: string; onChange: (v: string) => void; clearable?: boolean; hideLabel?: boolean }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <I18nProvider locale="ca-ES">
+      <DatePicker aria-label={hideLabel ? label : undefined} value={value ? parseDate(value) : null} minValue={todayIn(getLocalTimeZone())}
+        onChange={(d: DateValue | null) => onChange(d ? d.toString().slice(0, 10) : '')} isOpen={open} onOpenChange={setOpen} className="w-40 shrink-0">
+        {!hideLabel && <Label>{label}</Label>}
+        <DateField.Group fullWidth>
+          <DateField.Input>{segment => <DateField.Segment segment={segment} />}</DateField.Input>
+          <DateField.Suffix><DatePicker.Trigger><DatePicker.TriggerIndicator /></DatePicker.Trigger></DateField.Suffix>
+        </DateField.Group>
+        <DatePicker.Popover>
+          <Calendar aria-label={label}>
+            <Calendar.Header>
+              <Calendar.Heading />
+              <Calendar.NavButton slot="previous" />
+              <Calendar.NavButton slot="next" />
+            </Calendar.Header>
+            <Calendar.Grid>
+              <Calendar.GridHeader>{d => <Calendar.HeaderCell>{d}</Calendar.HeaderCell>}</Calendar.GridHeader>
+              <Calendar.GridBody>{d => <Calendar.Cell date={d} />}</Calendar.GridBody>
+            </Calendar.Grid>
+          </Calendar>
+          {clearable && value && <Button size="sm" variant="ghost" className="mt-2 w-full" onPress={() => { onChange(''); setOpen(false); }}>Sense dia</Button>}
+        </DatePicker.Popover>
+      </DatePicker>
+    </I18nProvider>
+  );
+}
+
+// An hour of the day, 24 h, as HH:MM
+function HourField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <I18nProvider locale="ca-ES">
+      <TimeField value={parseTime(value)} hourCycle={24} onChange={(v: Time | null) => { if (v) onChange(v.toString().slice(0, 5)); }} className="w-28">
+        <Label>{label}</Label>
+        <TimeField.Group fullWidth>
+          <TimeField.Input>{segment => <TimeField.Segment segment={segment} />}</TimeField.Input>
+        </TimeField.Group>
+      </TimeField>
+    </I18nProvider>
   );
 }
 

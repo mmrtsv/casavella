@@ -296,7 +296,7 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
   .cmp-buy { grid-column: 2; justify-items: start; text-align: left; }
   .cmp-badge { justify-self: start; }
 }
-/* Phone: one row per stay, a small cover photo on the left (no plaque, to save space), the rest beside it, so all four fit on screen.
+/* Phone: one row per stay, a small cover photo on the left with the plaque over its bottom-left corner, the rest beside it, so all four fit on screen.
    Each row keeps the type and one feature that tells apartments from rooms (the second in .feats: "Cuina equipada"
    or "Llit doble"); the description and the other features are in the details popup */
 @media (max-width: 640px) {
@@ -308,7 +308,7 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
   .cmp-row { grid-template-columns: 84px minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 6px 16px; align-items: start; padding-block: 16px; }
   .cmp-media { grid-row: 1 / span 2; cursor: pointer; }
   .cmp-media .photo { aspect-ratio: 3 / 4; }
-  .cmp-media .plaque { display: none; }
+  .cmp-media .plaque { left: -10px; bottom: -10px; width: 40px; box-shadow: 0 3px 8px rgba(15, 38, 20, .3); }
   .cmp-info p, .cmp-info .cmp-more, .cmp-buy .cmp-badge, .cmp-buy .cmp-nights { display: none; }
   .cmp-info { gap: 2px; }
   .cmp-info .label { font-size: 10.5px; letter-spacing: .16em; }

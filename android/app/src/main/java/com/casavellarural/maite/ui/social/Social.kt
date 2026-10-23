@@ -55,6 +55,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.casavellarural.maite.R
+import androidx.compose.ui.text.input.KeyboardType
+import com.casavellarural.maite.data.Schedule
+import com.casavellarural.maite.data.addDays
+import com.casavellarural.maite.data.dayMonth
 import com.casavellarural.maite.data.Api
 import com.casavellarural.maite.data.ApiError
 import com.casavellarural.maite.data.CaptionOption
@@ -296,11 +300,12 @@ private fun Profile(data: Social, onEmpty: () -> Unit) {
                         Text(t.title, style = Type.sm, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(if (p.photo.isNotEmpty()) "Amb la teva foto" else "Opció ${p.v + 1}", style = Type.xs, color = T.muted)
                         Text(copy?.lineSequence()?.first() ?: "Sense copy", style = Type.xs, color = T.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        p.schedule?.let { When(it) }
                     }
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.End) {
                     IconBtn(R.drawable.ic_message_square_text, "Copy del post ${i + 1}", { open = if (open == p.id) null else p.id }, on = open == p.id)
-                    if (insta?.connected == true && t.kind == "post") IconBtn(R.drawable.ic_send, "Publica el post ${i + 1} a Instagram", { publishing = p })
+                    if (insta?.connected == true && t.kind == "post") IconBtn(if (p.schedule != null) R.drawable.ic_clock else R.drawable.ic_send, "Publica o programa el post ${i + 1}", { publishing = p }, on = p.schedule != null)
                     var dl by remember { mutableStateOf(false) }
                     IconBtn(R.drawable.ic_download, "Descarrega el post ${i + 1}", { dl = true; scope.launch { saveTemplate(context, t, p.v, p.photo, i + 1); dl = false } }, busy = dl)
                     IconBtn(R.drawable.ic_x, "Treu ${t.title} del perfil", { order(posts.filter { it != p }.map { it.id }, "${t.title} tret del perfil") })
@@ -404,14 +409,44 @@ private fun CopyPanel(post: SocialPost, n: Int, data: Social, posts: List<Social
 }
 
 /** Publishing: the post as a JPEG on the site's photo storage, then Instagram fetches it and posts it with the saved caption */
+// Programs are moments; Maite shows them in Barcelona's time
+private val BCN = java.time.ZoneId.of("Europe/Madrid")
+private fun hourOf(iso: String) = java.time.Instant.parse(iso).atZone(BCN).toLocalTime().toString().take(5)
+private fun dayOfIso(iso: String) = java.time.Instant.parse(iso).atZone(BCN).toLocalDate().toString()
+private fun programmed(s: Schedule) = "es publica el ${dayMonth(dayOfIso(s.at))} a les ${hourOf(s.at)}"
+
 @Composable
+private fun When(s: Schedule) {
+    if (s.error != null) Text("No s'ha pogut publicar: ${s.error}", style = Type.xs, color = T.danger, maxLines = 2, overflow = TextOverflow.Ellipsis)
+    else Text("Programat: ${dayMonth(dayOfIso(s.at))} a les ${hourOf(s.at)}", style = Type.xs, color = T.accent, maxLines = 1)
+}
+
+// Publishing: the post as a full-size JPEG on the site's photo storage, then Instagram fetches it and posts it with the
+// saved caption. Now, or at a programmed time: then the JPEG goes up now and the server publishes it when it is due
+@Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun Publish(post: SocialPost, n: Int, caption: String, onClose: () -> Unit) {
     val t = Renderer.byId.getValue(post.tpl)
-    var busy by remember { mutableStateOf(false) }
+    val was = post.schedule
+    var mode by remember { mutableStateOf(if (was != null) "later" else "now") }
+    var date by remember { mutableStateOf(was?.let { dayOfIso(it.at) } ?: post.date?.takeIf { it > TODAY } ?: addDays(TODAY, 1)) }
+    var time by remember { mutableStateOf(was?.let { hourOf(it.at) } ?: "19:00") }
+    var busy by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val at = runCatching { java.time.LocalDateTime.parse("${date}T$time").atZone(BCN).toInstant() }.getOrNull()
+    val past = at == null || !at.isAfter(java.time.Instant.now().plusSeconds(60))
     Sheet(onClose) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 28.dp).verticalScroll(rememberScrollState())) {
             Text("Publica a Instagram", style = Type.xl); Muted("Post $n: ${t.title}")
+            Segmented(listOf("now" to "Ara", "later" to "Programa"), mode, { mode = it }, Modifier.padding(top = 14.dp))
+            if (mode == "later") {
+                Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Bottom) {
+                    DateField("Dia", date, { date = it }, Modifier.weight(1f), min = TODAY)
+                    Field("Hora", time, { v -> time = v.filter { it.isDigit() || it == ':' }.take(5) }, Modifier.width(110.dp), type = KeyboardType.Number, error = at == null)
+                }
+                Text(if (past) "Aquesta hora ja ha passat." else "Es publica sol a aquesta hora, amb el copy que tingui llavors.",
+                    style = Type.xs, color = if (past) T.warningText else T.muted, modifier = Modifier.padding(top = 6.dp))
+            }
             Row(Modifier.padding(top = 14.dp)) {
                 Art(t, post.v, post.photo, Modifier.width(120.dp).clip(RoundedCornerShape(12.dp)))
                 Spacer(Modifier.width(14.dp))
@@ -421,20 +456,37 @@ private fun Publish(post: SocialPost, n: Int, caption: String, onClose: () -> Un
                     Text("Un cop publicat, es pot editar o esborrar des de l'app d'Instagram.", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 8.dp))
                 }
             }
-            Row(Modifier.fillMaxWidth().padding(top = 18.dp), horizontalArrangement = Arrangement.End) {
-                Btn("Cancel·la", onClose, look = Look.Ghost, enabled = !busy); Spacer(Modifier.width(8.dp))
-                Btn("Publica ara", {
-                    busy = true
+            FlowRow(Modifier.fillMaxWidth().padding(top = 18.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Btn("Cancel·la", onClose, look = Look.Ghost, enabled = busy.isEmpty())
+                if (was != null) Btn("Desprograma", {
+                    busy = "cancel"
+                    scope.launch {
+                        try {
+                            Maite.social = Api.put<Social>("social", mapOf("schedule" to mapOf("id" to post.id)))
+                            Toasts.done("El post $n ja no està programat"); onClose()
+                        } catch (e: Exception) { Toasts.error(e) }
+                        busy = ""
+                    }
+                }, look = Look.Danger, busy = busy == "cancel", enabled = busy.isEmpty())
+                Btn(if (mode == "now") "Publica ara" else if (was != null) "Desa la programació" else "Programa", {
+                    busy = "go"
                     scope.launch {
                         try {
                             val big = Renderer.full(t.id, post.v, post.photo)
                             val image = uploadJpeg(withContext(Dispatchers.Default) { jpeg(big, 1440, 92) })
-                            Maite.social = Api.post<Social>("instagram", mapOf("id" to post.id, "image" to image))
-                            Toasts.done("Post $n publicat a Instagram"); onClose()
+                            if (mode == "now") {
+                                Maite.social = Api.post<Social>("instagram", mapOf("id" to post.id, "image" to image))
+                                Toasts.done("Post $n publicat a Instagram")
+                            } else {
+                                val s = Schedule(at!!.toString(), image)
+                                Maite.social = Api.put<Social>("social", mapOf("schedule" to mapOf("id" to post.id, "at" to s.at, "image" to image)))
+                                Toasts.done("El post $n ${programmed(s)}")
+                            }
+                            onClose()
                         } catch (e: Exception) { Toasts.error(e) }
-                        busy = false
+                        busy = ""
                     }
-                }, icon = R.drawable.ic_send, busy = busy, small = false)
+                }, icon = if (mode == "now") R.drawable.ic_send else R.drawable.ic_clock, busy = busy == "go", enabled = busy.isEmpty() && !(mode == "later" && past), small = false)
             }
         }
     }

@@ -231,6 +231,7 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .cmp-info .feats li { font-size: 13px; }
 .cmp-buy { display: grid; gap: 6px; justify-items: end; text-align: right; }
 .cmp-cap { font-size: 11.5px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.cmp-cap svg { display: none; }
 .cmp-total { display: flex; align-items: baseline; gap: 10px; margin-top: 6px; }
 .cmp-total b { font-family: var(--display); font-weight: 400; font-size: clamp(34px, 3.4vw, 44px); line-height: 1; color: var(--ink); }
 .cmp-total s { font-size: 15px; color: var(--muted); }
@@ -304,7 +305,9 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
   .cmp-edit { padding: 10px 16px; }
   .cmp-row { grid-template-columns: 112px minmax(0, 1fr); gap: 14px 16px; align-items: center; padding-block: 18px; }
   .cmp-media .photo { aspect-ratio: 1; }
-  .cmp-media .plaque, .cmp-info p, .cmp-info .feats, .cmp-buy .cmp-cap { display: none; }
+  .cmp-media .plaque, .cmp-info p, .cmp-info .feats { display: none; }
+  .cmp-row .cmp-cap { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+  .cmp-row .cmp-cap svg { display: block; width: 18px; height: 18px; flex: none; fill: none; stroke: var(--basil); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
   .cmp-info { gap: 4px; }
   .cmp-info h3 { font-size: 28px; }
   .cmp-buy { grid-column: 1 / -1; grid-template-columns: 1fr auto; align-items: end; gap: 2px 16px; justify-items: start; text-align: left; }
@@ -1518,8 +1521,8 @@ function drawCompare() {
 }
 function buyBlock(stay) {
   const s = STAY_INFO[stay], q = price(stay), fits = (+fguests.value || 1) <= s.max, ok = fits && freeNow[stay] !== false;
-  if (q.error) return `<span class="cmp-cap">Fins a ${people(s.max)}</span><span class="cmp-no">${ruleText(q.error)}</span>`;
-  return `<span class="cmp-cap">Fins a ${people(s.max)}</span>
+  if (q.error) return `<span class="cmp-cap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.5c1.9.8 3.2 2.8 3.5 5.5"/></svg>Fins a ${people(s.max)}</span><span class="cmp-no">${ruleText(q.error)}</span>`;
+  return `<span class="cmp-cap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M2.5 20c.6-3.6 3.3-6 6.5-6s5.9 2.4 6.5 6"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.5c1.9.8 3.2 2.8 3.5 5.5"/></svg>Fins a ${people(s.max)}</span>
     ${q.discount ? `<span class="cmp-badge">${q.discount} % de descompte</span>` : ''}
     <div class="cmp-total">${q.discount ? `<s>${euro(q.subtotal)}</s>` : ''}<b>${euro(q.total)}</b></div>
     <span class="cmp-nights">en total, per ${nightsTxt(q.n)}</span>

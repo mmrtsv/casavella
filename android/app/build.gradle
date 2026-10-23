@@ -1,8 +1,14 @@
-// Maite for Android: a Trusted Web Activity. The app opens maite.casavellarural.com full screen in Chrome's engine,
-// so it is the same Maite as the web (and the Google sign-in of Cloudflare Access works) and updates with every publish.
+// Maite for Android: the back office as a native app (Kotlin, Jetpack Compose). It talks to the same /api/maite/* as the web.
 plugins {
     id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.compose'
+    id 'org.jetbrains.kotlin.plugin.serialization'
+    id 'io.github.takahirom.roborazzi'
 }
+
+// Connection values can be built in (environment variables) or entered once in the app
+def env = { String k -> (System.getenv(k) ?: '').replace('"', '') }
 
 android {
     namespace 'com.casavellarural.maite'
@@ -10,10 +16,14 @@ android {
 
     defaultConfig {
         applicationId 'com.casavellarural.maite'
-        minSdk 24
+        minSdk 26
         targetSdk 35
-        versionCode 1
-        versionName '1.0'
+        versionCode 2
+        versionName '2.0'
+        buildConfigField 'String', 'BASE_URL', '"https://maite.casavellarural.com"'
+        buildConfigField 'String', 'CF_CLIENT_ID', "\"${env('MAITE_CF_CLIENT_ID')}\""
+        buildConfigField 'String', 'CF_CLIENT_SECRET', "\"${env('MAITE_CF_CLIENT_SECRET')}\""
+        buildConfigField 'String', 'GOOGLE_CLIENT_ID', "\"${env('MAITE_GOOGLE_CLIENT_ID')}\""
     }
 
     // The key stays out of the repository: pass its path and password when building (see README)
@@ -27,16 +37,42 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
     }
+    buildFeatures { compose true; buildConfig true }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+    kotlinOptions { jvmTarget = '17' }
+    testOptions { unitTests { includeAndroidResources = true } }
 }
 
 dependencies {
-    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+    implementation platform('androidx.compose:compose-bom:2024.12.01')
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.foundation:foundation'
+    implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.activity:activity-compose:1.9.3'
+    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.8.7'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'io.coil-kt:coil-compose:2.7.0'
+    implementation 'io.coil-kt:coil-svg:2.7.0'
+    implementation 'androidx.credentials:credentials:1.3.0'
+    implementation 'androidx.credentials:credentials-play-services-auth:1.3.0'
+    implementation 'com.google.android.libraries.identity.googleid:googleid:1.1.1'
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.14.1'
+    testImplementation 'androidx.compose.ui:ui-test-junit4'
+    testImplementation 'io.github.takahirom.roborazzi:roborazzi:1.40.1'
+    testImplementation 'io.github.takahirom.roborazzi:roborazzi-compose:1.40.1'
+    debugImplementation 'androidx.compose.ui:ui-test-manifest'
 }

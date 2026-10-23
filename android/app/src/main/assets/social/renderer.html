@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=1080">
+<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden}#stage{position:absolute;left:0;top:0;width:1080px}</style>
+</head><body><div id="stage" class="social-art"></div>
+<script src="social.js"></script>
+<script>
+// Draws one template (or the top of the profile) at full size, then tells the app when its photos and fonts are in
+MaiteSocial.loadBrandFonts();
+const stage = document.getElementById('stage');
+async function settle() {
+  await Promise.all([...stage.querySelectorAll('img')].map(i => i.decode().catch(() => {})));
+  await document.fonts.ready;
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+}
+window.draw = async (req, id, v, photo) => {
+  const t = MaiteSocial.byId.get(id);
+  stage.style.height = t.h + 'px';
+  MaiteSocial.paint(stage, t, v, photo);
+  await settle();
+  Maite.done(req, t.w, t.h);
+};
+window.drawProfile = async (req) => {
+  stage.style.height = 'auto';
+  stage.innerHTML = MaiteSocial.PROFILE_HEAD;
+  await settle();
+  Maite.done(req, 1080, Math.ceil(stage.firstElementChild.getBoundingClientRect().height));
+};
+window.words = (id, v, own) => {
+  const t = MaiteSocial.byId.get(id);
+  return JSON.stringify({ onImage: MaiteSocial.onImage(t, v), photo: MaiteSocial.photoAlt(t, v, own) });
+};
+</script>
+</body></html>

@@ -305,9 +305,9 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
   .cmp-when { width: 100%; justify-content: space-between; padding: 14px 16px; gap: 12px 16px; }
   .cmp-when-rows b { font-size: 18px; }
   .cmp-edit { padding: 10px 16px; }
-  .cmp-row { grid-template-columns: 84px minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 6px 16px; align-items: start; padding-block: 16px; }
-  .cmp-media { grid-row: 1 / span 2; cursor: pointer; }
-  .cmp-media .photo { aspect-ratio: 3 / 4; }
+  .cmp-row { grid-template-columns: 104px minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 6px 16px; align-items: start; padding-block: 16px; }
+  .cmp-media { grid-row: 1 / span 2; align-self: stretch; cursor: pointer; }
+  .cmp-media .photo { aspect-ratio: auto; height: 100%; }
   .cmp-media .plaque { left: -10px; bottom: -10px; width: 40px; box-shadow: 0 3px 8px rgba(15, 38, 20, .3); }
   .cmp-info p, .cmp-info .cmp-more, .cmp-buy .cmp-badge, .cmp-buy .cmp-nights { display: none; }
   .cmp-info { gap: 2px; }

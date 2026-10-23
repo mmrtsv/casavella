@@ -1,0 +1,14 @@
+{
+  "name": "Maite",
+  "short_name": "Maite",
+  "description": "El back office de La Casa Vella",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1a3f20",
+  "theme_color": "#f6f4ef",
+  "icons": [
+    { "src": "/maite/icons/maite-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/maite/icons/maite-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

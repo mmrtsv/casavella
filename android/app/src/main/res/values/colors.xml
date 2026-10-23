@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Maite's light background, its dark one, and Verd fosc for the icon and the splash -->
+    <color name="background">#F6F4EF</color>
+    <color name="background_dark">#0A0E0B</color>
+    <color name="brand">#1A3F20</color>
+</resources>

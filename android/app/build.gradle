@@ -1,0 +1,42 @@
+// Maite for Android: a Trusted Web Activity. The app opens maite.casavellarural.com full screen in Chrome's engine,
+// so it is the same Maite as the web (and the Google sign-in of Cloudflare Access works) and updates with every publish.
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.casavellarural.maite'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.casavellarural.maite'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+
+    // The key stays out of the repository: pass its path and password when building (see README)
+    signingConfigs {
+        release {
+            storeFile file(System.getenv('MAITE_KEYSTORE') ?: 'missing.keystore')
+            storePassword System.getenv('MAITE_KEYSTORE_PASSWORD')
+            keyAlias 'maite'
+            keyPassword System.getenv('MAITE_KEYSTORE_PASSWORD')
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}

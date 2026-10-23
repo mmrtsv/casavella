@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.casavellarural.maite",
+    "sha256_cert_fingerprints": ["86:43:F0:16:2D:F3:F7:61:1C:9B:73:14:76:26:6D:41:D7:0C:39:84:CA:CC:FE:1E:CE:6F:03:1D:76:C4:E3:95"]
+  }
+}]

@@ -384,7 +384,7 @@ private fun CopyPanel(post: SocialPost, n: Int, data: Social, posts: List<Social
     val scope = rememberCoroutineScope()
     val dirty = text.trim() != saved
     Panel(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        Muted(if (data.ai) "Claude escriu tres opcions en català." else "Sense la clau de Claude, et proposo els copies de la pestanya Copies.")
+        Muted(if (data.ai) "Claude escriu quatre opcions en català. L'última explica el que es veu." else "Sense la clau de Claude, et proposo els copies de la pestanya Copies.")
         Btn(if (options != null) "Altres opcions" else "Proposa copies", {
             if (!data.ai) { options = libraryFor(t); return@Btn }
             busy = "gen"

@@ -607,13 +607,13 @@ function CopyPanel({ post, n, data, setData, posts }: { post: Post; n: number; d
   return (
     <div className="mt-3 space-y-3 rounded-2xl bg-default/50 p-3 sm:p-4 fade-in">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="mr-auto text-sm text-muted">{data.ai ? 'Claude escriu tres opcions en català.' : 'Sense la clau de Claude, et proposo els copies de la pestanya Copies.'}</p>
+        <p className="mr-auto text-sm text-muted">{data.ai ? "Claude escriu quatre opcions en català. L'última explica el que es veu." : 'Sense la clau de Claude, et proposo els copies de la pestanya Copies.'}</p>
         <Button size="sm" variant="secondary" isPending={busy === 'gen'} onPress={generate}>
           {busy === 'gen' ? <Spinner size="sm" color="current" /> : <Sparkles size={15} />}{options ? 'Altres opcions' : 'Proposa copies'}
         </Button>
       </div>
       {options && (
-        <ul className="grid gap-2 xl:grid-cols-3">
+        <ul className="grid gap-2 md:grid-cols-2 2xl:grid-cols-4">
           {options.map((o, k) => (
             <li key={k} className="flex flex-col gap-2 rounded-xl bg-surface p-3 ring-1 ring-border">
               <p className="flex-1 text-sm whitespace-pre-wrap">{joinCopy(o)}</p>

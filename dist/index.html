@@ -1522,7 +1522,9 @@ const av = $('disponibles'), cmpList = $('cmpList'), freeNow = {};
 let searchSeq = 0, cameFrom = '#reservar';
 function drawCompare() {
   const g = +fguests.value || 1;
-  $('cmpDates').textContent = `Del ${dayLabel(fin.value)} al ${dayLabel(fout.value)}`;
+  // No weekday here: "Del 24 al 27 d'octubre" reads at a glance; the month only once when it doesn't change
+  const d1 = parse(fin.value), d2 = parse(fout.value), dm = d => d.toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' });
+  $('cmpDates').textContent = d1.getMonth() === d2.getMonth() ? `Del ${d1.getDate()} al ${dm(d2)}` : `Del ${dm(d1)} al ${dm(d2)}`;
   $('cmpWho').textContent = `${nightsTxt(nights())}, ${people(g)}`;
   const rows = Object.entries(STAY_INFO).map(([stay, s]) => ({ stay, s, q: price(stay), fits: g <= s.max, free: freeNow[stay] !== false }));
   rows.sort((a, b) => (b.fits && b.free) - (a.fits && a.free));

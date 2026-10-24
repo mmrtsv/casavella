@@ -6,7 +6,7 @@
 //                          it is a carousel ([{ tpl, v, photo, texts }], the same fields). copy: its caption, if it already has one.
 //                          story: true for a story (it never goes in the grid; it can be programmed like a post). menu: the
 //                          values of a menu made in Nova publicació › Menú (catalog.ts Menu), kept on its post so the pack can
-//                          be opened again; pack: on the menu's story, the id of its post.
+//                          be opened again; pack: on the menu's stories (the announcement and the menu), the id of its post.
 // PUT  /api/maite/social   { order: [ids] }  New order of the grid; posts left out are removed (stories are not in it, and stay).
 //                          Or { remove: id }  Removes one post or story. Or { copy: { id, text } }  The caption of one post.
 //                          Or { date: { id, date } }  The day a post is planned for ('' to clear, and its program with it);
@@ -17,6 +17,8 @@
 //                          Or { edit: { id, v, photo, texts, slides, menu, images } }  Changes a post that isn't published
 //                          (slides and menu only when given); a programmed one needs its new JPEGs (images, or image), which
 //                          replace the ones the program publishes.
+//                          Or { menu: { id, menu } }  The values of a menu on its post, published or not (its days and its image
+//                          for the web can change after it went out).
 //                          Or { template: { id, texts } }  The words changed on a template, for what is made from it next ([] to undo).
 // Opening the grid also publishes programs that are already due (lib/instagram.js), in case the cron hasn't yet.
 // Everything is one KV key, 'social' (lib/social.js).
@@ -47,14 +49,18 @@ function slidesOf(list) {
 }
 const slim = x => ({ tpl: x.tpl, v: x.v, photo: x.photo, ...(x.texts.length ? { texts: x.texts } : {}) });
 // The values of a menu (catalog.ts Menu): short strings and up to six dishes. null if they don't look like it; false if none
+// from, until: its first and last day; story: the announcement story's own lines (null follows the menu); image: the menu as a
+// JPEG, which the restaurant's booking page shows while it runs (/api/settings)
 function menuOf(m) {
   if (m == null || m === false) return false;
   if (m === true) return true;
-  const keys = ['photo', 'kicker', 'title', 'subtitle', 'dates', 'name', 'drinks', 'price', 'link'];
+  const keys = ['photo', 'kicker', 'title', 'subtitle', 'dates', 'name', 'drinks', 'price', 'link', 'from', 'until', 'image'];
   if (typeof m !== 'object' || keys.some(k => m[k] != null && (typeof m[k] !== 'string' || m[k].length > 300))) return null;
-  const dishes = [].concat(m.dishes || []);
+  if (['from', 'until'].some(k => m[k] && !/^\d{4}-\d{2}-\d{2}$/.test(m[k])) || m.image && !PHOTO.test(m.image)) return null;
+  const dishes = [].concat(m.dishes || []), story = [].concat(m.story || []);
   if (dishes.length > 6 || dishes.some(d => typeof d !== 'string' || d.length > 300)) return null;
-  return { ...Object.fromEntries(keys.map(k => [k, m[k] || ''])), dishes };
+  if (story.length > 6 || story.some(d => d !== null && (typeof d !== 'string' || d.length > 300))) return null;
+  return { ...Object.fromEntries(keys.map(k => [k, m[k] || ''])), dishes, ...(story.some(x => x != null) ? { story } : {}) };
 }
 
 // The day of a moment in Barcelona, as YYYY-MM-DD
@@ -136,6 +142,10 @@ export async function onRequestPut({ request, env, data }) {
     if (slides) { if (slides.length) post.slides = slides; else delete post.slides; }
     if (menu !== undefined) { if (menu) post.menu = menu; else delete post.menu; }
     if (post.schedule) { Object.assign(post.schedule, { image: images[0], by: data.user }); if (images.length > 1) post.schedule.images = images; else delete post.schedule.images; }
+  } else if (b.menu && S.posts.some(p => p.id === b.menu.id && p.menu)) {
+    const menu = menuOf(b.menu.menu);
+    if (!menu || menu === true) return json({ error: 'bad_request' }, 400);
+    S.posts.find(p => p.id === b.menu.id).menu = menu;
   } else if (b.template && TPL.test(b.template.id || '')) {
     const texts = words(b.template.texts);
     if (!texts) return json({ error: 'bad_request' }, 400);

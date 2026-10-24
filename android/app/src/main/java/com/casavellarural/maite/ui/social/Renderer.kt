@@ -34,7 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger
 @Serializable data class Style(val id: String, val label: String, val kind: String, val tpls: List<String>)
 @Serializable data class Photo(val src: String, val alt: String)
 /** A menu made in Menús, as maite-app/src/social/catalog.ts Menu */
-@Serializable data class Menu(val photo: String, val kicker: String, val title: String, val subtitle: String, val dates: String, val name: String, val dishes: List<String>, val drinks: String, val price: String, val link: String = "")
+@Serializable data class Menu(val photo: String, val kicker: String, val title: String, val subtitle: String, val dates: String, val name: String, val dishes: List<String>, val drinks: String, val price: String, val link: String = "",
+    val from: String = "", val until: String = "", val story: List<String?> = emptyList(), val image: String = "")
 @Serializable data class MenuDefaults(val example: Menu, val dishes: Int = 4)
 /** carousels: the templates that can open a carousel, and the templates of the slides after them. library: the photos to
  *  choose from. menu: the menu Menús starts from */

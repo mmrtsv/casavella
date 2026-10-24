@@ -412,6 +412,13 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .bookpage.done .bp-form, .bookpage.done .bp-change { display: none; }
 /* Table page (#taula): the same form, one column */
 .tb-main { max-width: 760px; }
+/* The menus made in Maite that haven't ended, next to the form (under it on a phone) */
+.tb-main.menus { max-width: none; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: clamp(32px, 5vw, 80px); align-items: start; }
+.tb-menus { display: grid; gap: 28px; }
+.tb-menus figure { margin: 0; display: grid; gap: 10px; }
+.tb-menus img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; border: 1px solid var(--line); }
+.tb-menus figcaption { font-size: 14px; color: var(--muted); }
+@media (max-width: 900px) { .tb-main.menus { grid-template-columns: 1fr; } .tb-menus { max-width: 440px; } }
 .pop.list.long { max-height: min(360px, 60vh); overflow-y: auto; }
 .tablepage .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 @media (max-width: 900px) { .bp-grid { grid-template-columns: 1fr; } .bp-sum { position: static; order: -1; } }
@@ -866,6 +873,7 @@ footer { padding-bottom: 32px !important; }
         <p>Si no podeu venir o canvien els plans, truca'ns o escriu-nos per WhatsApp al <a href="https://wa.me/34667409859" target="_blank" rel="noopener">+34 667 40 98 59</a>.</p>
         <a class="btn" href="#restaurant">Tornar al restaurant</a>
       </div>
+      <aside class="tb-menus" id="tbMenus" hidden aria-label="Menú"></aside>
     </div>
   </div>
 </section>
@@ -1784,6 +1792,7 @@ fetch('/api/settings').then(r => r.ok ? r.json() : null).then(p => {
   const hour = t => { const [h, m] = t.split(':'); return LANG === 'en' ? `${h}:${m}` : `${+h}${m === '00' ? '' : '.' + m} h`; };
   if (p.content) applyContent(p.content);
   if (p.restaurant) applyTables(p.restaurant);
+  if (p.menus) applyMenus(p.menus);
   const pol = $('policy'); if (pol) pol.textContent = `${LANG === 'ca' || !p.cancel ? p.policy : policyText(p.cancel)} ${tr(`Check-in a partir de les ${hour(p.rules.checkin)} i check-out abans de les ${hour(p.rules.checkout)}.`, `Check-in a partir de las ${hour(p.rules.checkin)} y check-out antes de las ${hour(p.rules.checkout)}.`, `Check-in from ${hour(p.rules.checkin)}, check-out by ${hour(p.rules.checkout)}.`)}`;
 }).catch(() => {});
 const CONTACT_MSG = tr("Truca'ns o escriu-nos per WhatsApp al +34 667 40 98 59 i t'ho preparem.", 'Llámanos o escríbenos por WhatsApp al +34 667 40 98 59 y te lo preparamos.', "Call us or message us on WhatsApp at +34 667 40 98 59 and we'll arrange it.");
@@ -2426,6 +2435,24 @@ function applyTables(R) {
   TABLES = R;
   if (TF.people.value !== 'more' && +TF.people.value > R.maxParty) tpeoplePick.set(String(R.maxParty), true);
   if (!tb.hidden && !tb.classList.contains('done')) openTable();
+}
+// The menus made in Maite (Xarxes socials › Menú) that haven't ended, as their image and their days
+const menuDays = (from, until) => {
+  const d = x => new Date(x + 'T12:00').toLocaleDateString(LOC, { day: 'numeric', month: 'long' }).replace(/’/g, "'");
+  const l = x => [1, 11].includes(+x.slice(8, 10));
+  if (!until || until === from) return capFirst(tr((l(from) ? "l'" : 'el ') + d(from), 'el ' + d(from), d(from)));
+  return tr((l(from) ? "De l'" : 'Del ') + d(from) + (l(until) ? " a l'" : ' al ') + d(until), `Del ${d(from)} al ${d(until)}`, `From ${d(from)} to ${d(until)}`);
+};
+function applyMenus(list) {
+  const box = $('tbMenus');
+  box.replaceChildren(...list.filter(m => m.image && m.from).map(m => {
+    const f = document.createElement('figure'), img = document.createElement('img'), c = document.createElement('figcaption');
+    Object.assign(img, { src: m.image, alt: m.alt, width: 1080, height: 1350, loading: 'lazy' });
+    c.textContent = menuDays(m.from, m.until);
+    f.append(img, c); return f;
+  }));
+  box.hidden = !box.children.length;
+  box.parentElement.classList.toggle('menus', !box.hidden);
 }
 // The page says so when the web doesn't take tables or there's no opening ahead; otherwise each visit starts a fresh table
 function tableMessage(title, text) { tableForm.hidden = true; tnote.textContent = ''; $('tbDone').hidden = false; $('tbDone').querySelector('h3').textContent = title; $('tbDoneText').textContent = text; }

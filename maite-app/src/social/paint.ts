@@ -1,5 +1,5 @@
 // Templates at full size: the markup, its variations ("Una altra opció") and a PNG of it at 1080 px wide
-import { LIBRARY, inLibrary } from './catalog';
+import { LIBRARY, inLibrary, www } from './catalog';
 import { TEMPLATES, type Template } from './templates';
 
 export const byId = new Map(TEMPLATES.map(t => [t.id, t]));
@@ -26,7 +26,7 @@ const photoFor = (t: Template, v: number) => {
 // How many variations a template has (0: none)
 export function variants(t: Template) {
   if (t.id === 'PostQuote') return 6;
-  if (t.id === 'PostMenu') return 2;
+  if (t.id === 'PostMenu' || t.id === 'StoryMenu') return 2;
   if (t.id === 'PostWord') return BIG_WORDS.length;
   return t.photo ? PHOTOS.length : 0;
 }
@@ -66,11 +66,13 @@ export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?:
     const iso = root.querySelector('img');
     if (iso) iso.src = cava ? '/img/iso-dark.png' : '/img/iso-light.png';
   }
-  if (t.id === 'PostMenu' && v % 2 === 1) {
+  if ((t.id === 'PostMenu' || t.id === 'StoryMenu') && v % 2 === 1) {
     root.setAttribute('data-v', 'dark');
     root.querySelectorAll('img').forEach(i => { i.src = '/img/iso-light.png'; });
   }
   if (img && inLibrary(photo)) img.alt = LIBRARY.find(p => p.src === photo)!.alt;
+  // Menus saved before the web went in bold had «Reserva a casavellarural.com» in one line, and the WhatsApp after it
+  if ((t.id === 'PostMenu' || t.id === 'StoryMenu') && texts && /^Reserva a \S/.test(texts[9] || '')) texts = [...texts.slice(0, 9), 'Reserva a', www(texts[9]!.slice(10))];
   if (texts?.length) {
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     for (let i = 0, n = walk.nextNode(); n; n = walk.nextNode()) {

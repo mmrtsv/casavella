@@ -11,7 +11,7 @@ import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
 import { done, toastError } from '../parts/toast';
 import { Art, Wide } from '../social/Art';
-import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, STYLES, inLibrary, menuCaption, menuSlides, type Menu, type Slide } from '../social/catalog';
+import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, STORY_LINES, STYLES, datesText, inLibrary, menuCaption, menuSlides, type Menu, type Slide } from '../social/catalog';
 import { byId, changed, fields, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants, type Texts } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Kind, type Template } from '../social/templates';
 
@@ -571,26 +571,34 @@ function Next({ post, then, onPublish }: { post: Post; then: Then; onPublish: ()
   );
 }
 
-// Menú, in Nova publicació: a menu in three steps (the cover, the menu, when it goes out). It becomes a carousel post in the
-// grid (the menu's cover, then the menu) and the announcement as a story; each goes out now, at a programmed time or later.
-// The menus made here are listed under the form; Edita opens the whole pack again (the menu's words, the caption, and when
-// the post and the story go out), and saving changes both
+// Menú, in Nova publicació: a menu in four steps (the cover, the menu, the stories, when it goes out). It becomes a carousel
+// post in the grid (the menu's cover, then the menu) and two stories, the announcement and the menu; each goes out now, at a
+// programmed time or later. The cover takes the first and last day, so the restaurant's booking page on the web shows the
+// menu while it runs. The menus made here are listed under the form; Edita opens the whole pack again (the menu's words, the
+// stories, the caption, and when each piece goes out), and saving changes all of them
 type Out = 'later' | 'now' | 'save';
 type When2 = { when: Out; date: string; time: string };
+type StoryOut = When2 & { on: boolean };
 const OUT: { id: Out; label: string }[] = [{ id: 'later', label: 'Programa' }, { id: 'now', label: 'Ara' }, { id: 'save', label: 'Més endavant' }];
 const menuValues = (p: Post): Menu | null => (p.menu && typeof p.menu === 'object' ? { ...MENU_EXAMPLE, ...p.menu } : null);
+// The two stories of a menu's pack: the announcement (StoryPoster, and older packs' only story) and the menu
+const packOf = (data: Data, p: Post) => ({
+  story: data.posts.find(x => x.pack === p.id && x.tpl !== 'StoryMenu') || null,
+  storyMenu: data.posts.find(x => x.pack === p.id && x.tpl === 'StoryMenu') || null,
+});
 
 function Menus({ data, setData }: { data: Data; setData: (d: Data) => void }) {
   const tomorrow = ymd(new Date(Date.now() + 864e5));
-  const [step, setStep] = useState<'cover' | 'menu' | 'out'>('cover');
+  const [step, setStep] = useState<'cover' | 'menu' | 'stories' | 'out'>('cover');
   const [m, setM] = useState<Menu>(MENU_EXAMPLE);
   const [own, setOwn] = useState<{ file: File; url: string } | null>(null);
   const [copy, setCopy] = useState<string | null>(null);
   const [insta, setInsta] = useState<Insta | null>(null);
   const [post, setPost] = useState<When2>({ when: 'later', date: tomorrow, time: '19:00' });
-  const [story, setStory] = useState<When2 & { on: boolean }>({ on: true, when: 'later', date: tomorrow, time: '12:00' });
-  // The pack being changed: its post and its story, as they were saved
-  const [editing, setEditing] = useState<{ post: Post; story: Post | null } | null>(null);
+  const [story, setStory] = useState<StoryOut>({ on: true, when: 'later', date: tomorrow, time: '12:00' });
+  const [storyMenu, setStoryMenu] = useState<StoryOut>({ on: true, when: 'later', date: tomorrow, time: '12:05' });
+  // The pack being changed: its post and its stories, as they were saved
+  const [editing, setEditing] = useState<{ post: Post; story: Post | null; storyMenu: Post | null } | null>(null);
   const [busy, setBusy] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   const top = useRef<HTMLDivElement>(null);
@@ -598,29 +606,39 @@ function Menus({ data, setData }: { data: Data; setData: (d: Data) => void }) {
   useEffect(() => () => { if (own) URL.revokeObjectURL(own.url); }, [own]);
   const set = (k: keyof Menu) => (v: string) => setM({ ...m, [k]: v });
   const dish = (i: number) => (v: string) => { const dishes = [...m.dishes]; dishes[i] = v; setM({ ...m, dishes }); };
+  const line = (i: number) => (v: string) => { const s = [...(m.story || [])]; while (s.length < i) s.push(null); s[i] = v; setM({ ...m, story: s }); };
   const made = menuSlides({ ...m, photo: own?.url || m.photo });
   const caption = copy ?? menuCaption(m);
   const live = !!insta?.connected;
   const atOf = (x: When2) => new Date(`${x.date}T${x.time}`);
   const late = (x: When2) => live && x.when === 'later' && !(atOf(x).getTime() > Date.now() + 60e3);
-  const postDone = !!editing?.post.published, storyDone = !!editing?.story?.published;
-  const ready = !!(m.title.trim() && m.name.trim() && m.price.trim() && m.dishes.some(d => d.trim())) && !(!postDone && late(post)) && !(story.on && !storyDone && late(story));
-  const storyOf = (p: Post) => data.posts.find(x => x.pack === p.id) || null;
+  const postDone = !!editing?.post.published, storyDone = !!editing?.story?.published, storyMenuDone = !!editing?.storyMenu?.published;
+  const daysOk = !!m.from && !!m.until && m.until >= m.from;
+  const ready = !!(m.title.trim() && m.name.trim() && m.price.trim() && m.dishes.some(d => d.trim())) && daysOk && !(!postDone && late(post))
+    && !(story.on && !storyDone && late(story)) && !(storyMenu.on && !storyMenuDone && late(storyMenu));
 
-  function reset() { setEditing(null); setM(MENU_EXAMPLE); setOwn(null); setCopy(null); setStep('cover'); setPost({ when: 'later', date: tomorrow, time: '19:00' }); setStory({ on: true, when: 'later', date: tomorrow, time: '12:00' }); }
+  function reset() {
+    setEditing(null); setM(MENU_EXAMPLE); setOwn(null); setCopy(null); setStep('cover'); setPost({ when: 'later', date: tomorrow, time: '19:00' });
+    setStory({ on: true, when: 'later', date: tomorrow, time: '12:00' }); setStoryMenu({ on: true, when: 'later', date: tomorrow, time: '12:05' });
+  }
   function edit(p: Post) {
     const values = menuValues(p);
     if (!values) return;
-    const st = storyOf(p), was = (x: Post | null, d: When2): When2 => (x?.schedule ? { when: 'later', date: ymd(new Date(x.schedule.at)), time: hour(x.schedule.at) } : { ...d, when: 'save' });
-    setEditing({ post: p, story: st }); setM(values); setOwn(null); setCopy(data.copies[p.id] ?? null); setStep('cover');
-    setPost(was(p, post)); setStory({ on: !!st, ...was(st, story) });
+    const { story: st, storyMenu: sm } = packOf(data, p), was = (x: Post | null, d: When2): When2 => (x?.schedule ? { when: 'later', date: ymd(new Date(x.schedule.at)), time: hour(x.schedule.at) } : { ...d, when: 'save' });
+    setEditing({ post: p, story: st, storyMenu: sm }); setM(values); setOwn(null); setCopy(data.copies[p.id] ?? null); setStep('cover');
+    setPost(was(p, post)); setStory({ on: !!st, ...was(st, story) }); setStoryMenu({ on: !!sm, ...was(sm, storyMenu) });
     top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   async function save() {
     setBusy(true);
     try {
-      const photo = own ? await uploadPhoto(own.file) : m.photo, values = { ...m, photo }, { post: p, story: st } = menuSlides(values);
+      const photo = own ? await uploadPhoto(own.file) : m.photo;
+      const shown = { ...m, photo, dates: datesText(m.from, m.until) }, { post: p, story: st, storyMenu: sm } = menuSlides(shown);
+      // The menu as an image for the restaurant's booking page on the web (without photo storage, the menu still saves)
+      const menuSlide = p.slides[0];
+      const image = await uploadPhoto(new File([await png(byId.get(menuSlide.tpl)!, menuSlide.v, menuSlide.photo, menuSlide.texts)], 'menu.png', { type: 'image/png' })).catch(() => m.image);
+      const values = { ...shown, image };
       let d = data;
       const out: string[] = [];
       // One piece of the pack: made or changed (a programmed one loses its program first, as the images change), then sent out
@@ -642,9 +660,13 @@ function Menus({ data, setData }: { data: Data; setData: (d: Data) => void }) {
       }
       const madePost = await piece(editing?.post || null, p, { menu: values, ...(editing ? {} : { copy: caption }) }, post, 'el post');
       if (editing && !postDone && caption !== (data.copies[madePost.id] || '')) { d = await api<Data>('social', { method: 'PUT', body: { copy: { id: madePost.id, text: caption } } }); setData(d); }
-      if (story.on) await piece(editing?.story || null, st, { story: true, pack: madePost.id }, story, 'la story');
-      else if (editing?.story && !storyDone) { d = await api<Data>('social', { method: 'PUT', body: { remove: editing.story.id } }); setData(d); }
-      done((editing ? 'Menú desat' : 'Menú fet') + (out.length ? `: ${out.join(' i ')}` : ''));
+      // A published post keeps its menu values: the new ones (the days, the image for the web) go on it anyway
+      if (postDone) { d = await api<Data>('social', { method: 'PUT', body: { menu: { id: madePost.id, menu: values } } }); setData(d); }
+      for (const [on, was, isDone, body, w, name] of [[story.on, editing?.story || null, storyDone, st, story, 'la story'], [storyMenu.on, editing?.storyMenu || null, storyMenuDone, sm, storyMenu, 'la story del menú']] as const) {
+        if (on) await piece(was, body, { story: true, pack: madePost.id }, w, name);
+        else if (was && !isDone) { d = await api<Data>('social', { method: 'PUT', body: { remove: was.id } }); setData(d); }
+      }
+      done((editing ? 'Menú desat' : 'Menú fet') + (out.length ? `: ${out.join(', ')}` : ''));
       reset();
     } catch (e) { toastError(e); }
     setBusy(false);
@@ -666,14 +688,21 @@ function Menus({ data, setData }: { data: Data; setData: (d: Data) => void }) {
       {x.when === 'save' && <p className="text-xs text-muted">Es desa i el pots programar quan vulguis, tornant-lo a obrir des d'aquí sota.</p>}
     </div>
   );
+  const storyWhen = (title: string, x: StoryOut, change: (x: StoryOut) => void, isDone: boolean) => !x.on && !isDone ? null : (
+    <div className="space-y-2">
+      <h3 className="text-sm font-semibold">{title}</h3>
+      {isDone ? <p className="text-sm text-muted">Ja és publicada: no es pot canviar.</p> : whenFields(`Quan surt ${title.toLowerCase()}`, x, w => change({ ...x, ...w }))}
+    </div>
+  );
 
-  // The menus made here, newest first, one row per pack (its post, and its story if it has one)
+  // The menus made here, newest first, one row per pack (its post, and its stories)
   const list = data.posts.filter(p => p.menu && !p.pack && byId.has(p.tpl)).sort((a, b) => b.at.localeCompare(a.at));
   const status = (x: Post) => x.published ? `publicat el ${day(x.published.at)}` : x.schedule ? (x.schedule.error ? "no s'ha pogut publicar" : `programat: ${short(x.schedule.at)}`) : 'per publicar';
   async function remove(p: Post) {
     try {
       let d = data;
-      for (const x of [p, storyOf(p)]) if (x && !x.published) d = await api<Data>('social', { method: 'PUT', body: { remove: x.id } });
+      const { story: st, storyMenu: sm } = packOf(data, p);
+      for (const x of [p, st, sm]) if (x && !x.published) d = await api<Data>('social', { method: 'PUT', body: { remove: x.id } });
       setData(d); done('Menú tret'); if (editing?.post.id === p.id) reset();
     } catch (e) { toastError(e); }
   }
@@ -689,9 +718,10 @@ function Menus({ data, setData }: { data: Data; setData: (d: Data) => void }) {
             </div>
           )}
           <ToggleButtonGroup aria-label="Pas" selectionMode="single" disallowEmptySelection selectedKeys={new Set([step])}
-            onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) setStep(v as typeof step); }} size="sm">
+            onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) setStep(v as typeof step); }} size="sm" className="max-w-full overflow-x-auto">
             <ToggleButton id="cover">Portada</ToggleButton>
             <ToggleButton id="menu">Menú</ToggleButton>
+            <ToggleButton id="stories">Stories</ToggleButton>
             <ToggleButton id="out">Publica</ToggleButton>
           </ToggleButtonGroup>
           {step === 'cover' && <>
@@ -706,9 +736,17 @@ function Menus({ data, setData }: { data: Data; setData: (d: Data) => void }) {
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Damunt del títol" value={m.kicker} onChange={set('kicker')} placeholder="Torna la" />
               <Field label="Títol" value={m.title} onChange={set('title')} placeholder="Calçotada" />
-              <Field label="Dates" value={m.dates} onChange={set('dates')} placeholder="Del 18 de gener al 29 de març" />
-              <Field label="Sota les dates" value={m.subtitle} onChange={set('subtitle')} placeholder="A la terrassa, cada diumenge" />
             </div>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-end gap-3">
+                <DayPicker label="Primer dia" past={!!editing} value={m.from} onChange={from => setM({ ...m, from, until: m.until && m.until < from ? from : m.until })} />
+                <DayPicker label="Últim dia" past={!!editing} value={m.until} onChange={until => setM({ ...m, until })} />
+              </div>
+              <p className={`text-xs ${m.from && m.until && m.until < m.from ? 'text-warning' : 'text-muted'}`}>
+                {m.from && m.until && m.until < m.from ? "L'últim dia va abans del primer." : m.from ? `A la portada: ${datesText(m.from, m.until)}. La web el mostra a la reserva de taula fins a l'últim dia.` : 'La portada escriu les dates, i la web mostra el menú a la reserva de taula fins a l\'últim dia.'}
+              </p>
+            </div>
+            <Field label="Sota les dates" value={m.subtitle} onChange={set('subtitle')} placeholder="A la terrassa, cada diumenge" />
             <div className="flex justify-end"><Button size="sm" onPress={() => setStep('menu')}>Següent</Button></div>
           </>}
           {step === 'menu' && <>
@@ -720,8 +758,26 @@ function Menus({ data, setData }: { data: Data; setData: (d: Data) => void }) {
               <Field label="Begudes" value={m.drinks} onChange={set('drinks')} placeholder="Vi del Penedès, aigua, cafè" />
               <Field label="Preu per persona (€)" value={m.price} onChange={v => set('price')(v.replace(/[^\d,.]/g, ''))} inputMode="decimal" />
             </div>
-            <Field label="Web per reservar" value={m.link} onChange={set('link')} help="Surt al menú i a la story, amb el WhatsApp. Instagram no deixa posar-hi l'enllaç des d'aquí." />
-            <div className="flex justify-between"><Button size="sm" variant="ghost" onPress={() => setStep('cover')}>Enrere</Button><Button size="sm" onPress={() => setStep('out')}>Següent</Button></div>
+            <Field label="Web per reservar" value={m.link} onChange={set('link')} help="Surt al menú i a les stories. Instagram no deixa posar-hi l'enllaç des d'aquí." />
+            <div className="flex justify-between"><Button size="sm" variant="ghost" onPress={() => setStep('cover')}>Enrere</Button><Button size="sm" onPress={() => setStep('stories')}>Següent</Button></div>
+          </>}
+          {step === 'stories' && <>
+            <div className="space-y-3">
+              {storyDone ? <><h3 className="text-sm font-semibold">Story de la portada</h3><p className="text-sm text-muted">Ja és publicada: no es pot canviar.</p></>
+                : <CheckField isSelected={story.on} onChange={on => setStory({ ...story, on })}>Story de la portada</CheckField>}
+              {story.on && !storyDone && <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {STORY_LINES.map((label, i) => <Field key={label} label={label} value={made.story.texts?.[i + 1] ?? ''} onChange={line(i)} />)}
+                </div>
+                {m.story?.some(x => x != null) && <Button size="sm" variant="ghost" onPress={() => setM({ ...m, story: [] })}>Torna al text del menú</Button>}
+              </>}
+            </div>
+            <div className="space-y-2">
+              {storyMenuDone ? <><h3 className="text-sm font-semibold">Story del menú</h3><p className="text-sm text-muted">Ja és publicada: no es pot canviar.</p></>
+                : <CheckField isSelected={storyMenu.on} onChange={on => setStoryMenu({ ...storyMenu, on })}>Story del menú</CheckField>}
+              {storyMenu.on && !storyMenuDone && <p className="text-xs text-muted">Els plats, el preu i la web, com al menú del post.</p>}
+            </div>
+            <div className="flex justify-between"><Button size="sm" variant="ghost" onPress={() => setStep('menu')}>Enrere</Button><Button size="sm" onPress={() => setStep('out')}>Següent</Button></div>
           </>}
           {step === 'out' && <>
             {!live && insta && <p className="text-sm text-muted">Per publicar o programar des d'aquí cal connectar el compte d'Instagram. El menú es desa i el pots descarregar.</p>}
@@ -735,21 +791,23 @@ function Menus({ data, setData }: { data: Data; setData: (d: Data) => void }) {
                 {postDone ? <p className="text-sm text-muted">Ja és publicat: no es pot canviar.</p> : whenFields('Quan surt el post', post, setPost)}
               </div>
             )}
-            <div className="space-y-2">
-              {storyDone ? <><h3 className="text-sm font-semibold">Story</h3><p className="text-sm text-muted">Ja és publicada: no es pot canviar.</p></>
-                : <CheckField isSelected={story.on} onChange={on => setStory({ ...story, on })}>També com a story</CheckField>}
-              {live && story.on && !storyDone && whenFields('Quan surt la story', story, x => setStory({ ...story, ...x }))}
-            </div>
+            {live && storyWhen('Story de la portada', story, setStory, storyDone)}
+            {live && storyWhen('Story del menú', storyMenu, setStoryMenu, storyMenuDone)}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Button size="sm" variant="ghost" onPress={() => setStep('menu')}>Enrere</Button>
+              <Button size="sm" variant="ghost" onPress={() => setStep('stories')}>Enrere</Button>
               <Button size="sm" isPending={busy} isDisabled={!ready || busy} onPress={save}>{busy ? <Spinner size="sm" color="current" /> : <Check size={15} />}{editing ? 'Desa els canvis' : 'Desa el menú'}</Button>
             </div>
-            {!ready && <p className="text-xs text-muted">Cal el títol, el nom del menú, un plat i el preu, i una hora que no hagi passat.</p>}
+            {!ready && <p className="text-xs text-muted">Cal el títol, el primer i l'últim dia, el nom del menú, un plat i el preu, i una hora que no hagi passat.</p>}
           </>}
         </section>
         <section className="space-y-3 lg:sticky lg:top-24" aria-label="Com quedarà">
           <Carousel list={[made.post, ...made.post.slides]} className="card overflow-hidden" />
-          {story.on && <div className="flex items-start gap-3"><Art t={byId.get('StoryPoster')!} v={0} photo={made.story.photo} texts={made.story.texts} className="w-28 shrink-0 rounded-xl" /><p className="text-sm text-muted">La story</p></div>}
+          {(story.on || storyMenu.on) && (
+            <div className="flex items-start gap-3">
+              {story.on && <figure className="w-28 shrink-0 space-y-1.5"><Art t={byId.get('StoryPoster')!} v={0} photo={made.story.photo} texts={made.story.texts} className="rounded-xl" /><figcaption className="text-xs text-muted">Story de la portada</figcaption></figure>}
+              {storyMenu.on && <figure className="w-28 shrink-0 space-y-1.5"><Art t={byId.get('StoryMenu')!} v={0} photo="" texts={made.storyMenu.texts} className="rounded-xl" /><figcaption className="text-xs text-muted">Story del menú</figcaption></figure>}
+            </div>
+          )}
         </section>
       </div>
 
@@ -758,19 +816,20 @@ function Menus({ data, setData }: { data: Data; setData: (d: Data) => void }) {
           <h2 className="border-b border-separator p-4 text-base font-semibold sm:px-5">Menús fets</h2>
           <ol className="divide-y divide-separator">
             {list.map(p => {
-              const t = byId.get(p.tpl)!, st = storyOf(p), title = [p.texts?.[1], p.texts?.[2]].filter(Boolean).join(' ') || t.title;
-              const open = !!menuValues(p) && !(p.published && (!st || st.published));
+              const t = byId.get(p.tpl)!, { story: st, storyMenu: sm } = packOf(data, p), title = [p.texts?.[1], p.texts?.[2]].filter(Boolean).join(' ') || t.title;
+              const open = !!menuValues(p) && [p, st, sm].some(x => x && !x.published);
               return (
                 <li key={p.id} className={`flex items-center gap-3 p-3 sm:px-5 ${editing?.post.id === p.id ? 'bg-default/50' : ''}`}>
                   <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className={`${p.story ? 'aspect-[9/16]' : 'aspect-[3/4]'} w-11 shrink-0 rounded-md`} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold">{title}</div>
                     <div className={`truncate text-xs ${p.schedule?.error ? 'text-danger' : 'text-muted'}`}>{p.story ? 'Story' : 'Post'}, {status(p)}</div>
-                    {st && <div className={`truncate text-xs ${st.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story, {status(st)}</div>}
+                    {st && <div className={`truncate text-xs ${st.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story de la portada, {status(st)}</div>}
+                    {sm && <div className={`truncate text-xs ${sm.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story del menú, {status(sm)}</div>}
                   </div>
                   {open && <Button size="sm" variant="secondary" onPress={() => edit(p)}><Pencil size={15} />Edita</Button>}
                   {p.published?.url && <a href={p.published.url} target="_blank" rel="noopener" aria-label="Obre a Instagram" className="grid size-8 shrink-0 place-items-center rounded-full outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={16} /></a>}
-                  <DownloadButton label={`Descarrega ${title}`} run={async () => { await downloadPost(p); if (st) await downloadPost(st); }} />
+                  <DownloadButton label={`Descarrega ${title}`} run={async () => { await downloadPost(p); if (st) await downloadPost(st); if (sm) await downloadPost(sm); }} />
                   {!p.published && <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${title}`} onPress={() => remove(p)}><X size={16} /></Button>}
                 </li>
               );
@@ -1204,11 +1263,12 @@ function Publish({ post, n, caption, onClose, setData, later, first = false }: {
 }
 
 // A day, picked on a calendar instead of the browser's own; '' is no day. clearable adds «Sense dia» under the calendar
-function DayPicker({ label, value, onChange, clearable, hideLabel }: { label: string; value: string; onChange: (v: string) => void; clearable?: boolean; hideLabel?: boolean }) {
+// past lets it take days already gone (the first day of a menu that has started)
+function DayPicker({ label, value, onChange, clearable, hideLabel, past }: { label: string; value: string; onChange: (v: string) => void; clearable?: boolean; hideLabel?: boolean; past?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <I18nProvider locale="ca-ES">
-      <DatePicker aria-label={hideLabel ? label : undefined} value={value ? parseDate(value) : null} minValue={todayIn(getLocalTimeZone())}
+      <DatePicker aria-label={hideLabel ? label : undefined} value={value ? parseDate(value) : null} minValue={past ? undefined : todayIn(getLocalTimeZone())}
         onChange={(d: DateValue | null) => onChange(d ? d.toString().slice(0, 10) : '')} isOpen={open} onOpenChange={setOpen} className="w-40 shrink-0">
         {!hideLabel && <Label>{label}</Label>}
         <DateField.Group fullWidth>

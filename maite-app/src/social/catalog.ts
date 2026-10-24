@@ -36,7 +36,7 @@ export function textSlots(t: Template): string[] {
 const all = (kind: string) => TEMPLATES.filter(t => t.kind === kind).map(t => t.id);
 const TOPICS: { id: string; label: string; about: string; post: string[]; story: string[] }[] = [
   { id: 'menu', label: 'Menú', about: "a menu or a dinner at the restaurant: the dishes, the date and the price the owner gives",
-    post: ['PostMenuCover', 'PostAnnounce', 'PostMenu'], story: ['StoryPoster'] },
+    post: ['PostMenuCover', 'PostAnnounce', 'PostMenu'], story: ['StoryPoster', 'StoryMenu'] },
   { id: 'room', label: 'Habitació', about: 'one of the rooms (habitacions): the bed, the light, waking up slowly. Photos of the rooms and their details',
     post: ['PostRoom', 'PostDetail', 'PostFrame', 'PostDiptych', 'PostTriptych', 'PostArch', 'PostSplit', 'CarouselCover'], story: ['StoryPhoto', 'StoryReel'] },
   { id: 'apartment', label: 'Apartament', about: 'one of the apartments: the kitchen, the living space, staying a few days as at home. Photos of the inside of the house',
@@ -55,34 +55,57 @@ export const CAROUSELS: Record<string, string[]> = { PostMenuCover: ['PostMenu']
 // One slide after the first: a template with its variation, photo and words, as a post has them
 export type Slide = { tpl: string; v: number; photo: string; texts?: (string | null)[] };
 
-// A menu made in Xarxes socials > Menús: the cover (photo, the line above the title, the title, the line under it, the dates)
-// and the menu (its name, the dishes, the drinks and the price). It becomes a carousel, the menu's cover (dates large, no price)
-// with the menu after it (the price, and booking on the web and WhatsApp), and the announcement as a story (with the price).
-// The words go in the templates' text lines, in order (textSlots); an empty one is hidden, null keeps the template's.
-// link: the web address on the menu and on the story (Instagram's API can't add a link sticker)
-export type Menu = { photo: string; kicker: string; title: string; subtitle: string; dates: string; name: string; dishes: string[]; drinks: string; price: string; link: string };
+// A menu made in Xarxes socials > Menús: the cover (photo, the line above the title, the title, the line under it, the days it
+// runs) and the menu (its name, the dishes, the drinks and the price). It becomes a carousel, the menu's cover (dates large, no
+// price) with the menu after it (the price, and booking on the web), and two stories: the announcement (with the price) and
+// the menu. The words go in the templates' text lines, in order (textSlots); an empty one is hidden, null keeps the template's.
+// from, until: the first and last day (YYYY-MM-DD); dates is the line written from them (older menus only have that line).
+// story: the announcement story's own words, one per line after the first (null follows the menu). image: the menu as a JPEG, for the restaurant's booking page on the web while the menu runs.
+// link: the web address on the menu and on the stories (Instagram's API can't add a link sticker)
+export type Menu = {
+  photo: string; kicker: string; title: string; subtitle: string; dates: string; from: string; until: string; name: string; dishes: string[];
+  drinks: string; price: string; link: string; story: (string | null)[]; image: string;
+};
 export const MENU_DISHES = 4;
 export const MENU_EXAMPLE: Menu = {
-  photo: '/maite/social/restaurant-barra.jpg', kicker: 'Torna la', title: 'Calçotada', subtitle: 'A la terrassa, cada diumenge', dates: 'Del 18 de gener al 29 de març',
-  name: 'Menú de calçotada', dishes: ['Calçots a la brasa amb salsa romesco', 'Botifarra i xai a la brasa', 'Mongetes del ganxet', 'Crema catalana'], drinks: 'Vi del Penedès, aigua, cafè', price: '38', link: 'casavellarural.com',
+  photo: '/maite/social/restaurant-barra.jpg', kicker: 'Torna la', title: 'Calçotada', subtitle: 'A la terrassa, cada diumenge', dates: 'Del 18 de gener al 29 de març', from: '', until: '',
+  name: 'Menú de calçotada', dishes: ['Calçots a la brasa amb salsa romesco', 'Botifarra i xai a la brasa', 'Mongetes del ganxet', 'Crema catalana'], drinks: 'Vi del Penedès, aigua, cafè', price: '38',
+  link: 'www.casavellarural.com', story: [], image: '',
 };
-export function menuSlides(m: Menu): { post: Slide & { slides: Slide[] }; story: Slide } {
+// The web address as the menu writes it: without https://, with www.
+export const www = (link: string) => { const l = link.trim().replace(/^https?:\/\//, '').replace(/\/$/, '') || 'casavellarural.com'; return /^www\./.test(l) ? l : 'www.' + l; };
+// The days a menu runs, as the cover writes them: «Del 18 de gener al 29 de març», «De l'1 d'abril a l'11 de maig», «El 6 de gener»
+export function datesText(from: string, until: string) {
+  if (!from) return '';
+  const d = (x: string) => new Date(x + 'T12:00').toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' }).replace(/’/g, "'");
+  const apos = (x: string) => [1, 11].includes(+x.slice(8, 10));
+  if (!until || until === from) return (apos(from) ? "L'" : 'El ') + d(from);
+  return (apos(from) ? "De l'" : 'Del ') + d(from) + (apos(until) ? " a l'" : ' al ') + d(until);
+}
+// The menu's words in the templates' lines: the carousel post (cover, then the menu), and the two stories
+export function menuSlides(m: Menu): { post: Slide & { slides: Slide[] }; story: Slide; storyMenu: Slide } {
   const price = m.price.trim().replace(/\s*€$/, '');
-  const when = [m.dates.trim(), price && `${price} € per persona`].filter(Boolean).join(', ');
-  const link = m.link.trim() || 'casavellarural.com';
-  const cover = ['La Casa Vella, El Bedorc', m.kicker.trim(), m.title.trim(), m.dates.trim(), m.subtitle.trim()];
+  const dates = (m.from ? datesText(m.from, m.until) : m.dates).trim();
+  const when = [dates, price && `${price} € per persona`].filter(Boolean).join(', ');
+  const link = www(m.link);
+  const cover = ['La Casa Vella, El Bedorc', m.kicker.trim(), m.title.trim(), dates, m.subtitle.trim()];
   const dishes = Array.from({ length: MENU_DISHES }, (_, i) => (m.dishes[i] || '').trim());
-  const menu = [m.subtitle.trim(), m.name.trim(), ...dishes, m.drinks.trim(), price ? `${price}€` : '', 'persona', `Reserva a ${link}`, null];
+  const menu = [m.subtitle.trim(), m.name.trim(), ...dishes, m.drinks.trim(), price ? `${price}€` : '', 'persona', 'Reserva a', link];
+  const story = [m.kicker.trim(), m.title.trim(), m.subtitle.trim(), when, link].map((x, i) => m.story?.[i] ?? x);
   return {
     post: { tpl: 'PostMenuCover', v: 0, photo: m.photo, texts: cover, slides: [{ tpl: 'PostMenu', v: 0, photo: '', texts: menu }] },
-    story: { tpl: 'StoryPoster', v: 0, photo: m.photo, texts: ['La Casa Vella, El Bedorc', m.kicker.trim(), m.title.trim(), m.subtitle.trim(), when, link] },
+    story: { tpl: 'StoryPoster', v: 0, photo: m.photo, texts: ['La Casa Vella, El Bedorc', ...story] },
+    storyMenu: { tpl: 'StoryMenu', v: 0, photo: '', texts: menu },
   };
 }
+// The lines of the announcement story that can be changed, in order (Menu.story)
+export const STORY_LINES = ['Damunt del títol', 'Títol', 'Sota el títol', 'Dates i preu', 'Botó'];
 // A first caption for the menu, to change before it goes out
 export function menuCaption(m: Menu) {
   const price = m.price.trim().replace(/\s*€$/, '');
-  return [`${m.kicker.trim()} ${m.title.trim()}`.trim() + '.', [m.subtitle.trim(), m.dates.trim()].filter(Boolean).join('. ') + '.',
+  const dates = (m.from ? datesText(m.from, m.until) : m.dates).trim();
+  return [`${m.kicker.trim()} ${m.title.trim()}`.trim() + '.', [m.subtitle.trim(), dates].filter(Boolean).join('. ') + '.',
     [m.name.trim(), ...m.dishes.map(d => d.trim()).filter(Boolean)].filter(Boolean).join('\n'), price && `${price} € per persona, ${m.drinks.trim() || 'begudes a part'}.`,
-    `Reserva a ${m.link.trim() || 'casavellarural.com'} o per WhatsApp al 667 40 98 59.`]
+    `Reserva a ${www(m.link)}.`]
     .filter(x => x && x !== '.').join('\n\n');
 }

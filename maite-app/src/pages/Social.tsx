@@ -36,8 +36,8 @@ type Own = { file: File; url: string };
 type Draft = { v: number; photo: string; own: Own | null; texts: Texts };
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'new', label: 'Nova publicació' }, { id: 'posts', label: 'Posts' }, { id: 'stories', label: 'Stories i reels' },
-  { id: 'profile', label: 'Perfil' }, { id: 'calendar', label: 'Calendari' },
+  { id: 'new', label: 'Generador de posts' }, { id: 'posts', label: 'Posts' }, { id: 'stories', label: 'Stories i reels' },
+  { id: 'profile', label: 'Publicar' }, { id: 'calendar', label: 'Calendari' },
 ];
 const KIND_OF: Partial<Record<Tab, Kind>> = { posts: 'post', stories: 'story' };
 const HELP: Partial<Record<Tab, string>> = {
@@ -84,13 +84,13 @@ export default function Social() {
         </Tabs.List></Tabs.ListContainer>
       </Tabs>
       {HELP[tab] && <p className="mb-5 max-w-3xl text-sm text-muted">{HELP[tab]}</p>}
-      {tab === 'new' && (data ? <NewPost key={start?.n || 0} data={data} setData={setData} start={start} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
+      {tab === 'new' && (data ? <NewPost key={start?.n || 0} data={data} setData={setData} start={start} go={pick} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {kind && (
         <ul className={`grid gap-5 ${kind === 'post' ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-5'}`}>
           {TEMPLATES.filter(t => t.kind === kind).map(t => <li key={t.id}><TemplateCard t={t} data={data} setData={setData} onCreate={(v, own) => { setStart({ id: t.id, v, own, n: (start?.n || 0) + 1 }); pick('new'); }} /></li>)}
         </ul>
       )}
-      {tab === 'calendar' && (data ? <Planner data={data} setData={setData} onEmpty={() => pick('posts')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
+      {tab === 'calendar' && (data ? <Planner data={data} onEmpty={() => pick('posts')} onPublish={() => pick('profile')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {tab === 'profile' && (data ? <Profile data={data} setData={setData} onEmpty={() => pick('posts')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
     </div>
   );
@@ -190,9 +190,14 @@ function Editor({ t, draft, set, look = true }: { t: Template; draft: Draft; set
   );
 }
 
-// Nova publicació: from a description (Claude proposes it), from a template, changed, or a menu (Menus); each goes to the profile
-function NewPost({ data, setData, start }: { data: Data; setData: (d: Data) => void; start: { id: string; v: number; own: Own | null } | null }) {
+// Generador de posts: from a description (Claude proposes it), from a template, changed, or a menu (Menus); each goes to the profile.
+// Once a post is added it can go out from here (now or programmed), and Publicar or the calendar is one step away
+type Then = { live: boolean; go: (t: Tab) => void };
+function NewPost({ data, setData, start, go }: { data: Data; setData: (d: Data) => void; start: { id: string; v: number; own: Own | null } | null; go: (t: Tab) => void }) {
   const [how, setHow] = useState<'prompt' | 'template' | 'menu'>(start || !data.ai ? 'template' : 'prompt');
+  const [insta, setInsta] = useState<Insta | null>(null);
+  useEffect(() => { api<Insta>('instagram').then(setInsta).catch(() => setInsta({ connected: false })); }, []);
+  const then: Then = { live: !!insta?.connected, go };
   return (
     <>
       <ToggleButtonGroup aria-label="Com la vols fer" selectionMode="single" disallowEmptySelection selectedKeys={new Set([how])}
@@ -202,28 +207,32 @@ function NewPost({ data, setData, start }: { data: Data; setData: (d: Data) => v
         <ToggleButton id="menu">Menú</ToggleButton>
       </ToggleButtonGroup>
       {how === 'menu' ? <Menus data={data} setData={setData} />
-        : how === 'prompt' && data.ai ? <Maker start="post" setData={setData} /> : <Composer data={data} setData={setData} start={start} />}
+        : how === 'prompt' && data.ai ? <Maker start="post" data={data} setData={setData} then={then} /> : <Composer data={data} setData={setData} start={start} then={then} />}
     </>
   );
 }
 
-function Composer({ data, setData, start }: { data: Data; setData: (d: Data) => void; start: { id: string; v: number; own: Own | null } | null }) {
+function Composer({ data, setData, start, then }: { data: Data; setData: (d: Data) => void; start: { id: string; v: number; own: Own | null } | null; then: Then }) {
   const list = TEMPLATES.filter(inGrid);
   const blank = (id: string, v = 0, own: Own | null = null): Draft => ({ v, photo: '', own, texts: [...(data.templates[id] || [])] });
   const [id, setId] = useState(start && byId.has(start.id) ? start.id : list[0].id);
   const [draft, setDraft] = useState<Draft>(() => blank(id, start?.v, start?.own));
   const [busy, setBusy] = useState<'' | 'add' | 'png'>('');
+  // The post just added, and whether its Publica a Instagram is open
+  const [added, setAdded] = useState(''), [publishing, setPublishing] = useState(false);
+  // Every post leaves the generator with its caption
+  const [caption, setCaption] = useState('');
   const t = byId.get(id)!;
   // The announcement can open a carousel, with the menu after it
   const next = nextSlides(t), [carousel, setCarousel] = useState(false), slides = carousel && next.length ? next : undefined;
-  const choose = (x: string) => { if (draft.own) URL.revokeObjectURL(draft.own.url); setId(x); setDraft(blank(x)); setCarousel(false); };
+  const choose = (x: string) => { if (draft.own) URL.revokeObjectURL(draft.own.url); setId(x); setDraft(blank(x)); setCarousel(false); setCaption(''); };
 
   async function add() {
     setBusy('add');
     try {
       const photo = draft.own ? await uploadPhoto(draft.own.file) : draft.photo;
-      const d = await api<Data>('social', { method: 'POST', body: { tpl: t.id, v: draft.v, photo, texts: changed(t, draft.v, draft.texts), slides } });
-      setData(d); setDraft(blank(id));
+      const d = await api<Data>('social', { method: 'POST', body: { tpl: t.id, v: draft.v, photo, texts: changed(t, draft.v, draft.texts), slides, copy: caption } });
+      setData(d); setDraft(blank(id)); setCaption(''); setAdded(d.posts[d.posts.length - 1].id); setPublishing(then.live);
       done(`${t.title}: post ${d.posts.filter(p => !p.published && !p.story).length} del perfil`);
     } catch (e) { toastError(e); }
     setBusy('');
@@ -233,6 +242,7 @@ function Composer({ data, setData, start }: { data: Data; setData: (d: Data) => 
     try { await downloadPost({ tpl: t.id, v: draft.v, photo: draft.own?.url || draft.photo, texts: draft.texts, slides }); } catch (e) { toastError(e); }
     setBusy('');
   }
+  const last = data.posts.find(p => p.id === added), lastN = last ? planNumber(data, last) : 0;
 
   return (
     <div className="space-y-5">
@@ -260,11 +270,14 @@ function Composer({ data, setData, start }: { data: Data; setData: (d: Data) => 
             {slides && <div className="flex gap-3">{slides.map((x, k) => <Art key={k} t={byId.get(x.tpl)!} v={x.v} photo={x.photo} texts={x.texts} className="w-28 rounded-lg" />)}</div>}
           </div>
         )}
-        <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-separator pt-4">
+        <NewCopy key={id + added} t={t} draft={draft} data={data} value={caption} onChange={setCaption} />
+        <div className="mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-separator pt-4">
+          {last && <div className="mr-auto flex flex-wrap items-center gap-2"><Kept post={last} n={lastN} /><Next post={last} then={then} onPublish={() => setPublishing(true)} /></div>}
           <Button variant="secondary" isPending={busy === 'png'} onPress={exportPng}>{busy === 'png' ? <Spinner size="sm" color="current" /> : <Download size={15} />}Descarrega</Button>
-          <Button isPending={busy === 'add'} isDisabled={busy === 'png'} onPress={add}>{busy === 'add' ? <Spinner size="sm" color="current" /> : <Plus size={15} />}Afegeix al perfil</Button>
+          <Button isPending={busy === 'add'} isDisabled={busy === 'png' || !caption.trim()} onPress={add}>{busy === 'add' ? <Spinner size="sm" color="current" /> : <Plus size={15} />}Afegeix al perfil</Button>
         </div>
       </section>
+      {publishing && last && <Publish post={last} n={lastN} caption={data.copies[last.id] || ''} onClose={() => setPublishing(false)} setData={setData} first />}
     </div>
   );
 }
@@ -326,7 +339,7 @@ function PostEditor({ post, n, setData, onClose }: { post: Post; n: number; setD
 
 // A post or story from a description, with the owner's photo or without, on one of the templates or on the one Claude picks:
 // Claude writes the words on it and the caption (and picks a photo from the library, when there isn't one)
-function Maker({ start, setData }: { start: 'post' | 'story'; setData: (d: Data) => void }) {
+function Maker({ start, data, setData, then }: { start: 'post' | 'story'; data: Data; setData: (d: Data) => void; then: Then }) {
   const [kind, setKind] = useState(start);
   const [style, setStyle] = useState('general');
   const [tpl, setTpl] = useState('');
@@ -400,7 +413,7 @@ function Maker({ start, setData }: { start: 'post' | 'story'; setData: (d: Data)
       </section>
       {made && made.options.length > 0 && (
         <ul className={`grid gap-5 ${made.kind === 'post' ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'sm:grid-cols-2 xl:grid-cols-3'}`}>
-          {made.options.map((o, k) => <li key={k + o.tpl + o.texts.join()}><MadeCard o={o} setData={setData} /></li>)}
+          {made.options.map((o, k) => <li key={k + o.tpl + o.texts.join()}><MadeCard o={o} data={data} setData={setData} then={then} /></li>)}
         </ul>
       )}
     </div>
@@ -408,12 +421,13 @@ function Maker({ start, setData }: { start: 'post' | 'story'; setData: (d: Data)
 }
 
 // A proposal from Claude, with Edita to change its words, photo and caption before it goes to the profile
-function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
+function MadeCard({ o, data, setData, then }: { o: Made; data: Data; setData: (d: Data) => void; then: Then }) {
   const t = byId.get(o.tpl)!;
   const [draft, setDraft] = useState<Draft>({ v: 0, photo: o.photo, own: null, texts: o.texts });
   const [caption, setCaption] = useState(joinCopy(o));
   const [busy, setBusy] = useState<'' | 'confirm' | 'png'>('');
-  const [kept, setKept] = useState(0);
+  const [keptId, setKeptId] = useState(''), [publishing, setPublishing] = useState(false);
+  const post = data.posts.find(p => p.id === keptId), kept = post ? planNumber(data, post) : 0;
   const [editing, setEditing] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   const photo = draft.own?.url || draft.photo;
@@ -426,9 +440,9 @@ function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
     setBusy('confirm');
     try {
       const d = await api<Data>('social', { method: 'POST', body: { tpl: t.id, v: draft.v, photo: draft.own ? await uploadPhoto(draft.own.file) : draft.photo, texts: draft.texts, slides, copy: inGrid(t) ? caption : '' } });
-      const added = d.posts[d.posts.length - 1], n = d.posts.filter(p => !p.published && !p.story).indexOf(added) + 1;
-      setData(d); setKept(n);
-      done(`${t.title}: post ${n} del perfil`);
+      const added = d.posts[d.posts.length - 1];
+      setData(d); setKeptId(added.id); setPublishing(then.live);
+      done(`${t.title}: post ${planNumber(d, added)} del perfil`);
     } catch (e) { toastError(e); }
     setBusy('');
   }
@@ -444,13 +458,13 @@ function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
       <div className="space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="mr-auto text-base font-semibold tracking-tight">{t.title}</h2>
-          {kept > 0 && <Tag tone="paid">Post {kept} del perfil</Tag>}
+          {post && <Kept post={post} n={kept} />}
         </div>
-        {next.length > 0 && !kept && <SingleOrCarousel carousel={carousel} onChange={setCarousel} />}
+        {next.length > 0 && !post && <SingleOrCarousel carousel={carousel} onChange={setCarousel} />}
         <p className="text-sm whitespace-pre-wrap">{caption}</p>
         <div className="flex flex-wrap items-center gap-2">
-          {!kept && <Button size="sm" variant="secondary" onPress={() => setEditing(true)}><Pencil size={15} />Edita</Button>}
-          {t.photo && !kept && (
+          {!post && <Button size="sm" variant="secondary" onPress={() => setEditing(true)}><Pencil size={15} />Edita</Button>}
+          {t.photo && !post && (
             <>
               <Button size="sm" variant="secondary" onPress={() => file.current?.click()}><ImageUp size={15} />{draft.own ? 'Una altra foto' : 'La teva foto'}</Button>
               <input ref={file} type="file" accept="image/*" hidden onChange={e => { choose(e.target.files?.[0]); e.target.value = ''; }} />
@@ -461,15 +475,86 @@ function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
           <Button size="sm" variant="ghost" isIconOnly aria-label={`Descarrega ${t.title} en PNG`} isPending={busy === 'png'} onPress={exportPng}>
             {busy === 'png' ? <Spinner size="sm" color="current" /> : <Download size={16} />}
           </Button>
-          {inGrid(t) && !kept && (
-            <Button size="sm" className="ml-auto" isPending={busy === 'confirm'} onPress={confirm}>
+          {inGrid(t) && !post && (
+            <Button size="sm" className="ml-auto" isPending={busy === 'confirm'} isDisabled={!caption.trim()} onPress={confirm}>
               {busy === 'confirm' ? <Spinner size="sm" color="current" /> : <Plus size={15} />}Confirma
             </Button>
           )}
         </div>
+        {post && <Next post={post} then={then} onPublish={() => setPublishing(true)} />}
       </div>
+      {publishing && post && <Publish post={post} n={kept} caption={data.copies[post.id] || ''} onClose={() => setPublishing(false)} setData={setData} first />}
       {editing && <MadeEditor t={t} draft={draft} caption={caption} onDone={(d, c) => { setDraft(d); setCaption(c); setEditing(false); }} onClose={() => setEditing(false)} />}
     </article>
+  );
+}
+
+// The caption of a post being made in the generator: Claude's options (or the house ones) to pick from, then changed by hand.
+// It is required: a post isn't added without it
+function NewCopy({ t, draft, data, value, onChange }: { t: Template; draft: Draft; data: Data; value: string; onChange: (v: string) => void }) {
+  const [options, setOptions] = useState<Option[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  async function generate() {
+    if (!data.ai) { setOptions(libraryFor(t)); return; }
+    setBusy(true);
+    try {
+      const planned = data.posts.filter(p => !p.published && !p.story);
+      const used = planned.map(p => data.copies[p.id]).filter(Boolean).map(c => c.split('\n')[0]);
+      const d = await api<{ options: Option[] }>('social-copy', { method: 'POST', body: { title: t.title, onImage: onImage(t, draft.v, draft.texts), photo: photoAlt(t, draft.v, draft.photo), n: planned.length + 1, used } });
+      setOptions(d.options);
+    } catch (e) { toastError(e); setOptions(libraryFor(t)); }
+    setBusy(false);
+  }
+  return (
+    <div className="mt-5 space-y-3 border-t border-separator pt-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="mr-auto text-sm font-semibold">Copy</h3>
+        {data.ai && <Button size="sm" variant="ghost" onPress={() => setOptions(library(t))}><BookOpen size={15} />Biblioteca</Button>}
+        <Button size="sm" variant="secondary" isPending={busy} onPress={generate}>
+          {busy ? <Spinner size="sm" color="current" /> : <Sparkles size={15} />}{options ? 'Altres opcions' : 'Proposa copies'}
+        </Button>
+      </div>
+      {options && (
+        <ul className="grid gap-2 md:grid-cols-2">
+          {options.map((o, k) => (
+            <li key={k} className="flex flex-col gap-2 rounded-xl bg-default/50 p-3">
+              <p className="flex-1 text-sm whitespace-pre-wrap">{joinCopy(o)}</p>
+              <Button size="sm" variant="secondary" className="self-start" onPress={() => onChange(joinCopy(o))}><Check size={15} />Tria aquesta</Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <TextField value={value} onChange={onChange} fullWidth>
+        <Label className="sr-only">Copy del post</Label>
+        <TextArea rows={6} placeholder="Tria una opció o escriu-lo aquí" />
+      </TextField>
+      {!value.trim() && <p className="text-xs text-muted">Cal el copy per afegir-lo al perfil.</p>}
+    </div>
+  );
+}
+
+// A post's number in the profile: its place among the posts still to publish
+const planNumber = (d: Data, p: Post) => d.posts.filter(x => !x.published && !x.story).indexOf(p) + 1;
+
+// Where a post just added stands: its number in the profile, programmed, or published
+function Kept({ post, n }: { post: Post; n: number }) {
+  if (post.published) return <span className="text-sm text-muted">Publicat a Instagram</span>;
+  if (post.schedule) return <When s={post.schedule} />;
+  return <Tag tone="paid">Post {n} del perfil</Tag>;
+}
+
+// What comes after adding it: publish or program it, then go to Publicar or, once programmed, to the calendar
+function Next({ post, then, onPublish }: { post: Post; then: Then; onPublish: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {then.live && !post.published && (
+        <Button size="sm" variant={post.schedule ? 'secondary' : undefined} onPress={onPublish}>
+          {post.schedule ? <Clock size={15} /> : <Send size={15} />}{post.schedule ? 'Canvia la programació' : 'Publica o programa'}
+        </Button>
+      )}
+      {post.published?.url && <a href={post.published.url} target="_blank" rel="noopener" className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={15} />Obre a Instagram</a>}
+      <Button size="sm" variant="ghost" onPress={() => then.go(post.schedule ? 'calendar' : 'profile')}>{post.schedule ? 'Vés al calendari' : 'Vés a Publicar'}</Button>
+    </div>
   );
 }
 
@@ -739,7 +824,8 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
   const [open, setOpen] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
   const [insta, setInsta] = useState<Insta | null>(null);
-  const [publishing, setPublishing] = useState<Post | null>(null);
+  // The post whose Publica a Instagram is open, and whether it opens on Programa
+  const [publishing, setPublishing] = useState<{ post: Post; later: boolean } | null>(null);
   const [editing, setEditing] = useState<Post | null>(null);
   const [drag, setDrag] = useState<string | null>(null), [over, setOver] = useState<string | null>(null);
   useEffect(() => { api<Insta>('instagram?media=1').then(setInsta).catch(() => setInsta({ connected: false })); }, []);
@@ -848,7 +934,7 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
             const t = byId.get(p.tpl)!, copy = data.copies[p.id];
             return (
               <li key={p.id} className="p-3 sm:px-5">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap">
                   <Select aria-label={`Número de ${t.title}`} value={String(i + 1)} onChange={(k: Key | null) => { if (k != null && +k !== i + 1) move(p, +k - 1); }} className="w-20 shrink-0">
                     <Select.Trigger><Select.Value /><Select.Indicator /></Select.Trigger>
                     <Select.Popover>
@@ -862,11 +948,17 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
                     <div className="truncate text-xs text-muted">{copy ? copy.split('\n')[0] : 'Sense copy'}</div>
                     {p.schedule && <When s={p.schedule} />}
                   </div>
+                  {/* On a phone the actions go on their own line, so the title keeps its room */}
+                  <div className="flex w-full justify-end sm:w-auto">
                   <Button size="sm" variant="ghost" isIconOnly aria-label={`Edita el post ${i + 1}`} onPress={() => setEditing(p)}><Pencil size={16} /></Button>
                   <Button size="sm" variant={open === p.id ? 'secondary' : 'ghost'} isIconOnly aria-expanded={open === p.id} aria-label={`Copy del post ${i + 1}`} onPress={() => setOpen(open === p.id ? null : p.id)}><MessageSquareText size={16} /></Button>
-                  {insta?.connected && t.kind === 'post' && <Button size="sm" variant="ghost" isIconOnly aria-label={p.schedule ? `Programa o publica el post ${i + 1}` : `Publica o programa el post ${i + 1}`} onPress={() => setPublishing(p)}><Send size={16} /></Button>}
+                  {insta?.connected && t.kind === 'post' && <>
+                    <Button size="sm" variant={p.schedule ? 'secondary' : 'ghost'} isIconOnly aria-label={p.schedule ? `Canvia la programació del post ${i + 1}` : `Programa el post ${i + 1}`} onPress={() => setPublishing({ post: p, later: true })}><Clock size={16} /></Button>
+                    <Button size="sm" variant="ghost" isIconOnly aria-label={`Publica ara el post ${i + 1}`} onPress={() => setPublishing({ post: p, later: false })}><Send size={16} /></Button>
+                  </>}
                   <DownloadButton label={`Descarrega el post ${i + 1}`} run={() => downloadPost(p, i + 1)} />
                   <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${t.title} del perfil`} onPress={() => order(posts.filter(x => x !== p).map(x => x.id), `${t.title} tret del perfil`)}><X size={16} /></Button>
+                  </div>
                 </div>
                 {open === p.id && <CopyPanel post={p} n={i + 1} data={data} setData={setData} posts={all} />}
               </li>
@@ -875,7 +967,7 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
         </ol>
       </section>
       {editing && <PostEditor post={editing} n={posts.indexOf(editing) + 1} setData={setData} onClose={() => setEditing(null)} />}
-      {publishing && <Publish post={publishing} n={posts.indexOf(publishing) + 1} caption={data.copies[publishing.id] || ''} onClose={() => { setPublishing(null); }} setData={setData} />}
+      {publishing && <Publish key={publishing.post.id + publishing.later} post={publishing.post} later={publishing.later} n={posts.indexOf(publishing.post) + 1} caption={data.copies[publishing.post.id] || ''} onClose={() => setPublishing(null)} setData={setData} />}
     </div>
     </>
   );
@@ -926,7 +1018,8 @@ function Published({ posts, copies }: { posts: Post[]; copies: Record<string, st
 const WEEK = ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'];
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) => void; onEmpty: () => void }) {
+// Calendari: the plan to look at, by day. Posts are programmed and published from Publicar
+function Planner({ data, onEmpty, onPublish }: { data: Data; onEmpty: () => void; onPublish: () => void }) {
   const all = data.posts.filter(p => byId.has(p.tpl) && !p.story), planned = all.filter(p => !p.published);
   const today = ymd(new Date());
   const [month, setMonth] = useState(() => { const first = planned.find(p => p.date)?.date; const d = first && first > today ? new Date(first + 'T12:00') : new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
@@ -940,31 +1033,6 @@ function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
   useEffect(() => { api<Insta>('instagram?media=1').then(setInsta).catch(() => setInsta({ connected: false })); }, []);
   const ours = new Set(all.map(p => p.published?.media).filter(Boolean));
   const liveOn = (day: string) => (insta?.media || []).filter(m => !ours.has(m.id) && ymd(new Date(m.at)) === day);
-  const [drag, setDrag] = useState<string | null>(null), [over, setOver] = useState<string | null>(null);
-  const [programming, setProgramming] = useState<Post | null>(null);
-
-  // A programmed post that moves to another day keeps its hour there
-  async function plan(p: Post, date: string) {
-    if (date === (p.date || '')) return;
-    const before = data;
-    if (p.schedule && date) {
-      const at = new Date(`${date}T${hour(p.schedule.at)}`);
-      if (at.getTime() < Date.now() + 60e3) { toastError(new Error(`A les ${hour(p.schedule.at)} d'aquell dia ja ha passat: tria una altra hora a Programa`)); return; }
-      setData({ ...data, posts: data.posts.map(x => x.id === p.id ? { ...x, date, schedule: { ...p.schedule!, at: at.toISOString() } } : x) });
-      try { setData(await api<Data>('social', { method: 'PUT', body: { schedule: { id: p.id, at: at.toISOString(), images: p.schedule.images || [p.schedule.image] } } })); }
-      catch (e) { setData(before); toastError(e); }
-      return;
-    }
-    setData({ ...data, posts: data.posts.map(x => x.id === p.id ? { ...x, date: date || undefined, schedule: date ? x.schedule : undefined } : x) });
-    try { setData(await api<Data>('social', { method: 'PUT', body: { date: { id: p.id, date } } })); }
-    catch (e) { setData(before); toastError(e); }
-  }
-  const dragged = () => planned.find(p => p.id === drag);
-  const dragProps = (p: Post) => ({
-    draggable: true,
-    onDragStart: (e: React.DragEvent) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', p.id); setDrag(p.id); },
-    onDragEnd: () => { setDrag(null); setOver(null); },
-  });
 
   if (!all.length) return (
     <div className="card flex flex-wrap items-center gap-3 p-5">
@@ -986,11 +1054,9 @@ function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
         <div className="grid grid-cols-7 border-b border-separator text-center text-xs text-muted">{WEEK.map(w => <div key={w} className="py-2">{w}</div>)}</div>
         <div className="grid grid-cols-7">
           {days.map(d => {
-            const key = ymd(d), inMonth = d.getMonth() === month.getMonth(), list = on(key), open = key >= today;
+            const key = ymd(d), inMonth = d.getMonth() === month.getMonth(), list = on(key);
             return (
-              <div key={key} onDragOver={e => { if (drag && open) { e.preventDefault(); setOver(key); } }} onDragLeave={() => setOver(o => o === key ? null : o)}
-                onDrop={e => { e.preventDefault(); const p = dragged(); setDrag(null); setOver(null); if (p && open) plan(p, key); }}
-                className={`min-h-24 border-r border-b border-separator p-1 sm:p-1.5 [&:nth-child(7n)]:border-r-0 ${over === key ? 'bg-accent/10 ring-2 ring-accent ring-inset' : inMonth ? '' : 'bg-default/40'}`}>
+              <div key={key} className={`min-h-24 border-r border-b border-separator p-1 sm:p-1.5 [&:nth-child(7n)]:border-r-0 ${inMonth ? '' : 'bg-default/40'}`}>
                 <div className={`tnum mb-1 grid size-6 place-items-center rounded-full text-xs ${key === today ? 'bg-accent font-semibold text-accent-foreground' : inMonth ? '' : 'text-muted'}`}>{d.getDate()}</div>
                 <div className="grid gap-1 sm:grid-cols-2">
                   {list.map(p => {
@@ -1001,7 +1067,7 @@ function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
                       : <div key={p.id} title={t.title} className="opacity-60">{art}<span className="sr-only">{t.title}</span></div>;
                     const label = p.schedule ? `${t.title}, ${programmed(p.schedule)}` : t.title;
                     return (
-                      <div key={p.id} {...dragProps(p)} title={label} className={`relative cursor-grab ${drag === p.id ? 'opacity-40' : ''}`}>
+                      <div key={p.id} title={label} className="relative">
                         {art}<span className="sr-only">{label}</span>
                         {p.schedule && <span className={`tnum absolute inset-x-0.5 bottom-0.5 inline-flex h-4 items-center justify-center gap-0.5 overflow-hidden rounded-full text-xs font-medium ${p.schedule.error ? 'bg-danger text-danger-foreground' : 'bg-[#f3efe4]/90 text-[#1a3f20]'}`}><Clock size={10} strokeWidth={2.5} aria-hidden />{hour(p.schedule.at)}</span>}
                       </div>
@@ -1020,36 +1086,31 @@ function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
         </div>
       </section>
 
-      <section aria-label="Dates dels posts" onDragOver={e => { if (dragged()?.date) { e.preventDefault(); setOver('list'); } }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOver(o => o === 'list' ? null : o); }}
-        onDrop={e => { e.preventDefault(); const p = dragged(); setDrag(null); setOver(null); if (p?.date) plan(p, ''); }}
-        className={`card ${over === 'list' ? 'ring-2 ring-accent' : ''}`}>
-        <div className="border-b border-separator p-4 sm:px-5">
-          <h2 className="text-base font-semibold">Per publicar</h2>
-          <p className="text-sm text-muted">Tria el dia de cada post o arrossega'l al calendari; per treure'l del calendari, torna'l aquí. Els posts amb data passen davant, per ordre de dia.</p>
-          {insta && <p className="text-sm text-muted">{insta.connected ? 'Programa un post perquè es publiqui sol a una hora.' : "Per programar-los cal connectar el compte d'Instagram."}</p>}
+      <section aria-label="Per publicar" className="card">
+        <div className="flex flex-wrap items-center gap-3 border-b border-separator p-4 sm:px-5">
+          <div className="mr-auto">
+            <h2 className="text-base font-semibold">Per publicar</h2>
+            <p className="text-sm text-muted">Es programen i es publiquen des de Publicar.</p>
+          </div>
+          <Button size="sm" variant="secondary" onPress={onPublish}>Vés a Publicar</Button>
         </div>
         {planned.length ? (
           <ol className="divide-y divide-separator">
             {planned.map((p, i) => {
               const t = byId.get(p.tpl)!;
               return (
-                <li key={p.id} className={`flex items-center gap-3 p-3 sm:px-5 ${drag === p.id ? 'opacity-40' : ''}`}>
-                  <div {...dragProps(p)} className="shrink-0 cursor-grab" title={`Arrossega ${t.title} a un dia`}>
-                    <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className="pointer-events-none aspect-[3/4] w-9 rounded-md" />
-                  </div>
+                <li key={p.id} className="flex items-center gap-3 p-3 sm:px-5">
+                  <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className="aspect-[3/4] w-9 shrink-0 rounded-md" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold"><span className="tnum text-muted">{i + 1}</span> {t.title}</div>
-                    {p.schedule ? <When s={p.schedule} hourOnly /> : p.date && p.date < today && <div className="text-xs text-warning">Aquest dia ja ha passat</div>}
+                    {p.schedule ? <When s={p.schedule} /> : <div className={`text-xs ${p.date && p.date < today ? 'text-warning' : 'text-muted'}`}>{p.date ? (p.date < today ? 'Aquest dia ja ha passat' : `Previst el ${day(p.date + 'T12:00')}`) : 'Sense programar'}</div>}
                   </div>
-                  <DayPicker label={`Dia del post ${i + 1}, ${t.title}`} hideLabel clearable value={p.date || ''} onChange={v => plan(p, v)} />
-                  {insta?.connected && t.kind === 'post' && <Button size="sm" variant={p.schedule ? 'secondary' : 'ghost'} isIconOnly aria-label={`Programa el post ${i + 1}`} onPress={() => setProgramming(p)}><Clock size={16} /></Button>}
                 </li>
               );
             })}
           </ol>
         ) : <p className="p-5 text-sm">No queda cap post per publicar.</p>}
       </section>
-      {programming && <Publish later post={programming} n={planned.indexOf(programming) + 1} caption={data.copies[programming.id] || ''} onClose={() => setProgramming(null)} setData={setData} />}
     </div>
   );
 }
@@ -1064,12 +1125,13 @@ async function sendOut(post: Post, at?: Date): Promise<Data> {
   return api<Data>('social', { method: 'PUT', body: { schedule: { id: post.id, at: at.toISOString(), images } } });
 }
 
-function Publish({ post, n, caption, onClose, setData, later = false }: { post: Post; n: number; caption: string; onClose: () => void; setData: (d: Data) => void; later?: boolean }) {
+// first: opened right after the post was added, so leaving it is «Més endavant»: it stays in the profile
+function Publish({ post, n, caption, onClose, setData, later, first = false }: { post: Post; n: number; caption: string; onClose: () => void; setData: (d: Data) => void; later?: boolean; first?: boolean }) {
   // How the toasts name it: «Post 3», or «La story» for a story
   const name = post.story ? 'La story' : `Post ${n}`, theName = post.story ? 'La story' : `El post ${n}`;
   const t = byId.get(post.tpl)!, was = post.schedule && new Date(post.schedule.at);
   const tomorrow = ymd(new Date(Date.now() + 864e5));
-  const [mode, setMode] = useState<'now' | 'later'>(later || post.schedule ? 'later' : 'now');
+  const [mode, setMode] = useState<'now' | 'later'>(later ?? !!post.schedule ? 'later' : 'now');
   const [date, setDate] = useState(was ? ymd(was) : post.date && post.date > ymd(new Date()) ? post.date : tomorrow);
   const [time, setTime] = useState(was ? hour(post.schedule!.at) : '19:00');
   const [busy, setBusy] = useState<'' | 'go' | 'cancel'>('');
@@ -1093,7 +1155,7 @@ function Publish({ post, n, caption, onClose, setData, later = false }: { post: 
   return (
     <Dialog isOpen onClose={onClose} title="Publica a Instagram" subtitle={`${name}: ${t.title}`}
       footer={<>
-        <Button variant="ghost" onPress={onClose} isDisabled={!!busy}>Cancel·la</Button>
+        <Button variant="ghost" onPress={onClose} isDisabled={!!busy}>{first ? 'Més endavant' : 'Cancel·la'}</Button>
         {post.schedule && <Button variant="danger-soft" onPress={cancel} isPending={busy === 'cancel'} isDisabled={busy === 'go'}>{busy === 'cancel' && <Spinner size="sm" color="current" />}Desprograma</Button>}
         <Button isPending={busy === 'go'} isDisabled={busy === 'cancel' || mode === 'later' && past} onPress={go}>
           {busy === 'go' ? <Spinner size="sm" color="current" /> : mode === 'now' ? <Send size={15} /> : <Clock size={15} />}{mode === 'now' ? 'Publica ara' : post.schedule ? 'Desa la programació' : 'Programa'}
@@ -1119,6 +1181,7 @@ function Publish({ post, n, caption, onClose, setData, later = false }: { post: 
           <div className="min-w-0 space-y-2">
             {post.story ? <p className="text-sm text-muted">Les stories no porten copy. Instagram no deixa afegir-hi l'enllaç des d'aquí: l'adreça de la web ja hi surt escrita.</p>
               : caption ? <p className="max-h-72 overflow-y-auto text-sm whitespace-pre-wrap">{caption}</p> : <p className="text-sm text-warning">Aquest post encara no té copy: es publicarà sense text.</p>}
+            {first && <p className="text-xs text-muted">Més endavant el deixa al perfil, per publicar quan vulguis.</p>}
             <p className="text-xs text-muted">{post.story ? "Un cop publicada, es pot esborrar des de l'app d'Instagram." : "Un cop publicat, es pot editar o esborrar des de l'app d'Instagram."}</p>
           </div>
         </div>

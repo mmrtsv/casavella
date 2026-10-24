@@ -11,7 +11,8 @@ export async function onRequestGet({ request, env }) {
   const u = new URL(request.url), from = u.searchParams.get('from'), to = u.searchParams.get('to');
   if (!isDate(from) || !isDate(to) || to <= from || to > addDays(from, 400)) return json({ error: 'dates' }, 400);
   if (!tablesConfigured(env)) return json({ configured: false, tables: [] });
-  return json({ configured: true, tables: await (await tables(env)).list(from, to) });
+  try { return json({ configured: true, tables: await (await tables(env)).list(from, to) }); }
+  catch (e) { return json({ error: 'calendar', detail: String(e.message || e) }, 502); }
 }
 
 export async function onRequestPost({ request, env, data }) {

@@ -7,6 +7,9 @@ import { settings, isDate, addDays, json } from '../../lib/booking.js';
 import { tablesConfigured, tables, tableEvent, servicesOn, serviceAt, serviceLoad, inTime, isTime, madridNow } from '../../lib/restaurant.js';
 import { send, tableConfirmation, tableNotice, langOf } from '../../lib/email.js';
 
+// Google refused the restaurant's calendar (not shared with the service account, or a wrong ID): the page falls back to phone
+const calendarError = e => json({ error: 'calendar', detail: String(e.message || e) }, 502);
+
 // The checks both calls share; returns an error body or null
 function check(R, date, people, now) {
   if (!R.online) return { error: 'offline' };
@@ -25,7 +28,9 @@ export async function onRequestGet({ request, env }) {
   const bad = check(R, date, people, now);
   if (bad) return json(bad, 400);
   if (!tablesConfigured(env)) return json({ error: 'not_configured' }, 503);
-  const list = await (await tables(env)).list(date, addDays(date, 1));
+  let list;
+  try { list = await (await tables(env)).list(date, addDays(date, 1)); }
+  catch (e) { return calendarError(e); }
   const services = serviceLoad(R, date, list).map(s => ({
     name: s.name, times: s.times.map(time => ({ time, free: s.taken + people <= s.seats && inTime(R, date, time, now) })),
   }));
@@ -51,10 +56,12 @@ export async function onRequestPost({ request, env, waitUntil }) {
   if (!inTime(R, t.date, t.time, now)) return json({ error: 'too_soon', hours: R.minHours }, 400);
   if (!tablesConfigured(env)) return json({ error: 'not_configured' }, 503);
 
-  const cal = await tables(env);
-  const load = serviceLoad(R, t.date, await cal.list(t.date, addDays(t.date, 1))).find(x => x.id === s.id);
-  if (load.taken + t.people > s.seats) return json({ error: 'full' }, 409);
-  await cal.create(tableEvent({ ...t, service: s.id }));
+  try {
+    const cal = await tables(env);
+    const load = serviceLoad(R, t.date, await cal.list(t.date, addDays(t.date, 1))).find(x => x.id === s.id);
+    if (load.taken + t.people > s.seats) return json({ error: 'full' }, 409);
+    await cal.create(tableEvent({ ...t, service: s.id }));
+  } catch (e) { return calendarError(e); }
 
   const msg = { ...t, service: s.name };
   waitUntil(Promise.all([send(env, tableConfirmation(env, msg)), send(env, tableNotice(env, msg))]).catch(() => {}));

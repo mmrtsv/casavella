@@ -20,6 +20,7 @@ export const ERRORS: Record<string, string> = {
   ig_not_configured: "Falta connectar el compte d'Instagram", ig_published: 'Aquest post ja està publicat',
   ai_not_configured: 'Falta la clau de Claude (ANTHROPIC_API_KEY)', ai: "Claude no ha pogut escriure el copy", ai_make: "Claude no ha pogut fer el post. Torna-ho a provar.",
   restaurant: 'Revisa els horaris del restaurant: cada servei necessita nom, algun dia, les hores i les places',
+  calendar: "Google Calendar no deixa llegir el calendari del restaurant: comprova que CAL_RESTAURANT és l'ID bo i que el calendari està compartit amb el compte de servei amb permís per fer canvis",
   restaurant_not_configured: 'Falta connectar el calendari del restaurant (CAL_RESTAURANT)', time: "Revisa l'hora", people: 'Revisa el nombre de persones',
   docs_not_configured: 'Falta connectar la carpeta de Google Drive dels documents', drive: 'Google Drive no ha deixat desar el document',
 };

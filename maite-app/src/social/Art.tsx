@@ -3,10 +3,11 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { paint } from './paint';
 import type { Template } from './templates';
 
-export function Art({ t, v = 0, photo = '', fit = 'width', className = '' }: { t: Template; v?: number; photo?: string; fit?: 'width' | 'cover'; className?: string }) {
+export function Art({ t, v = 0, photo = '', texts, fit = 'width', className = '' }: { t: Template; v?: number; photo?: string; texts?: string[]; fit?: 'width' | 'cover'; className?: string }) {
   const box = useRef<HTMLDivElement>(null), art = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
-  useLayoutEffect(() => { if (art.current) paint(art.current, t, v, photo); }, [t, v, photo]);
+  const words = texts?.join('\n');
+  useLayoutEffect(() => { if (art.current) paint(art.current, t, v, photo, texts); }, [t, v, photo, words]);
   useLayoutEffect(() => {
     const ro = new ResizeObserver(([e]) => setSize({ w: e.contentRect.width, h: e.contentRect.height }));
     ro.observe(box.current!);

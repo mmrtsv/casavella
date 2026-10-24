@@ -99,7 +99,7 @@ data class CancelResponse(val refunded: Long = 0)
 data class Published(val at: String, val url: String = "", val media: String? = null, val image: String? = null)
 
 @Serializable
-data class SocialPost(val id: String, val tpl: String, val v: Int = 0, val photo: String = "", val at: String = "", val date: String? = null, val published: Published? = null, val schedule: Schedule? = null)
+data class SocialPost(val id: String, val tpl: String, val v: Int = 0, val photo: String = "", val texts: List<String>? = null, val at: String = "", val date: String? = null, val published: Published? = null, val schedule: Schedule? = null)
 
 /** A post programmed for a moment: its JPEG is already uploaded and lib/instagram.js publishes it when due */
 @Serializable
@@ -113,6 +113,13 @@ data class CaptionOption(val caption: String, val hashtags: String = "")
 
 @Serializable
 data class CaptionOptions(val options: List<CaptionOption>)
+
+/** A post or story Claude made from a description (/api/maite/social-make): the template, its photo and words, and the caption */
+@Serializable
+data class Made(val tpl: String, val photo: String = "", val texts: List<String> = emptyList(), val caption: String = "", val hashtags: String = "")
+
+@Serializable
+data class MadeOptions(val options: List<Made>)
 
 @Serializable
 data class LiveMedia(val id: String, val at: String, val url: String = "", val image: String = "", val caption: String = "")

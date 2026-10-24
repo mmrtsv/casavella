@@ -135,14 +135,16 @@ object Renderer {
     }
 
     private fun q(s: String) = JSONObject.quote(s)
+    private fun q(texts: List<String>?) = texts?.let { org.json.JSONArray(it).toString() } ?: "null"
 
-    suspend fun full(id: String, v: Int, photo: String): Bitmap = drawNow { r -> "draw($r, ${q(id)}, $v, ${q(photo)})" }
+    /** texts: the post's own words on the image, one per text line of the template (a post made from a prompt) */
+    suspend fun full(id: String, v: Int, photo: String, texts: List<String>? = null): Bitmap = drawNow { r -> "draw($r, ${q(id)}, $v, ${q(photo)}, ${q(texts)})" }
 
     /** A small version for the screens, kept in memory */
-    suspend fun thumb(id: String, v: Int, photo: String, width: Int = 420): Bitmap {
-        val key = "$id|$v|$photo|$width"
+    suspend fun thumb(id: String, v: Int, photo: String, texts: List<String>? = null, width: Int = 420): Bitmap {
+        val key = "$id|$v|$photo|${texts?.joinToString("\u0000")}|$width"
         thumbs.get(key)?.let { return it }
-        val big = full(id, v, photo)
+        val big = full(id, v, photo, texts)
         val small = Bitmap.createScaledBitmap(big, width, big.height * width / big.width, true)
         if (small !== big) big.recycle()
         thumbs.put(key, small)
@@ -158,10 +160,10 @@ object Renderer {
     }
 
     /** The words on the image and what the photo shows, for the caption request */
-    suspend fun words(id: String, v: Int, own: Boolean): Pair<String, String> {
+    suspend fun words(id: String, v: Int, photo: String, texts: List<String>?): Pair<String, String> {
         if (web == null) return "" to ""
         withTimeout(20_000) { ready.await() }
-        val raw = js("words(${q(id)}, $v, $own)")
+        val raw = js("words(${q(id)}, $v, ${q(photo)}, ${q(texts)})")
         val o = JSONObject(JSONObject("{\"x\":$raw}").getString("x"))
         return o.getString("onImage") to o.getString("photo")
     }

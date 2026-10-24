@@ -17,7 +17,7 @@ npm run build      # només Maite, a dist/maite/
 | --- | --- |
 | `src/shell/` | L'estructura: barra lateral, barra superior, pestanyes al mòbil i la paleta d'ordres |
 | `src/pages/` | Una pàgina per secció (Inici, Calendari, Reserves, Preus, Descomptes, Normes, Allotjaments, Correus, Xarxes socials) |
-| `src/social/` | Les plantilles d'Instagram: el seu HTML a mida real (`templates.ts`, generat des del disseny), les variacions i l'exportació a PNG (`paint.ts`), i com es dibuixen a escala (`Art.tsx`) |
+| `src/social/` | Les plantilles d'Instagram: el seu HTML a mida real (`templates.ts`, generat des del disseny), les variacions i l'exportació a PNG (`paint.ts`), com es dibuixen a escala (`Art.tsx`), i el que se'ls pot canviar des d'una descripció: les fotos i les línies de text (`catalog.ts`, que també llegeix `social-make.js`) |
 | `src/windows/` | Fitxa de la reserva, formularis i finestres |
 | `src/parts/` | Peces petites compartides: `Status`, avisos, camps, el full lliscant |
 | `src/lib/` | API, dades, dates, textos, rutes i les superfícies de vidre (`glass.tsx`) |
@@ -38,7 +38,7 @@ npm run build      # només Maite, a dist/maite/
 | [Vite](https://vite.dev) i `@vitejs/plugin-react` | 8.3 | Servidor local i construcció. Un connector propi posa el CSS dins d'`index.html` perquè el marc es pinti de seguida |
 | [TypeScript](https://www.typescriptlang.org) | 7.0 | Comprovació de tipus |
 
-Les funcions del servidor (`functions/api/maite/`, `lib/maite.js`) no fan servir cap llibreria: són JavaScript pla sobre Cloudflare Pages Functions, amb Stripe, Google Calendar, Google Drive i Claude (els copies d'Instagram, `social-copy.js`) per la seva API HTTP.
+Les funcions del servidor (`functions/api/maite/`, `lib/maite.js`) no fan servir cap llibreria: són JavaScript pla sobre Cloudflare Pages Functions, amb Stripe, Google Calendar, Google Drive i Claude (els copies d'Instagram, `social-copy.js`, i els posts fets a partir d'una descripció, `social-make.js`) per la seva API HTTP.
 
 ## D'on ve el disseny
 

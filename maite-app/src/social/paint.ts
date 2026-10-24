@@ -1,4 +1,5 @@
 // Templates at full size: the markup, its variations ("Una altra opció") and a PNG of it at 1080 px wide
+import { LIBRARY, inLibrary } from './catalog';
 import { TEMPLATES, type Template } from './templates';
 
 export const byId = new Map(TEMPLATES.map(t => [t.id, t]));
@@ -33,8 +34,9 @@ export function variants(t: Template) {
 const find = (root: Element, needle: string) => root.querySelector<HTMLElement>(`[style*="${needle}"]`);
 const text = (el: HTMLElement | null, s: string) => { if (el) el.textContent = s; };
 
-// Fill host with the template, then apply variation v and the owner's photo, if any
-export function paint(host: HTMLElement, t: Template, v = 0, photo = '') {
+// Fill host with the template, then apply variation v, the photo (the owner's or one from the library), if any, and the
+// post's own words, if it has them (one per text node, as textSlots lists them; a missing one keeps the template's)
+export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?: string[]) {
   host.innerHTML = t.html;
   const root = host.firstElementChild as HTMLElement | null;
   if (!root) return;
@@ -64,18 +66,27 @@ export function paint(host: HTMLElement, t: Template, v = 0, photo = '') {
     root.setAttribute('data-v', 'dark');
     root.querySelectorAll('img').forEach(i => { i.src = '/img/iso-light.png'; });
   }
+  if (img && inLibrary(photo)) img.alt = LIBRARY.find(p => p.src === photo)!.alt;
+  if (texts?.length) {
+    const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let i = 0, n = walk.nextNode(); n; n = walk.nextNode()) {
+      if (!n.nodeValue?.trim()) continue;
+      if (texts[i] != null) n.nodeValue = texts[i];
+      i++;
+    }
+  }
 }
 
 // The words on the image, for the caption prompt
-export function onImage(t: Template, v: number) {
+export function onImage(t: Template, v: number, texts?: string[]) {
   const d = document.createElement('div');
-  paint(d, t, v);
+  paint(d, t, v, '', texts);
   return (d.textContent || '').replace(/\s+/g, ' ').trim();
 }
-export function photoAlt(t: Template, v: number, own: boolean) {
-  if (own) return 'a photo the owner uploaded';
+export function photoAlt(t: Template, v: number, photo: string) {
+  if (photo && !inLibrary(photo)) return 'a photo the owner uploaded';
   const d = document.createElement('div');
-  paint(d, t, v);
+  paint(d, t, v, photo);
   return d.querySelector('img[data-photo]')?.getAttribute('alt') || 'none, brand colours only';
 }
 
@@ -101,12 +112,12 @@ export const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀
 export const fileName = (t: Template, n?: number) => (n ? pad(n) + '-' : 'la-casa-vella-') + slug(t.title) + '.png';
 
 // Full-size PNG, drawn off screen
-export async function png(t: Template, v = 0, photo = ''): Promise<Blob> {
+export async function png(t: Template, v = 0, photo = '', texts?: string[]): Promise<Blob> {
   const { toBlob } = await import('html-to-image');
   const stage = document.createElement('div');
   stage.className = 'social-art';
   stage.style.cssText = `position: fixed; left: -20000px; top: 0; width: ${t.w}px; height: ${t.h}px; pointer-events: none;`;
-  paint(stage, t, v, photo);
+  paint(stage, t, v, photo, texts);
   document.body.appendChild(stage);
   try {
     const node = stage.firstElementChild as HTMLElement;

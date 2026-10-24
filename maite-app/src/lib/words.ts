@@ -18,7 +18,7 @@ export const ERRORS: Record<string, string> = {
   doc_type: 'Només es poden pujar fotos (JPG, PNG, HEIC) o PDF', doc_size: 'El document és massa gran (màxim 15 MB)',
   social_full: 'La graella ja té 150 posts: treu-ne algun abans de confirmar-ne més', ai_busy: 'Massa peticions seguides. Espera un moment i torna-ho a provar.',
   ig_not_configured: "Falta connectar el compte d'Instagram", ig_published: 'Aquest post ja està publicat',
-  ai_not_configured: 'Falta la clau de Claude (ANTHROPIC_API_KEY)', ai: "Claude no ha pogut escriure el copy",
+  ai_not_configured: 'Falta la clau de Claude (ANTHROPIC_API_KEY)', ai: "Claude no ha pogut escriure el copy", ai_make: "Claude no ha pogut fer el post. Torna-ho a provar.",
   docs_not_configured: 'Falta connectar la carpeta de Google Drive dels documents', drive: 'Google Drive no ha deixat desar el document',
 };
 

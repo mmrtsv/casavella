@@ -23,7 +23,7 @@ val ERRORS = mapOf(
     "doc_size" to "El document és massa gran (màxim 15 MB)", "docs_not_configured" to "Falta connectar la carpeta de Google Drive dels documents",
     "drive" to "Google Drive no ha deixat desar el document", "social_full" to "La graella ja té 150 posts: treu-ne algun abans de confirmar-ne més",
     "ai_busy" to "Massa peticions seguides. Espera un moment i torna-ho a provar.", "ai_not_configured" to "Falta la clau de Claude (ANTHROPIC_API_KEY)",
-    "ai" to "Claude no ha pogut escriure el copy", "ig_not_configured" to "Falta connectar el compte d'Instagram", "ig_published" to "Aquest post ja està publicat",
+    "ai" to "Claude no ha pogut escriure el copy", "ai_make" to "Claude no ha pogut fer el post. Torna-ho a provar.", "ig_not_configured" to "Falta connectar el compte d'Instagram", "ig_published" to "Aquest post ja està publicat",
 )
 
 fun isBooking(b: Booking) = b.kind == "paid" || b.kind == "pending" || b.kind == "manual"

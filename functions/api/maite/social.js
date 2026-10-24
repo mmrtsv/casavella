@@ -1,5 +1,7 @@
 // GET  /api/maite/social   The Instagram posts confirmed in Xarxes socials, in grid order (1 is the first to publish), and their captions
-// POST /api/maite/social   { tpl, v, photo }  Adds a post at the end. photo: '' (the template's own) or an upload ('/photos/…')
+// POST /api/maite/social   { tpl, v, photo, texts, copy }  Adds a post at the end. photo: '' (the template's own), an upload
+//                          ('/photos/…') or one of the library ('/maite/social/…'). texts: its own words on the image (a post
+//                          made from a prompt), one per text line of the template. copy: its caption, if it already has one.
 // PUT  /api/maite/social   { order: [ids] }  New order; posts left out are removed. Or { copy: { id, text } }  The caption of one post.
 //                          Or { date: { id, date } }  The day a post is planned for ('' to clear, and its program with it);
 //                          planned posts follow their dates.
@@ -27,10 +29,15 @@ export async function onRequestPost({ request, env, data }) {
   const b = await body(request);
   if (!b || !/^[A-Za-z]{2,40}$/.test(b.tpl || '')) return json({ error: 'bad_request' }, 400);
   const v = Number(b.v || 0), photo = String(b.photo || '');
-  if (!Number.isInteger(v) || v < 0 || v > 99 || photo && !/^\/photos\/[\w-]+\.(jpg|webp|png)$/.test(photo)) return json({ error: 'bad_request' }, 400);
+  if (!Number.isInteger(v) || v < 0 || v > 99 || photo && !/^\/(photos|maite\/social)\/[\w-]+\.(jpg|webp|png)$/.test(photo)) return json({ error: 'bad_request' }, 400);
+  const texts = b.texts == null ? null : [].concat(b.texts);
+  if (texts && (texts.length > 20 || texts.some(x => typeof x !== 'string' || x.length > 300))) return json({ error: 'bad_request' }, 400);
   const S = await load(env);
   if (S.posts.length >= 150) return json({ error: 'social_full' }, 400);
-  S.posts.push({ id: crypto.randomUUID().slice(0, 8), tpl: b.tpl, v, photo, at: new Date().toISOString(), by: data.user });
+  const id = crypto.randomUUID().slice(0, 8);
+  S.posts.push({ id, tpl: b.tpl, v, photo, ...(texts?.length ? { texts } : {}), at: new Date().toISOString(), by: data.user });
+  const copy = String(b.copy || '').trim().slice(0, 4000);
+  if (copy) S.copies[id] = copy;
   await store(env, S, data.user);
   return view(S, env);
 }

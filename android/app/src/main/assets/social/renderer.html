@@ -12,10 +12,10 @@ async function settle() {
   await document.fonts.ready;
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 }
-window.draw = async (req, id, v, photo) => {
+window.draw = async (req, id, v, photo, texts) => {
   const t = MaiteSocial.byId.get(id);
   stage.style.height = t.h + 'px';
-  MaiteSocial.paint(stage, t, v, photo);
+  MaiteSocial.paint(stage, t, v, photo, texts || undefined);
   await settle();
   Maite.done(req, t.w, t.h);
 };
@@ -25,9 +25,9 @@ window.drawProfile = async (req) => {
   await settle();
   Maite.done(req, 1080, Math.ceil(stage.firstElementChild.getBoundingClientRect().height));
 };
-window.words = (id, v, own) => {
+window.words = (id, v, photo, texts) => {
   const t = MaiteSocial.byId.get(id);
-  return JSON.stringify({ onImage: MaiteSocial.onImage(t, v), photo: MaiteSocial.photoAlt(t, v, own) });
+  return JSON.stringify({ onImage: MaiteSocial.onImage(t, v, texts || undefined), photo: MaiteSocial.photoAlt(t, v, photo) });
 };
 </script>
 </body></html>

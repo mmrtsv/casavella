@@ -9,10 +9,11 @@ import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
 import { done, toastError } from '../parts/toast';
 import { Art, Wide } from '../social/Art';
+import { inLibrary } from '../social/catalog';
 import { byId, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Kind, type Template } from '../social/templates';
 
-type Post = { id: string; tpl: string; v: number; photo: string; at: string; date?: string; published?: { at: string; url: string; media?: string }; schedule?: Schedule };
+type Post = { id: string; tpl: string; v: number; photo: string; texts?: string[]; at: string; date?: string; published?: { at: string; url: string; media?: string }; schedule?: Schedule };
 // A program: when the post goes out on its own (the cron in cron/), with its JPEG already uploaded; error, if it failed
 type Schedule = { at: string; image: string; error?: string; started?: string };
 type Insta = { connected: boolean; username?: string; detail?: string; media?: Live[] };
@@ -20,6 +21,8 @@ type Insta = { connected: boolean; username?: string; detail?: string; media?: L
 type Live = { id: string; at: string; url: string; image: string; caption: string };
 type Data = { posts: Post[]; copies: Record<string, string>; ai: boolean };
 type Option = { caption: string; hashtags: string };
+// A post or story Claude made from a description: the template, its photo and words, and the caption
+type Made = Option & { tpl: string; photo: string; texts: string[] };
 type Tab = 'posts' | 'stories' | 'highlights' | 'profile' | 'calendar' | 'copies';
 
 const TABS: { id: Tab; label: string }[] = [
@@ -37,8 +40,8 @@ const HELP: Partial<Record<Tab, string>> = {
 const inGrid = (t: Template) => t.kind === 'post' || t.id === 'StoryReel';
 const joinCopy = (o: Option) => o.caption.trim() + (o.hashtags ? '\n\n' + o.hashtags.trim() : '');
 
-async function download(t: Template, v: number, photo: string, n?: number) {
-  save(await png(t, v, photo), fileName(t, n));
+async function download(t: Template, v: number, photo: string, texts?: string[], n?: number) {
+  save(await png(t, v, photo, texts), fileName(t, n));
 }
 
 export default function Social() {
@@ -56,6 +59,7 @@ export default function Social() {
         </Tabs.List></Tabs.ListContainer>
       </Tabs>
       {HELP[tab] && <p className="mb-5 max-w-3xl text-sm text-muted">{HELP[tab]}</p>}
+      {(kind === 'post' || kind === 'story') && data?.ai && <Maker key={kind} kind={kind} setData={setData} />}
       {kind && (
         <ul className={`grid gap-5 ${kind === 'post' ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-5'}`}>
           {TEMPLATES.filter(t => t.kind === kind).map(t => <li key={t.id}><TemplateCard t={t} data={data} setData={setData} /></li>)}
@@ -129,6 +133,96 @@ function TemplateCard({ t, data, setData }: { t: Template; data: Data | null; se
   );
 }
 
+// A post or story from a description: Claude picks the template and the photo and writes the words on it and the caption
+function Maker({ kind, setData }: { kind: 'post' | 'story'; setData: (d: Data) => void }) {
+  const [prompt, setPrompt] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [made, setMade] = useState<Made[]>([]);
+  async function make() {
+    setBusy(true);
+    try { setMade((await api<{ options: Made[] }>('social-make', { method: 'POST', body: { prompt, kind } })).options.filter(o => byId.has(o.tpl))); }
+    catch (e) { toastError(e); }
+    setBusy(false);
+  }
+  return (
+    <div className="mb-8 space-y-5">
+      <section className="card space-y-3 p-4 sm:p-5">
+        <TextField value={prompt} onChange={setPrompt} fullWidth>
+          <Label>{kind === 'post' ? 'Què vols publicar' : 'Què vols explicar a la story'}</Label>
+          <TextArea rows={2} placeholder={kind === 'post' ? "El sopar de Cap d'Any al restaurant, 31 de desembre, 65 € per persona" : 'Aquest cap de setmana encara queda lliure Les Vinyes'}
+            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && prompt.trim() && !busy) make(); }} />
+        </TextField>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="mr-auto text-sm text-muted">Claude tria la plantilla i la foto, i escriu el text de la imatge{kind === 'post' ? ' i el copy' : ''}.</p>
+          <Button size="sm" isPending={busy} isDisabled={!prompt.trim()} onPress={make}>
+            {busy ? <Spinner size="sm" color="current" /> : <Sparkles size={15} />}{made.length ? 'Altres propostes' : 'Proposa'}
+          </Button>
+        </div>
+      </section>
+      {made.length > 0 && (
+        <ul className={`grid gap-5 ${kind === 'post' ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-5'}`}>
+          {made.map((o, k) => <li key={k + o.tpl + o.texts.join()}><MadeCard o={o} setData={setData} /></li>)}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
+  const t = byId.get(o.tpl)!, caption = joinCopy(o);
+  const [own, setOwn] = useState<{ file: File; url: string } | null>(null);
+  const [busy, setBusy] = useState<'' | 'confirm' | 'png'>('');
+  const [kept, setKept] = useState(0);
+  const file = useRef<HTMLInputElement>(null);
+  useEffect(() => () => { if (own) URL.revokeObjectURL(own.url); }, [own]);
+  const photo = own?.url || o.photo;
+
+  async function confirm() {
+    setBusy('confirm');
+    try {
+      const d = await api<Data>('social', { method: 'POST', body: { tpl: t.id, v: 0, photo: own ? await uploadPhoto(own.file) : o.photo, texts: o.texts, copy: inGrid(t) ? caption : '' } });
+      const added = d.posts[d.posts.length - 1], n = d.posts.filter(p => !p.published).indexOf(added) + 1;
+      setData(d); setKept(n);
+      done(`${t.title}: post ${n} del perfil`);
+    } catch (e) { toastError(e); }
+    setBusy('');
+  }
+  async function exportPng() {
+    setBusy('png');
+    try { await download(t, 0, photo, o.texts); } catch (e) { toastError(e); }
+    setBusy('');
+  }
+
+  return (
+    <article className="card overflow-hidden">
+      <Art t={t} photo={photo} texts={o.texts} className="rounded-t-[var(--card-radius)]" />
+      <div className="space-y-3 p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="mr-auto text-base font-semibold tracking-tight">{t.title}</h2>
+          {kept > 0 && <Tag tone="paid">Post {kept} del perfil</Tag>}
+        </div>
+        {inGrid(t) && <p className="text-sm whitespace-pre-wrap">{caption}</p>}
+        <div className="flex flex-wrap items-center gap-2">
+          {t.photo && (
+            <>
+              <Button size="sm" variant="secondary" onPress={() => file.current?.click()}><ImageUp size={15} />{own ? 'Una altra foto' : 'La teva foto'}</Button>
+              <input ref={file} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) setOwn({ file: f, url: URL.createObjectURL(f) }); e.target.value = ''; }} />
+            </>
+          )}
+          <Button size="sm" variant="ghost" isIconOnly aria-label={`Descarrega ${t.title} en PNG`} isPending={busy === 'png'} onPress={exportPng}>
+            {busy === 'png' ? <Spinner size="sm" color="current" /> : <Download size={16} />}
+          </Button>
+          {inGrid(t) && !kept && (
+            <Button size="sm" className="ml-auto" isPending={busy === 'confirm'} onPress={confirm}>
+              {busy === 'confirm' ? <Spinner size="sm" color="current" /> : <Plus size={15} />}Confirma
+            </Button>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) => void; onEmpty: () => void }) {
   // Published posts leave the plan; the preview shows them below it, marked, and Publicats lists them, newest first
   const all = data.posts.filter(p => byId.has(p.tpl));
@@ -164,7 +258,7 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
       for (let i = 0; i < posts.length; i++) {
         setProgress(`${i + 1} de ${posts.length}`);
         const p = posts[i];
-        await download(byId.get(p.tpl)!, p.v, p.photo, i + 1);
+        await download(byId.get(p.tpl)!, p.v, p.photo, p.texts, i + 1);
         await new Promise(r => setTimeout(r, 400));
       }
       done(posts.length === 1 ? '1 post descarregat' : `${posts.length} posts descarregats`);
@@ -204,7 +298,7 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
                 onDrop={e => { e.preventDefault(); const from = posts.find(x => x.id === drag); if (from && from !== p) move(from, n - 1); setDrag(null); setOver(null); }}
                 title={p.schedule ? `Post ${n}, ${programmed(p.schedule)}` : `Post ${n}`}
                 className={`relative cursor-grab ${drag === p.id ? 'opacity-40' : ''} ${over === p.id && drag !== p.id ? 'ring-2 ring-accent ring-inset' : ''}`}>
-                <Art t={byId.get(p.tpl)!} v={p.v} photo={p.photo} fit="cover" className="pointer-events-none aspect-[3/4]" />
+                <Art t={byId.get(p.tpl)!} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className="pointer-events-none aspect-[3/4]" />
                 <span className="tnum absolute top-1.5 left-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[#1a3f20]/85 px-1.5 text-xs font-semibold text-[#f3efe4]">{n}</span>
                 {p.schedule && (
                   <span className={`tnum absolute bottom-1.5 left-1.5 inline-flex h-5 items-center gap-1 rounded-full px-1.5 text-xs font-medium ${p.schedule.error ? 'bg-danger text-danger-foreground' : 'bg-[#f3efe4]/90 text-[#1a3f20]'}`}>
@@ -216,7 +310,7 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
           })}
           {live.map(m => {
             const art = 'post' in m
-              ? <Art t={byId.get(m.post.tpl)!} v={m.post.v} photo={m.post.photo} fit="cover" className="aspect-[3/4]" />
+              ? <Art t={byId.get(m.post.tpl)!} v={m.post.v} photo={m.post.photo} texts={m.post.texts} fit="cover" className="aspect-[3/4]" />
               : m.image ? <img src={m.image} alt="" loading="lazy" className="aspect-[3/4] w-full bg-default object-cover" /> : <div className="aspect-[3/4] bg-default" />;
             const mark = <span className="absolute top-1.5 left-1.5 grid size-5 place-items-center rounded-full bg-[#f3efe4]/90 text-[#1a3f20]"><Check size={13} strokeWidth={2.5} aria-hidden /></span>;
             const label = `Publicat el ${day(m.at)}`;
@@ -250,16 +344,16 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
                       <ListBox>{posts.map((_, k) => <ListBox.Item key={k} id={String(k + 1)} textValue={String(k + 1)}>{k + 1}<ListBox.ItemIndicator /></ListBox.Item>)}</ListBox>
                     </Select.Popover>
                   </Select>
-                  <Art t={t} v={p.v} photo={p.photo} fit="cover" className="aspect-[3/4] w-11 shrink-0 rounded-md" />
+                  <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className="aspect-[3/4] w-11 shrink-0 rounded-md" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold">{t.title}</div>
-                    <div className="truncate text-xs text-muted">{p.photo ? 'Amb la teva foto' : `Opció ${p.v + 1}`}</div>
+                    <div className="truncate text-xs text-muted">{p.photo && !inLibrary(p.photo) ? 'Amb la teva foto' : p.texts ? 'Amb text propi' : `Opció ${p.v + 1}`}</div>
                     <div className="truncate text-xs text-muted">{copy ? copy.split('\n')[0] : 'Sense copy'}</div>
                     {p.schedule && <When s={p.schedule} />}
                   </div>
                   <Button size="sm" variant={open === p.id ? 'secondary' : 'ghost'} isIconOnly aria-expanded={open === p.id} aria-label={`Copy del post ${i + 1}`} onPress={() => setOpen(open === p.id ? null : p.id)}><MessageSquareText size={16} /></Button>
                   {insta?.connected && t.kind === 'post' && <Button size="sm" variant="ghost" isIconOnly aria-label={p.schedule ? `Programa o publica el post ${i + 1}` : `Publica o programa el post ${i + 1}`} onPress={() => setPublishing(p)}><Send size={16} /></Button>}
-                  <DownloadButton label={`Descarrega el post ${i + 1}`} run={() => download(t, p.v, p.photo, i + 1)} />
+                  <DownloadButton label={`Descarrega el post ${i + 1}`} run={() => download(t, p.v, p.photo, p.texts, i + 1)} />
                   <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${t.title} del perfil`} onPress={() => order(posts.filter(x => x !== p).map(x => x.id), `${t.title} tret del perfil`)}><X size={16} /></Button>
                 </div>
                 {open === p.id && <CopyPanel post={p} n={i + 1} data={data} setData={setData} posts={all} />}
@@ -294,7 +388,7 @@ function Published({ posts, copies }: { posts: Post[]; copies: Record<string, st
           const t = byId.get(p.tpl)!, copy = copies[p.id];
           return (
             <li key={p.id} className="flex items-center gap-3 p-3 sm:px-5">
-              <Art t={t} v={p.v} photo={p.photo} fit="cover" className="aspect-[3/4] w-11 shrink-0 rounded-md" />
+              <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className="aspect-[3/4] w-11 shrink-0 rounded-md" />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{t.title}</div>
                 <div className="truncate text-xs text-muted">Publicat el {day(p.published!.at)}</div>
@@ -305,7 +399,7 @@ function Published({ posts, copies }: { posts: Post[]; copies: Record<string, st
                   <ExternalLink size={15} />Obre a Instagram
                 </a>
               )}
-              <DownloadButton label={`Descarrega ${t.title}`} run={() => download(t, p.v, p.photo)} />
+              <DownloadButton label={`Descarrega ${t.title}`} run={() => download(t, p.v, p.photo, p.texts)} />
             </li>
           );
         })}
@@ -388,7 +482,7 @@ function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
                 <div className="grid gap-1 sm:grid-cols-2">
                   {list.map(p => {
                     const t = byId.get(p.tpl)!;
-                    const art = <Art t={t} v={p.v} photo={p.photo} fit="cover" className="aspect-[3/4] w-full rounded-md" />;
+                    const art = <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className="aspect-[3/4] w-full rounded-md" />;
                     if (p.published) return p.published.url
                       ? <a key={p.id} href={p.published.url} target="_blank" rel="noopener" title={`${t.title}, publicat`} aria-label={`${t.title}, publicat: obre a Instagram`} className="block rounded-md opacity-60 outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-focus">{art}</a>
                       : <div key={p.id} title={t.title} className="opacity-60">{art}<span className="sr-only">{t.title}</span></div>;
@@ -428,7 +522,7 @@ function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
               return (
                 <li key={p.id} className={`flex items-center gap-3 p-3 sm:px-5 ${drag === p.id ? 'opacity-40' : ''}`}>
                   <div {...dragProps(p)} className="shrink-0 cursor-grab" title={`Arrossega ${t.title} a un dia`}>
-                    <Art t={t} v={p.v} photo={p.photo} fit="cover" className="pointer-events-none aspect-[3/4] w-9 rounded-md" />
+                    <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className="pointer-events-none aspect-[3/4] w-9 rounded-md" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold"><span className="tnum text-muted">{i + 1}</span> {t.title}</div>
@@ -461,7 +555,7 @@ function Publish({ post, n, caption, onClose, setData, later = false }: { post: 
   async function go() {
     setBusy('go');
     try {
-      const image = await uploadPhoto(new File([await png(t, post.v, post.photo)], 'post.png', { type: 'image/png' }));
+      const image = await uploadPhoto(new File([await png(t, post.v, post.photo, post.texts)], 'post.png', { type: 'image/png' }));
       if (mode === 'now') { setData(await api<Data>('instagram', { method: 'POST', body: { id: post.id, image } })); done(`Post ${n} publicat a Instagram`); }
       else { setData(await api<Data>('social', { method: 'PUT', body: { schedule: { id: post.id, at: at.toISOString(), image } } })); done(`El post ${n} ${programmed({ at: at.toISOString(), image })}`); }
       onClose();
@@ -499,7 +593,7 @@ function Publish({ post, n, caption, onClose, setData, later = false }: { post: 
           </div>
         )}
         <div className="grid gap-4 sm:grid-cols-[160px_minmax(0,1fr)]">
-          <Art t={t} v={post.v} photo={post.photo} className="w-40 rounded-xl" />
+          <Art t={t} v={post.v} photo={post.photo} texts={post.texts} className="w-40 rounded-xl" />
           <div className="min-w-0 space-y-2">
             {caption ? <p className="max-h-72 overflow-y-auto text-sm whitespace-pre-wrap">{caption}</p> : <p className="text-sm text-warning">Aquest post encara no té copy: es publicarà sense text.</p>}
             <p className="text-xs text-muted">Un cop publicat, es pot editar o esborrar des de l'app d'Instagram.</p>
@@ -589,7 +683,7 @@ function CopyPanel({ post, n, data, setData, posts }: { post: Post; n: number; d
     setBusy('gen');
     try {
       const used = posts.filter(p => p.id !== post.id && data.copies[p.id]).map(p => data.copies[p.id].split('\n')[0]);
-      const d = await api<{ options: Option[] }>('social-copy', { method: 'POST', body: { title: t.title, onImage: onImage(t, post.v), photo: photoAlt(t, post.v, !!post.photo), n, used } });
+      const d = await api<{ options: Option[] }>('social-copy', { method: 'POST', body: { title: t.title, onImage: onImage(t, post.v, post.texts), photo: photoAlt(t, post.v, post.photo), n, used } });
       written.set(post.id, d.options); setOptions(d.options);
     } catch (e) { toastError(e); setOptions(libraryFor(t)); }
     setBusy('');

@@ -65,6 +65,8 @@ import com.casavellarural.maite.data.CaptionOption
 import com.casavellarural.maite.data.CaptionOptions
 import com.casavellarural.maite.data.Insta
 import com.casavellarural.maite.data.Maite
+import com.casavellarural.maite.data.Made
+import com.casavellarural.maite.data.MadeOptions
 import com.casavellarural.maite.data.Social
 import com.casavellarural.maite.data.SocialPost
 import com.casavellarural.maite.data.TODAY
@@ -131,7 +133,10 @@ fun SocialScreen() {
         val kind = KIND_OF[tab]
         val data = Maite.social
         when {
-            kind != null -> TemplateGrid(cat.templates.filter { it.kind == kind }, data, kind)
+            kind != null -> {
+                if ((kind == "post" || kind == "story") && data?.ai == true) Maker(kind)
+                TemplateGrid(cat.templates.filter { it.kind == kind }, data, kind)
+            }
             tab == "copies" -> Library(cat.copies)
             data == null -> com.casavellarural.maite.ui.Loading()
             tab == "profile" -> Profile(data) { tab = "posts"; lastTab = tab }
@@ -142,9 +147,9 @@ fun SocialScreen() {
 
 /** A template, drawn by the renderer and scaled into its box: to the width, or covering it (grid tiles) */
 @Composable
-fun Art(t: Template, v: Int, photo: String, modifier: Modifier = Modifier, cover: Boolean = false) {
-    var bmp by remember(t.id, v, photo) { mutableStateOf<ImageBitmap?>(null) }
-    LaunchedEffect(t.id, v, photo) { runCatching { Renderer.thumb(t.id, v, photo) }.onSuccess { bmp = it.asImageBitmap() } }
+fun Art(t: Template, v: Int, photo: String, texts: List<String>? = null, modifier: Modifier = Modifier, cover: Boolean = false) {
+    var bmp by remember(t.id, v, photo, texts) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(t.id, v, photo, texts) { runCatching { Renderer.thumb(t.id, v, photo, texts) }.onSuccess { bmp = it.asImageBitmap() } }
     Box(modifier.then(if (cover) Modifier else Modifier.aspectRatio(t.w / t.h.toFloat())).background(Cava)) {
         bmp?.let { Image(it, null, Modifier.matchParentSize(), contentScale = if (cover) ContentScale.Crop else ContentScale.FillWidth) }
     }
@@ -178,7 +183,7 @@ private fun TemplateCard(t: Template, data: Social?, compact: Boolean) {
         if (uri != null) { busy = "photo"; scope.launch { try { own = uploadPhoto(context, uri) } catch (e: Exception) { Toasts.error(e) }; busy = "" } }
     }
     Card(Modifier.fillMaxWidth()) {
-        Art(t, v, own, Modifier.fillMaxWidth())
+        Art(t, v, own, null, Modifier.fillMaxWidth())
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(t.title, style = Type.base, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -188,7 +193,7 @@ private fun TemplateCard(t: Template, data: Social?, compact: Boolean) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (t.variants > 0) Btn(if (compact) "${v + 1}/${t.variants}" else "Una altra opció ${v + 1}/${t.variants}", { v = (v + 1) % t.variants; own = "" }, look = Look.Secondary, icon = R.drawable.ic_shuffle)
                 if (t.photo.isNotEmpty()) Btn(if (compact) "Foto" else if (own.isNotEmpty()) "Una altra foto" else "La teva foto", { pick.launch("image/*") }, look = Look.Secondary, icon = R.drawable.ic_image_up, busy = busy == "photo")
-                IconBtn(R.drawable.ic_download, "Descarrega ${t.title}", { busy = "png"; scope.launch { saveTemplate(context, t, v, own, null); busy = "" } }, busy = busy == "png")
+                IconBtn(R.drawable.ic_download, "Descarrega ${t.title}", { busy = "png"; scope.launch { saveTemplate(context, t, v, own, null, null); busy = "" } }, busy = busy == "png")
                 if (inGrid(t) && data != null) Btn(if (at.isNotEmpty()) "Confirma un altre" else "Confirma", {
                     busy = "confirm"
                     scope.launch {
@@ -205,9 +210,83 @@ private fun TemplateCard(t: Template, data: Social?, compact: Boolean) {
     }
 }
 
+// A post or story from a description: Claude picks the template and the photo and writes the words on it and the caption
+private val made = mutableMapOf<String, List<Made>>()
+
+@Composable
+private fun Maker(kind: String) {
+    val l = LocalLayout.current
+    val scope = rememberCoroutineScope()
+    var prompt by remember(kind) { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var options by remember(kind) { mutableStateOf(made[kind].orEmpty()) }
+    Card(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
+        Field(if (kind == "post") "Què vols publicar" else "Què vols explicar a la story", prompt, { prompt = it }, area = true,
+            placeholder = if (kind == "post") "El sopar de Cap d'Any al restaurant, 31 de desembre, 65 € per persona" else "Aquest cap de setmana encara queda lliure Les Vinyes")
+        Muted("Claude tria la plantilla i la foto, i escriu el text de la imatge" + if (kind == "post") " i el copy." else ".")
+        Btn(if (options.isNotEmpty()) "Altres propostes" else "Proposa", {
+            busy = true
+            scope.launch {
+                try {
+                    val d = Api.post<MadeOptions>("social-make", mapOf("prompt" to prompt, "kind" to kind))
+                    options = d.options.filter { Renderer.byId.containsKey(it.tpl) }; made[kind] = options
+                } catch (e: ApiError) { Toasts.error(e) }
+                busy = false
+            }
+        }, Modifier.padding(top = 10.dp), icon = R.drawable.ic_sparkles, busy = busy, enabled = prompt.isNotBlank())
+    }
+    val per = if (kind == "post") (if (l.wide) 3 else if (l.rail) 2 else 1) else 2
+    options.chunked(per).forEach { row ->
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            row.forEach { o -> Box(Modifier.weight(1f)) { MadeCard(o, compact = per > 1) } }
+            repeat(per - row.size) { Spacer(Modifier.weight(1f)) }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MadeCard(o: Made, compact: Boolean) {
+    val t = Renderer.byId[o.tpl] ?: return
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val caption = joinCopy(CaptionOption(o.caption, o.hashtags))
+    var own by remember(o) { mutableStateOf("") }
+    var busy by remember(o) { mutableStateOf("") }
+    var kept by remember(o) { mutableStateOf(0) }
+    val photo = own.ifEmpty { o.photo }
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) { busy = "photo"; scope.launch { try { own = uploadPhoto(context, uri) } catch (e: Exception) { Toasts.error(e) }; busy = "" } }
+    }
+    Card(Modifier.fillMaxWidth()) {
+        Art(t, 0, photo, o.texts, Modifier.fillMaxWidth())
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(t.title, style = Type.base, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (kept > 0) Tag("Post $kept del perfil", Tone.Paid)
+            if (inGrid(t)) Text(caption, style = Type.sm, maxLines = if (compact) 6 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (t.photo.isNotEmpty()) Btn(if (compact) "Foto" else if (own.isNotEmpty()) "Una altra foto" else "La teva foto", { pick.launch("image/*") }, look = Look.Secondary, icon = R.drawable.ic_image_up, busy = busy == "photo")
+                IconBtn(R.drawable.ic_download, "Descarrega ${t.title}", { busy = "png"; scope.launch { saveTemplate(context, t, 0, photo, o.texts, null); busy = "" } }, busy = busy == "png")
+                if (inGrid(t) && kept == 0) Btn("Confirma", {
+                    busy = "confirm"
+                    scope.launch {
+                        try {
+                            val d = Api.post<Social>("social", mapOf("tpl" to t.id, "v" to 0, "photo" to photo, "texts" to o.texts, "copy" to caption))
+                            Maite.social = d
+                            kept = d.posts.filter { it.published == null }.indexOf(d.posts.last()) + 1
+                            Toasts.done("${t.title}: post $kept del perfil")
+                        } catch (e: ApiError) { Toasts.error(e) }
+                        busy = ""
+                    }
+                }, icon = R.drawable.ic_plus, busy = busy == "confirm")
+            }
+        }
+    }
+}
+
 /** Saves the full-size PNG to the phone's Pictures/Maite folder */
-suspend fun saveTemplate(context: Context, t: Template, v: Int, photo: String, n: Int?): Boolean = try {
-    val bmp = Renderer.full(t.id, v, photo)
+suspend fun saveTemplate(context: Context, t: Template, v: Int, photo: String, texts: List<String>?, n: Int?): Boolean = try {
+    val bmp = Renderer.full(t.id, v, photo, texts)
     val name = (if (n != null) "%02d-".format(n) else "la-casa-vella-") + slug(t.title) + ".png"
     withContext(Dispatchers.IO) { saveBitmap(context, bmp, name) }
     Toasts.done("Desat a Imatges, Maite")
@@ -265,7 +344,7 @@ private fun Profile(data: Social, onEmpty: () -> Unit) {
                 row.forEach { tile ->
                     Box(Modifier.weight(1f).aspectRatio(3 / 4f).padding(bottom = 2.dp)) {
                         if (tile is SocialPost) {
-                            Art(byId.getValue(tile.tpl), tile.v, tile.photo, Modifier.matchParentSize(), cover = true)
+                            Art(byId.getValue(tile.tpl), tile.v, tile.photo, tile.texts, Modifier.matchParentSize(), cover = true)
                             Text("${posts.indexOf(tile) + 1}", style = Type.xs, fontWeight = FontWeight.SemiBold, color = Color(0xFFF3EFE4),
                                 modifier = Modifier.padding(5.dp).clip(CircleShape).background(Color(0xD91A3F20)).padding(horizontal = 6.dp, vertical = 1.dp))
                             tile.schedule?.let { s ->
@@ -294,7 +373,7 @@ private fun Profile(data: Social, onEmpty: () -> Unit) {
             Btn(if (progress.isNotEmpty()) "Descarregant $progress" else "Descarrega la graella", {
                 scope.launch {
                     var ok = 0
-                    for ((i, p) in posts.withIndex()) { progress = "${i + 1} de ${posts.size}"; if (saveTemplate(context, byId.getValue(p.tpl), p.v, p.photo, i + 1)) ok++ else break }
+                    for ((i, p) in posts.withIndex()) { progress = "${i + 1} de ${posts.size}"; if (saveTemplate(context, byId.getValue(p.tpl), p.v, p.photo, p.texts, i + 1)) ok++ else break }
                     progress = ""
                     if (ok > 0) Toasts.done(if (ok == 1) "1 post descarregat" else "$ok posts descarregats")
                 }
@@ -310,11 +389,11 @@ private fun Profile(data: Social, onEmpty: () -> Unit) {
                         if (to != i) order(posts.map { it.id }.toMutableList().also { it.remove(p.id); it.add(to, p.id) }, "${t.title} ara és el post ${to + 1}")
                     }, Modifier.width(76.dp))
                     Spacer(Modifier.width(10.dp))
-                    Art(t, p.v, p.photo, Modifier.width(40.dp).aspectRatio(3 / 4f).clip(RoundedCornerShape(6.dp)), cover = true)
+                    Art(t, p.v, p.photo, p.texts, Modifier.width(40.dp).aspectRatio(3 / 4f).clip(RoundedCornerShape(6.dp)), cover = true)
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
                         Text(t.title, style = Type.sm, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(if (p.photo.isNotEmpty()) "Amb la teva foto" else "Opció ${p.v + 1}", style = Type.xs, color = T.muted)
+                        Text(if (p.photo.isNotEmpty() && !p.photo.startsWith("/maite/social/")) "Amb la teva foto" else if (p.texts != null) "Amb text propi" else "Opció ${p.v + 1}", style = Type.xs, color = T.muted)
                         Text(copy?.lineSequence()?.first() ?: "Sense copy", style = Type.xs, color = T.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         p.schedule?.let { When(it) }
                     }
@@ -323,7 +402,7 @@ private fun Profile(data: Social, onEmpty: () -> Unit) {
                     IconBtn(R.drawable.ic_message_square_text, "Copy del post ${i + 1}", { open = if (open == p.id) null else p.id }, on = open == p.id)
                     if (insta?.connected == true && t.kind == "post") IconBtn(if (p.schedule != null) R.drawable.ic_clock else R.drawable.ic_send, "Publica o programa el post ${i + 1}", { publishing = p }, on = p.schedule != null)
                     var dl by remember { mutableStateOf(false) }
-                    IconBtn(R.drawable.ic_download, "Descarrega el post ${i + 1}", { dl = true; scope.launch { saveTemplate(context, t, p.v, p.photo, i + 1); dl = false } }, busy = dl)
+                    IconBtn(R.drawable.ic_download, "Descarrega el post ${i + 1}", { dl = true; scope.launch { saveTemplate(context, t, p.v, p.photo, p.texts, i + 1); dl = false } }, busy = dl)
                     IconBtn(R.drawable.ic_x, "Treu ${t.title} del perfil", { order(posts.filter { it != p }.map { it.id }, "${t.title} tret del perfil") })
                 }
                 if (open == p.id) CopyPanel(p, i + 1, data, all)
@@ -350,7 +429,7 @@ private fun Published(posts: List<SocialPost>, copies: Map<String, String>) {
             val t = Renderer.byId.getValue(p.tpl)
             if (i > 0) Divider()
             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Art(t, p.v, p.photo, Modifier.width(40.dp).aspectRatio(3 / 4f).clip(RoundedCornerShape(6.dp)), cover = true)
+                Art(t, p.v, p.photo, p.texts, Modifier.width(40.dp).aspectRatio(3 / 4f).clip(RoundedCornerShape(6.dp)), cover = true)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(t.title, style = Type.sm, fontWeight = FontWeight.SemiBold)
@@ -358,7 +437,7 @@ private fun Published(posts: List<SocialPost>, copies: Map<String, String>) {
                     Text(copies[p.id]?.lineSequence()?.first() ?: "Sense copy", style = Type.xs, color = T.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 if (p.published!!.url.isNotEmpty()) IconBtn(R.drawable.ic_external_link, "Obre a Instagram", { open(context, p.published.url) })
-                IconBtn(R.drawable.ic_download, "Descarrega ${t.title}", { scope.launch { saveTemplate(context, t, p.v, p.photo, null) } })
+                IconBtn(R.drawable.ic_download, "Descarrega ${t.title}", { scope.launch { saveTemplate(context, t, p.v, p.photo, p.texts, null) } })
             }
         }
     }
@@ -390,7 +469,7 @@ private fun CopyPanel(post: SocialPost, n: Int, data: Social, posts: List<Social
             busy = "gen"
             scope.launch {
                 try {
-                    val (onImage, photo) = Renderer.words(t.id, post.v, post.photo.isNotEmpty())
+                    val (onImage, photo) = Renderer.words(t.id, post.v, post.photo, post.texts)
                     val used = posts.filter { it.id != post.id && data.copies[it.id] != null }.map { data.copies.getValue(it.id).lineSequence().first() }
                     val d = Api.post<CaptionOptions>("social-copy", mapOf("title" to t.title, "onImage" to onImage, "photo" to photo, "n" to n, "used" to used))
                     written[post.id] = d.options; options = d.options
@@ -464,7 +543,7 @@ private fun Publish(post: SocialPost, n: Int, caption: String, onClose: () -> Un
                     style = Type.xs, color = if (past) T.warningText else T.muted, modifier = Modifier.padding(top = 6.dp))
             }
             Row(Modifier.padding(top = 14.dp)) {
-                Art(t, post.v, post.photo, Modifier.width(120.dp).clip(RoundedCornerShape(12.dp)))
+                Art(t, post.v, post.photo, post.texts, Modifier.width(120.dp).clip(RoundedCornerShape(12.dp)))
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     if (caption.isNotEmpty()) Text(caption, style = Type.sm, maxLines = 12, overflow = TextOverflow.Ellipsis)
@@ -488,7 +567,7 @@ private fun Publish(post: SocialPost, n: Int, caption: String, onClose: () -> Un
                     busy = "go"
                     scope.launch {
                         try {
-                            val big = Renderer.full(t.id, post.v, post.photo)
+                            val big = Renderer.full(t.id, post.v, post.photo, post.texts)
                             val image = uploadJpeg(withContext(Dispatchers.Default) { jpeg(big, 1440, 92) })
                             if (mode == "now") {
                                 Maite.social = Api.post<Social>("instagram", mapOf("id" to post.id, "image" to image))
@@ -551,7 +630,7 @@ private fun Planner(data: Social, onEmpty: () -> Unit) {
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.padding(top = 2.dp)) {
                             on(key).take(2).forEach { p ->
-                                Art(byId.getValue(p.tpl), p.v, p.photo, Modifier.weight(1f).aspectRatio(3 / 4f).clip(RoundedCornerShape(4.dp)).alpha(if (p.published != null) 0.6f else 1f)
+                                Art(byId.getValue(p.tpl), p.v, p.photo, p.texts, Modifier.weight(1f).aspectRatio(3 / 4f).clip(RoundedCornerShape(4.dp)).alpha(if (p.published != null) 0.6f else 1f)
                                     .clickable(enabled = p.published?.url?.isNotEmpty() == true) { open(context, p.published!!.url) }, cover = true)
                             }
                             liveOn(key).take(2).forEach { m ->
@@ -573,7 +652,7 @@ private fun Planner(data: Social, onEmpty: () -> Unit) {
             val t = byId.getValue(p.tpl)
             Divider()
             Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Art(t, p.v, p.photo, Modifier.width(36.dp).aspectRatio(3 / 4f).clip(RoundedCornerShape(6.dp)), cover = true)
+                Art(t, p.v, p.photo, p.texts, Modifier.width(36.dp).aspectRatio(3 / 4f).clip(RoundedCornerShape(6.dp)), cover = true)
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text("${i + 1}  ${t.title}", style = Type.sm, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)

@@ -22,6 +22,10 @@ object Maite {
     var error by mutableStateOf("")
     var content by mutableStateOf<Content?>(null)
     var social by mutableStateOf<Social?>(null)
+    /** The restaurant's tables, loaded by date windows and merged by id (lib/tables.ts) */
+    var tables by mutableStateOf<Map<String, Table>>(emptyMap())
+    var tablesConfigured by mutableStateOf(true)
+    private val tablesLoaded = mutableListOf<Pair<String, String>>()
 
     private val loaded = mutableListOf<Pair<String, String>>()
     private var extra: Pair<String, String>? = null
@@ -68,6 +72,15 @@ object Maite {
     fun refresh() { scope.launch { reload() } }
 
     fun setBooking(b: Booking) { bookings = bookings + (b.key to b) }
+    suspend fun ensureTables(from: String, to: String) {
+        if (tablesLoaded.any { (a, b) -> a <= from && b >= to }) return
+        tablesLoaded += from to to
+        try {
+            val d = Api.get<TablesResponse>("restaurant?from=$from&to=$to")
+            tables = tables.filterValues { it.date < from || it.date >= to } + d.tables.associateBy { it.id }; tablesConfigured = d.configured
+        } catch (e: ApiError) { tablesLoaded.remove(from to to); throw e }
+    }
+    fun setTable(t: Table) { tables = tables + (t.id to t) }
     suspend fun loadContent(): Content { content?.let { return it }; return Api.get<Content>("stays").also { content = it } }
     suspend fun loadSocial(): Social = Api.get<Social>("social").also { social = it }
 }

@@ -49,6 +49,8 @@ data class Table(
     val id: String, val date: String, val time: String = "", val people: Int? = null, val name: String = "", val phone: String = "",
     val email: String = "", val notes: String = "", val source: String = "", val lang: String = "",
     val cancelled: Boolean = false, val link: String = "",
+    /** Cents the table paid, noted in Maite after the meal */
+    val paid: Long? = null,
 )
 
 @Serializable

@@ -14,6 +14,7 @@ export interface RestaurantSettings { online: boolean; maxParty: number; minHour
 export interface Table {
   id: string; date: string; time: string; people: number | null; name: string; phone: string; email: string; notes: string;
   source: string; lang: string; cancelled: boolean; link: string;
+  paid: number | null; // cents, noted in Maite after the meal
 }
 export interface Settings {
   stays: Record<string, { base: number; weekend: number | null }>;

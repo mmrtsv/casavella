@@ -31,7 +31,7 @@ object Fake {
     private fun t(id: String, day: Int, time: String, people: Int, name: String, extra: String = "") =
         """{"id":"$id","date":"${d(day)}","time":"$time","people":$people,"name":"$name"$extra}"""
     val tables = listOf(
-        t("t1", 0, "13:30", 4, "Montse Bosch", ""","phone":"+34 646 20 18 77","notes":"Un dels nens és celíac.","source":"web""""),
+        t("t1", 0, "13:30", 4, "Montse Bosch", ""","phone":"+34 646 20 18 77","notes":"Un dels nens és celíac.","source":"web","paid":9250"""),
         t("t2", 0, "14:00", 2, "Xavier Soler", ""","phone":"+34 677 81 30 02","source":"phone""""),
         t("t3", 0, "21:00", 6, "Família Roca", ""","phone":"+34 619 55 41 90","notes":"Aniversari, porten pastís.","source":"whatsapp""""),
         t("t4", 2, "13:00", 3, "Gemma Puig", ""","source":"web""""),

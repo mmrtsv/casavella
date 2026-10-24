@@ -1,11 +1,12 @@
-// Restaurant: the tables booked for a day (web and phone), a new one, cancelling, and the openings (a day and a time each),
-// seats and limits the web follows
+// Restaurant: the tables booked for a day (web and phone), a new one, cancelling, what each table paid by day,
+// and the openings (a day and a time each), seats and limits the web follows
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Spinner, Tabs } from '@heroui/react';
 import { ChevronLeft, ChevronRight, Phone, Plus, Trash2 } from 'lucide-react';
 import { api } from '../lib/api';
-import { addDays, cap, day, longDay, TODAY } from '../lib/dates';
+import { addDays, cap, day, euro, iso, longDay, parse, TODAY } from '../lib/dates';
 import { setSettings, useStore } from '../lib/store';
+import { atOf, putTable, seated, useTables } from '../lib/tables';
 import { useGuard } from '../lib/guard';
 import { SOURCE } from '../lib/words';
 import { Dialog } from '../parts/Sheet';
@@ -13,11 +14,9 @@ import { Check, Choice, Field } from '../parts/fields';
 import { done, toastError } from '../parts/toast';
 import type { RestaurantSettings, Settings, Table } from '../lib/types';
 
-type Tab = 'tables' | 'open';
+type Tab = 'tables' | 'paid' | 'open';
 const SOURCES = [{ id: 'phone', name: 'Telèfon' }, { id: 'whatsapp', name: 'WhatsApp' }, { id: 'email', name: 'Correu' }, { id: 'door', name: 'En persona' }, { id: 'other', name: 'Altres' }];
 const persones = (n: number) => `${n} ${n === 1 ? 'persona' : 'persones'}`;
-const atOf = (t: Table) => `${t.date}T${t.time}`;
-const seated = (list: Table[]) => list.reduce((n, t) => n + (t.people || 0), 0);
 // '2026-12-31T21:00' as "Dijous, 31 de desembre, 21:00"
 const atLabel = (at: string) => `${cap(longDay(at.slice(0, 10)))}, ${at.slice(11)}`;
 
@@ -28,10 +27,11 @@ export default function Restaurant() {
       <Tabs selectedKey={tab} onSelectionChange={k => setTab(k as Tab)} className="mb-5">
         <Tabs.ListContainer><Tabs.List aria-label="Restaurant" className="w-fit">
           <Tabs.Tab id="tables">Taules<Tabs.Indicator /></Tabs.Tab>
+          <Tabs.Tab id="paid">Cobrat<Tabs.Indicator /></Tabs.Tab>
           <Tabs.Tab id="open">Dies oberts<Tabs.Indicator /></Tabs.Tab>
         </Tabs.List></Tabs.ListContainer>
       </Tabs>
-      {tab === 'tables' ? <Tables /> : <Openings />}
+      {tab === 'tables' ? <Tables /> : tab === 'paid' ? <Paid /> : <Openings />}
     </div>
   );
 }
@@ -40,23 +40,10 @@ export default function Restaurant() {
 function Tables() {
   const R = useStore(s => s.settings)!.restaurant;
   const [date, setDate] = useState(() => R.open.find(a => a.slice(0, 10) >= TODAY)?.slice(0, 10) || TODAY);
-  const [tables, setTables] = useState<Map<string, Table>>(new Map());
-  const [loaded, setLoaded] = useState<[string, string][]>([]);
-  const [configured, setConfigured] = useState(true);
-  const [error, setError] = useState('');
+  const { tables, configured, error } = useTables(addDays(date, -7), addDays(date, 90));
   const [adding, setAdding] = useState(false);
   const [cancel, setCancel] = useState<Table | null>(null);
-
-  // Loads a window around the day shown, once
-  useEffect(() => {
-    if (loaded.some(([a, b]) => a <= date && b > date)) return;
-    const from = addDays(date, -7), to = addDays(date, 90);
-    setLoaded(l => [...l, [from, to]]);
-    api<{ configured: boolean; tables: Table[] }>(`restaurant?from=${from}&to=${to}`)
-      .then(d => { setConfigured(d.configured); setTables(m => { const n = new Map(m); d.tables.forEach(t => n.set(t.id, t)); return n; }); setError(''); })
-      .catch(e => { setError((e as Error).message); setLoaded(l => l.filter(([a]) => a !== from)); });
-  }, [date]);
-  const put = (t: Table) => setTables(m => new Map(m).set(t.id, t));
+  const put = putTable;
 
   const all = useMemo(() => [...tables.values()].sort((a, b) => atOf(a).localeCompare(atOf(b))), [tables]);
   const ofDay = all.filter(t => t.date === date), live = ofDay.filter(t => !t.cancelled);
@@ -139,6 +126,7 @@ function Row({ t, onCancel }: { t: Table; onCancel?: () => void }) {
         {t.phone && <a href={`tel:${t.phone.replace(/\s/g, '')}`} className="mt-0.5 inline-flex items-center gap-1.5 text-muted hover:text-foreground"><Phone size={13} aria-hidden="true" />{t.phone}</a>}
         {t.notes && <p className="mt-1 whitespace-pre-line">{t.notes}</p>}
         <div className="mt-1 text-xs text-muted">{SOURCE[t.source] || 'Maite'}</div>
+        {t.paid != null && <div className="text-xs text-muted">Ha pagat {euro(t.paid)}</div>}
       </div>
       {onCancel && t.source !== 'calendar' && <Button variant="ghost" size="sm" onPress={onCancel}>Cancel·la</Button>}
     </div>
@@ -193,6 +181,102 @@ function CancelTable({ t, onClose, onSaved }: { t: Table | null; onClose: () => 
       footer={<><Button variant="ghost" onPress={onClose}>No</Button><Button variant="danger" isPending={busy} onPress={submit}>{busy && <Spinner size="sm" color="current" />}Cancel·la la taula</Button></>}>
       <p className="text-sm">Queda al calendari com a cancel·lada i les places tornen a quedar lliures. L'hoste no rep cap correu: avisa'l si cal.</p>
     </Dialog>
+  );
+}
+
+// ---------- What each table paid, by day ----------
+const WEEK = ['dl', 'dt', 'dc', 'dj', 'dv', 'ds', 'dg'];
+const total = (list: Table[]) => list.reduce((n, t) => n + (t.paid || 0), 0);
+
+function Paid() {
+  const R = useStore(s => s.settings)!.restaurant;
+  const [month, setMonth] = useState(TODAY.slice(0, 8) + '01');
+  const m = parse(month), end = iso(new Date(m.getFullYear(), m.getMonth() + 1, 1));
+  const { tables } = useTables(month, end);
+  const live = useMemo(() => [...tables.values()].filter(t => !t.cancelled && t.date >= month && t.date < end), [tables, month, end]);
+  const byDay = (d: string) => live.filter(t => t.date === d).sort((a, b) => atOf(a).localeCompare(atOf(b)));
+  const firstWithTables = live.map(t => t.date).sort()[0];
+  const [sel, setSel] = useState<string>(TODAY);
+  useEffect(() => { if (sel < month || sel >= end) setSel(month <= TODAY && TODAY < end ? TODAY : firstWithTables || month); }, [month, firstWithTables]);
+  const days = Array.from({ length: Math.round((parse(end).getTime() - m.getTime()) / 864e5) }, (_, i) => addDays(month, i));
+  const lead = (m.getDay() + 6) % 7;
+  const missing = live.filter(t => t.paid == null && t.date <= TODAY).length;
+  const shift = (n: number) => setMonth(iso(new Date(m.getFullYear(), m.getMonth() + n, 1)));
+  return (
+    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <section className="card p-4 sm:p-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button isIconOnly variant="ghost" size="sm" aria-label="Mes anterior" onPress={() => shift(-1)}><ChevronLeft size={18} /></Button>
+          <Button isIconOnly variant="ghost" size="sm" aria-label="Mes següent" onPress={() => shift(1)}><ChevronRight size={18} /></Button>
+          <h2 className="mr-auto text-lg font-semibold tracking-tight">{cap(m.toLocaleDateString('ca-ES', { month: 'long', year: 'numeric' }))}</h2>
+          <div className="text-right">
+            <div className="text-xs text-muted">Cobrat al mes</div>
+            <div className="text-lg font-semibold tnum">{euro(total(live)) || '0 €'}</div>
+          </div>
+        </div>
+        {missing > 0 && <p className="mt-3 text-sm text-warning">{missing === 1 ? '1 taula ja servida no té import.' : `${missing} taules ja servides no tenen import.`}</p>}
+        <div className="mt-4 grid grid-cols-7 gap-1 text-center text-xs text-muted">{WEEK.map(w => <div key={w} className="py-1">{w}</div>)}</div>
+        <div className="grid grid-cols-7 gap-1">
+          {Array.from({ length: lead }, (_, i) => <div key={'x' + i} />)}
+          {days.map(d => {
+            const list = byDay(d), open = R.open.some(a => a.slice(0, 10) === d), owed = list.some(t => t.paid == null) && d <= TODAY;
+            return (
+              <button key={d} type="button" onClick={() => setSel(d)} aria-pressed={d === sel}
+                className={`flex h-16 flex-col items-start justify-between rounded-xl p-1.5 text-left text-xs outline-none ring-1 transition-colors focus-visible:ring-2 focus-visible:ring-focus sm:h-20 sm:p-2
+                  ${d === sel ? 'bg-accent/15 ring-accent' : list.length || open ? 'bg-default/60 ring-transparent hover:bg-default' : 'ring-transparent hover:bg-default/40'}`}>
+                <span className={`tnum ${d === TODAY ? 'font-bold text-accent' : 'text-muted'}`}>{parse(d).getDate()}</span>
+                {list.length > 0 && (d <= TODAY || list.some(t => t.paid != null)) && <span className={`w-full truncate font-semibold tnum ${owed ? 'text-warning' : ''}`}>{euro(total(list)) || '0 €'}</span>}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+      <PaidDay date={sel} list={byDay(sel)} />
+    </div>
+  );
+}
+
+// The day's tables, each with what it paid; amounts are in euros and saved one table at a time
+function PaidDay({ date, list }: { date: string; list: Table[] }) {
+  const [edit, setEdit] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState('');
+  useEffect(() => { setEdit({}); }, [date]);
+  const shown = (t: Table) => t.paid == null ? '' : String(t.paid / 100).replace('.', ',');
+  const value = (t: Table) => edit[t.id] ?? shown(t);
+  const save = async (t: Table) => {
+    const v = value(t).trim().replace(',', '.');
+    if (v !== '' && !(Number(v) >= 0)) return toastError(new Error("L'import no és vàlid"));
+    setBusy(t.id);
+    try {
+      const d = await api<{ table: Table }>('restaurant', { method: 'PATCH', body: { id: t.id, paid: v === '' ? null : Math.round(Number(v) * 100) } });
+      putTable(d.table); setEdit(e => { const n = { ...e }; delete n[t.id]; return n; }); done('Import desat');
+    } catch (e) { toastError(e); }
+    setBusy('');
+  };
+  return (
+    <section className="card p-4 sm:p-5 lg:sticky lg:top-24">
+      <div className="flex items-baseline gap-3">
+        <h2 className="flex-1 text-base font-semibold">{cap(longDay(date))}</h2>
+        {list.length > 0 && <span className="text-base font-semibold tnum">{euro(total(list)) || '0 €'}</span>}
+      </div>
+      {list.length ? (
+        <ul className="mt-2">
+          {list.map(t => {
+            const dirty = edit[t.id] !== undefined && value(t) !== shown(t);
+            return (
+              <li key={t.id} className="grid grid-cols-[minmax(0,1fr)_7rem_auto] items-end gap-2 border-b border-separator py-3">
+                <div className="min-w-0 text-sm">
+                  <div className="truncate font-medium">{t.name || 'Sense nom'}</div>
+                  <div className="text-xs text-muted tnum">{t.time}{t.people ? `, ${persones(t.people)}` : ''}</div>
+                </div>
+                <Field label="Ha pagat (€)" value={value(t)} onChange={v => setEdit(e => ({ ...e, [t.id]: v }))} inputMode="decimal" placeholder="0" />
+                <Button size="sm" variant={dirty ? 'primary' : 'secondary'} isDisabled={!dirty} isPending={busy === t.id} onPress={() => save(t)}>{busy === t.id && <Spinner size="sm" color="current" />}Desa</Button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : <p className="mt-2 text-sm text-muted">Cap taula aquest dia.</p>}
+    </section>
   );
 }
 

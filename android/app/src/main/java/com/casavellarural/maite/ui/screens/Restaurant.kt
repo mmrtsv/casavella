@@ -48,6 +48,9 @@ import com.casavellarural.maite.data.TablesResponse
 import com.casavellarural.maite.data.addDays
 import com.casavellarural.maite.data.cap
 import com.casavellarural.maite.data.day
+import com.casavellarural.maite.data.euro
+import com.casavellarural.maite.data.parse
+import com.casavellarural.maite.data.monthTitle
 import com.casavellarural.maite.data.json
 import com.casavellarural.maite.data.longDay
 import com.casavellarural.maite.ui.Btn
@@ -71,8 +74,8 @@ import kotlinx.coroutines.launch
 // Restaurant: the tables booked for a day (web and phone), a new one, cancelling, and the openings (a day and a time each),
 // seats and limits the web follows. Like maite-app/src/pages/Restaurant.tsx.
 
-private fun atOf(t: Table) = "${t.date}T${t.time}"
-private fun seated(list: List<Table>) = list.sumOf { it.people ?: 0 }
+fun atOf(t: Table) = "${t.date}T${t.time}"
+fun seated(list: List<Table>) = list.sumOf { it.people ?: 0 }
 /** "2026-12-31T21:00" as "Dijous, 31 de desembre, 21:00" */
 private fun atLabel(at: String) = "${cap(longDay(at.take(10)))}, ${at.drop(11)}"
 
@@ -81,8 +84,8 @@ fun Restaurant() {
     val S = Maite.settings ?: return LoadingPage()
     var tab by remember { mutableStateOf("tables") }
     Page {
-        Tabs(listOf("tables" to "Taules", "open" to "Dies oberts"), tab, { tab = it })
-        if (tab == "tables") Tables(S.restaurant) else Openings(S.restaurant)
+        Tabs(listOf("tables" to "Taules", "paid" to "Cobrat", "open" to "Dies oberts"), tab, { tab = it })
+        when (tab) { "tables" -> Tables(S.restaurant); "paid" -> Paid(S.restaurant); else -> Openings(S.restaurant) }
     }
 }
 
@@ -90,27 +93,19 @@ fun Restaurant() {
 @Composable
 private fun Tables(cfg: RestaurantSettings) {
     var date by remember { mutableStateOf(cfg.open.firstOrNull { it.take(10) >= TODAY }?.take(10) ?: TODAY) }
-    var tables by remember { mutableStateOf<Map<String, Table>>(emptyMap()) }
-    var loaded by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
-    var configured by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf("") }
     var adding by remember { mutableStateOf(false) }
     var cancel by remember { mutableStateOf<Table?>(null) }
     // Loads a window around the day shown, once
     LaunchedEffect(date) {
-        if (loaded.any { (a, b) -> a <= date && b > date }) return@LaunchedEffect
-        val from = addDays(date, -7); val to = addDays(date, 90)
-        loaded = loaded + (from to to)
-        try {
-            val d = Api.get<TablesResponse>("restaurant?from=$from&to=$to")
-            configured = d.configured; tables = tables + d.tables.associateBy { it.id }; error = ""
-        } catch (e: ApiError) { error = e.message.orEmpty(); loaded = loaded.filter { it.first != from } }
+        try { Maite.ensureTables(addDays(date, -7), addDays(date, 90)); error = "" } catch (e: ApiError) { error = e.message.orEmpty() }
     }
+    val tables = Maite.tables; val configured = Maite.tablesConfigured
     val all = tables.values.sortedBy { atOf(it) }
     val ofDay = all.filter { it.date == date }; val live = ofDay.filter { !it.cancelled }
     val opens = cfg.open.filter { it.take(10) == date }
     val rest = live.filter { atOf(it) !in opens }
-    val put = { t: Table -> tables = tables + (t.id to t) }
+    val put = { t: Table -> Maite.setTable(t) }
 
     Card(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -178,6 +173,7 @@ private fun TableRow(t: Table, onCancel: (() -> Unit)?) {
             }
             if (t.notes.isNotEmpty()) Text(t.notes, style = Type.sm, modifier = Modifier.padding(top = 2.dp))
             Text(SOURCE[t.source] ?: "Maite", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 2.dp))
+            if (t.paid != null) Text("Ha pagat ${euro(t.paid)}", style = Type.xs, color = T.muted)
         }
         if (onCancel != null && t.source != "calendar") Btn("Cancel·la", onCancel, look = Look.Ghost)
     }
@@ -244,6 +240,101 @@ private fun CancelTable(t: Table, onClose: () -> Unit, onSaved: (Table) -> Unit)
         }, look = Look.Danger, busy = busy, small = false)
     }) {
         Text("Queda al calendari com a cancel·lada i les places tornen a quedar lliures. L'hoste no rep cap correu: avisa'l si cal.", style = Type.sm)
+    }
+}
+
+// ---------- What each table paid, by day ----------
+private val WEEK = listOf("dl", "dt", "dc", "dj", "dv", "ds", "dg")
+private fun total(list: List<Table>) = list.sumOf { it.paid ?: 0L }
+
+@Composable
+private fun Paid(cfg: RestaurantSettings) {
+    var month by remember { mutableStateOf(TODAY.take(8) + "01") }
+    val m = parse(month); val end = m.plusMonths(1).toString()
+    var error by remember { mutableStateOf("") }
+    LaunchedEffect(month) { try { Maite.ensureTables(month, end); error = "" } catch (e: ApiError) { error = e.message.orEmpty() } }
+    val live = Maite.tables.values.filter { !it.cancelled && it.date >= month && it.date < end }
+    fun byDay(d: String) = live.filter { it.date == d }.sortedBy { atOf(it) }
+    var sel by remember { mutableStateOf(TODAY) }
+    LaunchedEffect(month, live.size) { if (sel < month || sel >= end) sel = if (TODAY >= month && TODAY < end) TODAY else live.minOfOrNull { it.date } ?: month }
+    val missing = live.count { it.paid == null && it.date <= TODAY }
+    val days = (0 until m.lengthOfMonth()).map { addDays(month, it) }
+
+    Card(Modifier.fillMaxWidth(), padding = PaddingValues(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconBtn(R.drawable.ic_chevron_left, "Mes anterior", { month = m.minusMonths(1).toString() })
+            IconBtn(R.drawable.ic_chevron_right, "Mes següent", { month = m.plusMonths(1).toString() })
+            Text(monthTitle(month), style = Type.lg, modifier = Modifier.weight(1f).padding(start = 4.dp))
+            Column(horizontalAlignment = Alignment.End) {
+                Text("Cobrat al mes", style = Type.xs, color = T.muted)
+                Text(euro(total(live)).ifEmpty { "0 €" }, style = Type.base, fontWeight = FontWeight.SemiBold)
+            }
+        }
+        ErrorNote(error)
+        if (missing > 0) Text(if (missing == 1) "1 taula ja servida no té import." else "$missing taules ja servides no tenen import.", style = Type.sm, color = T.warningText, modifier = Modifier.padding(top = 8.dp))
+        Row(Modifier.padding(top = 8.dp)) { WEEK.forEach { Text(it, style = Type.xs, color = T.muted, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center) } }
+        (List(m.dayOfWeek.value - 1) { null } + days).chunked(7).forEach { week ->
+            Row(Modifier.padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                (0 until 7).forEach { i ->
+                    val d = week.getOrNull(i)
+                    Box(Modifier.weight(1f)) {
+                        if (d != null) {
+                            val list = byDay(d); val open = cfg.open.any { it.take(10) == d }; val owed = list.any { it.paid == null } && d <= TODAY
+                            Column(
+                                Modifier.fillMaxWidth().height(54.dp).clip(RoundedCornerShape(10.dp))
+                                    .background(when { d == sel -> T.accent.copy(alpha = 0.18f); list.isNotEmpty() || open -> T.default.copy(alpha = 0.7f); else -> T.surface.copy(alpha = 0f) })
+                                    .clickable { sel = d }.padding(4.dp),
+                                verticalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text("${parse(d).dayOfMonth}", style = Type.xs, color = if (d == TODAY) T.accent else T.muted, fontWeight = if (d == TODAY) FontWeight.Bold else FontWeight.Normal)
+                                if (list.isNotEmpty() && (d <= TODAY || list.any { it.paid != null }))
+                                    Text(euro(total(list)).ifEmpty { "0 €" }, style = Type.xs, fontWeight = FontWeight.SemiBold, color = if (owed) T.warningText else T.foreground, maxLines = 1)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    PaidDay(sel, byDay(sel))
+}
+
+/** The day's tables, each with what it paid; amounts in euros, saved one table at a time */
+@Composable
+private fun PaidDay(date: String, list: List<Table>) {
+    var edit by remember(date) { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var busy by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    fun shown(t: Table) = t.paid?.let { (it / 100.0).let { v -> if (v == Math.floor(v)) v.toLong().toString() else v.toString() }.replace('.', ',') } ?: ""
+    Card(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(cap(longDay(date)), style = Type.base, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            if (list.isNotEmpty()) Text(euro(total(list)).ifEmpty { "0 €" }, style = Type.base, fontWeight = FontWeight.SemiBold)
+        }
+        if (list.isEmpty()) Muted("Cap taula aquest dia.", Modifier.padding(top = 6.dp))
+        list.forEach { t ->
+            val value = edit[t.id] ?: shown(t); val dirty = edit[t.id] != null && value != shown(t)
+            Divider()
+            Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Text(t.name.ifEmpty { "Sense nom" }, style = Type.sm, fontWeight = FontWeight.Medium, maxLines = 1)
+                    Text(t.time + (t.people?.let { ", ${persones(it)}" } ?: ""), style = Type.xs, color = T.muted)
+                }
+                Field("Ha pagat (€)", value, { v -> edit = edit + (t.id to v) }, Modifier.width(110.dp), type = KeyboardType.Decimal, placeholder = "0")
+                Btn("Desa", {
+                    val v = value.trim().replace(',', '.')
+                    if (v.isNotEmpty() && (v.toDoubleOrNull() ?: -1.0) < 0) { Toasts.error("L'import no és vàlid"); return@Btn }
+                    busy = t.id
+                    scope.launch {
+                        try {
+                            val d = json.decodeFromString(TableResponse.serializer(), Api.raw("PATCH", "restaurant", Api.encode(mapOf("id" to t.id, "paid" to (if (v.isEmpty()) null else Math.round(v.toDouble() * 100))))))
+                            Maite.setTable(d.table); edit = edit - t.id; Toasts.done("Import desat")
+                        } catch (e: ApiError) { Toasts.error(e) }
+                        busy = ""
+                    }
+                }, look = if (dirty) Look.Primary else Look.Secondary, enabled = dirty, busy = busy == t.id, small = false)
+            }
+        }
     }
 }
 

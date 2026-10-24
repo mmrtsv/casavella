@@ -114,7 +114,7 @@ import kotlinx.coroutines.withContext
 // Xarxes socials, as maite-app/src/pages/Social.tsx: a new post (from a description or from a template), the templates and the
 // words changed on them, the profile grid of the posts made, captions, publishing, a calendar
 
-private val TABS = listOf("new" to "Nova publicació", "posts" to "Posts", "stories" to "Stories i reels", "menus" to "Menús", "profile" to "Perfil", "calendar" to "Calendari")
+private val TABS = listOf("new" to "Generador de posts", "posts" to "Posts", "stories" to "Stories i reels", "menus" to "Menús", "profile" to "Publicar", "calendar" to "Calendari")
 private val KIND_OF = mapOf("posts" to "post", "stories" to "story")
 private val HELP = mapOf(
     "new" to "Descriu-la i Claude la proposa, o fes-la tu des d'una plantilla. Abans d'afegir-la al perfil en pots canviar el text i la foto.",
@@ -150,9 +150,9 @@ fun SocialScreen() {
             }
             data == null -> com.casavellarural.maite.ui.Loading()
             tab == "menus" -> Menus(data)
-            tab == "new" -> key(start?.n ?: 0) { NewPost(data, start) }
+            tab == "new" -> key(start?.n ?: 0) { NewPost(data, start) { tab = it; lastTab = it } }
             tab == "profile" -> Profile(data) { tab = "posts"; lastTab = tab }
-            else -> Planner(data) { tab = "posts"; lastTab = tab }
+            else -> Planner(data, { tab = "posts"; lastTab = tab }) { tab = "profile"; lastTab = tab }
         }
     }
 }
@@ -283,15 +283,84 @@ private fun Editor(t: Template, v: Int, photo: String, texts: List<String?>, onC
 
 /** Nova publicació: from a description (Claude proposes it) or from a template, changed, added to the end of the profile */
 @Composable
-private fun NewPost(data: Social, start: Start?) {
+private fun NewPost(data: Social, start: Start?, go: (String) -> Unit) {
     var how by remember { mutableStateOf(if (start != null || !data.ai) "template" else "prompt") }
+    var live by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { live = runCatching { Api.get<Insta>("instagram") }.getOrNull()?.connected == true }
+    val then = Then(live, go)
     if (data.ai) Segmented(listOf("prompt" to "Amb una descripció", "template" to "Des d'una plantilla"), how, { how = it })
-    if (how == "prompt" && data.ai) Maker("post") else Composer(data, start)
+    if (how == "prompt" && data.ai) Maker("post", then) else Composer(data, start, then)
+}
+
+/** The caption of a post being made in the generator: Claude's options (or the house ones) to pick from, then changed by hand.
+ *  It is required: a post isn't added without it */
+@Composable
+private fun NewCopy(t: Template, v: Int, photo: String, texts: List<String?>, data: Social, value: String, onChange: (String) -> Unit) {
+    var options by remember { mutableStateOf<List<CaptionOption>?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    Column(Modifier.padding(top = 16.dp)) {
+        Divider()
+        Text("Copy", style = Type.sm, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+            Btn(if (options != null) "Altres opcions" else "Proposa copies", {
+                if (!data.ai) { options = libraryFor(t); return@Btn }
+                busy = true
+                scope.launch {
+                    try {
+                        val (onImage, alt) = Renderer.words(t.id, v, photo, texts)
+                        val planned = data.posts.filter { it.published == null && !it.story }
+                        val used = planned.mapNotNull { data.copies[it.id] }.map { it.lineSequence().first() }
+                        options = Api.post<CaptionOptions>("social-copy", mapOf("title" to t.title, "onImage" to onImage, "photo" to alt, "n" to planned.size + 1, "used" to used)).options
+                    } catch (e: ApiError) { Toasts.error(e); options = libraryFor(t) }
+                    busy = false
+                }
+            }, look = Look.Secondary, icon = R.drawable.ic_sparkles, busy = busy)
+            if (data.ai) Btn("Biblioteca", { options = library(t) }, look = Look.Ghost, icon = R.drawable.ic_book_open)
+        }
+        options?.forEach { o ->
+            Column(Modifier.padding(top = 8.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(T.default.copy(alpha = 0.5f)).padding(12.dp)) {
+                Text(joinCopy(o), style = Type.sm)
+                Btn("Tria aquesta", { onChange(joinCopy(o)) }, Modifier.padding(top = 8.dp), look = Look.Secondary, icon = R.drawable.ic_check)
+            }
+        }
+        Field("", value, onChange, Modifier.padding(top = 8.dp), area = true, placeholder = "Tria una opció o escriu-lo aquí")
+        if (value.isBlank()) Text("Cal el copy per afegir-lo al perfil.", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 6.dp))
+    }
+}
+
+/** Once a post is added it can go out from here (now or programmed), and Publicar or the calendar is one step away */
+private class Then(val live: Boolean, val go: (String) -> Unit)
+
+/** A post's number in the profile: its place among the posts still to publish */
+private fun planNumber(d: Social, p: SocialPost) = d.posts.filter { it.published == null && !it.story }.indexOfFirst { it.id == p.id } + 1
+
+/** Where a post just added stands: its number in the profile, programmed, or published */
+@Composable
+private fun Kept(post: SocialPost, n: Int) {
+    when {
+        post.published != null -> Text("Publicat a Instagram", style = Type.sm, color = T.muted)
+        post.schedule != null -> When(post.schedule)
+        else -> Tag("Post $n del perfil", Tone.Paid)
+    }
+}
+
+/** What comes after adding it: publish or program it, then go to Publicar or, once programmed, to the calendar */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Next(post: SocialPost, then: Then, onPublish: () -> Unit) {
+    val context = LocalContext.current
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (then.live && post.published == null) Btn(if (post.schedule != null) "Canvia la programació" else "Publica o programa", onPublish,
+            look = if (post.schedule != null) Look.Secondary else Look.Primary, icon = if (post.schedule != null) R.drawable.ic_clock else R.drawable.ic_send)
+        if (post.published?.url?.isNotEmpty() == true) Btn("Obre a Instagram", { open(context, post.published.url) }, look = Look.Ghost, icon = R.drawable.ic_external_link)
+        Btn(if (post.schedule != null) "Vés al calendari" else "Vés a Publicar", { then.go(if (post.schedule != null) "calendar" else "profile") }, look = Look.Ghost)
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Composer(data: Social, start: Start?) {
+private fun Composer(data: Social, start: Start?, then: Then) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val list = Renderer.catalog!!.templates.filter(::inGrid)
@@ -300,12 +369,18 @@ private fun Composer(data: Social, start: Start?) {
     var photo by remember { mutableStateOf(start?.photo.orEmpty()) }
     var texts by remember { mutableStateOf(data.templates[id].orEmpty()) }
     var busy by remember { mutableStateOf("") }
+    // The post just added, and whether its Publica a Instagram is open
+    var added by remember { mutableStateOf("") }
+    var publishing by remember { mutableStateOf(false) }
+    val last = data.posts.find { it.id == added }
+    // Every post leaves the generator with its caption
+    var caption by remember { mutableStateOf("") }
     val t = Renderer.byId.getValue(id)
     // The announcement can open a carousel, with the menu after it
     val next = nextSlides(t)
     var carousel by remember { mutableStateOf(false) }
     val images = listOf(Slide(t.id, v, photo, texts)) + if (carousel) next else emptyList()
-    fun blank(x: String) { id = x; v = 0; photo = ""; texts = data.templates[x].orEmpty(); carousel = false }
+    fun blank(x: String) { id = x; v = 0; photo = ""; texts = data.templates[x].orEmpty(); carousel = false; caption = "" }
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Text("Plantilla", style = Type.base, fontWeight = FontWeight.SemiBold)
@@ -333,22 +408,28 @@ private fun Composer(data: Social, start: Start?) {
                     next.forEach { x -> Art(Renderer.byId.getValue(x.tpl), x.v, x.photo, x.texts, Modifier.width(100.dp).clip(RoundedCornerShape(8.dp))) }
                 }
             }
+            key(id, added) { NewCopy(t, v, photo, texts, data, caption) { caption = it } }
             FlowRow(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Btn("Descarrega", { busy = "png"; scope.launch { savePost(context, images, null); busy = "" } }, look = Look.Secondary, icon = R.drawable.ic_download, busy = busy == "png", enabled = busy.isEmpty())
                 Btn("Afegeix al perfil", {
                     busy = "add"
                     scope.launch {
                         try {
-                            val d = Api.post<Social>("social", mapOf("tpl" to t.id, "v" to v, "photo" to photo, "texts" to changed(t, v, texts), "slides" to images.drop(1).map { it.body() }))
-                            Maite.social = d; blank(id)
+                            val d = Api.post<Social>("social", mapOf("tpl" to t.id, "v" to v, "photo" to photo, "texts" to changed(t, v, texts), "slides" to images.drop(1).map { it.body() }, "copy" to caption))
+                            Maite.social = d; blank(id); added = d.posts.last().id; publishing = then.live
                             Toasts.done("${t.title}: post ${d.posts.count { it.published == null && !it.story }} del perfil")
                         } catch (e: Exception) { Toasts.error(e) }
                         busy = ""
                     }
-                }, icon = R.drawable.ic_plus, busy = busy == "add", enabled = busy.isEmpty(), small = false)
+                }, icon = R.drawable.ic_plus, busy = busy == "add", enabled = busy.isEmpty() && caption.isNotBlank(), small = false)
+            }
+            if (last != null) Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Kept(last, planNumber(data, last))
+                Next(last, then) { publishing = true }
             }
         }
     }
+    if (publishing && last != null) Publish(last, planNumber(data, last), data.copies[last.id].orEmpty(), first = true) { publishing = false }
 }
 
 /** The words of a template, for the posts made from it from now on; the ones already made keep theirs */
@@ -448,7 +529,7 @@ private fun MadeEditor(t: Template, photo: String, texts: List<String?>, caption
 private val made = mutableMapOf<String, Pair<String, List<Made>>>()
 
 @Composable
-private fun Maker(start: String) {
+private fun Maker(start: String, then: Then) {
     val l = LocalLayout.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -495,7 +576,7 @@ private fun Maker(start: String) {
     val per = if (l.wide) 3 else if (l.rail) 2 else 1
     result?.second.orEmpty().chunked(per).forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            row.forEach { o -> Box(Modifier.weight(1f)) { MadeCard(o, compact = per > 1) } }
+            row.forEach { o -> Box(Modifier.weight(1f)) { MadeCard(o, compact = per > 1, then) } }
             repeat(per - row.size) { Spacer(Modifier.weight(1f)) }
         }
     }
@@ -503,7 +584,7 @@ private fun Maker(start: String) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MadeCard(o: Made, compact: Boolean) {
+private fun MadeCard(o: Made, compact: Boolean, then: Then) {
     val t = Renderer.byId[o.tpl] ?: return
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -511,7 +592,11 @@ private fun MadeCard(o: Made, compact: Boolean) {
     var own by remember(o) { mutableStateOf("") }
     var texts by remember(o) { mutableStateOf(o.texts) }
     var busy by remember(o) { mutableStateOf("") }
-    var kept by remember(o) { mutableStateOf(0) }
+    var keptId by remember(o) { mutableStateOf("") }
+    var publishing by remember(o) { mutableStateOf(false) }
+    val data = Maite.social
+    val post = data?.posts?.find { it.id == keptId }
+    val kept = if (data != null && post != null) planNumber(data, post) else 0
     var editing by remember(o) { mutableStateOf(false) }
     // A carousel when Claude filled the slides after it (the menu after the announcement); it can still go alone
     var carousel by remember(o) { mutableStateOf(o.slides.isNotEmpty()) }
@@ -524,29 +609,31 @@ private fun MadeCard(o: Made, compact: Boolean) {
         Carousel(list, Modifier.fillMaxWidth())
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(t.title, style = Type.base, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            if (kept > 0) Tag("Post $kept del perfil", Tone.Paid)
-            if (o.slides.isNotEmpty() && kept == 0) SingleOrCarousel(carousel) { carousel = it }
+            if (post != null) Kept(post, kept)
+            if (o.slides.isNotEmpty() && post == null) SingleOrCarousel(carousel) { carousel = it }
             Text(caption, style = Type.sm, maxLines = if (compact) 6 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (kept == 0) Btn("Edita", { editing = true }, look = Look.Secondary, icon = R.drawable.ic_pencil)
-                if (t.photo.isNotEmpty() && kept == 0) Btn(if (compact) "Foto" else if (own.isNotEmpty()) "Una altra foto" else "La teva foto", { pick.launch("image/*") }, look = Look.Secondary, icon = R.drawable.ic_image_up, busy = busy == "photo")
+                if (post == null) Btn("Edita", { editing = true }, look = Look.Secondary, icon = R.drawable.ic_pencil)
+                if (t.photo.isNotEmpty() && post == null) Btn(if (compact) "Foto" else if (own.isNotEmpty()) "Una altra foto" else "La teva foto", { pick.launch("image/*") }, look = Look.Secondary, icon = R.drawable.ic_image_up, busy = busy == "photo")
                 IconBtn(R.drawable.ic_copy, "Copia el copy", { (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("Copy", caption)); Toasts.done("Copy copiat") })
                 IconBtn(R.drawable.ic_download, "Descarrega ${t.title}", { busy = "png"; scope.launch { savePost(context, list, null); busy = "" } }, busy = busy == "png")
-                if (inGrid(t) && kept == 0) Btn("Confirma", {
+                if (inGrid(t) && post == null) Btn("Confirma", {
                     busy = "confirm"
                     scope.launch {
                         try {
                             val d = Api.post<Social>("social", mapOf("tpl" to t.id, "v" to 0, "photo" to photo, "texts" to texts, "slides" to list.drop(1).map { it.body() }, "copy" to caption))
                             Maite.social = d
-                            kept = d.posts.filter { it.published == null && !it.story }.indexOf(d.posts.last()) + 1
-                            Toasts.done("${t.title}: post $kept del perfil")
+                            keptId = d.posts.last().id; publishing = then.live
+                            Toasts.done("${t.title}: post ${planNumber(d, d.posts.last())} del perfil")
                         } catch (e: ApiError) { Toasts.error(e) }
                         busy = ""
                     }
-                }, icon = R.drawable.ic_plus, busy = busy == "confirm")
+                }, icon = R.drawable.ic_plus, busy = busy == "confirm", enabled = caption.isNotBlank())
             }
+            if (post != null) Next(post, then) { publishing = true }
         }
     }
+    if (publishing && post != null && data != null) Publish(post, kept, data.copies[post.id].orEmpty(), first = true) { publishing = false }
     if (editing) MadeEditor(t, photo, texts, caption, { p, tx, c -> own = if (p == o.photo) "" else p; texts = tx; caption = c; editing = false }) { editing = false }
 }
 
@@ -592,7 +679,8 @@ private fun Profile(data: Social, onEmpty: () -> Unit) {
     var open by remember { mutableStateOf<String?>(null) }
     var progress by remember { mutableStateOf("") }
     var insta by remember { mutableStateOf<Insta?>(null) }
-    var publishing by remember { mutableStateOf<SocialPost?>(null) }
+    // The post whose Publica a Instagram is open, and whether it opens on Programa
+    var publishing by remember { mutableStateOf<Pair<SocialPost, Boolean>?>(null) }
     var editing by remember { mutableStateOf<SocialPost?>(null) }
     var head by remember { mutableStateOf<ImageBitmap?>(null) }
     val context = LocalContext.current
@@ -680,7 +768,10 @@ private fun Profile(data: Social, onEmpty: () -> Unit) {
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.End) {
                     IconBtn(R.drawable.ic_pencil, "Edita el post ${i + 1}", { editing = p })
                     IconBtn(R.drawable.ic_message_square_text, "Copy del post ${i + 1}", { open = if (open == p.id) null else p.id }, on = open == p.id)
-                    if (insta?.connected == true && t.kind == "post") IconBtn(if (p.schedule != null) R.drawable.ic_clock else R.drawable.ic_send, "Publica o programa el post ${i + 1}", { publishing = p }, on = p.schedule != null)
+                    if (insta?.connected == true && t.kind == "post") {
+                        IconBtn(R.drawable.ic_clock, if (p.schedule != null) "Canvia la programació del post ${i + 1}" else "Programa el post ${i + 1}", { publishing = p to true }, on = p.schedule != null)
+                        IconBtn(R.drawable.ic_send, "Publica ara el post ${i + 1}", { publishing = p to false })
+                    }
                     var dl by remember { mutableStateOf(false) }
                     IconBtn(R.drawable.ic_download, "Descarrega el post ${i + 1}", { dl = true; scope.launch { savePost(context, imagesOf(p), i + 1); dl = false } }, busy = dl)
                     IconBtn(R.drawable.ic_x, "Treu ${t.title} del perfil", { order(posts.filter { it != p }.map { it.id }, "${t.title} tret del perfil") })
@@ -690,7 +781,7 @@ private fun Profile(data: Social, onEmpty: () -> Unit) {
         }
     }
     editing?.let { p -> PostEditor(p, posts.indexOf(p) + 1) { editing = null } }
-    publishing?.let { p -> Publish(p, posts.indexOf(p) + 1, data.copies[p.id].orEmpty()) { publishing = null } }
+    publishing?.let { (p, later) -> key(p.id, later) { Publish(p, posts.indexOf(p) + 1, data.copies[p.id].orEmpty(), later = later) { publishing = null } } }
 }
 
 @Composable
@@ -815,12 +906,14 @@ private suspend fun sendOut(post: SocialPost, at: java.time.Instant?): Social {
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-private fun Publish(post: SocialPost, n: Int, caption: String, onClose: () -> Unit) {
+/** later: opens on Programa (by default, when it is already programmed). first: opened right after the post was added, so leaving it
+ *  is «Més endavant»: it stays in the profile */
+private fun Publish(post: SocialPost, n: Int, caption: String, later: Boolean? = null, first: Boolean = false, onClose: () -> Unit) {
     // How the toasts name it: «Post 3», or «La story» for a story
     val name = if (post.story) "La story" else "Post $n"; val theName = if (post.story) "La story" else "El post $n"
     val t = Renderer.byId.getValue(post.tpl)
     val was = post.schedule
-    var mode by remember { mutableStateOf(if (was != null) "later" else "now") }
+    var mode by remember { mutableStateOf(if (later ?: (was != null)) "later" else "now") }
     var date by remember { mutableStateOf(was?.let { dayOfIso(it.at) } ?: post.date?.takeIf { it > TODAY } ?: addDays(TODAY, 1)) }
     var time by remember { mutableStateOf(was?.let { hourOf(it.at) } ?: "19:00") }
     var busy by remember { mutableStateOf("") }
@@ -846,11 +939,12 @@ private fun Publish(post: SocialPost, n: Int, caption: String, onClose: () -> Un
                     if (post.story) Text("Les stories no porten copy. Instagram no deixa afegir-hi l'enllaç des d'aquí: l'adreça de la web ja hi surt escrita.", style = Type.sm, color = T.muted)
                     else if (caption.isNotEmpty()) Text(caption, style = Type.sm, maxLines = 12, overflow = TextOverflow.Ellipsis)
                     else Text("Aquest post encara no té copy: es publicarà sense text.", style = Type.sm, color = T.warningText)
+                    if (first) Text("Més endavant el deixa al perfil, per publicar quan vulguis.", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 8.dp))
                     Text(if (post.story) "Un cop publicada, es pot esborrar des de l'app d'Instagram." else "Un cop publicat, es pot editar o esborrar des de l'app d'Instagram.", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 8.dp))
                 }
             }
             FlowRow(Modifier.fillMaxWidth().padding(top = 18.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Btn("Cancel·la", onClose, look = Look.Ghost, enabled = busy.isEmpty())
+                Btn(if (first) "Més endavant" else "Cancel·la", onClose, look = Look.Ghost, enabled = busy.isEmpty())
                 if (was != null) Btn("Desprograma", {
                     busy = "cancel"
                     scope.launch {
@@ -879,24 +973,19 @@ private fun Publish(post: SocialPost, n: Int, caption: String, onClose: () -> Un
 
 // ---------- Calendari ----------
 @Composable
-private fun Planner(data: Social, onEmpty: () -> Unit) {
+/** Calendari: the plan to look at, by day. Posts are programmed and published from Publicar */
+private fun Planner(data: Social, onEmpty: () -> Unit, onPublish: () -> Unit) {
     val byId = Renderer.byId
     val all = data.posts.filter { byId.containsKey(it.tpl) && !it.story }
     val planned = all.filter { it.published == null }
     val today = TODAY
     var month by remember { mutableStateOf(parse(planned.firstNotNullOfOrNull { it.date }?.takeIf { it > today } ?: today).withDayOfMonth(1)) }
     var live by remember { mutableStateOf<List<com.casavellarural.maite.data.LiveMedia>>(emptyList()) }
-    val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { runCatching { Api.get<Insta>("instagram?media=1") }.onSuccess { live = it.media } }
     if (all.isEmpty()) return Nothing("Encara no hi ha cap post confirmat.", onEmpty)
     val ours = all.mapNotNull { it.published?.media }.toSet()
     fun on(day: String) = all.filter { (it.published?.let { p -> localDayOf(p.at) } ?: it.date) == day }
     fun liveOn(day: String) = live.filter { it.id !in ours && localDayOf(it.at) == day }
-    fun plan(p: SocialPost, date: String) {
-        val before = Maite.social
-        Maite.social = data.copy(posts = data.posts.map { if (it.id == p.id) it.copy(date = date.ifEmpty { null }) else it })
-        scope.launch { try { Maite.social = Api.put<Social>("social", mapOf("date" to mapOf("id" to p.id, "date" to date))) } catch (e: ApiError) { Maite.social = before; Toasts.error(e) } }
-    }
     val context = LocalContext.current
     Card(Modifier.fillMaxWidth()) {
         Row(Modifier.padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -935,7 +1024,8 @@ private fun Planner(data: Social, onEmpty: () -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Text("Per publicar", style = Type.base, fontWeight = FontWeight.SemiBold)
-            Muted("Tria el dia de cada post. Els posts amb data passen davant, per ordre de dia. Es publiquen quan prems publicar a Perfil.")
+            Muted("Es programen i es publiquen des de Publicar.")
+            Btn("Vés a Publicar", onPublish, Modifier.padding(top = 10.dp), look = Look.Secondary)
         }
         if (planned.isEmpty()) Text("No queda cap post per publicar.", style = Type.sm, modifier = Modifier.padding(16.dp))
         planned.forEachIndexed { i, p ->
@@ -946,9 +1036,12 @@ private fun Planner(data: Social, onEmpty: () -> Unit) {
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text("${i + 1}  ${t.title}", style = Type.sm, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (p.date != null && p.date < today) Text("Aquest dia ja ha passat", style = Type.xs, color = T.warningText)
-                    DateField("", p.date.orEmpty(), { plan(p, it) }, Modifier.padding(top = 4.dp), min = today)
-                    if (p.date != null) Text("Treu la data", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 4.dp).clickable { plan(p, "") })
+                    when {
+                        p.schedule != null -> When(p.schedule)
+                        p.date != null && p.date < today -> Text("Aquest dia ja ha passat", style = Type.xs, color = T.warningText)
+                        p.date != null -> Text("Previst el ${dayMonth(p.date)}", style = Type.xs, color = T.muted)
+                        else -> Text("Sense programar", style = Type.xs, color = T.muted)
+                    }
                 }
             }
         }
@@ -1135,5 +1228,5 @@ private fun Menus(data: Social) {
             }
         }
     }
-    publishing?.let { p -> Publish(p, grid.indexOf(p) + 1, data.copies[p.id].orEmpty()) { publishing = null } }
+    publishing?.let { p -> Publish(p, grid.indexOf(p) + 1, data.copies[p.id].orEmpty(), later = true) { publishing = null } }
 }

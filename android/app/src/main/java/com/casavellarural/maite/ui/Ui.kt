@@ -16,7 +16,7 @@ enum class Page(val title: String, @DrawableRes val icon: Int, val hint: String)
     Rules("Normes", R.drawable.ic_scroll_text, "Estada, antelació, horaris i cancel·lació"),
     Emails("Correus", R.drawable.ic_mail, "Els correus que reben els hostes i la casa"),
     Social("Xarxes socials", R.drawable.ic_layout_grid, "Plantilles d'Instagram, la graella del perfil i els copies"),
-    Restaurant("Restaurant", R.drawable.ic_utensils_crossed, "Taules reservades, horaris i places"),
+    Restaurant("Restaurant", R.drawable.ic_utensils_crossed, "Taules reservades, dies oberts i places"),
 }
 
 data class BookDraft(val stay: String? = null, val first: String? = null, val until: String? = null)

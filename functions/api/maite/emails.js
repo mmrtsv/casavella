@@ -10,7 +10,7 @@ export async function onRequestGet({ env }) {
   const meta = { stay: 'montserrat', checkin, checkout: addDays(checkin, nights), nights: String(nights), guests: '2', arrival: 'Cap a les 18:00', notes: 'Venim amb un gos petit.', ...guest };
   const amount = Math.round(S.stays.montserrat.base * nights * 100);
   const extra = { checkin: S.rules.checkin, checkout: S.rules.checkout, policy: policyText(S.cancel) };
-  const table = { ...guest, date: addDays(today, 5), time: '13:30', people: 4, notes: 'Un dels nens és celíac.', service: S.restaurant.services[0]?.name || 'Dinar', lang: 'ca' };
+  const table = { ...guest, date: addDays(today, 5), time: '13:30', people: 4, notes: 'Un dels nens és celíac.', lang: 'ca' };
   const msg = { ...guest, message: 'Hola! Voldríem saber si el mes que ve teniu lloc per a dues persones. Gràcies!' };
   const list = [
     { id: 'confirmed', name: 'Reserva confirmada', for: 'guest', when: "Quan l'hoste paga una reserva a la web i el pagament es confirma.", ...bookingConfirmation(env, meta, amount, false, extra) },

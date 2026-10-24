@@ -39,22 +39,15 @@ data class Rules(
     val checkin: String, val checkout: String,
 )
 
-/** A restaurant service: first and last arrival time, seats for the whole service */
+/** Closed unless Maite opens it: each opening is a day and a time ("2026-12-31T21:00"), each with `seats` */
 @Serializable
-data class Service(val id: String = "", val name: String = "", val from: String = "13:00", val to: String = "15:00", val seats: Int = 15)
-
-/** Closed unless a date is in `open`, with the ids of the services it has that day */
-@Serializable
-data class RestaurantSettings(
-    val online: Boolean = true, val maxParty: Int = 8, val minHours: Int = 2,
-    val services: List<Service> = emptyList(), val open: Map<String, List<String>> = emptyMap(),
-)
+data class RestaurantSettings(val online: Boolean = true, val maxParty: Int = 8, val minHours: Int = 2, val seats: Int = 15, val open: List<String> = emptyList())
 
 /** A table on the restaurant's calendar (lib/restaurant.js asTable) */
 @Serializable
 data class Table(
     val id: String, val date: String, val time: String = "", val people: Int? = null, val name: String = "", val phone: String = "",
-    val email: String = "", val notes: String = "", val source: String = "", val service: String = "", val lang: String = "",
+    val email: String = "", val notes: String = "", val source: String = "", val lang: String = "",
     val cancelled: Boolean = false, val link: String = "",
 )
 

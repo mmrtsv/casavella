@@ -40,7 +40,6 @@ import com.casavellarural.maite.data.Maite
 import com.casavellarural.maite.data.RestaurantSettings
 import com.casavellarural.maite.data.SOURCE
 import com.casavellarural.maite.data.SOURCES
-import com.casavellarural.maite.data.Service
 import com.casavellarural.maite.data.Settings
 import com.casavellarural.maite.data.TODAY
 import com.casavellarural.maite.data.Table
@@ -51,7 +50,6 @@ import com.casavellarural.maite.data.cap
 import com.casavellarural.maite.data.day
 import com.casavellarural.maite.data.json
 import com.casavellarural.maite.data.longDay
-import com.casavellarural.maite.data.parse
 import com.casavellarural.maite.ui.Btn
 import com.casavellarural.maite.ui.Card
 import com.casavellarural.maite.ui.CheckRow
@@ -70,29 +68,28 @@ import com.casavellarural.maite.ui.Toasts
 import com.casavellarural.maite.ui.Type
 import kotlinx.coroutines.launch
 
-// Restaurant: the tables booked for a day (web and phone), a new one, cancelling, and the services, seats and limits the web follows.
-// Like maite-app/src/pages/Restaurant.tsx.
+// Restaurant: the tables booked for a day (web and phone), a new one, cancelling, and the openings (a day and a time each),
+// seats and limits the web follows. Like maite-app/src/pages/Restaurant.tsx.
 
-private fun mins(t: String) = (t.take(2).toIntOrNull() ?: 0) * 60 + (t.drop(3).take(2).toIntOrNull() ?: 0)
-// Closed unless that date is opened, as lib/restaurant.js
-private fun servicesOn(cfg: RestaurantSettings, d: String) = cfg.services.filter { it.id in (cfg.open[d] ?: emptyList()) }
-private fun inService(s: Service, t: Table) = if (t.service.isNotEmpty()) t.service == s.id else t.time.isNotEmpty() && mins(t.time) in mins(s.from)..mins(s.to)
+private fun atOf(t: Table) = "${t.date}T${t.time}"
 private fun seated(list: List<Table>) = list.sumOf { it.people ?: 0 }
+/** "2026-12-31T21:00" as "Dijous, 31 de desembre, 21:00" */
+private fun atLabel(at: String) = "${cap(longDay(at.take(10)))}, ${at.drop(11)}"
 
 @Composable
 fun Restaurant() {
     val S = Maite.settings ?: return LoadingPage()
     var tab by remember { mutableStateOf("tables") }
     Page {
-        Tabs(listOf("tables" to "Taules", "hours" to "Horaris i places"), tab, { tab = it })
-        if (tab == "tables") Tables(S.restaurant) else Hours(S.restaurant)
+        Tabs(listOf("tables" to "Taules", "open" to "Dies oberts"), tab, { tab = it })
+        if (tab == "tables") Tables(S.restaurant) else Openings(S.restaurant)
     }
 }
 
 // ---------- Tables ----------
 @Composable
 private fun Tables(cfg: RestaurantSettings) {
-    var date by remember { mutableStateOf(TODAY) }
+    var date by remember { mutableStateOf(cfg.open.firstOrNull { it.take(10) >= TODAY }?.take(10) ?: TODAY) }
     var tables by remember { mutableStateOf<Map<String, Table>>(emptyMap()) }
     var loaded by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
     var configured by remember { mutableStateOf(true) }
@@ -102,17 +99,17 @@ private fun Tables(cfg: RestaurantSettings) {
     // Loads a window around the day shown, once
     LaunchedEffect(date) {
         if (loaded.any { (a, b) -> a <= date && b > date }) return@LaunchedEffect
-        val from = addDays(date, -7); val to = addDays(date, 60)
+        val from = addDays(date, -7); val to = addDays(date, 90)
         loaded = loaded + (from to to)
         try {
             val d = Api.get<TablesResponse>("restaurant?from=$from&to=$to")
             configured = d.configured; tables = tables + d.tables.associateBy { it.id }; error = ""
         } catch (e: ApiError) { error = e.message.orEmpty(); loaded = loaded.filter { it.first != from } }
     }
-    val all = tables.values.sortedBy { it.date + it.time }
+    val all = tables.values.sortedBy { atOf(it) }
     val ofDay = all.filter { it.date == date }; val live = ofDay.filter { !it.cancelled }
-    val services = servicesOn(cfg, date)
-    val rest = live.filter { t -> services.none { inService(it, t) } }
+    val opens = cfg.open.filter { it.take(10) == date }
+    val rest = live.filter { atOf(it) !in opens }
     val put = { t: Table -> tables = tables + (t.id to t) }
 
     Card(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
@@ -127,20 +124,20 @@ private fun Tables(cfg: RestaurantSettings) {
         }
         if (!configured) Panel(Modifier.fillMaxWidth().padding(top = 12.dp)) { Text("Falta connectar el calendari del restaurant (CAL_RESTAURANT). Fins llavors, la web remet al telèfon.", style = Type.sm) }
         ErrorNote(error)
-        if (services.isEmpty()) Muted("Aquest dia el restaurant no obre. Els dies s'obren a Horaris i places.", Modifier.padding(top = 14.dp))
-        services.forEach { s ->
-            val list = live.filter { inService(s, it) }
-            Group(s.name, "${seated(list)} de ${s.seats} places")
+        if (opens.isEmpty()) Muted("Aquest dia el restaurant no obre. Els dies s'obren a Dies oberts.", Modifier.padding(top = 14.dp))
+        opens.forEach { at ->
+            val list = live.filter { atOf(it) == at }
+            Group(at.drop(11), "${seated(list)} de ${cfg.seats} places")
             if (list.isEmpty()) Muted("Cap taula.", Modifier.padding(vertical = 10.dp))
             list.forEach { t -> TableRow(t) { cancel = t } }
         }
-        if (rest.isNotEmpty()) { Group("Fora d'horari", null); rest.forEach { t -> TableRow(t) { cancel = t } } }
+        if (rest.isNotEmpty()) { Group(if (opens.isEmpty()) "Taules" else "A una altra hora", null); rest.forEach { t -> TableRow(t) { cancel = t } } }
         if (ofDay.any { it.cancelled }) { Group("Cancel·lades", null, muted = true); ofDay.filter { it.cancelled }.forEach { TableRow(it, null) } }
     }
 
-    // The open days ahead and any other day that has tables, in order
-    val upcoming = (cfg.open.keys.filter { it >= TODAY }.associateWith { emptyList<Table>() } +
-        all.filter { !it.cancelled && it.date >= TODAY && it.date < addDays(TODAY, 60) }.groupBy { it.date }).toSortedMap()
+    // The openings ahead and any other day that has tables, in order
+    val upcoming = (cfg.open.filter { it.take(10) >= TODAY }.associate { it.take(10) to emptyList<Table>() } +
+        all.filter { !it.cancelled && it.date >= TODAY }.groupBy { it.date }).toSortedMap()
     Card(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
         Text("Pròxims dies", style = Type.base, fontWeight = FontWeight.SemiBold)
         if (upcoming.isEmpty()) Muted("Cap dia obert.", Modifier.padding(top = 6.dp))
@@ -189,15 +186,15 @@ private fun TableRow(t: Table, onCancel: (() -> Unit)?) {
 
 @Composable
 private fun NewTable(cfg: RestaurantSettings, date0: String, tables: List<Table>, onClose: () -> Unit, onSaved: (Table) -> Unit) {
-    var date by remember { mutableStateOf(date0) }; var time by remember { mutableStateOf(servicesOn(cfg, date0).firstOrNull()?.from ?: "13:00") }
+    var date by remember { mutableStateOf(date0) }; var time by remember { mutableStateOf(cfg.open.firstOrNull { it.take(10) == date0 }?.drop(11) ?: "21:00") }
     var people by remember { mutableStateOf("2") }; var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }; var email by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }; var source by remember { mutableStateOf("phone") }
     var err by remember { mutableStateOf("") }; var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    // How full the service at that time already is, so the house can judge
-    val s = servicesOn(cfg, date).find { time.length == 5 && mins(time) in mins(it.from)..mins(it.to) }
-    val taken = s?.let { x -> seated(tables.filter { !it.cancelled && it.date == date && inService(x, it) }) } ?: 0
+    // How full that opening already is, so the house can judge
+    val at = "${date}T$time"
+    val taken = seated(tables.filter { !it.cancelled && atOf(it) == at })
     FormSheet("Nova taula", null, onClose, {
         Btn("Cancel·la", onClose, look = Look.Ghost)
         Spacer(Modifier.width(8.dp))
@@ -215,9 +212,9 @@ private fun NewTable(cfg: RestaurantSettings, date0: String, tables: List<Table>
     }) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             DateField("Dia", date, { date = it }, Modifier.weight(1.4f))
-            Field("Hora", time, { time = it }, Modifier.weight(1f), placeholder = "13:30")
+            Field("Hora", time, { time = it }, Modifier.weight(1f), placeholder = "21:00")
         }
-        Muted(if (s != null) "${s.name}: $taken de ${s.seats} places ocupades" else "Fora dels horaris del restaurant")
+        Muted(if (at in cfg.open) "$taken de ${cfg.seats} places ocupades" else "No és cap dia obert")
         Field("Nom", name, { name = it })
         Field("Persones", people, { people = it }, type = KeyboardType.Number)
         Field("Telèfon", phone, { phone = it }, type = KeyboardType.Phone)
@@ -250,83 +247,39 @@ private fun CancelTable(t: Table, onClose: () -> Unit, onSaved: (Table) -> Unit)
     }
 }
 
-// ---------- Open days, services and limits ----------
-private data class SForm(val id: String, val name: String, val from: String, val to: String, val seats: String)
-
-/** Services as toggles, like the web's ToggleButtonGroup */
-@OptIn(ExperimentalLayoutApi::class)
+// ---------- Openings, seats and limits ----------
 @Composable
-private fun ServicePicker(services: List<SForm>, on: List<String>, onChange: (List<String>) -> Unit) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        services.forEach { s ->
-            val sel = s.id in on
-            Box(
-                Modifier.clip(CircleShape).background(if (sel) T.accent else T.default)
-                    .clickable(role = Role.Checkbox) { onChange(if (sel) on - s.id else on + s.id) }.padding(horizontal = 14.dp, vertical = 8.dp),
-            ) { Text(s.name.ifEmpty { "Servei" }, style = Type.sm, fontWeight = FontWeight.Medium, color = if (sel) T.onAccent else T.foreground) }
-        }
-    }
-}
-
-@Composable
-private fun Hours(cfg: RestaurantSettings) {
+private fun Openings(cfg: RestaurantSettings) {
     var online by remember(cfg) { mutableStateOf(cfg.online) }
-    var services by remember(cfg) { mutableStateOf(cfg.services.map { SForm(it.id, it.name, it.from, it.to, "${it.seats}") }) }
+    var seats by remember(cfg) { mutableStateOf("${cfg.seats}") }
     var maxParty by remember(cfg) { mutableStateOf("${cfg.maxParty}") }; var minHours by remember(cfg) { mutableStateOf("${cfg.minHours}") }
     var open by remember(cfg) { mutableStateOf(cfg.open) }
-    var first by remember { mutableStateOf(TODAY) }; var last by remember { mutableStateOf(TODAY) }
-    var pick by remember(cfg) { mutableStateOf(cfg.services.map { it.id }) }
+    var day0 by remember { mutableStateOf(TODAY) }; var time by remember { mutableStateOf("21:00") }
     var busy by remember { mutableStateOf(false) }; var err by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
-    fun setS(i: Int, f: (SForm) -> SForm) { services = services.mapIndexed { j, s -> if (j == i) f(s) else s } }
-    fun setDay(d: String, ids: List<String>) { open = if (ids.isEmpty()) open - d else open + (d to ids) }
 
     Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
-        Block("Dies oberts", "El restaurant només obre els dies que hi ha aquí, amb els serveis de cada dia. La resta de dies, la web no ofereix taula.") {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                DateField("Des del", first, { first = it; if (last < it) last = it }, Modifier.weight(1f), min = TODAY)
-                DateField("Fins al", last, { last = it }, Modifier.weight(1f), min = first)
+        Block("Dies oberts", "El restaurant només obre aquests dies, a aquesta hora. La web no ofereix res més.") {
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                DateField("Dia", day0, { day0 = it }, Modifier.weight(1.4f), min = TODAY)
+                Field("Hora", time, { time = it }, Modifier.weight(1f), placeholder = "21:00")
             }
-            Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(1f)) { ServicePicker(services, pick) { pick = it } }
-                // Opens every date from the first to the last with the services picked
-                Btn("Obre", {
-                    if (pick.isNotEmpty() && first >= TODAY && last >= first) {
-                        var d = first; val next = open.toMutableMap()
-                        while (d <= last) { next[d] = pick; d = addDays(d, 1) }
-                        open = next
-                    }
-                }, look = Look.Secondary, icon = R.drawable.ic_plus, enabled = pick.isNotEmpty())
-            }
-            val days = open.keys.filter { it >= TODAY }.sorted()
-            if (days.isEmpty()) Muted("Cap dia obert. La web diu que el restaurant obre en dates concretes i dona el telèfon.", Modifier.padding(top = 12.dp))
-            days.forEach { d ->
+            Btn("Obre", {
+                val at = "${day0}T$time"
+                if (day0 >= TODAY && Regex("^([01]\\d|2[0-3]):[0-5]\\d$").matches(time) && at !in open) open = (open + at).sorted()
+            }, Modifier.padding(top = 10.dp), look = Look.Secondary, icon = R.drawable.ic_plus)
+            val ahead = open.filter { it.take(10) >= TODAY }
+            if (ahead.isEmpty()) Muted("Cap dia obert. La web diu que el restaurant obre en dates concretes i dona el telèfon.", Modifier.padding(top = 12.dp))
+            ahead.forEach { a ->
                 Divider()
-                Column(Modifier.padding(vertical = 8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(cap(longDay(d)), style = Type.sm, modifier = Modifier.weight(1f))
-                        IconBtn(R.drawable.ic_trash_2, "Tanca ${day(d)}", { setDay(d, emptyList()) })
-                    }
-                    ServicePicker(services, open[d] ?: emptyList()) { setDay(d, it) }
+                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(atLabel(a), style = Type.sm, modifier = Modifier.weight(1f))
+                    IconBtn(R.drawable.ic_trash_2, "Tanca ${atLabel(a)}", { open = open - a })
                 }
             }
         }
-        Block("Serveis", "Les hores són la primera i l'última d'arribada, cada mitja hora. Les places compten per a tot el servei.") {
-            services.forEachIndexed { i, s ->
-                Panel(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Field("Nom", s.name, { v -> setS(i) { it.copy(name = v) } }, Modifier.weight(1f))
-                        Field("Places", s.seats, { v -> setS(i) { it.copy(seats = v) } }, Modifier.width(84.dp), type = KeyboardType.Number)
-                        IconBtn(R.drawable.ic_trash_2, "Treu ${s.name.ifEmpty { "aquest servei" }}", { services = services.filterIndexed { j, _ -> j != i } })
-                    }
-                    Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Field("Primera hora", s.from, { v -> setS(i) { it.copy(from = v) } }, Modifier.weight(1f), placeholder = "13:00")
-                        Field("Última hora", s.to, { v -> setS(i) { it.copy(to = v) } }, Modifier.weight(1f), placeholder = "15:00")
-                    }
-                }
-            }
-            if (services.size < 6) Btn("Afegeix un servei", { services = services + SForm("s" + System.currentTimeMillis().toString(36), "", "13:00", "15:00", "15") },
-                Modifier.padding(top = 4.dp), look = Look.Secondary, icon = R.drawable.ic_plus)
+        Block("Places", "Les persones que caben cada dia obert, sumant totes les taules.") {
+            Field("Places", seats, { seats = it }, type = KeyboardType.Number)
         }
         Block("A la web", "Només per a la web. Des de Maite es pot apuntar qualsevol taula, qualsevol dia.", last = true) {
             CheckRow(online, { online = it }, "Es pot reservar taula a la web")
@@ -334,14 +287,13 @@ private fun Hours(cfg: RestaurantSettings) {
             Field("Hores d'antelació", minHours, { minHours = it }, Modifier.padding(top = 10.dp), type = KeyboardType.Number)
         }
         ErrorNote(err)
-        Btn("Desa els horaris", {
+        Btn("Desa", {
             busy = true; err = ""
             scope.launch {
                 try {
                     Maite.settings = Api.put<Settings>("settings", mapOf("restaurant" to mapOf(
-                        "online" to online, "maxParty" to maxParty, "minHours" to minHours, "open" to open,
-                        "services" to services.map { mapOf("id" to it.id, "name" to it.name, "from" to it.from, "to" to it.to, "seats" to (it.seats.toIntOrNull() ?: 0)) })))
-                    Toasts.done("Horaris desats")
+                        "online" to online, "seats" to seats, "maxParty" to maxParty, "minHours" to minHours, "open" to open)))
+                    Toasts.done("Dies oberts desats")
                 } catch (e: ApiError) { err = e.message.orEmpty() }
                 busy = false
             }

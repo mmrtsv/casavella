@@ -2,10 +2,10 @@
 // POST  /api/maite/restaurant  { date, time, people, name, phone, email, notes, source }
 //       A table taken by phone, WhatsApp or in person. Maite skips the web's limits (seats, notice, party size): the house decides.
 // PATCH /api/maite/restaurant  { id, cancelled: true }  Kept on the calendar as cancelled; its seats are free again.
-// Services, seats and limits change through /api/maite/settings (restaurant).
-import { settings, isDate, addDays, json } from '../../../lib/booking.js';
+// Openings, seats and limits change through /api/maite/settings (restaurant).
+import { isDate, addDays, json } from '../../../lib/booking.js';
 import { isSource } from '../../../lib/maite.js';
-import { tablesConfigured, tables, tableEvent, asTable, serviceAt, isTime } from '../../../lib/restaurant.js';
+import { tablesConfigured, tables, tableEvent, asTable, isTime } from '../../../lib/restaurant.js';
 
 export async function onRequestGet({ request, env }) {
   const u = new URL(request.url), from = u.searchParams.get('from'), to = u.searchParams.get('to');
@@ -28,7 +28,6 @@ export async function onRequestPost({ request, env, data }) {
   if (!(t.people >= 1 && t.people <= 200)) return json({ error: 'people' }, 400);
   if (t.name.length < 2) return json({ error: 'name' }, 400);
   if (!tablesConfigured(env)) return json({ error: 'restaurant_not_configured' }, 503);
-  t.service = serviceAt((await settings(env)).restaurant, t.date, t.time)?.id || '';
   const ev = await (await tables(env)).create(tableEvent(t, data.user));
   return json({ ok: true, table: { ...asTable(ev), date: t.date, time: t.time } });
 }

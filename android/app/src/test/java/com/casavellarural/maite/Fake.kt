@@ -26,11 +26,10 @@ object Fake {
     private val settings = """{"stays":{"montserrat":{"base":90,"weekend":105},"la-pineda":{"base":90,"weekend":null},"les-vinyes":{"base":95,"weekend":110},"figarot":{"base":70,"weekend":80}},
       "days":{"montserrat":{"${d(8)}":{"price":120,"min":2},"${d(9)}":{"price":120}}},"discounts":[{"nights":2,"pct":5},{"nights":3,"pct":10}],
       "rules":{"minNights":1,"maxNights":30,"minAdvance":0,"maxAdvance":365,"checkin":"15:00","checkout":"11:00"},"cancel":{"fullDays":7,"partialDays":2,"partialPct":50},"policy":"",
-      "restaurant":{"online":true,"maxParty":8,"minHours":2,"services":[{"id":"lunch","name":"Dinar","from":"13:00","to":"15:00","seats":15},{"id":"dinner","name":"Sopar","from":"20:00","to":"22:00","seats":15}],
-      "open":{"${d(0)}":["lunch","dinner"],"${d(2)}":["lunch"],"${d(7)}":["dinner"]}}}"""
+      "restaurant":{"online":true,"maxParty":8,"minHours":2,"seats":15,"open":["${d(0)}T13:30","${d(0)}T21:00","${d(2)}T13:00","${d(7)}T21:00"]}}"""
 
     private fun t(id: String, day: Int, time: String, people: Int, name: String, extra: String = "") =
-        """{"id":"$id","date":"${d(day)}","time":"$time","people":$people,"name":"$name","service":"${if (time < "17:00") "lunch" else "dinner"}"$extra}"""
+        """{"id":"$id","date":"${d(day)}","time":"$time","people":$people,"name":"$name"$extra}"""
     val tables = listOf(
         t("t1", 0, "13:30", 4, "Montse Bosch", ""","phone":"+34 646 20 18 77","notes":"Un dels nens és celíac.","source":"web""""),
         t("t2", 0, "14:00", 2, "Xavier Soler", ""","phone":"+34 677 81 30 02","source":"phone""""),

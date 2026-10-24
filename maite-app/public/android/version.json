@@ -1,5 +1,5 @@
 {
-  "versionCode": 4,
-  "version": "2.2",
-  "notes": "Fer posts i stories amb una descripció, amb foto o sense, i triar-ne el tipus"
+  "versionCode": 6,
+  "version": "2.4",
+  "notes": "Restaurant: taules del dia, nova taula, cancel·lar, i horaris i places"
 }

@@ -4,8 +4,9 @@
 //                          own), an upload ('/photos/…') or one of the library ('/maite/social/…'). texts: its own words on the
 //                          image, one per text line of the template (null keeps the template's). slides: the images after it, when
 //                          it is a carousel ([{ tpl, v, photo, texts }], the same fields). copy: its caption, if it already has one.
-//                          story: true for a story (it never goes in the grid; it can be programmed like a post). menu: true
-//                          for the post and the story made in Menús, which lists them.
+//                          story: true for a story (it never goes in the grid; it can be programmed like a post). menu: the
+//                          values of a menu made in Nova publicació › Menú (catalog.ts Menu), kept on its post so the pack can
+//                          be opened again; pack: on the menu's story, the id of its post.
 // PUT  /api/maite/social   { order: [ids] }  New order of the grid; posts left out are removed (stories are not in it, and stay).
 //                          Or { remove: id }  Removes one post or story. Or { copy: { id, text } }  The caption of one post.
 //                          Or { date: { id, date } }  The day a post is planned for ('' to clear, and its program with it);
@@ -13,8 +14,9 @@
 //                          Or { schedule: { id, at, images } }  Programs a post: at, when (ISO); images, its JPEGs already
 //                          uploaded ('/photos/…'), one per slide (image, a single one, still works). Its day becomes the day of
 //                          at in Barcelona. Without at, the program is cancelled.
-//                          Or { edit: { id, v, photo, texts, images } }  Changes a post that isn't published; a programmed one
-//                          needs its new JPEGs (images, or image), which replace the ones the program publishes.
+//                          Or { edit: { id, v, photo, texts, slides, menu, images } }  Changes a post that isn't published
+//                          (slides and menu only when given); a programmed one needs its new JPEGs (images, or image), which
+//                          replace the ones the program publishes.
 //                          Or { template: { id, texts } }  The words changed on a template, for what is made from it next ([] to undo).
 // Opening the grid also publishes programs that are already due (lib/instagram.js), in case the cron hasn't yet.
 // Everything is one KV key, 'social' (lib/social.js).
@@ -38,6 +40,23 @@ const look = b => {
   return Number.isInteger(v) && v >= 0 && v <= 99 && !(photo && !PHOTO.test(photo)) && texts ? { v, photo, texts } : null;
 };
 
+// The slides of a carousel: each one a template with its variation, photo and words, like the post; null if any is wrong
+function slidesOf(list) {
+  const out = [].concat(list || []).map(x => x && TPL.test(x.tpl || '') && look(x) ? { tpl: x.tpl, ...look(x) } : null);
+  return out.length > 9 || out.some(x => !x) ? null : out.map(slim);
+}
+const slim = x => ({ tpl: x.tpl, v: x.v, photo: x.photo, ...(x.texts.length ? { texts: x.texts } : {}) });
+// The values of a menu (catalog.ts Menu): short strings and up to six dishes. null if they don't look like it; false if none
+function menuOf(m) {
+  if (m == null || m === false) return false;
+  if (m === true) return true;
+  const keys = ['photo', 'kicker', 'title', 'subtitle', 'dates', 'name', 'drinks', 'price', 'link'];
+  if (typeof m !== 'object' || keys.some(k => m[k] != null && (typeof m[k] !== 'string' || m[k].length > 300))) return null;
+  const dishes = [].concat(m.dishes || []);
+  if (dishes.length > 6 || dishes.some(d => typeof d !== 'string' || d.length > 300)) return null;
+  return { ...Object.fromEntries(keys.map(k => [k, m[k] || ''])), dishes };
+}
+
 // The day of a moment in Barcelona, as YYYY-MM-DD
 const dayOf = at => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date(at));
 
@@ -50,15 +69,13 @@ export async function onRequestGet({ env, waitUntil }) {
 export async function onRequestPost({ request, env, data }) {
   if (!env.MAITE) return json({ error: 'not_configured' }, 503);
   const b = await body(request);
-  const l = b && TPL.test(b.tpl || '') && look(b);
-  // The slides of a carousel: each one a template with its variation, photo and words, like the post
-  const slides = [].concat(b?.slides || []).map(x => x && TPL.test(x.tpl || '') && look(x) ? { tpl: x.tpl, ...look(x) } : null);
-  if (!l || slides.length > 9 || slides.some(x => !x)) return json({ error: 'bad_request' }, 400);
+  const l = b && TPL.test(b.tpl || '') && look(b), slides = slidesOf(b?.slides), menu = menuOf(b?.menu);
+  if (!l || !slides || menu === null || b.pack != null && !/^[\w-]{1,40}$/.test(String(b.pack))) return json({ error: 'bad_request' }, 400);
   const S = await load(env);
   if (S.posts.length >= 150) return json({ error: 'social_full' }, 400);
   const id = crypto.randomUUID().slice(0, 8);
-  const slim = x => ({ tpl: x.tpl, v: x.v, photo: x.photo, ...(x.texts.length ? { texts: x.texts } : {}) });
-  S.posts.push({ id, ...slim({ tpl: b.tpl, ...l }), ...(slides.length ? { slides: slides.map(slim) } : {}), ...(b.story ? { story: true } : {}), ...(b.menu ? { menu: true } : {}), at: new Date().toISOString(), by: data.user });
+  S.posts.push({ id, ...slim({ tpl: b.tpl, ...l }), ...(slides.length ? { slides } : {}), ...(b.story ? { story: true } : {}), ...(menu ? { menu } : {}),
+    ...(b.pack ? { pack: String(b.pack) } : {}), at: new Date().toISOString(), by: data.user });
   const copy = String(b.copy || '').trim().slice(0, 4000);
   if (copy) S.copies[id] = copy;
   await store(env, S, data.user);
@@ -111,10 +128,13 @@ export async function onRequestPut({ request, env, data }) {
     follow(S);
   } else if (b.edit && S.posts.some(p => p.id === b.edit.id && !p.published)) {
     const post = S.posts.find(p => p.id === b.edit.id), l = look(b.edit);
-    const images = post.schedule && imagesOf(b.edit);
-    if (!l || post.schedule && !images) return json({ error: 'bad_request' }, 400);
+    const images = post.schedule && imagesOf(b.edit), slides = b.edit.slides === undefined ? undefined : slidesOf(b.edit.slides);
+    const menu = b.edit.menu === undefined ? undefined : menuOf(b.edit.menu);
+    if (!l || post.schedule && !images || slides === null || menu === null) return json({ error: 'bad_request' }, 400);
     Object.assign(post, { v: l.v, photo: l.photo });
     if (l.texts.length) post.texts = l.texts; else delete post.texts;
+    if (slides) { if (slides.length) post.slides = slides; else delete post.slides; }
+    if (menu !== undefined) { if (menu) post.menu = menu; else delete post.menu; }
     if (post.schedule) { Object.assign(post.schedule, { image: images[0], by: data.user }); if (images.length > 1) post.schedule.images = images; else delete post.schedule.images; }
   } else if (b.template && TPL.test(b.template.id || '')) {
     const texts = words(b.template.texts);

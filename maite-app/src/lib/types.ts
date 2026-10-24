@@ -9,12 +9,19 @@ export interface Booking {
   method: string; memo: string; policy: Policy | null;
 }
 export interface Stay { id: string; name: string; short: string; max: number }
+export interface Service { id: string; name: string; days: number[]; from: string; to: string; seats: number }
+export interface RestaurantSettings { online: boolean; maxParty: number; minHours: number; maxDays: number; closed: string[]; services: Service[] }
+export interface Table {
+  id: string; date: string; time: string; people: number | null; name: string; phone: string; email: string; notes: string;
+  source: string; service: string; lang: string; cancelled: boolean; link: string;
+}
 export interface Settings {
   stays: Record<string, { base: number; weekend: number | null }>;
   days: Record<string, Record<string, { price?: number; min?: number }>>;
   discounts: { nights: number; pct: number }[];
   rules: { minNights: number; maxNights: number; minAdvance: number; maxAdvance: number; checkin: string; checkout: string };
   cancel: Policy;
+  restaurant: RestaurantSettings;
   policy?: string;
 }
 export interface Feat { icon: string; text: string }

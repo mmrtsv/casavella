@@ -3,7 +3,7 @@ package com.casavellarural.maite.data
 // Labels and rules, as in maite-app/src/lib/words.ts
 val KIND = mapOf("paid" to "Pagada a la web", "pending" to "Pendent del banc", "manual" to "Reserva directa", "block" to "Tancat",
     "cancelled" to "Cancel·lada", "refunded" to "Reemborsada", "other" to "Google Calendar")
-val SOURCE = mapOf("web" to "Web", "phone" to "Telèfon", "whatsapp" to "WhatsApp", "email" to "Correu", "door" to "En persona", "other" to "Altres")
+val SOURCE = mapOf("calendar" to "Google Calendar", "web" to "Web", "phone" to "Telèfon", "whatsapp" to "WhatsApp", "email" to "Correu", "door" to "En persona", "other" to "Altres")
 val METHOD = linkedMapOf("cash" to "Efectiu", "transfer" to "Transferència", "bizum" to "Bizum", "card" to "Targeta (TPV)", "other" to "Altres")
 val PAYTYPE = mapOf("card" to "Targeta", "sepa_debit" to "Domiciliació SEPA", "customer_balance" to "Transferència", "bancontact" to "Bancontact",
     "ideal" to "iDEAL", "paypal" to "PayPal", "klarna" to "Klarna", "link" to "Link", "revolut_pay" to "Revolut Pay", "amazon_pay" to "Amazon Pay")
@@ -20,6 +20,8 @@ val ERRORS = mapOf(
     "no_payment" to "No trobo el pagament a Stripe", "access" to "La sessió ha caducat. Torna a entrar.",
     "discount" to "Revisa els descomptes: de 2 nits en amunt, entre 1 i 90 %, sense repetir nits", "price" to "Revisa els preus",
     "email" to "Revisa el correu", "note" to "Escriu el motiu", "doc_type" to "Només es poden pujar fotos (JPG, PNG, HEIC) o PDF",
+    "restaurant" to "Revisa els horaris del restaurant: cada servei necessita nom, algun dia, les hores i les places",
+    "restaurant_not_configured" to "Falta connectar el calendari del restaurant (CAL_RESTAURANT)", "time" to "Revisa l'hora", "people" to "Revisa el nombre de persones",
     "doc_size" to "El document és massa gran (màxim 15 MB)", "docs_not_configured" to "Falta connectar la carpeta de Google Drive dels documents",
     "drive" to "Google Drive no ha deixat desar el document", "social_full" to "La graella ja té 150 posts: treu-ne algun abans de confirmar-ne més",
     "ai_busy" to "Massa peticions seguides. Espera un moment i torna-ho a provar.", "ai_not_configured" to "Falta la clau de Claude (ANTHROPIC_API_KEY)",

@@ -3,7 +3,7 @@ import type { Booking, Kind, Policy } from './types';
 import { TODAY } from './dates';
 
 export const KIND: Record<Kind, string> = { paid: 'Pagada a la web', pending: 'Pendent del banc', manual: 'Reserva directa', block: 'Tancat', cancelled: 'Cancel·lada', refunded: 'Reemborsada', other: 'Google Calendar' };
-export const SOURCE: Record<string, string> = { web: 'Web', phone: 'Telèfon', whatsapp: 'WhatsApp', email: 'Correu', door: 'En persona', other: 'Altres' };
+export const SOURCE: Record<string, string> = { calendar: 'Google Calendar', web: 'Web', phone: 'Telèfon', whatsapp: 'WhatsApp', email: 'Correu', door: 'En persona', other: 'Altres' };
 export const METHOD: Record<string, string> = { cash: 'Efectiu', transfer: 'Transferència', bizum: 'Bizum', card: 'Targeta (TPV)', other: 'Altres' };
 export const PAYTYPE: Record<string, string> = { card: 'Targeta', sepa_debit: 'Domiciliació SEPA', customer_balance: 'Transferència', bancontact: 'Bancontact', ideal: 'iDEAL', paypal: 'PayPal', klarna: 'Klarna', link: 'Link', revolut_pay: 'Revolut Pay', amazon_pay: 'Amazon Pay', sofort: 'Sofort', giropay: 'Giropay', eps: 'EPS', p24: 'Przelewy24' };
 export const WALLET: Record<string, string> = { apple_pay: 'Apple Pay', google_pay: 'Google Pay', samsung_pay: 'Samsung Pay', link: 'Link' };
@@ -19,6 +19,8 @@ export const ERRORS: Record<string, string> = {
   social_full: 'La graella ja té 150 posts: treu-ne algun abans de confirmar-ne més', ai_busy: 'Massa peticions seguides. Espera un moment i torna-ho a provar.',
   ig_not_configured: "Falta connectar el compte d'Instagram", ig_published: 'Aquest post ja està publicat',
   ai_not_configured: 'Falta la clau de Claude (ANTHROPIC_API_KEY)', ai: "Claude no ha pogut escriure el copy", ai_make: "Claude no ha pogut fer el post. Torna-ho a provar.",
+  restaurant: 'Revisa els horaris del restaurant: cada servei necessita nom, algun dia, les hores i les places',
+  restaurant_not_configured: 'Falta connectar el calendari del restaurant (CAL_RESTAURANT)', time: "Revisa l'hora", people: 'Revisa el nombre de persones',
   docs_not_configured: 'Falta connectar la carpeta de Google Drive dels documents', drive: 'Google Drive no ha deixat desar el document',
 };
 

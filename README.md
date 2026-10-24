@@ -11,7 +11,7 @@ Web de La Casa Vella, casa de poble familiar al Bedorc (1898): allotjaments, res
 | `dist/` | Versió per publicar: document HTML complet, etiquetes per a Google i xarxes, sense les eines de revisió. |
 | `maite-app/` | Maite, el back office (React, Vite, HeroUI). Es construeix a `dist/maite/` (vegeu més avall). Com està fet i quines llibreries fa servir: `maite-app/README.md`. |
 | `android/` | Maite per a Android: app nativa (Compose) amb tot el que fa la web, per instal·lar a mà (vegeu `android/README.md`). |
-| `lib/` | Lògica compartida de les funcions: reserves i preus (`booking.js`), Maite (`maite.js`) i contingut dels allotjaments (`stays.js`). |
+| `lib/` | Lògica compartida de les funcions: reserves i preus (`booking.js`), Maite (`maite.js`), contingut dels allotjaments (`stays.js`) i taules del restaurant (`restaurant.js`). |
 | `cron/` | Un Worker de Cloudflare que cada 5 minuts publica els posts d'Instagram programats (vegeu `cron/README.md`). |
 | `img/` | Fotos, logo, isotip i plaques dels allotjaments. |
 | `fonts/` | Tipografies de marca: Le Monde Livre i Halyard Display. |
@@ -61,13 +61,25 @@ El formulari calcula el preu (per defecte habitació 70 €, apartament 90 € l
 
 Cada allotjament té un Google Calendar a info@casavellarural.com, compartit amb un compte de servei de Google. Qualsevol esdeveniment al calendari d'un allotjament bloqueja aquelles nits, sigui quin sigui el títol (els marcats com a «Disponible» no). Per bloquejar dates a mà, n'hi ha prou amb crear-hi un esdeveniment.
 
-Variables a Cloudflare Pages (Settings → Variables and secrets): `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `GOOGLE_SA_EMAIL`, `GOOGLE_SA_KEY`, `CAL_MONTSERRAT`, `CAL_LA_PINEDA`, `CAL_LES_VINYES`, `CAL_FIGAROT`, `SITE_URL`. Mentre no hi siguin, el formulari mostra el preu i remet al telèfon i al WhatsApp.
+Variables a Cloudflare Pages (Settings → Variables and secrets): `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `GOOGLE_SA_EMAIL`, `GOOGLE_SA_KEY`, `CAL_MONTSERRAT`, `CAL_LA_PINEDA`, `CAL_LES_VINYES`, `CAL_FIGAROT`, `CAL_RESTAURANT` (taules del restaurant), `SITE_URL`. Mentre no hi siguin, el formulari mostra el preu i remet al telèfon i al WhatsApp.
+
+## Reserves del restaurant
+
+El botó «Reservar taula» del restaurant obre `#taula`: l'hoste tria el dia, les persones i l'hora, i deixa el nom, el correu, el telèfon i el que calgui tenir en compte. No hi ha pagament. Ho fa `functions/api/table.js`, amb la lògica a `lib/restaurant.js`:
+
+- `GET /api/table?date=…&people=…`: les hores amb lloc per a aquell grup, per serveis.
+- `POST /api/table`: torna a comprovar les places, escriu la taula al calendari del restaurant i envia la confirmació a l'hoste i un avís a la casa.
+
+Cada servei (per defecte, dinar de dimarts a diumenge de 13 a 15 h i sopar divendres i dissabte de 20 a 22 h, amb 30 places) té els dies, la primera i l'última hora d'arribada (cada mitja hora) i les places de tot el servei. També hi ha el grup més gran que es pot reservar a la web (els més grans truquen), les hores d'antelació, quants dies endavant i els dies tancats. Tot es canvia a Maite (Restaurant, Horaris i places) i es desa a KV amb la resta de normes.
+
+Les taules es guarden en un Google Calendar propi del restaurant, compartit amb el mateix compte de servei, a la variable `CAL_RESTAURANT`. Mentre no hi sigui, la pàgina mostra les hores però remet al telèfon i al WhatsApp per reservar.
 
 ## Correus (Resend)
 
 `lib/email.js` té les plantilles, amb els colors i la tipografia de la marca, i les envia amb [Resend](https://resend.com) (pla gratuït: 100 correus al dia).
 
 - Formulari de contacte (`functions/api/contact.js`): el missatge arriba a info@casavellarural.com (respondre'l li arriba a l'hoste) i l'hoste rep una còpia. Mentre no hi hagi clau, el botó obre el correu de l'hoste amb el missatge ja escrit.
+- Taula al restaurant (`functions/api/table.js`): l'hoste rep la confirmació en el seu idioma i la casa un avís amb les dades.
 - Reserva (`functions/api/stripe-webhook.js`): quan el pagament es completa, l'hoste rep la confirmació i la casa un avís amb les dades. Si el banc encara ha de confirmar el pagament, s'envia «reserva rebuda» i, quan es cobra, la confirmació.
 
 Per activar-ho: compte a Resend amb info@casavellarural.com → Domains → afegir casavellarural.com (amb Cloudflare, el botó «Auto configure» hi posa els registres DNS) → API Keys → crear una clau amb permís d'enviament → a Cloudflare Pages, variable `RESEND_API_KEY`. Opcionals: `CONTACT_TO` (per defecte info@casavellarural.com) i `CONTACT_FROM` (per defecte `La Casa Vella <info@casavellarural.com>`).
@@ -86,6 +98,7 @@ Maite és el back office, a `maite.casavellarural.com`. Surt del mateix projecte
 - **Descomptes**: per estada llarga, tants com calgui («a partir de 7 nits, un 15 % menys»). S'aplica el més alt.
 - **Normes**: estada mínima i màxima, amb quanta antelació es pot reservar, hores d'entrada i sortida, i la política de cancel·lació (Flexible, Moderada, Estricta, No reemborsable o a mida). La web mostra la política al costat de les condicions, i cada reserva guarda la que va acceptar l'hoste: en cancel·lar-la, Maite proposa el retorn que toca.
 
+- **Restaurant**: les taules de cada dia per serveis (dinar, sopar…), amb les places ocupades, i els pròxims dies amb taules. Es pot apuntar una taula (telèfon, WhatsApp, en persona), sense els límits de la web, i cancel·lar-ne una: queda al calendari com a «CANCEL·LADA» i les places tornen a quedar lliures (l'hoste no rep cap correu). A *Horaris i places*: si es pot reservar a la web, els serveis amb els dies, les hores i les places, els límits de la web i els dies tancats.
 - **Allotjaments**: tipus, nom, descripció, capacitat, característiques (amb icona) i fotos de cada allotjament, amb una vista prèvia de com es veu a la web. Les fotos es poden pujar (es redueixen al navegador i es guarden a R2), afegir de les que ja té la web, reordenar arrossegant-les o amb fletxes, i la primera és la portada. Les fotos pujades que ja no fa servir cap allotjament s'esborren. La capacitat compta per a la web, els pagaments i les reserves de Maite. El rètol amb el nom (`img/nom-*.png`) és una imatge i no canvia sol.
 - **Xarxes socials**: les plantilles d'Instagram amb la marca, en pestanyes. *Posts* (1080 × 1350) i *Stories i reels* (1080 × 1920): cada plantilla té variacions («Una altra opció»), s'hi pot posar una foto pròpia i es descarrega en PNG a mida real. Els posts (i la portada de reel) es confirmen per a la graella. A dalt de *Posts* i de *Stories i reels* es pot fer un post o una story descrivint-lo («el sopar de Cap d'Any, 31 de desembre, 65 € per persona»), amb una foto pròpia o sense. Es pot triar el tipus (foto, foto amb frase, només text, menú, paraules d'un hoste, premi o premsa; a les stories, foto amb titular, cartell o portada de reel) i, dins seu, la plantilla, o deixar que ho triï Claude. Sense foto, Claude tria una foto de la casa; amb foto, la mira, la posa en una plantilla que en té i n'escriu a partir del que s'hi veu (llavors la descripció és opcional). En tots dos casos escriu el text de la imatge i el copy, i en proposa dues opcions. Es poden descarregar, copiar-ne el copy o confirmar per a la graella amb el copy ja desat (cal la clau de Claude, pas 7). *Destacats*: les portades dels destacats. *Perfil*: com es veurà el perfil amb els posts confirmats (en pantalla ample, la vista del perfil es desplaça per dins quan els publicats la fan més alta que la finestra); s'ordenen triant el número de cadascun (l'1 és el primer que es publica), es treuen, es descarreguen d'un en un o tota la graella (`01-detall.png`, `02-…`), i cada post té el seu copy: Claude en proposa tres en català (Instagram tradueix els posts a qui llegeix en una altra llengua), i es pot editar. *Calendari*: el dia previst de cada post, en un mes, i el que ja hi ha publicat a Instagram cada dia (des de Maite o des de l'app, amb l'enllaç al post). El dia es tria amb un calendari o arrossegant el post a un dia (i tornant-lo a la llista es treu); els posts amb data passen davant a Perfil, per ordre de dia. Un post es pot publicar ara o programar per a un dia i una hora: la imatge es puja en programar-lo i es publica sola, amb el copy que tingui llavors (cal el Worker de `cron/`; mentrestant, es publica quan algú obre Xarxes socials després de l'hora). A *Perfil*, la graella també s'ordena arrossegant els posts; els programats hi porten el dia i l'hora, i a sota hi ha el que ja és a Instagram, amb una marca i l'enllaç al post. Els publicats es veuen també a «Publicats». *Copies*: els textos de referència de cada plantilla, que són els que es proposen si no hi ha la clau de Claude. Les plantilles són a `maite-app/src/social/` (`templates.ts` es genera des del disseny) i les seves fotos a `maite-app/public/social/`.
 
@@ -99,7 +112,8 @@ Tot el que hi ha al calendari continua sent la referència: el que es crea a mà
 | --- | --- | --- |
 | Reserves, dades dels hostes i la seva llista (entrada, documents…) | Google Calendar, un calendari per allotjament (a l'esdeveniment de cada reserva) | La web (disponibilitat) i Maite |
 | Pagaments i devolucions | Stripe | Maite el consulta en directe |
-| Preus, descomptes, normes, política i textos dels allotjaments | Cloudflare KV, espai `MAITE` (claus `settings` i `stays`) | La web (`/api/settings`) i Maite |
+| Taules del restaurant | Google Calendar del restaurant (`CAL_RESTAURANT`), un esdeveniment per taula | La web (places lliures) i Maite |
+| Preus, descomptes, normes, política, horaris del restaurant i textos dels allotjaments | Cloudflare KV, espai `MAITE` (claus `settings` i `stays`) | La web (`/api/settings`) i Maite |
 | Posts confirmats per a Instagram, el seu ordre, els seus copies i si ja s'han publicat | Cloudflare KV, espai `MAITE` (clau `social`; el testimoni renovat d'Instagram, a `instagram`) | Maite |
 | Fotos pujades a Maite | Cloudflare R2, bucket `PHOTOS`, servides a `/photos/…` | La web i Maite |
 | Fotos originals, disseny i codi | Aquest repositori (`img/`, `index.html`, `functions/`, `lib/`) | Cloudflare Pages el publica a cada push |

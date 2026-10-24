@@ -20,6 +20,7 @@ const SCREENS = {
   Bookings: ['ui/screens/Bookings.kt', 'ui/screens/BookingFile.kt', 'ui/screens/Forms.kt'],
   Prices: ['ui/screens/Settings.kt'], Discounts: ['ui/screens/Settings.kt'], Rules: ['ui/screens/Settings.kt'],
   Stays: ['ui/screens/Stays.kt'], Emails: ['ui/screens/Emails.kt'], Social: ['ui/social/Social.kt', 'ui/social/Renderer.kt'],
+  Restaurant: ['ui/screens/Restaurant.kt', 'ui/screens/Forms.kt'],
 };
 
 /** A fingerprint of the web's Instagram templates, so a stale copy in the app is caught */

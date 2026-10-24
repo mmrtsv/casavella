@@ -1,5 +1,5 @@
 {
   "versionCode": 9,
   "version": "2.7",
-  "notes": "Restaurant: dies oberts, cada un amb el seu dia i la seva hora"
+  "notes": "Generador de posts: publica o programa en acabar un post, i el copy és obligatori. Perfil ara és Publicar, amb Programa i Publica ara. El calendari només mostra el pla."
 }

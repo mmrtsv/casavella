@@ -30,12 +30,11 @@ abstract class Shots(private val device: String) {
         Today.value = Fake.today
         Api.fake = { m, p, _ -> Fake.answer(m, p) }
         Auth.state = Auth.State.SignedIn
-        Ui.page = Page.Home; Ui.detail = null; Ui.book = null; Ui.block = null; Ui.search = false; Ui.more = false; Ui.dark = false
+        Ui.page = Page.Home; Ui.detail = null; Ui.book = null; Ui.block = null; Ui.search = false; Ui.more = false
         Maite.ready = false; Maite.content = null; Maite.social = null
     }
 
-    private fun shot(name: String, dark: Boolean = false, setup: () -> Unit = {}) {
-        Ui.dark = dark
+    private fun shot(name: String, setup: () -> Unit = {}) {
         setup()
         compose.setContent { MaiteRoot() }
         compose.waitUntil(5_000) { Maite.ready }
@@ -44,7 +43,6 @@ abstract class Shots(private val device: String) {
     }
 
     @Test fun home() = shot("01-inici")
-    @Test fun homeDark() = shot("02-inici-fosc", dark = true)
     @Test fun calendar() = shot("03-calendari") { Ui.page = Page.Calendar }
     @Test fun bookings() = shot("04-reserves") { Ui.page = Page.Bookings }
     @Test fun file() = shot("05-fitxa") { Ui.page = Page.Bookings; Ui.detail = "montserrat|e1" }

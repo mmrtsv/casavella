@@ -31,8 +31,6 @@ object Ui {
     var search by mutableStateOf(false)
     var more by mutableStateOf(false)
     var keys by mutableStateOf(false)
-    /** null follows the phone */
-    var dark by mutableStateOf<Boolean?>(null)
     var bookingsFilter by mutableStateOf("")
 
     fun go(p: Page) { page = p; more = false }

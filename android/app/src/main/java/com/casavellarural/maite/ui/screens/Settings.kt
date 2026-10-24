@@ -67,6 +67,7 @@ import com.casavellarural.maite.ui.Look
 import com.casavellarural.maite.ui.Muted
 import com.casavellarural.maite.ui.Panel
 import com.casavellarural.maite.ui.Segmented
+import com.casavellarural.maite.ui.Tabs
 import com.casavellarural.maite.ui.T
 import com.casavellarural.maite.ui.Toasts
 import com.casavellarural.maite.ui.Type
@@ -87,11 +88,21 @@ private fun nightOf(S: Settings, stay: String, d: String): Pair<Double, Boolean>
 
 private data class PSel(val a: String, val b: String? = null, val weekends: Boolean = false)
 
-@OptIn(ExperimentalLayoutApi::class)
-/** Preus: a month per stay. Tap a day, or the first and last of a period, to give it a special price or a minimum stay */
+/** Preus: two tabs, the nights of each stay and the long-stay discounts */
 @Composable
 fun Prices() {
     val S = Maite.settings ?: return LoadingPage()
+    var tab by remember { mutableStateOf("nights") }
+    Page {
+        Tabs(listOf("nights" to "Per nit", "discounts" to "Descomptes"), tab, { tab = it })
+        if (tab == "nights") Nights(S) else Discounts(S)
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+/** Per nit: a month per stay. Tap a day, or the first and last of a period, to give it a special price or a minimum stay */
+@Composable
+private fun Nights(S: Settings) {
     var stay by remember { mutableStateOf(Maite.stays.firstOrNull()?.id.orEmpty()) }
     var month by remember { mutableStateOf(TODAY.take(7) + "-01") }
     var sel by remember { mutableStateOf<PSel?>(null) }
@@ -106,48 +117,46 @@ fun Prices() {
     val booked = { d: String -> Maite.all().any { it.blocks && it.stay == stay && it.first <= d && it.until > d } }
     val scope = rememberCoroutineScope()
 
-    Page {
-        Segmented(Maite.stays.map { it.id to it.short }, stay, { stay = it; sel = null })
-        Card(Modifier.fillMaxWidth(), padding = PaddingValues(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(monthTitle(month), style = Type.lg, modifier = Modifier.weight(1f))
-                IconBtn(R.drawable.ic_chevron_left, "Mes anterior", { month = m.minusMonths(1).toString(); sel = null; scope.launch { runCatching { Maite.ensure(month, parse(month).plusMonths(1).toString()) } } }, enabled = month > TODAY.take(7) + "-01")
-                IconBtn(R.drawable.ic_chevron_right, "Mes següent", { month = m.plusMonths(1).toString(); sel = null; scope.launch { runCatching { Maite.ensure(month, parse(month).plusMonths(1).toString()) } } })
-            }
-            Row { listOf("dl", "dt", "dc", "dj", "dv", "ds", "dg").forEach { Text(it, style = Type.xs, color = T.muted, modifier = Modifier.weight(1f).padding(vertical = 4.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center) } }
-            val cells = List(lead) { null } + days
-            cells.chunked(7).forEach { week ->
-                Row(Modifier.padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    (0 until 7).forEach { i ->
-                        val d = week.getOrNull(i)
-                        Box(Modifier.weight(1f)) {
-                            if (d != null) {
-                                val (price, special) = nightOf(S, stay, d); val min = S.days[stay]?.get(d)?.min
-                                val past = d < TODAY; val on = d in dates; val bk = booked(d)
-                                Column(
-                                    Modifier.fillMaxWidth().height(58.dp).clip(RoundedCornerShape(10.dp)).alpha(if (past) 0.35f else 1f)
-                                        .background(when { on -> T.accent.copy(alpha = 0.22f); bk -> T.accent.copy(alpha = 0.12f); special -> T.cava.copy(alpha = 0.25f); else -> T.default.copy(alpha = 0.45f) })
-                                        .then(if (on) Modifier.border(2.dp, T.accent, RoundedCornerShape(10.dp)) else if (bk) Modifier.border(1.dp, T.accent.copy(alpha = 0.4f), RoundedCornerShape(10.dp)) else Modifier)
-                                        .clickable(enabled = !past) { val s = sel; sel = if (s != null && s.b == null && !s.weekends && d >= s.a) s.copy(b = d) else PSel(d) }
-                                        .padding(5.dp),
-                                    verticalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Row { Text("${parse(d).dayOfMonth}", style = Type.xs, fontWeight = if (d == TODAY) FontWeight.Bold else FontWeight.Normal, color = if (d == TODAY) T.accent else T.muted, modifier = Modifier.weight(1f))
-                                        if (min != null) Text("${min}n", style = Type.xs, fontWeight = FontWeight.SemiBold) }
-                                    Text("${plain(price)} €", style = Type.xs.copy(fontWeight = if (special) FontWeight.SemiBold else FontWeight.Normal), maxLines = 1)
-                                }
+    Segmented(Maite.stays.map { it.id to it.short }, stay, { stay = it; sel = null })
+    Card(Modifier.fillMaxWidth(), padding = PaddingValues(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(monthTitle(month), style = Type.lg, modifier = Modifier.weight(1f))
+            IconBtn(R.drawable.ic_chevron_left, "Mes anterior", { month = m.minusMonths(1).toString(); sel = null; scope.launch { runCatching { Maite.ensure(month, parse(month).plusMonths(1).toString()) } } }, enabled = month > TODAY.take(7) + "-01")
+            IconBtn(R.drawable.ic_chevron_right, "Mes següent", { month = m.plusMonths(1).toString(); sel = null; scope.launch { runCatching { Maite.ensure(month, parse(month).plusMonths(1).toString()) } } })
+        }
+        Row { listOf("dl", "dt", "dc", "dj", "dv", "ds", "dg").forEach { Text(it, style = Type.xs, color = T.muted, modifier = Modifier.weight(1f).padding(vertical = 4.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center) } }
+        val cells = List(lead) { null } + days
+        cells.chunked(7).forEach { week ->
+            Row(Modifier.padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                (0 until 7).forEach { i ->
+                    val d = week.getOrNull(i)
+                    Box(Modifier.weight(1f)) {
+                        if (d != null) {
+                            val (price, special) = nightOf(S, stay, d); val min = S.days[stay]?.get(d)?.min
+                            val past = d < TODAY; val on = d in dates; val bk = booked(d)
+                            Column(
+                                Modifier.fillMaxWidth().height(58.dp).clip(RoundedCornerShape(10.dp)).alpha(if (past) 0.35f else 1f)
+                                    .background(when { on -> T.accent.copy(alpha = 0.22f); bk -> T.accent.copy(alpha = 0.12f); special -> T.cava.copy(alpha = 0.25f); else -> T.default.copy(alpha = 0.45f) })
+                                    .then(if (on) Modifier.border(2.dp, T.accent, RoundedCornerShape(10.dp)) else if (bk) Modifier.border(1.dp, T.accent.copy(alpha = 0.4f), RoundedCornerShape(10.dp)) else Modifier)
+                                    .clickable(enabled = !past) { val s = sel; sel = if (s != null && s.b == null && !s.weekends && d >= s.a) s.copy(b = d) else PSel(d) }
+                                    .padding(5.dp),
+                                verticalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Row { Text("${parse(d).dayOfMonth}", style = Type.xs, fontWeight = if (d == TODAY) FontWeight.Bold else FontWeight.Normal, color = if (d == TODAY) T.accent else T.muted, modifier = Modifier.weight(1f))
+                                    if (min != null) Text("${min}n", style = Type.xs, fontWeight = FontWeight.SemiBold) }
+                                Text("${plain(price)} €", style = Type.xs.copy(fontWeight = if (special) FontWeight.SemiBold else FontWeight.Normal), maxLines = 1)
                             }
                         }
                     }
                 }
             }
-            FlowRow(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Btn("Caps de setmana", { sel = PSel(maxOf(month, TODAY), m.plusMonths(1).minusDays(1).toString(), weekends = true) }, look = Look.Secondary)
-                Btn("Tot el mes", { sel = PSel(maxOf(month, TODAY), m.plusMonths(1).minusDays(1).toString()) }, look = Look.Secondary)
-            }
         }
-        if (sel != null && dates.isNotEmpty()) DaysPanel(S, stay, dates, sel!!.weekends) { sel = null } else NormalPanel(S, stay)
+        FlowRow(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Btn("Caps de setmana", { sel = PSel(maxOf(month, TODAY), m.plusMonths(1).minusDays(1).toString(), weekends = true) }, look = Look.Secondary)
+            Btn("Tot el mes", { sel = PSel(maxOf(month, TODAY), m.plusMonths(1).minusDays(1).toString()) }, look = Look.Secondary)
+        }
     }
+    if (sel != null && dates.isNotEmpty()) DaysPanel(S, stay, dates, sel!!.weekends) { sel = null } else NormalPanel(S, stay)
 }
 
 @Composable
@@ -213,51 +222,48 @@ private fun DaysPanel(S: Settings, stay: String, dates: List<String>, weekends: 
 @OptIn(ExperimentalLayoutApi::class)
 /** Descomptes: longer stays pay less; the highest discount that applies wins */
 @Composable
-fun Discounts() {
-    val S = Maite.settings ?: return LoadingPage()
+private fun Discounts(S: Settings) {
     var tiers by remember(S.discounts) { mutableStateOf(S.discounts.map { "${it.nights}" to "${it.pct}" }) }
     var busy by remember { mutableStateOf(false) }; var err by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val s = Maite.stays.firstOrNull(); val base = s?.let { S.stays[it.id]?.base } ?: 0.0
     fun pctFor(n: Int) = tiers.filter { n >= (it.first.toIntOrNull() ?: 999) }.maxOfOrNull { it.second.toIntOrNull() ?: 0 } ?: 0
-    Page {
-        Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
-            Text("Descomptes per estada llarga", style = Type.lg)
-            Muted("Com més nits, més descompte. S'aplica el més alt que toqui. A la web, els textos que en parlen s'actualitzen sols.", Modifier.padding(top = 4.dp, bottom = 14.dp))
-            if (tiers.isEmpty()) Panel(Modifier.fillMaxWidth()) { Muted("Sense descomptes: totes les estades paguen el preu per nit.") }
-            tiers.forEachIndexed { i, t ->
-                Panel(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Field("A partir de (nits)", t.first, { v -> tiers = tiers.mapIndexed { j, x -> if (j == i) v to x.second else x } }, Modifier.weight(1f), type = KeyboardType.Number)
-                        Field("Descompte (%)", t.second, { v -> tiers = tiers.mapIndexed { j, x -> if (j == i) x.first to v else x } }, Modifier.weight(1f), type = KeyboardType.Number)
-                        IconBtn(R.drawable.ic_trash_2, "Treu aquest descompte", { tiers = tiers.filterIndexed { j, _ -> j != i } })
-                    }
+    Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
+        Text("Descomptes per estada llarga", style = Type.lg)
+        Muted("Com més nits, més descompte. S'aplica el més alt que toqui. A la web, els textos que en parlen s'actualitzen sols.", Modifier.padding(top = 4.dp, bottom = 14.dp))
+        if (tiers.isEmpty()) Panel(Modifier.fillMaxWidth()) { Muted("Sense descomptes: totes les estades paguen el preu per nit.") }
+        tiers.forEachIndexed { i, t ->
+            Panel(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Field("A partir de (nits)", t.first, { v -> tiers = tiers.mapIndexed { j, x -> if (j == i) v to x.second else x } }, Modifier.weight(1f), type = KeyboardType.Number)
+                    Field("Descompte (%)", t.second, { v -> tiers = tiers.mapIndexed { j, x -> if (j == i) x.first to v else x } }, Modifier.weight(1f), type = KeyboardType.Number)
+                    IconBtn(R.drawable.ic_trash_2, "Treu aquest descompte", { tiers = tiers.filterIndexed { j, _ -> j != i } })
                 }
-            }
-            ErrorNote(err)
-            FlowRow(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Btn("Afegeix un descompte", { val last = tiers.lastOrNull(); tiers = tiers + ((last?.first?.toIntOrNull()?.plus(4) ?: 2).toString() to (last?.second?.toIntOrNull()?.plus(5)?.coerceAtMost(90) ?: 5).toString()) }, look = Look.Secondary, icon = R.drawable.ic_plus)
-                Btn("Desa els descomptes", {
-                    busy = true; err = ""
-                    scope.launch {
-                        try { Maite.settings = Api.put<Settings>("settings", mapOf("discounts" to tiers.map { mapOf("nights" to (it.first.toIntOrNull() ?: 0), "pct" to (it.second.toIntOrNull() ?: 0)) })); Toasts.done("Descomptes desats") }
-                        catch (e: ApiError) { err = e.message.orEmpty() }
-                        busy = false
-                    }
-                }, busy = busy)
             }
         }
-        if (s != null) Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
-            Text("Exemple", style = Type.xs, color = T.muted)
-            Text("${s.name} a ${euros(base)} la nit", style = Type.base, fontWeight = FontWeight.SemiBold)
-            listOf(1, 2, 3, 5, 7, 14).forEach { n ->
-                val p = pctFor(n)
-                Divider()
-                Row(Modifier.padding(vertical = 10.dp)) {
-                    Text(nitsTxt(n), style = Type.sm, modifier = Modifier.weight(1f))
-                    if (p > 0) Text("−$p %   ", style = Type.sm, color = T.muted)
-                    Text(euro(Math.round(base * n * (100 - p))), style = Type.sm, fontWeight = FontWeight.SemiBold)
+        ErrorNote(err)
+        FlowRow(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Btn("Afegeix un descompte", { val last = tiers.lastOrNull(); tiers = tiers + ((last?.first?.toIntOrNull()?.plus(4) ?: 2).toString() to (last?.second?.toIntOrNull()?.plus(5)?.coerceAtMost(90) ?: 5).toString()) }, look = Look.Secondary, icon = R.drawable.ic_plus)
+            Btn("Desa els descomptes", {
+                busy = true; err = ""
+                scope.launch {
+                    try { Maite.settings = Api.put<Settings>("settings", mapOf("discounts" to tiers.map { mapOf("nights" to (it.first.toIntOrNull() ?: 0), "pct" to (it.second.toIntOrNull() ?: 0)) })); Toasts.done("Descomptes desats") }
+                    catch (e: ApiError) { err = e.message.orEmpty() }
+                    busy = false
                 }
+            }, busy = busy)
+        }
+    }
+    if (s != null) Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
+        Text("Exemple", style = Type.xs, color = T.muted)
+        Text("${s.name} a ${euros(base)} la nit", style = Type.base, fontWeight = FontWeight.SemiBold)
+        listOf(1, 2, 3, 5, 7, 14).forEach { n ->
+            val p = pctFor(n)
+            Divider()
+            Row(Modifier.padding(vertical = 10.dp)) {
+                Text(nitsTxt(n), style = Type.sm, modifier = Modifier.weight(1f))
+                if (p > 0) Text("−$p %   ", style = Type.sm, color = T.muted)
+                Text(euro(Math.round(base * n * (100 - p))), style = Type.sm, fontWeight = FontWeight.SemiBold)
             }
         }
     }

@@ -51,7 +51,6 @@ abstract class Shots(private val device: String) {
     @Test fun fileBooking() = shot("06-fitxa-directa") { Ui.page = Page.Bookings; Ui.detail = "la-pineda|e2" }
     @Test fun newBooking() = shot("07-nova-reserva") { Ui.page = Page.Calendar; Ui.book = com.casavellarural.maite.ui.BookDraft("montserrat", Fake.today, com.casavellarural.maite.data.addDays(Fake.today, 2)) }
     @Test fun prices() = shot("08-preus") { Ui.page = Page.Prices }
-    @Test fun discounts() = shot("09-descomptes") { Ui.page = Page.Discounts }
     @Test fun rules() = shot("10-normes") { Ui.page = Page.Rules }
     @Test fun stays() = shot("11-allotjaments") { Ui.page = Page.Stays }
     @Test fun more() = shot("12-mes") { Ui.more = true }

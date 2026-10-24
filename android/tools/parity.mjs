@@ -18,7 +18,7 @@ const KT = path.join(ROOT, 'android/app/src/main/java/com/casavellarural/maite')
 const SCREENS = {
   Home: ['ui/screens/Home.kt'], Calendar: ['ui/screens/Calendar.kt', 'ui/screens/Forms.kt'],
   Bookings: ['ui/screens/Bookings.kt', 'ui/screens/BookingFile.kt', 'ui/screens/Forms.kt'],
-  Prices: ['ui/screens/Settings.kt'], Discounts: ['ui/screens/Settings.kt'], Rules: ['ui/screens/Settings.kt'],
+  Prices: ['ui/screens/Settings.kt'], Rules: ['ui/screens/Settings.kt'],
   Stays: ['ui/screens/Stays.kt'], Emails: ['ui/screens/Emails.kt'], Social: ['ui/social/Social.kt', 'ui/social/Renderer.kt'],
   Restaurant: ['ui/screens/Restaurant.kt', 'ui/screens/Forms.kt'],
 };

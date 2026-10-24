@@ -1,5 +1,5 @@
 {
-  "versionCode": 10,
-  "version": "2.8",
-  "notes": "Restaurant: dies oberts amb el seu dia i hora, el restaurant a Inici, i Cobrat per apuntar el que paga cada taula"
+  "versionCode": 11,
+  "version": "2.9",
+  "notes": "Descomptes ara és una pestanya dins de Preus"
 }

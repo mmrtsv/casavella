@@ -13,13 +13,11 @@ import { done, toastError } from '../parts/toast';
 import type { RestaurantSettings, Service, Settings, Table } from '../lib/types';
 
 type Tab = 'tables' | 'hours';
-const WEEK = ['dl', 'dt', 'dc', 'dj', 'dv', 'ds', 'dg'];
 const SOURCES = [{ id: 'phone', name: 'Telèfon' }, { id: 'whatsapp', name: 'WhatsApp' }, { id: 'email', name: 'Correu' }, { id: 'door', name: 'En persona' }, { id: 'other', name: 'Altres' }];
 const persones = (n: number) => `${n} ${n === 1 ? 'persona' : 'persones'}`;
-// 1 = Monday … 7 = Sunday, as lib/restaurant.js
-const weekday = (d: string) => (new Date(d + 'T12:00:00').getDay() + 6) % 7 + 1;
 const mins = (t: string) => +t.slice(0, 2) * 60 + +t.slice(3, 5);
-const servicesOn = (R: RestaurantSettings, d: string) => R.closed.includes(d) ? [] : R.services.filter(s => s.days.includes(weekday(d)));
+// Closed unless that date is opened, as lib/restaurant.js
+const servicesOn = (R: RestaurantSettings, d: string) => R.services.filter(s => (R.open[d] || []).includes(s.id));
 const inService = (s: Service, t: Table) => t.service ? t.service === s.id : !!t.time && mins(t.time) >= mins(s.from) && mins(t.time) <= mins(s.to);
 const seated = (list: Table[]) => list.reduce((n, t) => n + (t.people || 0), 0);
 
@@ -65,11 +63,12 @@ function Tables() {
   const services = servicesOn(R, date);
   const groups = services.map(s => ({ s, list: live.filter(t => inService(s, t)) }));
   const rest = live.filter(t => !services.some(s => inService(s, t)));
+  // The open days ahead and any other day that has tables, in order
   const upcoming = useMemo(() => {
-    const by = new Map<string, Table[]>();
-    for (const t of all) if (!t.cancelled && t.date >= TODAY && t.date < addDays(TODAY, 30)) by.set(t.date, [...(by.get(t.date) || []), t]);
-    return [...by.entries()];
-  }, [all]);
+    const by = new Map<string, Table[]>(Object.keys(R.open).filter(d => d >= TODAY).map(d => [d, []]));
+    for (const t of all) if (!t.cancelled && t.date >= TODAY && t.date < addDays(TODAY, 60)) by.set(t.date, [...(by.get(t.date) || []), t]);
+    return [...by.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [all, R.open]);
 
   return (
     <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -83,7 +82,7 @@ function Tables() {
         </div>
         {!configured && <p className="mt-4 rounded-xl bg-warning/10 px-3 py-2 text-sm">Falta connectar el calendari del restaurant (CAL_RESTAURANT). Fins llavors, la web remet al telèfon.</p>}
         {error && <p role="alert" className="mt-4 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
-        {!services.length && <p className="mt-5 text-sm text-muted">{R.closed.includes(date) ? 'Aquest dia el restaurant és tancat.' : 'Aquest dia no hi ha cap servei.'}</p>}
+        {!services.length && <p className="mt-5 text-sm text-muted">Aquest dia el restaurant no obre. Els dies s'obren a Horaris i places.</p>}
         {groups.map(({ s, list }) => (
           <div key={s.id} className="mt-6">
             <div className="flex items-baseline gap-3 border-b border-separator pb-2">
@@ -121,7 +120,7 @@ function Tables() {
               </li>
             ))}
           </ul>
-        ) : <p className="mt-2 text-sm text-muted">Cap taula en els pròxims 30 dies.</p>}
+        ) : <p className="mt-2 text-sm text-muted">Cap dia obert.</p>}
       </section>
       <NewTable isOpen={adding} date={date} tables={all} onClose={() => setAdding(false)} onSaved={t => { put(t); setDate(t.date); }} />
       <CancelTable t={cancel} onClose={() => setCancel(null)} onSaved={put} />
@@ -195,9 +194,9 @@ function CancelTable({ t, onClose, onSaved }: { t: Table | null; onClose: () => 
   );
 }
 
-// ---------- Hours and seats ----------
-type Form = { online: boolean; maxParty: string; minHours: string; maxDays: string; closed: string[]; services: (Omit<Service, 'seats'> & { seats: string })[] };
-const toForm = (R: RestaurantSettings): Form => ({ online: R.online, maxParty: String(R.maxParty), minHours: String(R.minHours), maxDays: String(R.maxDays), closed: [...R.closed], services: R.services.map(s => ({ ...s, seats: String(s.seats) })) });
+// ---------- Open days, services and limits ----------
+type Form = { online: boolean; maxParty: string; minHours: string; open: Record<string, string[]>; services: (Omit<Service, 'seats'> & { seats: string })[] };
+const toForm = (R: RestaurantSettings): Form => ({ online: R.online, maxParty: String(R.maxParty), minHours: String(R.minHours), open: { ...R.open }, services: R.services.map(s => ({ ...s, seats: String(s.seats) })) });
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -211,14 +210,22 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 function Hours() {
   const R = useStore(s => s.settings)!.restaurant;
   const [f, setF] = useState<Form>(() => toForm(R));
-  const [closeDay, setCloseDay] = useState(TODAY);
+  const [first, setFirst] = useState(TODAY); const [last, setLast] = useState(TODAY);
+  const [pick, setPick] = useState<string[]>(() => R.services.map(s => s.id));
   const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
   const setS = (i: number, patch: Partial<Form['services'][number]>) => setF(x => ({ ...x, services: x.services.map((s, j) => j === i ? { ...s, ...patch } : s) }));
+  const setDay = (d: string, ids: string[]) => setF(x => { const open = { ...x.open }; if (ids.length) open[d] = ids; else delete open[d]; return { ...x, open }; });
+  // Opens every date from the first to the last with the services picked (a single day when both are the same)
+  const openRange = () => {
+    if (!pick.length || first < TODAY || last < first) return;
+    setF(x => { const open = { ...x.open }; for (let d = first; d <= last; d = addDays(d, 1)) open[d] = [...pick]; return { ...x, open }; });
+  };
+  const days = Object.keys(f.open).filter(d => d >= TODAY).sort();
   const dirty = JSON.stringify(f) !== JSON.stringify(toForm(R));
   const save = async () => {
     setBusy(true); setErr(''); let ok = false;
     try {
-      const next = await api<Settings>('settings', { method: 'PUT', body: { restaurant: { ...f, maxParty: Number(f.maxParty), minHours: Number(f.minHours), maxDays: Number(f.maxDays), services: f.services.map(s => ({ ...s, seats: Number(s.seats) })) } } });
+      const next = await api<Settings>('settings', { method: 'PUT', body: { restaurant: { ...f, maxParty: Number(f.maxParty), minHours: Number(f.minHours), services: f.services.map(s => ({ ...s, seats: Number(s.seats) })) } } });
       setSettings(next); setF(toForm(next.restaurant)); done('Horaris desats'); ok = true;
     } catch (e) { setErr((e as Error).message); }
     setBusy(false); return ok;
@@ -226,52 +233,50 @@ function Hours() {
   useGuard(dirty, save);
   return (
     <div className="card p-5 sm:p-8">
-      <Section title="A la web" hint="Si no, el botó de reservar taula remet al telèfon i al WhatsApp.">
-        <Check isSelected={f.online} onChange={v => setF(x => ({ ...x, online: v }))}>Es pot reservar taula a la web</Check>
+      <Section title="Dies oberts" hint="El restaurant només obre els dies que hi ha aquí, amb els serveis de cada dia. La resta de dies, la web no ofereix taula.">
+        <div className="flex flex-wrap items-end gap-3">
+          <Field label="Des del" type="date" value={first} onChange={v => { setFirst(v); if (last < v) setLast(v); }} className="w-44" />
+          <Field label="Fins al" type="date" value={last} onChange={setLast} className="w-44" />
+          <ToggleButtonGroup aria-label="Serveis" selectionMode="multiple" selectedKeys={new Set(pick)} size="sm" onSelectionChange={(k: Set<Key>) => setPick([...k].map(String))}>
+            {f.services.map(s => <ToggleButton key={s.id} id={s.id}>{s.name || 'Servei'}</ToggleButton>)}
+          </ToggleButtonGroup>
+          <Button variant="secondary" onPress={openRange} isDisabled={!pick.length}><Plus size={16} />Obre</Button>
+        </div>
+        {days.length ? (
+          <ul className="mt-4">
+            {days.map(d => (
+              <li key={d} className="flex flex-wrap items-center gap-3 border-b border-separator py-2 text-sm">
+                <span className="min-w-48 flex-1">{cap(longDay(d))}</span>
+                <ToggleButtonGroup aria-label={`Serveis del ${day(d)}`} selectionMode="multiple" selectedKeys={new Set(f.open[d])} size="sm"
+                  onSelectionChange={(k: Set<Key>) => setDay(d, [...k].map(String))}>
+                  {f.services.map(s => <ToggleButton key={s.id} id={s.id}>{s.name || 'Servei'}</ToggleButton>)}
+                </ToggleButtonGroup>
+                <Button isIconOnly variant="ghost" size="sm" aria-label={`Tanca ${day(d)}`} onPress={() => setDay(d, [])}><Trash2 size={15} /></Button>
+              </li>
+            ))}
+          </ul>
+        ) : <p className="mt-4 text-sm text-muted">Cap dia obert. La web diu que el restaurant obre en dates concretes i dona el telèfon.</p>}
       </Section>
       <Section title="Serveis" hint="Les hores són la primera i l'última d'arribada, cada mitja hora. Les places compten per a tot el servei.">
         <div className="space-y-2">
           {f.services.map((s, i) => (
-            <div key={s.id} className="rounded-2xl bg-default/50 p-3">
-              <div className="flex flex-wrap items-end gap-3">
-                <Field label="Nom" value={s.name} onChange={v => setS(i, { name: v })} className="w-40" />
-                <Field label="Primera hora" type="time" value={s.from} onChange={v => setS(i, { from: v })} className="w-32" />
-                <Field label="Última hora" type="time" value={s.to} onChange={v => setS(i, { to: v })} className="w-32" />
-                <Field label="Places" value={s.seats} onChange={v => setS(i, { seats: v })} inputMode="numeric" className="w-24" />
-                <Button isIconOnly variant="ghost" aria-label={`Treu ${s.name || 'aquest servei'}`} className="ml-auto" onPress={() => setF(x => ({ ...x, services: x.services.filter((_, j) => j !== i) }))}><Trash2 size={16} /></Button>
-              </div>
-              <ToggleButtonGroup aria-label={`Dies de ${s.name}`} selectionMode="multiple" selectedKeys={new Set(s.days.map(String))} size="sm" className="mt-3"
-                onSelectionChange={(k: Set<Key>) => setS(i, { days: [...k].map(Number).sort() })}>
-                {WEEK.map((w, j) => <ToggleButton key={w} id={String(j + 1)}>{w}</ToggleButton>)}
-              </ToggleButtonGroup>
+            <div key={s.id} className="flex flex-wrap items-end gap-3 rounded-2xl bg-default/50 p-3">
+              <Field label="Nom" value={s.name} onChange={v => setS(i, { name: v })} className="w-40" />
+              <Field label="Primera hora" type="time" value={s.from} onChange={v => setS(i, { from: v })} className="w-32" />
+              <Field label="Última hora" type="time" value={s.to} onChange={v => setS(i, { to: v })} className="w-32" />
+              <Field label="Places" value={s.seats} onChange={v => setS(i, { seats: v })} inputMode="numeric" className="w-24" />
+              <Button isIconOnly variant="ghost" aria-label={`Treu ${s.name || 'aquest servei'}`} className="ml-auto" onPress={() => setF(x => ({ ...x, services: x.services.filter((_, j) => j !== i) }))}><Trash2 size={16} /></Button>
             </div>
           ))}
-          {!f.services.length && <p className="rounded-2xl bg-default/50 p-4 text-sm text-muted">Sense serveis, la web no ofereix cap hora.</p>}
         </div>
-        {f.services.length < 6 && <Button variant="secondary" className="mt-3" onPress={() => setF(x => ({ ...x, services: [...x.services, { id: `s${Date.now().toString(36)}`, name: '', days: [6, 7], from: '13:00', to: '15:00', seats: '20' }] }))}><Plus size={16} />Afegeix un servei</Button>}
+        {f.services.length < 6 && <Button variant="secondary" className="mt-3" onPress={() => setF(x => ({ ...x, services: [...x.services, { id: `s${Date.now().toString(36)}`, name: '', from: '13:00', to: '15:00', seats: '15' }] }))}><Plus size={16} />Afegeix un servei</Button>}
       </Section>
-      <Section title="Límits" hint="Només per a la web. Des de Maite es pot apuntar qualsevol taula.">
-        <div className="grid gap-4 sm:grid-cols-3">
+      <Section title="A la web" hint="Només per a la web. Des de Maite es pot apuntar qualsevol taula, qualsevol dia.">
+        <Check isSelected={f.online} onChange={v => setF(x => ({ ...x, online: v }))}>Es pot reservar taula a la web</Check>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Persones per taula, com a molt" value={f.maxParty} onChange={v => setF(x => ({ ...x, maxParty: v }))} inputMode="numeric" help="Els grups més grans truquen" />
           <Field label="Hores d'antelació" value={f.minHours} onChange={v => setF(x => ({ ...x, minHours: v }))} inputMode="numeric" />
-          <Field label="Dies endavant" value={f.maxDays} onChange={v => setF(x => ({ ...x, maxDays: v }))} inputMode="numeric" />
         </div>
-      </Section>
-      <Section title="Dies tancats" hint="Festius, vacances o un esdeveniment privat. Aquells dies la web no ofereix taula.">
-        <div className="flex flex-wrap items-end gap-3">
-          <Field label="Dia" type="date" value={closeDay} onChange={setCloseDay} className="w-44" />
-          <Button variant="secondary" onPress={() => { if (closeDay >= TODAY && !f.closed.includes(closeDay)) setF(x => ({ ...x, closed: [...x.closed, closeDay].sort() })); }}><Plus size={16} />Tanca aquest dia</Button>
-        </div>
-        {f.closed.length > 0 && (
-          <ul className="mt-3">
-            {f.closed.map(d => (
-              <li key={d} className="flex items-center gap-3 border-b border-separator py-1.5 text-sm">
-                <span className="flex-1">{cap(longDay(d))}</span>
-                <Button isIconOnly variant="ghost" size="sm" aria-label={`Obre ${day(d)}`} onPress={() => setF(x => ({ ...x, closed: x.closed.filter(c => c !== d) }))}><Trash2 size={15} /></Button>
-              </li>
-            ))}
-          </ul>
-        )}
       </Section>
       {err && <p role="alert" className="mb-3 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">{err}</p>}
       <div className="flex justify-end border-t border-separator pt-5"><Button isPending={busy} onPress={save}>{busy && <Spinner size="sm" color="current" />}Desa els horaris</Button></div>

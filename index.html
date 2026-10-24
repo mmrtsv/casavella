@@ -2389,21 +2389,15 @@ guestForm.addEventListener('submit', async e => {
 });
 
 // ---- Restaurant: a table for a day, a time and a number of people (/api/table). No payment. ----
-// Services, seats and limits come from Maite; this is the first guess and the fallback for the review preview.
-let TABLES = { online: true, maxParty: 8, maxDays: 60, closed: [], services: [
-  { name: 'Dinar', days: [2, 3, 4, 5, 6, 7], from: '13:00', to: '15:00' }, { name: 'Sopar', days: [5, 6], from: '20:00', to: '22:00' }] };
+// The restaurant only opens on the dates Maite opens, each with its services; until /api/settings answers, none.
+let TABLES = { online: true, maxParty: 8, days: [] };
 const tb = $('taula'), tableForm = $('tableForm'), tnote = $('tableNote'), tableBtn = tableForm.querySelector('.bp-pay');
 const TF = { day: $('tday'), people: $('tpeople'), time: $('ttime'), name: $('tname'), email: $('temail'), phone: $('tphone'), notes: $('tnotes'), terms: $('tterms') };
 const clock = t => LANG === 'en' ? t : `${+t.slice(0, 2)}${t.slice(3) === '00' ? '' : '.' + t.slice(3)} h`;
 const diners = n => `${n} ${+n === 1 ? tr('persona', 'persona', 'person') : tr('persones', 'personas', 'people')}`;
 const capFirst = t => t.charAt(0).toUpperCase() + t.slice(1);
-const isoDow = d => (parse(d).getDay() + 6) % 7 + 1;
-const servicesOn = d => TABLES.closed.includes(d) ? [] : TABLES.services.filter(v => v.days.includes(isoDow(d)));
-function tableDays() {
-  const out = [], t = iso(new Date());
-  for (let i = 0; i <= TABLES.maxDays; i++) { const d = addDays(t, i); if (servicesOn(d).length) out.push(d); }
-  return out;
-}
+const servicesOn = d => (TABLES.days.find(x => x.date === d) || { services: [] }).services;
+const tableDays = () => TABLES.days.map(x => x.date).filter(d => d >= iso(new Date()));
 const tdayPick = makeSelect(TF.day, () => {
   const t = iso(new Date()), tomorrow = addDays(t, 1);
   return tableDays().map(d => ({ value: d, text: capFirst(dayLabel(d, true)),
@@ -2426,8 +2420,7 @@ function tableError(d) {
   const e = d && d.error;
   if (e === 'party') return tr(`En línia es reserva fins a ${diners(d.max)}.`, `En línea se reserva hasta ${diners(d.max)}.`, `Online bookings are for up to ${diners(d.max)}.`) + ' ' + TABLE_CONTACT;
   if (e === 'too_soon') return tr('Per a avui ja no es pot reservar en línia.', 'Para hoy ya no se puede reservar en línea.', "It's too late to book online for today.") + ' ' + TABLE_CONTACT;
-  if (e === 'too_far') return tr('Encara no tenim obertes aquestes dates.', 'Todavía no tenemos abiertas estas fechas.', "These dates aren't open yet.") + ' ' + TABLE_CONTACT;
-  if (e === 'closed' || e === 'past') return tr('Aquest dia el restaurant és tancat. Tria un altre dia.', 'Este día el restaurante está cerrado. Elige otro día.', 'The restaurant is closed that day. Choose another day.');
+  if (e === 'closed' || e === 'past') return tr('Aquest dia el restaurant no obre. Tria un altre dia.', 'Este día el restaurante no abre. Elige otro día.', "The restaurant isn't open that day. Choose another day.");
   if (e === 'full' || e === 'time') return tr('Aquesta hora ja és plena. Tria una altra hora o un altre dia.', 'Esta hora ya está llena. Elige otra hora u otro día.', 'That time is full. Choose another time or day.');
   if (e === 'name') return tr('Ens falta el teu nom.', 'Nos falta tu nombre.', 'We still need your name.');
   if (e === 'email') return tr('Revisa el correu.', 'Revisa el correo.', 'Please check your email.');
@@ -2455,11 +2448,15 @@ function applyTables(R) {
   TABLES = R;
   if (TF.day.value && !tableDays().includes(TF.day.value)) tdayPick.set('', true);
   if (TF.people.value !== 'more' && +TF.people.value > R.maxParty) tpeoplePick.set(String(R.maxParty), true);
+  if (!tb.hidden && !tb.classList.contains('done')) openTable();
 }
 // Each visit starts a fresh table; the next open day is already chosen
 function openTable() {
   if (tb.classList.contains('done')) { tb.classList.remove('done'); $('tbDone').hidden = true; tableForm.hidden = false; tableForm.reset(); TF.time.value = ''; }
   if (!TABLES.online) { tableForm.hidden = true; tnote.textContent = ''; $('tbDone').hidden = false; $('tbDone').querySelector('h3').textContent = tr('Reserves per telèfon', 'Reservas por teléfono', 'Bookings by phone'); $('tbDoneText').textContent = TABLE_CONTACT; return; }
+  // No open date ahead: the page says so and gives the phone
+  if (!tableDays().length) { tableForm.hidden = true; tnote.textContent = ''; $('tbDone').hidden = false; $('tbDone').querySelector('h3').textContent = tr('Ara no hi ha dies oberts', 'Ahora no hay días abiertos', 'No open days right now'); $('tbDoneText').textContent = tr('El restaurant obre en dates concretes. Quan n\'hi hagi, les veuràs aquí.', 'El restaurante abre en fechas concretas. Cuando haya, las verás aquí.', 'The restaurant opens on specific dates. When there are some, you will see them here.') + ' ' + TABLE_CONTACT; return; }
+  tableForm.hidden = false; $('tbDone').hidden = true;
   if (!TF.day.value) { const first = tableDays()[0]; if (first) tdayPick.set(first, true); }
   tpeoplePick.set(TF.people.value || '2', true);
   loadTimes();

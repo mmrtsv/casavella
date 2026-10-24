@@ -2,7 +2,8 @@
 // POST /api/table  { date, time, people, name, email, phone, notes, website, lang }
 //      Books a table: written to the restaurant's calendar (CAL_RESTAURANT), confirmed to the guest and announced to the house.
 // Services, seats and limits come from Maite (lib/booking.js settings().restaurant). Errors the page explains:
-// offline (the web doesn't take tables now), closed, past, too_soon, too_far, party (more than maxParty), full, not_configured.
+// offline (the web doesn't take tables now), closed (that date isn't open), past, too_soon, party (more than maxParty), full,
+// not_configured, calendar.
 import { settings, isDate, addDays, json } from '../../lib/booking.js';
 import { tablesConfigured, tables, tableEvent, servicesOn, serviceAt, serviceLoad, inTime, isTime, madridNow } from '../../lib/restaurant.js';
 import { send, tableConfirmation, tableNotice, langOf } from '../../lib/email.js';
@@ -17,7 +18,6 @@ function check(R, date, people, now) {
   if (!(Number.isInteger(people) && people >= 1)) return { error: 'people' };
   if (people > R.maxParty) return { error: 'party', max: R.maxParty };
   if (date < now.date) return { error: 'past' };
-  if (date > addDays(now.date, R.maxDays)) return { error: 'too_far', days: R.maxDays };
   if (!servicesOn(R, date).length) return { error: 'closed' };
   return null;
 }

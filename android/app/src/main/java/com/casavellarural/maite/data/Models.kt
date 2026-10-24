@@ -39,14 +39,15 @@ data class Rules(
     val checkin: String, val checkout: String,
 )
 
-/** A restaurant service: weekdays (1 = Monday … 7 = Sunday), first and last arrival time, seats for the whole service */
+/** A restaurant service: first and last arrival time, seats for the whole service */
 @Serializable
-data class Service(val id: String = "", val name: String = "", val days: List<Int> = emptyList(), val from: String = "13:00", val to: String = "15:00", val seats: Int = 20)
+data class Service(val id: String = "", val name: String = "", val from: String = "13:00", val to: String = "15:00", val seats: Int = 15)
 
+/** Closed unless a date is in `open`, with the ids of the services it has that day */
 @Serializable
 data class RestaurantSettings(
-    val online: Boolean = true, val maxParty: Int = 8, val minHours: Int = 2, val maxDays: Int = 60,
-    val closed: List<String> = emptyList(), val services: List<Service> = emptyList(),
+    val online: Boolean = true, val maxParty: Int = 8, val minHours: Int = 2,
+    val services: List<Service> = emptyList(), val open: Map<String, List<String>> = emptyMap(),
 )
 
 /** A table on the restaurant's calendar (lib/restaurant.js asTable) */

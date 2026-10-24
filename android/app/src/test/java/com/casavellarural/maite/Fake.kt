@@ -26,7 +26,8 @@ object Fake {
     private val settings = """{"stays":{"montserrat":{"base":90,"weekend":105},"la-pineda":{"base":90,"weekend":null},"les-vinyes":{"base":95,"weekend":110},"figarot":{"base":70,"weekend":80}},
       "days":{"montserrat":{"${d(8)}":{"price":120,"min":2},"${d(9)}":{"price":120}}},"discounts":[{"nights":2,"pct":5},{"nights":3,"pct":10}],
       "rules":{"minNights":1,"maxNights":30,"minAdvance":0,"maxAdvance":365,"checkin":"15:00","checkout":"11:00"},"cancel":{"fullDays":7,"partialDays":2,"partialPct":50},"policy":"",
-      "restaurant":{"online":true,"maxParty":8,"minHours":2,"maxDays":60,"closed":["${d(10)}"],"services":[{"id":"lunch","name":"Dinar","days":[1,2,3,4,5,6,7],"from":"13:00","to":"15:00","seats":30},{"id":"dinner","name":"Sopar","days":[1,2,3,4,5,6,7],"from":"20:00","to":"22:00","seats":30}]}}"""
+      "restaurant":{"online":true,"maxParty":8,"minHours":2,"services":[{"id":"lunch","name":"Dinar","from":"13:00","to":"15:00","seats":15},{"id":"dinner","name":"Sopar","from":"20:00","to":"22:00","seats":15}],
+      "open":{"${d(0)}":["lunch","dinner"],"${d(2)}":["lunch"],"${d(7)}":["dinner"]}}}"""
 
     private fun t(id: String, day: Int, time: String, people: Int, name: String, extra: String = "") =
         """{"id":"$id","date":"${d(day)}","time":"$time","people":$people,"name":"$name","service":"${if (time < "17:00") "lunch" else "dinner"}"$extra}"""

@@ -9,8 +9,9 @@ export interface Booking {
   method: string; memo: string; policy: Policy | null;
 }
 export interface Stay { id: string; name: string; short: string; max: number }
-export interface Service { id: string; name: string; days: number[]; from: string; to: string; seats: number }
-export interface RestaurantSettings { online: boolean; maxParty: number; minHours: number; maxDays: number; closed: string[]; services: Service[] }
+export interface Service { id: string; name: string; from: string; to: string; seats: number }
+// Closed unless a date is in `open`, with the ids of the services it has that day
+export interface RestaurantSettings { online: boolean; maxParty: number; minHours: number; services: Service[]; open: Record<string, string[]> }
 export interface Table {
   id: string; date: string; time: string; people: number | null; name: string; phone: string; email: string; notes: string;
   source: string; service: string; lang: string; cancelled: boolean; link: string;

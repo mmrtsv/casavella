@@ -129,9 +129,10 @@ data class Slide(val tpl: String, val v: Int = 0, val photo: String = "", val te
     fun body() = mapOf("tpl" to tpl, "v" to v, "photo" to photo, "texts" to texts)
 }
 
-/** slides: the images after the first, when the post is a carousel. story: a story (never in the grid); menu: made in Menús */
+/** slides: the images after the first, when the post is a carousel. story: a story (never in the grid). menu: the values of a
+ *  menu made in Nova publicació › Menú (true on older ones), read with ui.social menuValues; pack: on its story, the id of its post */
 @Serializable
-data class SocialPost(val id: String, val tpl: String, val v: Int = 0, val photo: String = "", val texts: List<String?>? = null, val slides: List<Slide>? = null, val story: Boolean = false, val menu: Boolean = false, val at: String = "", val date: String? = null, val published: Published? = null, val schedule: Schedule? = null)
+data class SocialPost(val id: String, val tpl: String, val v: Int = 0, val photo: String = "", val texts: List<String?>? = null, val slides: List<Slide>? = null, val story: Boolean = false, val menu: JsonElement? = null, val pack: String? = null, val at: String = "", val date: String? = null, val published: Published? = null, val schedule: Schedule? = null)
 
 /** A post programmed for a moment: its JPEGs are already uploaded (images, for a carousel) and lib/instagram.js publishes it when due */
 @Serializable

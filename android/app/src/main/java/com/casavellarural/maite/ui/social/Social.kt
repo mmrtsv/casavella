@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.casavellarural.maite.R
 import androidx.compose.ui.text.input.KeyboardType
+import com.casavellarural.maite.data.CA
 import com.casavellarural.maite.data.Schedule
 import com.casavellarural.maite.data.addDays
 import com.casavellarural.maite.data.dayMonth

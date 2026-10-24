@@ -399,11 +399,10 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .bookpage.done .bp-form, .bookpage.done .bp-change { display: none; }
 /* Table page (#taula): the same form, one column */
 .tb-main { max-width: 760px; }
-.bp-three { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr); gap: 26px; }
 .pop.list.long { max-height: min(360px, 60vh); overflow-y: auto; }
 .tablepage .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 @media (max-width: 900px) { .bp-grid { grid-template-columns: 1fr; } .bp-sum { position: static; order: -1; } }
-@media (max-width: 560px) { .bp-two, .bp-three { grid-template-columns: 1fr; } .bp-sum { padding: 16px; } .bp-top { grid-template-columns: 84px minmax(0, 1fr); gap: 14px; } .bp-id h3 { font-size: 26px; } .bp-pay { justify-self: stretch; } }
+@media (max-width: 560px) { .bp-two { grid-template-columns: 1fr; } .bp-sum { padding: 16px; } .bp-top { grid-template-columns: 84px minmax(0, 1fr); gap: 14px; } .bp-id h3 { font-size: 26px; } .bp-pay { justify-self: stretch; } }
 .stay-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
 .stays .btn { padding: 12px 18px; }
 @media (max-width: 760px) { .stays { grid-template-columns: 1fr; } }
@@ -832,10 +831,9 @@ footer { padding-bottom: 32px !important; }
     <div class="bp-head"><span class="label">Restaurant</span><h2 id="tbTitle" data-script="a la planta baixa">Reservar taula</h2></div>
     <div class="tb-main">
       <form id="tableForm" class="bp-form" novalidate aria-label="Reserva de taula">
-        <div class="bp-three">
-          <div class="bp-row field"><label class="label" id="lbTday">Dia</label><button type="button" class="pick" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbTday tdayVal" data-placeholder="Tria el dia"><span class="val ph" id="tdayVal">Tria el dia</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><input type="hidden" id="tday"></div>
+        <div class="bp-two">
+          <div class="bp-row field"><label class="label" id="lbTopen">Dia i hora</label><button type="button" class="pick" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbTopen topenVal" data-placeholder="Tria el dia"><span class="val ph" id="topenVal">Tria el dia</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><input type="hidden" id="topen"></div>
           <div class="bp-row field"><label class="label" id="lbTpeople">Persones</label><button type="button" class="pick" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbTpeople tpeopleVal"><span class="val" id="tpeopleVal">2 persones</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><input type="hidden" id="tpeople" value="2"></div>
-          <div class="bp-row field"><label class="label" id="lbTtime">Hora</label><button type="button" class="pick" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbTtime ttimeVal" data-placeholder="Tria l'hora"><span class="val ph" id="ttimeVal">Tria l'hora</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><input type="hidden" id="ttime"></div>
         </div>
         <div class="bp-row"><label class="label" for="tname">Nom i cognoms</label><input id="tname" autocomplete="name" maxlength="100" placeholder="Com et dius?"></div>
         <div class="bp-two">
@@ -1234,6 +1232,7 @@ footer { padding-bottom: 32px !important; }
 // Spanish and English for the text written in the page (keyed by the Catalan). Text the script builds goes through tr().
 const I18N = { es: {
 "Dia": "Día",
+"Dia i hora": "Día y hora",
 "Persones": "Personas",
 "Hora": "Hora",
 "Tria el dia": "Elige el día",
@@ -1440,6 +1439,7 @@ const I18N = { es: {
 "Foto següent": "Foto siguiente"
 }, en: {
 "Dia": "Day",
+"Dia i hora": "Day and time",
 "Persones": "People",
 "Hora": "Time",
 "Tria el dia": "Choose a day",
@@ -2388,89 +2388,71 @@ guestForm.addEventListener('submit', async e => {
   }
 });
 
-// ---- Restaurant: a table for a day, a time and a number of people (/api/table). No payment. ----
-// Services, seats and limits come from Maite; this is the first guess and the fallback for the review preview.
-let TABLES = { online: true, maxParty: 8, maxDays: 60, closed: [], services: [
-  { name: 'Dinar', days: [2, 3, 4, 5, 6, 7], from: '13:00', to: '15:00' }, { name: 'Sopar', days: [5, 6], from: '20:00', to: '22:00' }] };
+// ---- Restaurant: a table at one of the openings (a day and a time each) for a number of people (/api/table). No payment. ----
+// The restaurant only opens at the moments Maite lists; until /api/settings answers, none.
+let TABLES = { online: true, maxParty: 8, open: [] };
 const tb = $('taula'), tableForm = $('tableForm'), tnote = $('tableNote'), tableBtn = tableForm.querySelector('.bp-pay');
-const TF = { day: $('tday'), people: $('tpeople'), time: $('ttime'), name: $('tname'), email: $('temail'), phone: $('tphone'), notes: $('tnotes'), terms: $('tterms') };
+const TF = { open: $('topen'), people: $('tpeople'), name: $('tname'), email: $('temail'), phone: $('tphone'), notes: $('tnotes'), terms: $('tterms') };
 const clock = t => LANG === 'en' ? t : `${+t.slice(0, 2)}${t.slice(3) === '00' ? '' : '.' + t.slice(3)} h`;
 const diners = n => `${n} ${+n === 1 ? tr('persona', 'persona', 'person') : tr('persones', 'personas', 'people')}`;
 const capFirst = t => t.charAt(0).toUpperCase() + t.slice(1);
-const isoDow = d => (parse(d).getDay() + 6) % 7 + 1;
-const servicesOn = d => TABLES.closed.includes(d) ? [] : TABLES.services.filter(v => v.days.includes(isoDow(d)));
-function tableDays() {
-  const out = [], t = iso(new Date());
-  for (let i = 0; i <= TABLES.maxDays; i++) { const d = addDays(t, i); if (servicesOn(d).length) out.push(d); }
-  return out;
-}
-const tdayPick = makeSelect(TF.day, () => {
-  const t = iso(new Date()), tomorrow = addDays(t, 1);
-  return tableDays().map(d => ({ value: d, text: capFirst(dayLabel(d, true)),
-    html: `<span class="o-name">${capFirst(dayLabel(d, true))}</span>${d === t ? `<span class="o-sub">${tr('Avui', 'Hoy', 'Today')}</span>` : d === tomorrow ? `<span class="o-sub">${tr('Demà', 'Mañana', 'Tomorrow')}</span>` : ''}` }));
-});
-$('tdayList').classList.add('long');
+// '2026-12-31T21:00' as "Dijous, 31 de desembre, 21 h"
+const atLabel = at => `${capFirst(dayLabel(at.slice(0, 10), true))}, ${clock(at.slice(11, 16))}`;
+// Which openings have room for the party, from the server; until it answers (or in the review preview), all of them
+let full = new Set(), openSeq = 0;
+const openings = () => TABLES.open.filter(at => at.slice(0, 10) >= iso(new Date()) && !full.has(at));
+const topenPick = makeSelect(TF.open, () => openings().map(at => ({ value: at, text: atLabel(at) })));
+$('topenList').classList.add('long');
 const tpeoplePick = makeSelect(TF.people, () => [...Array.from({ length: TABLES.maxParty }, (_, i) => ({ value: String(i + 1), text: diners(i + 1) })),
   { value: 'more', text: tr(`Més de ${TABLES.maxParty}`, `Más de ${TABLES.maxParty}`, `More than ${TABLES.maxParty}`) }]);
-// The times with room for the party, from the server; without it (review preview), every time of the day's services
-let slots = [], timesSeq = 0;
-const ttimePick = makeSelect(TF.time, () => slots.map(x => ({ value: x.time, text: clock(x.time), html: `<span class="o-name">${clock(x.time)}</span><span class="o-sub">${T(x.name)}</span>` })));
-$('ttimeList').classList.add('long');
-function localSlots(d) {
-  const mins = t => +t.slice(0, 2) * 60 + +t.slice(3), out = [];
-  for (const v of servicesOn(d)) for (let m = mins(v.from); m <= mins(v.to); m += 30) out.push({ time: `${pad(Math.floor(m / 60))}:${pad(m % 60)}`, name: v.name });
-  return out;
-}
 const TABLE_CONTACT = tr("Truca'ns o escriu-nos per WhatsApp al +34 667 40 98 59 i us guardem la taula.", 'Llámanos o escríbenos por WhatsApp al +34 667 40 98 59 y os guardamos la mesa.', "Call us or message us on WhatsApp at +34 667 40 98 59 and we'll keep a table for you.");
 function tableError(d) {
   const e = d && d.error;
   if (e === 'party') return tr(`En línia es reserva fins a ${diners(d.max)}.`, `En línea se reserva hasta ${diners(d.max)}.`, `Online bookings are for up to ${diners(d.max)}.`) + ' ' + TABLE_CONTACT;
-  if (e === 'too_soon') return tr('Per a avui ja no es pot reservar en línia.', 'Para hoy ya no se puede reservar en línea.', "It's too late to book online for today.") + ' ' + TABLE_CONTACT;
-  if (e === 'too_far') return tr('Encara no tenim obertes aquestes dates.', 'Todavía no tenemos abiertas estas fechas.', "These dates aren't open yet.") + ' ' + TABLE_CONTACT;
-  if (e === 'closed' || e === 'past') return tr('Aquest dia el restaurant és tancat. Tria un altre dia.', 'Este día el restaurante está cerrado. Elige otro día.', 'The restaurant is closed that day. Choose another day.');
-  if (e === 'full' || e === 'time') return tr('Aquesta hora ja és plena. Tria una altra hora o un altre dia.', 'Esta hora ya está llena. Elige otra hora u otro día.', 'That time is full. Choose another time or day.');
+  if (e === 'too_soon') return tr('Per a aquest dia ja no es pot reservar en línia.', 'Para este día ya no se puede reservar en línea.', "It's too late to book that day online.") + ' ' + TABLE_CONTACT;
+  if (e === 'full' || e === 'closed') return tr('Aquest dia ja és ple. Tria un altre dia.', 'Este día ya está lleno. Elige otro día.', 'That day is full. Choose another day.');
   if (e === 'name') return tr('Ens falta el teu nom.', 'Nos falta tu nombre.', 'We still need your name.');
   if (e === 'email') return tr('Revisa el correu.', 'Revisa el correo.', 'Please check your email.');
   if (e === 'phone') return tr('Ens falta un telèfon de contacte.', 'Nos falta un teléfono de contacto.', 'We still need a contact phone.');
   return tr('Ara mateix no la podem reservar en línia.', 'Ahora mismo no la podemos reservar en línea.', "We can't book it online right now.") + ' ' + TABLE_CONTACT;
 }
-async function loadTimes() {
-  const d = TF.day.value, n = TF.people.value, keep = TF.time.value, seq = ++timesSeq;
-  slots = []; tnote.textContent = '';
-  if (n === 'more') { ttimePick.set('', true); tnote.textContent = tr(`Per a grups de més de ${diners(TABLES.maxParty)}, parlem-ne.`, `Para grupos de más de ${diners(TABLES.maxParty)}, hablemos.`, `For groups of more than ${diners(TABLES.maxParty)}, let's talk.`) + ' ' + TABLE_CONTACT; return; }
-  if (!d) { ttimePick.set('', true); return; }
+async function loadOpenings() {
+  const n = TF.people.value, keep = TF.open.value, seq = ++openSeq;
+  tnote.textContent = '';
+  if (n === 'more') { tnote.textContent = tr(`Per a grups de més de ${diners(TABLES.maxParty)}, parlem-ne.`, `Para grupos de más de ${diners(TABLES.maxParty)}, hablemos.`, `For groups of more than ${diners(TABLES.maxParty)}, let's talk.`) + ' ' + TABLE_CONTACT; return; }
   let res = null;
-  try { const r = await fetch(`/api/table?date=${d}&people=${n}`); res = await r.json(); } catch (e) {}
-  if (seq !== timesSeq) return;
-  if (!res || res.error === 'not_configured') slots = localSlots(d);
-  else if (res.error) { ttimePick.set('', true); tnote.textContent = tableError(res); return; }
-  else slots = res.services.flatMap(v => v.times.filter(x => x.free).map(x => ({ time: x.time, name: v.name })));
-  ttimePick.set(slots.some(x => x.time === keep) ? keep : '', true);
-  if (!slots.length) tnote.textContent = tr(`Aquest dia ja no queden taules per a ${diners(n)}. Tria un altre dia.`, `Este día ya no quedan mesas para ${diners(n)}. Elige otro día.`, `There are no tables left that day for ${diners(n)}. Choose another day.`);
+  try { res = await (await fetch(`/api/table?people=${n}`)).json(); } catch (e) {}
+  if (seq !== openSeq) return;
+  if (res && res.error && res.error !== 'not_configured' && res.error !== 'calendar') { tnote.textContent = tableError(res); return; }
+  full = new Set(res && Array.isArray(res.open) ? res.open.filter(x => !x.free).map(x => x.at) : []);
+  const left = openings();
+  topenPick.set(left.includes(keep) ? keep : left[0] || '', true);
+  if (!left.length) tnote.textContent = tr(`Ja no queden places per a ${diners(n)}.`, `Ya no quedan plazas para ${diners(n)}.`, `There are no places left for ${diners(n)}.`) + ' ' + TABLE_CONTACT;
 }
-TF.day.addEventListener('change', loadTimes);
-TF.people.addEventListener('change', loadTimes);
-[TF.day, TF.time].forEach(el => el.addEventListener('change', () => el.closest('.field').querySelector('.pick').removeAttribute('aria-invalid')));
+TF.people.addEventListener('change', loadOpenings);
+TF.open.addEventListener('change', () => TF.open.closest('.field').querySelector('.pick').removeAttribute('aria-invalid'));
 function applyTables(R) {
   TABLES = R;
-  if (TF.day.value && !tableDays().includes(TF.day.value)) tdayPick.set('', true);
   if (TF.people.value !== 'more' && +TF.people.value > R.maxParty) tpeoplePick.set(String(R.maxParty), true);
+  if (!tb.hidden && !tb.classList.contains('done')) openTable();
 }
-// Each visit starts a fresh table; the next open day is already chosen
+// The page says so when the web doesn't take tables or there's no opening ahead; otherwise each visit starts a fresh table
+function tableMessage(title, text) { tableForm.hidden = true; tnote.textContent = ''; $('tbDone').hidden = false; $('tbDone').querySelector('h3').textContent = title; $('tbDoneText').textContent = text; }
 function openTable() {
-  if (tb.classList.contains('done')) { tb.classList.remove('done'); $('tbDone').hidden = true; tableForm.hidden = false; tableForm.reset(); TF.time.value = ''; }
-  if (!TABLES.online) { tableForm.hidden = true; tnote.textContent = ''; $('tbDone').hidden = false; $('tbDone').querySelector('h3').textContent = tr('Reserves per telèfon', 'Reservas por teléfono', 'Bookings by phone'); $('tbDoneText').textContent = TABLE_CONTACT; return; }
-  if (!TF.day.value) { const first = tableDays()[0]; if (first) tdayPick.set(first, true); }
+  if (tb.classList.contains('done')) { tb.classList.remove('done'); tableForm.reset(); TF.open.value = ''; }
+  if (!TABLES.online) return tableMessage(tr('Reserves per telèfon', 'Reservas por teléfono', 'Bookings by phone'), TABLE_CONTACT);
+  if (!TABLES.open.some(at => at.slice(0, 10) >= iso(new Date())))
+    return tableMessage(tr('Ara no hi ha dies oberts', 'Ahora no hay días abiertos', 'No open days right now'), tr("El restaurant obre en dates concretes. Quan n'hi hagi, les veuràs aquí.", 'El restaurante abre en fechas concretas. Cuando haya, las verás aquí.', 'The restaurant opens on specific dates. When there are some, you will see them here.') + ' ' + TABLE_CONTACT);
+  tableForm.hidden = false; $('tbDone').hidden = true; $('tbDone').querySelector('h3').textContent = T('Us esperem a taula');
   tpeoplePick.set(TF.people.value || '2', true);
-  loadTimes();
+  loadOpenings();
 }
 tableForm.addEventListener('submit', async e => {
   e.preventDefault();
-  const d = { date: TF.day.value, time: TF.time.value, people: TF.people.value, name: TF.name.value.trim(), email: TF.email.value.trim(), phone: TF.phone.value.trim(), notes: TF.notes.value.trim(), website: $('tweb').value, lang: LANG };
+  const d = { at: TF.open.value, people: TF.people.value, name: TF.name.value.trim(), email: TF.email.value.trim(), phone: TF.phone.value.trim(), notes: TF.notes.value.trim(), website: $('tweb').value, lang: LANG };
   if (d.people === 'more') { tnote.textContent = tableError({ error: 'party', max: TABLES.maxParty }); return; }
   const bad = [];
-  if (!d.date) bad.push([TF.day.closest('.field').querySelector('.pick'), tr('el dia', 'el día', 'the day')]);
-  if (!d.time) bad.push([TF.time.closest('.field').querySelector('.pick'), tr("l'hora", 'la hora', 'the time')]);
+  if (!d.at) bad.push([TF.open.closest('.field').querySelector('.pick'), tr('el dia', 'el día', 'the day')]);
   if (d.name.length < 2) bad.push([TF.name, tr('el teu nom', 'tu nombre', 'your name')]);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) bad.push([TF.email, tr('un correu vàlid', 'un correo válido', 'a valid email')]);
   if (d.phone.replace(/\D/g, '').length < 6) bad.push([TF.phone, tr('un telèfon de contacte', 'un teléfono de contacto', 'a contact phone')]);
@@ -2483,17 +2465,14 @@ tableForm.addEventListener('submit', async e => {
   try { r = await fetch('/api/table', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(d) }); res = await r.json().catch(() => ({})); } catch (err) {}
   tableBtn.disabled = false; tableBtn.classList.remove('loading');
   if (r && r.ok) {
-    tb.classList.add('done'); tableForm.hidden = true; $('tbDone').hidden = false; $('tbDone').querySelector('h3').textContent = T('Us esperem a taula');
-    $('tbDoneText').textContent = tr(`${capFirst(dayLabel(d.date, true))} a les ${clock(d.time)}, ${diners(d.people)}. T'hem enviat la confirmació a ${d.email}.`,
-      `${capFirst(dayLabel(d.date, true))} a las ${clock(d.time)}, ${diners(d.people)}. Te hemos enviado la confirmación a ${d.email}.`,
-      `${capFirst(dayLabel(d.date, true))} at ${clock(d.time)}, ${diners(d.people)}. We've sent the confirmation to ${d.email}.`);
+    tb.classList.add('done'); tableForm.hidden = true; $('tbDone').hidden = false;
+    $('tbDoneText').textContent = `${atLabel(d.at)}, ${diners(d.people)}. ` + tr(`T'hem enviat la confirmació a ${d.email}.`, `Te hemos enviado la confirmación a ${d.email}.`, `We've sent the confirmation to ${d.email}.`);
     scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }
   tnote.textContent = tableError(res);
-  if (res.error === 'full' || res.error === 'time' || res.error === 'too_soon') loadTimes().then(() => { tnote.textContent = tableError(res); });
+  if (res.error === 'full' || res.error === 'too_soon' || res.error === 'closed') loadOpenings().then(() => { tnote.textContent = tableError(res); });
 });
-
 // ---- Start: default dates, restore a booking in progress, handle the return from Stripe ----
 setDates(iso(new Date()), addDays(iso(new Date()), 1));
 guestsPick.set(fguests.value, true);

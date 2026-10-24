@@ -11,7 +11,7 @@ export const NAV: { page: Page; label: string; short?: string; icon: typeof Cale
   { page: 'home', label: 'Inici', icon: House, hint: "El que passa avui i el que falta per fer" },
   { page: 'calendar', label: 'Calendari', icon: CalendarDays, hint: 'Ocupació de les properes setmanes' },
   { page: 'bookings', label: 'Reserves', icon: Table2, hint: 'Totes les reserves i la seva llista' },
-  { page: 'restaurant', label: 'Restaurant', icon: UtensilsCrossed, hint: 'Taules reservades, horaris i places' },
+  { page: 'restaurant', label: 'Restaurant', icon: UtensilsCrossed, hint: 'Taules reservades, dies oberts i places' },
   { page: 'prices', label: 'Preus', icon: Tag, hint: 'Preu per nit i dies especials' },
   { page: 'discounts', label: 'Descomptes', icon: Percent, hint: 'Descomptes per estada llarga' },
   { page: 'stays', label: 'Allotjaments', icon: BedDouble, hint: 'Textos, capacitat i fotos de la web' },

@@ -54,6 +54,7 @@ import com.casavellarural.maite.data.Booking
 import com.casavellarural.maite.data.Maite
 import com.casavellarural.maite.data.TODAY
 import com.casavellarural.maite.data.addDays
+import com.casavellarural.maite.data.cap
 import com.casavellarural.maite.data.atHome
 import com.casavellarural.maite.data.day
 import com.casavellarural.maite.data.dueList
@@ -81,7 +82,8 @@ import com.casavellarural.maite.ui.Type
 import com.casavellarural.maite.ui.Ui
 import com.casavellarural.maite.ui.pagePadding
 
-/** Inici: a greeting that says what happens today, four numbers, what is still to do, this week, and who is here or coming next */
+/** Inici: a greeting that says what happens today, four numbers, what is still to do, this week, who is here or coming next
+ *  and the restaurant's next open days */
 @Composable
 fun Home() {
     val all = remember(Maite.bookings) { Maite.all().filter(::isBooking).sortedBy { it.first } }
@@ -96,6 +98,10 @@ fun Home() {
     val h = java.time.LocalTime.now().hour
     val hello = if (h < 6 || h >= 21) "Bona nit" else if (h < 14) "Bon dia" else "Bona tarda"
     val l = LocalLayout.current
+    // The restaurant opens today: when, and how many are coming
+    LaunchedEffect(Unit) { runCatching { Maite.ensureTables(TODAY, addDays(TODAY, 120)) } }
+    val opensToday = Maite.settings?.restaurant?.open.orEmpty().filter { it.take(10) == TODAY }
+    val comingToday = seated(Maite.tables.values.filter { !it.cancelled && atOf(it) in opensToday })
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = pagePadding(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item { Errors() }
@@ -108,7 +114,7 @@ fun Home() {
                     Column(Modifier.padding(if (l.rail) 18.dp else 22.dp)) {
                         Rise(0) { Text("$hello, Maite", style = if (l.rail) Type.xl else Type.xxl) }
                         Spacer(Modifier.height(if (l.rail) 14.dp else 28.dp))
-                        Rise(250) { Text(say(arrive, leave, next), style = Type.base, color = T.muted) }
+                        Rise(250) { Text(say(arrive, leave, next, opensToday, comingToday), style = Type.base, color = T.muted) }
                     }
                 }
             }
@@ -133,11 +139,12 @@ fun Home() {
         }
         item { Rise(500) { Todo(all) } }
         item { Rise(580) { Week() } }
-        item { Rise(660) { Upcoming(all) } }
+        item { Rise(660) { RestaurantNext() } }
+        item { Rise(740) { Upcoming(all) } }
     }
 }
 
-private fun say(arrive: List<Booking>, leave: List<Booking>, next: Booking?): androidx.compose.ui.text.AnnotatedString = buildAnnotatedString {
+private fun say(arrive: List<Booking>, leave: List<Booking>, next: Booking?, opens: List<String>, coming: Int): androidx.compose.ui.text.AnnotatedString = buildAnnotatedString {
     fun names(list: List<Booking>, withStay: Boolean) = list.forEachIndexed { i, b ->
         if (i > 0) append(if (i == list.size - 1) " i " else ", ")
         withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(who(b)) }
@@ -145,7 +152,33 @@ private fun say(arrive: List<Booking>, leave: List<Booking>, next: Booking?): an
     }
     if (arrive.isNotEmpty()) { append(if (arrive.size == 1) "Avui arriba " else "Avui arriben "); names(arrive, true); append(". ") } else append("Avui no arriba ningú. ")
     if (leave.isNotEmpty()) { append(if (leave.size == 1) "Marxa " else "Marxen "); names(leave, false); append(". ") }
-    if (arrive.isEmpty() && next != null) { append("El proper check-in és el de "); withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(who(next)) }; append(", ${longDay(next.first)}.") }
+    if (arrive.isEmpty() && next != null) { append("El proper check-in és el de "); withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(who(next)) }; append(", ${longDay(next.first)}. ") }
+    if (opens.isNotEmpty()) append("El restaurant obre a les ${opens.joinToString(" i a les ") { it.drop(11) }}${if (coming > 0) ", amb $coming ${if (coming == 1) "persona" else "persones"}" else ""}.")
+}
+
+/** The restaurant's next open days, with the tables and seats taken */
+@Composable
+private fun RestaurantNext() {
+    val cfg = Maite.settings?.restaurant ?: return
+    val next = cfg.open.filter { it.take(10) >= TODAY }.take(4)
+    Column {
+        SectionTitle("Restaurant") { Btn("Taules", { Ui.go(Page.Restaurant) }, look = Look.Ghost) }
+        Card(Modifier.fillMaxWidth()) {
+            if (next.isEmpty()) Text("El restaurant no té cap dia obert.", style = Type.sm, color = T.muted, modifier = Modifier.padding(28.dp).fillMaxWidth())
+            next.forEachIndexed { i, a ->
+                if (i > 0) Divider()
+                val list = Maite.tables.values.filter { !it.cancelled && atOf(it) == a }
+                Row(Modifier.fillMaxWidth().clickable { Ui.go(Page.Restaurant) }.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(cap(longDay(a.take(10))), style = Type.sm, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(a.drop(11), style = Type.xs, color = T.muted)
+                    }
+                    Text("${list.size} ${if (list.size == 1) "taula" else "taules"}", style = Type.sm, color = T.muted)
+                    Text("${seated(list)} de ${cfg.seats} places", style = Type.sm, fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 12.dp))
+                }
+            }
+        }
+    }
 }
 
 /** Content rises in once, a little after what comes before it (the web's home-up) */

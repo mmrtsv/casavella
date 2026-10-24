@@ -1,69 +1,62 @@
-// GET  /api/table?date=2026-11-14&people=4  The times with room for that many people, by service
-// POST /api/table  { date, time, people, name, email, phone, notes, website, lang }
+// GET  /api/table?people=4  The openings ahead (a day and a time each) and whether each has room for that many people
+// POST /api/table  { at, people, name, email, phone, notes, website, lang }   at: '2026-12-31T21:00', one of the openings
 //      Books a table: written to the restaurant's calendar (CAL_RESTAURANT), confirmed to the guest and announced to the house.
-// Services, seats and limits come from Maite (lib/booking.js settings().restaurant). Errors the page explains:
-// offline (the web doesn't take tables now), closed, past, too_soon, too_far, party (more than maxParty), full, not_configured.
-import { settings, isDate, addDays, json } from '../../lib/booking.js';
-import { tablesConfigured, tables, tableEvent, servicesOn, serviceAt, serviceLoad, inTime, isTime, madridNow } from '../../lib/restaurant.js';
+// Openings, seats and limits come from Maite (lib/booking.js settings().restaurant). Errors the page explains:
+// offline (the web doesn't take tables now), closed (not an opening), too_soon, party (more than maxParty), full,
+// not_configured, calendar.
+import { settings, addDays, json } from '../../lib/booking.js';
+import { tablesConfigured, tables, tableEvent, taken, inTime, isAt, madridNow } from '../../lib/restaurant.js';
 import { send, tableConfirmation, tableNotice, langOf } from '../../lib/email.js';
 
 // Google refused the restaurant's calendar (not shared with the service account, or a wrong ID): the page falls back to phone
 const calendarError = e => json({ error: 'calendar', detail: String(e.message || e) }, 502);
 
 // The checks both calls share; returns an error body or null
-function check(R, date, people, now) {
+function check(R, people) {
   if (!R.online) return { error: 'offline' };
-  if (!isDate(date)) return { error: 'dates' };
   if (!(Number.isInteger(people) && people >= 1)) return { error: 'people' };
   if (people > R.maxParty) return { error: 'party', max: R.maxParty };
-  if (date < now.date) return { error: 'past' };
-  if (date > addDays(now.date, R.maxDays)) return { error: 'too_far', days: R.maxDays };
-  if (!servicesOn(R, date).length) return { error: 'closed' };
   return null;
 }
 
 export async function onRequestGet({ request, env }) {
-  const u = new URL(request.url), date = u.searchParams.get('date'), people = Number(u.searchParams.get('people') || 2);
+  const people = Number(new URL(request.url).searchParams.get('people') || 2);
   const R = (await settings(env)).restaurant, now = madridNow();
-  const bad = check(R, date, people, now);
+  const bad = check(R, people);
   if (bad) return json(bad, 400);
+  if (!R.open.length) return json({ people, open: [] });
   if (!tablesConfigured(env)) return json({ error: 'not_configured' }, 503);
   let list;
-  try { list = await (await tables(env)).list(date, addDays(date, 1)); }
+  try { list = await (await tables(env)).list(R.open[0].slice(0, 10), addDays(R.open.at(-1).slice(0, 10), 1)); }
   catch (e) { return calendarError(e); }
-  const services = serviceLoad(R, date, list).map(s => ({
-    name: s.name, times: s.times.map(time => ({ time, free: s.taken + people <= s.seats && inTime(R, date, time, now) })),
-  }));
-  return json({ date, people, services });
+  return json({ people, open: R.open.map(at => ({ at, free: taken(list, at) + people <= R.seats && inTime(R, at, now) })) });
 }
 
 export async function onRequestPost({ request, env, waitUntil }) {
   const b = await request.json().catch(() => ({}));
   if (b.website) return json({ ok: true }); // honeypot: bots fill the hidden field
   const clip = (v, n) => String(v ?? '').trim().slice(0, n);
+  const at = String(b.at || '');
   const t = {
-    date: b.date, time: b.time, people: Number(b.people), name: clip(b.name, 100), email: clip(b.email, 120), phone: clip(b.phone, 40),
+    date: at.slice(0, 10), time: at.slice(11, 16), people: Number(b.people), name: clip(b.name, 100), email: clip(b.email, 120), phone: clip(b.phone, 40),
     notes: clip(b.notes, 500), source: 'web', lang: langOf(b.lang),
   };
-  const R = (await settings(env)).restaurant, now = madridNow();
-  const bad = check(R, t.date, t.people, now);
+  const R = (await settings(env)).restaurant;
+  const bad = check(R, t.people);
   if (bad) return json(bad, 400);
+  if (!isAt(at) || !R.open.includes(at)) return json({ error: 'closed' }, 400);
+  if (!inTime(R, at)) return json({ error: 'too_soon', hours: R.minHours }, 400);
   if (t.name.length < 2) return json({ error: 'name' }, 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t.email)) return json({ error: 'email' }, 400);
   if (t.phone.replace(/\D/g, '').length < 6) return json({ error: 'phone' }, 400);
-  const s = isTime(t.time) && serviceAt(R, t.date, t.time);
-  if (!s) return json({ error: 'time' }, 400);
-  if (!inTime(R, t.date, t.time, now)) return json({ error: 'too_soon', hours: R.minHours }, 400);
   if (!tablesConfigured(env)) return json({ error: 'not_configured' }, 503);
 
   try {
     const cal = await tables(env);
-    const load = serviceLoad(R, t.date, await cal.list(t.date, addDays(t.date, 1))).find(x => x.id === s.id);
-    if (load.taken + t.people > s.seats) return json({ error: 'full' }, 409);
-    await cal.create(tableEvent({ ...t, service: s.id }));
+    if (taken(await cal.list(t.date, addDays(t.date, 1)), at) + t.people > R.seats) return json({ error: 'full' }, 409);
+    await cal.create(tableEvent(t));
   } catch (e) { return calendarError(e); }
 
-  const msg = { ...t, service: s.name };
-  waitUntil(Promise.all([send(env, tableConfirmation(env, msg)), send(env, tableNotice(env, msg))]).catch(() => {}));
+  waitUntil(Promise.all([send(env, tableConfirmation(env, t)), send(env, tableNotice(env, t))]).catch(() => {}));
   return json({ ok: true });
 }

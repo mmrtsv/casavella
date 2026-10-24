@@ -1,7 +1,8 @@
 // GET /api/maite/settings
 // PUT /api/maite/settings  { stays?, discounts?, rules?, cancel?, restaurant? }  Any of the sections; the others are kept.
 // Per-day prices and minimum stays change through /api/maite/days. See settings() in lib/booking.js for the shape.
-import { STAYS, settings, policyText, isDate, today, json } from '../../../lib/booking.js';
+import { STAYS, settings, policyText, today, json } from '../../../lib/booking.js';
+import { isAt } from '../../../lib/restaurant.js';
 
 const money = v => v === null || v === '' ? null : Math.round(Number(v) * 100) / 100;
 const int = v => Number(v);
@@ -49,17 +50,11 @@ export async function onRequestPut({ request, env, data }) {
     S.cancel = c;
   }
   if (b.restaurant) {
-    const r = b.restaurant;
-    const services = [].concat(r.services || []).map((x, i) => ({
-      id: String(x.id || `s${Date.now().toString(36)}${i}`).slice(0, 24), name: String(x.name || '').trim().slice(0, 40),
-      days: [...new Set([].concat(x.days || []).map(Number))].filter(d => ok(d, 1, 7)).sort(), from: String(x.from || ''), to: String(x.to || ''), seats: int(x.seats),
-    }));
-    const R = { online: !!r.online, maxParty: int(r.maxParty), minHours: int(r.minHours), maxDays: int(r.maxDays), services,
-      closed: [...new Set([].concat(r.closed || []))].filter(d => isDate(d) && d >= today()).sort() };
-    if (services.length > 6 || new Set(services.map(x => x.id)).size !== services.length
-      || !services.every(x => x.name && x.days.length && time(x.from) && time(x.to) && x.from <= x.to && ok(x.seats, 1, 500))
-      || !ok(R.maxParty, 1, 50) || !ok(R.minHours, 0, 72) || !ok(R.maxDays, 1, 365) || R.closed.length > 200)
-      return json({ error: 'restaurant' }, 400);
+    const r = b.restaurant, t = today();
+    // Openings: a day and a time each; past ones are dropped
+    const open = [...new Set([].concat(r.open || []))].filter(a => isAt(a) && a.slice(0, 10) >= t).sort();
+    const R = { online: !!r.online, maxParty: int(r.maxParty), minHours: int(r.minHours), seats: int(r.seats), open };
+    if (!ok(R.seats, 1, 500) || !ok(R.maxParty, 1, 50) || !ok(R.minHours, 0, 72) || open.length > 400) return json({ error: 'restaurant' }, 400);
     S.restaurant = R;
   }
   await env.MAITE.put('settings', JSON.stringify({ ...S, by: data.user, at: new Date().toISOString() }));

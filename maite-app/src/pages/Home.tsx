@@ -1,10 +1,12 @@
-// Inici: a greeting that says what happens today, four numbers, what is still to do, this week's calendar and who is here or coming next
+// Inici: a greeting that says what happens today, four numbers, what is still to do, this week's calendar, who is here or coming next
+// and the restaurant's next open days
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Glass } from '../lib/glass';
-import { addDays, day, euro, nightsBetween, parse, range, TODAY } from '../lib/dates';
+import { addDays, cap, day, euro, nightsBetween, parse, range, TODAY } from '../lib/dates';
 import { go } from '../lib/route';
 import { keyOf, shortName, useStore } from '../lib/store';
+import { atOf, seated, useTables } from '../lib/tables';
 import { openBookings, openDetail } from '../lib/ui';
 import { atHome, dueList, isBooking, missing, who } from '../lib/words';
 import { Status } from '../parts/Status';
@@ -56,11 +58,17 @@ export default function Home() {
   const in30 = addDays(TODAY, 30);
   const occ = Math.round(all.reduce((n, b) => n + Math.max(0, nightsBetween(b.first < TODAY ? TODAY : b.first, b.until > in30 ? in30 : b.until)), 0) / (30 * (stays.length || 1)) * 100);
   const due = all.filter(b => b.kind === 'manual' && !b.settled && b.until >= TODAY).reduce((s, b) => s + (b.amount || 0), 0);
+  // The restaurant opens today: when, and how many are coming
+  const R = useStore(s => s.settings)?.restaurant;
+  const { tables } = useTables(TODAY, addDays(TODAY, 120));
+  const opensToday = (R?.open || []).filter(a => a.slice(0, 10) === TODAY);
+  const comingToday = seated([...tables.values()].filter(t => !t.cancelled && opensToday.includes(atOf(t))));
   const h = new Date().getHours(), hello = h < 6 || h >= 21 ? 'Bona nit' : h < 14 ? 'Bon dia' : 'Bona tarda';
   const say: Seg[] = [
     ...(arrive.length ? [`Avui ${arrive.length === 1 ? 'arriba' : 'arriben'}`, ...listOf(arrive, b => [b, `a ${shortName(b.stay)}`]), '.'] : ['Avui no arriba ningú.']),
     ...(leave.length ? [leave.length === 1 ? 'Marxa' : 'Marxen', ...listOf(leave, b => [b]), '.'] : []),
     ...(!arrive.length && next ? ['El proper check-in és el de', next, `, ${day(next.first, { weekday: 'long', day: 'numeric', month: 'long' })}.`] : []),
+    ...(opensToday.length ? [`El restaurant obre a les ${opensToday.map(a => a.slice(11)).join(' i a les ')}${comingToday ? `, amb ${comingToday} ${comingToday === 1 ? 'persona' : 'persones'}` : ''}.`] : []),
   ];
   const [anim] = useState(() => !played && !matchMedia('(prefers-reduced-motion: reduce)').matches);
   useEffect(() => { played = true; }, []);
@@ -88,7 +96,8 @@ export default function Home() {
 
       <div {...up(4)}><Todo all={all} /></div>
       <div {...up(5)}><Week /></div>
-      <div {...up(6)}><Upcoming all={all} /></div>
+      <div {...up(6)}><Restaurant /></div>
+      <div {...up(7)}><Upcoming all={all} /></div>
     </div>
   );
 }
@@ -209,6 +218,36 @@ function Week() {
           ))}
         </div>
       </div>
+    </Section>
+  );
+}
+
+// The restaurant's next open days, with the tables and seats taken
+function Restaurant() {
+  const R = useStore(s => s.settings)?.restaurant;
+  const { tables } = useTables(TODAY, addDays(TODAY, 120));
+  const next = (R?.open || []).filter(a => a.slice(0, 10) >= TODAY).slice(0, 4);
+  return (
+    <Section title="Restaurant" action={<Open to="restaurant">Taules</Open>}>
+      {next.length ? (
+        <ul className="divide-y divide-separator overflow-hidden card">
+          {next.map(a => {
+            const list = [...tables.values()].filter(t => !t.cancelled && atOf(t) === a);
+            return (
+              <li key={a}>
+                <button type="button" onClick={() => go('restaurant')} className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 px-5 py-4 text-left outline-none hover:bg-[var(--row-hover)] focus-visible:bg-[var(--row-hover)]">
+                  <span className="min-w-0 flex-1 basis-56">
+                    <span className="block text-sm font-semibold">{cap(day(a.slice(0, 10), { weekday: 'long', day: 'numeric', month: 'long' }))}</span>
+                    <span className="block text-xs text-muted tnum">{a.slice(11)}</span>
+                  </span>
+                  <span className="text-sm text-muted tnum">{list.length} {list.length === 1 ? 'taula' : 'taules'}</span>
+                  <span className="w-28 text-right text-sm font-medium tnum">{seated(list)} de {R!.seats} places</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : <p className="card p-8 text-center text-sm text-muted">El restaurant no té cap dia obert.</p>}
     </Section>
   );
 }

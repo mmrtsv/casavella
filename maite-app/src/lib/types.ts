@@ -9,11 +9,12 @@ export interface Booking {
   method: string; memo: string; policy: Policy | null;
 }
 export interface Stay { id: string; name: string; short: string; max: number }
-export interface Service { id: string; name: string; days: number[]; from: string; to: string; seats: number }
-export interface RestaurantSettings { online: boolean; maxParty: number; minHours: number; maxDays: number; closed: string[]; services: Service[] }
+// Closed unless Maite opens it: each opening is a day and a time ('2026-12-31T21:00'), each with `seats`
+export interface RestaurantSettings { online: boolean; maxParty: number; minHours: number; seats: number; open: string[] }
 export interface Table {
   id: string; date: string; time: string; people: number | null; name: string; phone: string; email: string; notes: string;
-  source: string; service: string; lang: string; cancelled: boolean; link: string;
+  source: string; lang: string; cancelled: boolean; link: string;
+  paid: number | null; // cents, noted in Maite after the meal
 }
 export interface Settings {
   stays: Record<string, { base: number; weekend: number | null }>;

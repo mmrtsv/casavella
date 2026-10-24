@@ -59,7 +59,7 @@ export default function Social() {
         </Tabs.List></Tabs.ListContainer>
       </Tabs>
       {HELP[tab] && <p className="mb-5 max-w-3xl text-sm text-muted">{HELP[tab]}</p>}
-      {(kind === 'post' || kind === 'story') && data?.ai && <Maker key={kind} kind={kind} setData={setData} />}
+      {(kind === 'post' || kind === 'story') && data?.ai && <Maker key={kind} start={kind} setData={setData} />}
       {kind && (
         <ul className={`grid gap-5 ${kind === 'post' ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-5'}`}>
           {TEMPLATES.filter(t => t.kind === kind).map(t => <li key={t.id}><TemplateCard t={t} data={data} setData={setData} /></li>)}
@@ -133,35 +133,59 @@ function TemplateCard({ t, data, setData }: { t: Template; data: Data | null; se
   );
 }
 
-// A post or story from a description: Claude picks the template and the photo and writes the words on it and the caption
-function Maker({ kind, setData }: { kind: 'post' | 'story'; setData: (d: Data) => void }) {
+// A post or story from a description, with the owner's photo or without: Claude picks the template (and the photo, when there
+// isn't one) and writes the words on it and the caption
+function Maker({ start, setData }: { start: 'post' | 'story'; setData: (d: Data) => void }) {
+  const [kind, setKind] = useState(start);
   const [prompt, setPrompt] = useState('');
+  const [own, setOwn] = useState<{ file: File; url: string } | null>(null);
+  const uploaded = useRef('');
   const [busy, setBusy] = useState(false);
-  const [made, setMade] = useState<Made[]>([]);
+  const [made, setMade] = useState<{ kind: 'post' | 'story'; options: Made[] } | null>(null);
+  const file = useRef<HTMLInputElement>(null);
+  useEffect(() => () => { if (own) URL.revokeObjectURL(own.url); }, [own]);
+  const ready = !!(prompt.trim() || own) && !busy;
+  const choose = (f?: File) => { if (f) { uploaded.current = ''; setOwn({ file: f, url: URL.createObjectURL(f) }); } };
+
   async function make() {
     setBusy(true);
-    try { setMade((await api<{ options: Made[] }>('social-make', { method: 'POST', body: { prompt, kind } })).options.filter(o => byId.has(o.tpl))); }
-    catch (e) { toastError(e); }
+    try {
+      // The photo goes up once; asking again with the same one reuses it
+      if (own && !uploaded.current) uploaded.current = await uploadPhoto(own.file);
+      const d = await api<{ options: Made[] }>('social-make', { method: 'POST', body: { prompt, kind, photo: own ? uploaded.current : '' } });
+      setMade({ kind, options: d.options.filter(o => byId.has(o.tpl)) });
+    } catch (e) { toastError(e); }
     setBusy(false);
   }
   return (
     <div className="mb-8 space-y-5">
-      <section className="card space-y-3 p-4 sm:p-5">
+      <section className="card space-y-4 p-4 sm:p-5">
+        <ToggleButtonGroup aria-label="Què vols fer" selectionMode="single" disallowEmptySelection selectedKeys={new Set([kind])}
+          onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) setKind(v as typeof kind); }} size="sm">
+          <ToggleButton id="post">Post</ToggleButton>
+          <ToggleButton id="story">Story</ToggleButton>
+        </ToggleButtonGroup>
         <TextField value={prompt} onChange={setPrompt} fullWidth>
-          <Label>{kind === 'post' ? 'Què vols publicar' : 'Què vols explicar a la story'}</Label>
+          <Label>{own ? 'Què vols dir amb aquesta foto (opcional)' : kind === 'post' ? 'Què vols publicar' : 'Què vols explicar a la story'}</Label>
           <TextArea rows={2} placeholder={kind === 'post' ? "El sopar de Cap d'Any al restaurant, 31 de desembre, 65 € per persona" : 'Aquest cap de setmana encara queda lliure Les Vinyes'}
-            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && prompt.trim() && !busy) make(); }} />
+            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && ready) make(); }} />
         </TextField>
         <div className="flex flex-wrap items-center gap-3">
-          <p className="mr-auto text-sm text-muted">Claude tria la plantilla i la foto, i escriu el text de la imatge{kind === 'post' ? ' i el copy' : ''}.</p>
-          <Button size="sm" isPending={busy} isDisabled={!prompt.trim()} onPress={make}>
-            {busy ? <Spinner size="sm" color="current" /> : <Sparkles size={15} />}{made.length ? 'Altres propostes' : 'Proposa'}
+          {own && <img src={own.url} alt="La teva foto" className="h-16 w-16 rounded-lg object-cover" />}
+          <Button size="sm" variant="secondary" onPress={() => file.current?.click()}><ImageUp size={15} />{own ? 'Una altra foto' : 'Afegeix una foto'}</Button>
+          {own && <Button size="sm" variant="ghost" onPress={() => { setOwn(null); uploaded.current = ''; }}><X size={15} />Treu la foto</Button>}
+          <input ref={file} type="file" accept="image/*" hidden onChange={e => { choose(e.target.files?.[0]); e.target.value = ''; }} />
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="mr-auto text-sm text-muted">{own ? `Claude fa ${kind === 'post' ? 'el post' : 'la story'} amb la teva foto i n'escriu el text i el copy.` : 'Claude tria la plantilla i la foto, i escriu el text de la imatge i el copy.'}</p>
+          <Button size="sm" isPending={busy} isDisabled={!ready} onPress={make}>
+            {busy ? <Spinner size="sm" color="current" /> : <Sparkles size={15} />}{made ? 'Altres propostes' : 'Proposa'}
           </Button>
         </div>
       </section>
-      {made.length > 0 && (
-        <ul className={`grid gap-5 ${kind === 'post' ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-5'}`}>
-          {made.map((o, k) => <li key={k + o.tpl + o.texts.join()}><MadeCard o={o} setData={setData} /></li>)}
+      {made && made.options.length > 0 && (
+        <ul className={`grid gap-5 ${made.kind === 'post' ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'sm:grid-cols-2 xl:grid-cols-3'}`}>
+          {made.options.map((o, k) => <li key={k + o.tpl + o.texts.join()}><MadeCard o={o} setData={setData} /></li>)}
         </ul>
       )}
     </div>
@@ -201,7 +225,7 @@ function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
           <h2 className="mr-auto text-base font-semibold tracking-tight">{t.title}</h2>
           {kept > 0 && <Tag tone="paid">Post {kept} del perfil</Tag>}
         </div>
-        {inGrid(t) && <p className="text-sm whitespace-pre-wrap">{caption}</p>}
+        <p className="text-sm whitespace-pre-wrap">{caption}</p>
         <div className="flex flex-wrap items-center gap-2">
           {t.photo && (
             <>
@@ -209,6 +233,8 @@ function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
               <input ref={file} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) setOwn({ file: f, url: URL.createObjectURL(f) }); e.target.value = ''; }} />
             </>
           )}
+          <Button size="sm" variant="ghost" isIconOnly aria-label="Copia el copy"
+            onPress={() => navigator.clipboard.writeText(caption).then(() => done('Copy copiat'), () => toastError(new Error("No s'ha pogut copiar")))}><CopyIcon size={16} /></Button>
           <Button size="sm" variant="ghost" isIconOnly aria-label={`Descarrega ${t.title} en PNG`} isPending={busy === 'png'} onPress={exportPng}>
             {busy === 'png' ? <Spinner size="sm" color="current" /> : <Download size={16} />}
           </Button>

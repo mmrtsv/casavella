@@ -210,33 +210,47 @@ private fun TemplateCard(t: Template, data: Social?, compact: Boolean) {
     }
 }
 
-// A post or story from a description: Claude picks the template and the photo and writes the words on it and the caption
-private val made = mutableMapOf<String, List<Made>>()
+// A post or story from a description, with the owner's photo or without: Claude picks the template (and the photo, when there
+// isn't one) and writes the words on it and the caption
+private val made = mutableMapOf<String, Pair<String, List<Made>>>()
 
 @Composable
-private fun Maker(kind: String) {
+private fun Maker(start: String) {
     val l = LocalLayout.current
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var prompt by remember(kind) { mutableStateOf("") }
-    var busy by remember { mutableStateOf(false) }
-    var options by remember(kind) { mutableStateOf(made[kind].orEmpty()) }
+    var kind by remember(start) { mutableStateOf(start) }
+    var prompt by remember(start) { mutableStateOf("") }
+    // The photo goes up as soon as it is picked: what the phone shows, and the address Claude gets
+    var own by remember(start) { mutableStateOf<Pair<android.net.Uri, String>?>(null) }
+    var busy by remember { mutableStateOf("") }
+    var result by remember(start) { mutableStateOf(made[start]) }
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) { busy = "photo"; scope.launch { try { own = uri to uploadPhoto(context, uri) } catch (e: Exception) { Toasts.error(e) }; busy = "" } }
+    }
     Card(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
-        Field(if (kind == "post") "Què vols publicar" else "Què vols explicar a la story", prompt, { prompt = it }, area = true,
+        Segmented(listOf("post" to "Post", "story" to "Story"), kind, { kind = it })
+        Field(if (own != null) "Què vols dir amb aquesta foto (opcional)" else if (kind == "post") "Què vols publicar" else "Què vols explicar a la story", prompt, { prompt = it }, Modifier.padding(top = 12.dp), area = true,
             placeholder = if (kind == "post") "El sopar de Cap d'Any al restaurant, 31 de desembre, 65 € per persona" else "Aquest cap de setmana encara queda lliure Les Vinyes")
-        Muted("Claude tria la plantilla i la foto, i escriu el text de la imatge" + if (kind == "post") " i el copy." else ".")
-        Btn(if (options.isNotEmpty()) "Altres propostes" else "Proposa", {
-            busy = true
+        Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            own?.let { AsyncImage(it.first, "La teva foto", Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop) }
+            Btn(if (own != null) "Una altra foto" else "Afegeix una foto", { pick.launch("image/*") }, look = Look.Secondary, icon = R.drawable.ic_image_up, busy = busy == "photo")
+            if (own != null) Btn("Treu la foto", { own = null }, look = Look.Ghost, icon = R.drawable.ic_x)
+        }
+        Muted(if (own != null) "Claude fa ${if (kind == "post") "el post" else "la story"} amb la teva foto i n'escriu el text i el copy." else "Claude tria la plantilla i la foto, i escriu el text de la imatge i el copy.")
+        Btn(if (result != null) "Altres propostes" else "Proposa", {
+            busy = "make"
             scope.launch {
                 try {
-                    val d = Api.post<MadeOptions>("social-make", mapOf("prompt" to prompt, "kind" to kind))
-                    options = d.options.filter { Renderer.byId.containsKey(it.tpl) }; made[kind] = options
+                    val d = Api.post<MadeOptions>("social-make", mapOf("prompt" to prompt, "kind" to kind, "photo" to own?.second.orEmpty()))
+                    result = kind to d.options.filter { Renderer.byId.containsKey(it.tpl) }; made[start] = result!!
                 } catch (e: ApiError) { Toasts.error(e) }
-                busy = false
+                busy = ""
             }
-        }, Modifier.padding(top = 10.dp), icon = R.drawable.ic_sparkles, busy = busy, enabled = prompt.isNotBlank())
+        }, Modifier.padding(top = 10.dp), icon = R.drawable.ic_sparkles, busy = busy == "make", enabled = (prompt.isNotBlank() || own != null) && busy.isEmpty())
     }
-    val per = if (kind == "post") (if (l.wide) 3 else if (l.rail) 2 else 1) else 2
-    options.chunked(per).forEach { row ->
+    val per = if (l.wide) 3 else if (l.rail) 2 else 1
+    result?.second.orEmpty().chunked(per).forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             row.forEach { o -> Box(Modifier.weight(1f)) { MadeCard(o, compact = per > 1) } }
             repeat(per - row.size) { Spacer(Modifier.weight(1f)) }
@@ -263,9 +277,10 @@ private fun MadeCard(o: Made, compact: Boolean) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(t.title, style = Type.base, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (kept > 0) Tag("Post $kept del perfil", Tone.Paid)
-            if (inGrid(t)) Text(caption, style = Type.sm, maxLines = if (compact) 6 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis)
+            Text(caption, style = Type.sm, maxLines = if (compact) 6 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (t.photo.isNotEmpty()) Btn(if (compact) "Foto" else if (own.isNotEmpty()) "Una altra foto" else "La teva foto", { pick.launch("image/*") }, look = Look.Secondary, icon = R.drawable.ic_image_up, busy = busy == "photo")
+                IconBtn(R.drawable.ic_copy, "Copia el copy", { (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("Copy", caption)); Toasts.done("Copy copiat") })
                 IconBtn(R.drawable.ic_download, "Descarrega ${t.title}", { busy = "png"; scope.launch { saveTemplate(context, t, 0, photo, o.texts, null); busy = "" } }, busy = busy == "png")
                 if (inGrid(t) && kept == 0) Btn("Confirma", {
                     busy = "confirm"

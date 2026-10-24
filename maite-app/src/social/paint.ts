@@ -71,8 +71,17 @@ export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?:
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     for (let i = 0, n = walk.nextNode(); n; n = walk.nextNode()) {
       if (!n.nodeValue?.trim()) continue;
-      if (texts[i] != null) n.nodeValue = texts[i];
+      if (texts[i] != null) {
+        n.nodeValue = texts[i];
+        // A line left empty goes, with its room (a dish fewer on a menu)
+        if (!texts[i].trim() && n.parentElement) n.parentElement.style.display = 'none';
+      }
       i++;
+    }
+    // The title in script is drawn for a word of about ten letters; a longer one gets smaller to stay on the image
+    if (t.id === 'PostAnnounce' || t.id === 'StoryPoster') {
+      const sc = find(root, 'Pinyon'), n = sc?.textContent?.trim().length || 0;
+      if (sc && n > 10) sc.style.fontSize = Math.max(90, Math.round(parseInt(sc.style.fontSize) * 10 / n)) + 'px';
     }
   }
 }
@@ -109,7 +118,8 @@ export function loadBrandFonts() {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 export const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-export const fileName = (t: Template, n?: number) => (n ? pad(n) + '-' : 'la-casa-vella-') + slug(t.title) + '.png';
+// slide: the image's place in a carousel, so its files sort together and in order
+export const fileName = (t: Template, n?: number, slide?: number) => (n ? pad(n) + '-' : 'la-casa-vella-') + (slide ? slide + '-' : '') + slug(t.title) + '.png';
 
 // Full-size PNG, drawn off screen
 export async function png(t: Template, v = 0, photo = '', texts?: string[]): Promise<Blob> {

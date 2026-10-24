@@ -3,49 +3,64 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Calendar, DateField, DatePicker, I18nProvider, Label, ListBox, Select, Skeleton, Spinner, Tabs, TextArea, TextField, TimeField, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
 import { getLocalTimeZone, parseDate, parseTime, today as todayIn, type DateValue, type Time } from '@internationalized/date';
-import { Check, ChevronLeft, ChevronRight, Clock, Copy as CopyIcon, Download, ExternalLink, ImageUp, MessageSquareText, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Clock, Copy as CopyIcon, Download, ExternalLink, GalleryHorizontalEnd, ImageUp, MessageSquareText, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
 import { api, uploadPhoto } from '../lib/api';
 import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
 import { done, toastError } from '../parts/toast';
 import { Art, Wide } from '../social/Art';
-import { STYLES, inLibrary } from '../social/catalog';
+import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, STYLES, inLibrary, menuCaption, menuSlides, type Menu, type Slide } from '../social/catalog';
+import { Check as CheckField, Choice, Field } from '../parts/fields';
 import { byId, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Kind, type Template } from '../social/templates';
 
-type Post = { id: string; tpl: string; v: number; photo: string; texts?: string[]; at: string; date?: string; published?: { at: string; url: string; media?: string }; schedule?: Schedule };
-// A program: when the post goes out on its own (the cron in cron/), with its JPEG already uploaded; error, if it failed
-type Schedule = { at: string; image: string; error?: string; started?: string };
+// story: a story (never in the grid); menu: made in Menús, which lists it
+type Post = Slide & { id: string; slides?: Slide[]; story?: boolean; menu?: boolean; at: string; date?: string; published?: { at: string; url: string; media?: string }; schedule?: Schedule };
+// A program: when the post goes out on its own (the cron in cron/), with its JPEGs already uploaded (images, for a carousel);
+// error, if it failed
+type Schedule = { at: string; image: string; images?: string[]; error?: string; started?: string };
 type Insta = { connected: boolean; username?: string; detail?: string; media?: Live[] };
 // A post on the Instagram account, published from Maite or from the app
 type Live = { id: string; at: string; url: string; image: string; caption: string };
 type Data = { posts: Post[]; copies: Record<string, string>; ai: boolean };
 type Option = { caption: string; hashtags: string };
 // A post or story Claude made from a description: the template, its photo and words, and the caption
-type Made = Option & { tpl: string; photo: string; texts: string[] };
-type Tab = 'posts' | 'stories' | 'highlights' | 'profile' | 'calendar' | 'copies';
+type Made = Option & { tpl: string; photo: string; texts: string[]; slides?: Slide[] };
+// Destacats (the highlight covers) is out of the tabs for now; its templates stay
+type Tab = 'posts' | 'stories' | 'menus' | 'profile' | 'calendar' | 'copies';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'posts', label: 'Posts' }, { id: 'stories', label: 'Stories i reels' }, { id: 'highlights', label: 'Destacats' },
+  { id: 'posts', label: 'Posts' }, { id: 'stories', label: 'Stories i reels' }, { id: 'menus', label: 'Menús' },
   { id: 'profile', label: 'Perfil' }, { id: 'calendar', label: 'Calendari' }, { id: 'copies', label: 'Copies' },
 ];
-const KIND_OF: Partial<Record<Tab, Kind>> = { posts: 'post', stories: 'story', highlights: 'highlight' };
+const KIND_OF: Partial<Record<Tab, Kind>> = { posts: 'post', stories: 'story' };
 const HELP: Partial<Record<Tab, string>> = {
   posts: '1080 × 1350 px. Només els colors de la marca. Confirma els que vulguis publicar i ordena\'ls a Perfil.',
   stories: '1080 × 1920 px. El text queda lluny de les franges de dalt i de baix, on Instagram posa els botons.',
-  highlights: 'Puja-les com a story i tria-les com a portada de cada destacat. Instagram n\'agafa el cercle del centre.',
   copies: 'Escrits com ho fan Mas d\'en Bruno, Oller del Mas, Off Grid, La Vella Farga i Mas Grimosach.',
 };
 // Templates that can go in the grid: every post, and the reel cover
 const inGrid = (t: Template) => t.kind === 'post' || t.id === 'StoryReel';
 const joinCopy = (o: Option) => o.caption.trim() + (o.hashtags ? '\n\n' + o.hashtags.trim() : '');
 
-async function download(t: Template, v: number, photo: string, texts?: string[], n?: number) {
-  save(await png(t, v, photo, texts), fileName(t, n));
+async function download(t: Template, v: number, photo: string, texts?: string[], n?: number, slide?: number) {
+  save(await png(t, v, photo, texts), fileName(t, n, slide));
 }
+// Every image of a post: the post itself, then the slides of a carousel
+const imagesOf = (p: Slide & { slides?: Slide[] }) => [p, ...(p.slides || [])].filter(x => byId.has(x.tpl));
+// A post's images one after the other, numbered when there are more than one
+async function downloadPost(p: Slide & { slides?: Slide[] }, n?: number) {
+  const list = imagesOf(p);
+  for (const [k, x] of list.entries()) {
+    await download(byId.get(x.tpl)!, x.v, x.photo, x.texts, n, list.length > 1 ? k + 1 : undefined);
+    if (k < list.length - 1) await new Promise(r => setTimeout(r, 400));
+  }
+}
+// The slides that follow a template in a carousel, as they are before Claude or the owner change them
+const nextSlides = (t: Template): Slide[] => (CAROUSELS[t.id] || []).map(tpl => ({ tpl, v: 0, photo: '' }));
 
 export default function Social() {
-  const [tab, setTab] = useState<Tab>(() => { try { return (localStorage.getItem('maite-social-tab') as Tab) || 'posts'; } catch { return 'posts'; } });
+  const [tab, setTab] = useState<Tab>(() => { try { return (TABS.find(t => t.id === localStorage.getItem('maite-social-tab'))?.id) || 'posts'; } catch { return 'posts'; } });
   const [data, setData] = useState<Data | null>(null);
   useEffect(() => { loadBrandFonts(); api<Data>('social').then(setData).catch(toastError); }, []);
   const pick = (t: Tab) => { setTab(t); try { localStorage.setItem('maite-social-tab', t); } catch { /* private window */ } };
@@ -67,6 +82,7 @@ export default function Social() {
       )}
       {tab === 'calendar' && (data ? <Planner data={data} setData={setData} onEmpty={() => pick('posts')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {tab === 'profile' && (data ? <Profile data={data} setData={setData} onEmpty={() => pick('posts')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
+      {tab === 'menus' && (data ? <Menus data={data} setData={setData} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {tab === 'copies' && <Library />}
     </div>
   );
@@ -77,16 +93,17 @@ function TemplateCard({ t, data, setData }: { t: Template; data: Data | null; se
   const [v, setV] = useState(0);
   const [own, setOwn] = useState<{ file: File; url: string } | null>(null);
   const [busy, setBusy] = useState<'' | 'confirm' | 'png'>('');
+  const next = nextSlides(t), [carousel, setCarousel] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   useEffect(() => () => { if (own) URL.revokeObjectURL(own.url); }, [own]);
-  const at = (data?.posts || []).filter(p => !p.published).map((p, i) => (p.tpl === t.id ? i + 1 : 0)).filter(Boolean);
+  const at = (data?.posts || []).filter(p => !p.published && !p.story).map((p, i) => (p.tpl === t.id ? i + 1 : 0)).filter(Boolean);
   const choose = (f?: File) => { if (f) { setOwn({ file: f, url: URL.createObjectURL(f) }); } };
 
   async function confirm() {
     setBusy('confirm');
     try {
       const photo = own ? await uploadPhoto(own.file) : '';
-      const d = await api<Data>('social', { method: 'POST', body: { tpl: t.id, v, photo } });
+      const d = await api<Data>('social', { method: 'POST', body: { tpl: t.id, v, photo, slides: carousel ? next : undefined } });
       setData(d); setOwn(null);
       done(`${t.title}: post ${d.posts.length} del perfil`);
     } catch (e) { toastError(e); }
@@ -94,19 +111,20 @@ function TemplateCard({ t, data, setData }: { t: Template; data: Data | null; se
   }
   async function exportPng() {
     setBusy('png');
-    try { await download(t, v, own?.url || ''); } catch (e) { toastError(e); }
+    try { await downloadPost({ tpl: t.id, v, photo: own?.url || '', slides: carousel ? next : undefined }); } catch (e) { toastError(e); }
     setBusy('');
   }
 
   return (
     <article className="card overflow-hidden">
-      <Art t={t} v={v} photo={own?.url} className="rounded-t-[var(--card-radius)]" />
+      <Carousel list={[{ tpl: t.id, v, photo: own?.url || '' }, ...(carousel ? next : [])]} className="rounded-t-[var(--card-radius)]" />
       <div className="space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="mr-auto text-base font-semibold tracking-tight">{t.title}</h2>
           {at.length > 0 && <Tag tone="paid">{at.length === 1 ? `Post ${at[0]} del perfil` : `Posts ${at.join(', ')} del perfil`}</Tag>}
         </div>
         <p className="text-sm text-muted">{t.desc}</p>
+        {next.length > 0 && <SingleOrCarousel carousel={carousel} onChange={setCarousel} />}
         <div className="flex flex-wrap items-center gap-2">
           {n > 0 && (
             <Button size="sm" variant="secondary" onPress={() => { setV((v + 1) % n); setOwn(null); }} aria-label={`Una altra opció (${v + 1} de ${n})`}>
@@ -137,7 +155,7 @@ function TemplateCard({ t, data, setData }: { t: Template; data: Data | null; se
 // Claude writes the words on it and the caption (and picks a photo from the library, when there isn't one)
 function Maker({ start, setData }: { start: 'post' | 'story'; setData: (d: Data) => void }) {
   const [kind, setKind] = useState(start);
-  const [style, setStyle] = useState('');
+  const [style, setStyle] = useState('general');
   const [tpl, setTpl] = useState('');
   const [prompt, setPrompt] = useState('');
   const [own, setOwn] = useState<{ file: File; url: string } | null>(null);
@@ -174,9 +192,8 @@ function Maker({ start, setData }: { start: 'post' | 'story'; setData: (d: Data)
           <ToggleButton id="story">Story</ToggleButton>
         </ToggleButtonGroup>
         <div className="max-w-full overflow-x-auto">
-          <ToggleButtonGroup aria-label="Tipus" selectionMode="single" disallowEmptySelection selectedKeys={new Set([look?.id || 'auto'])}
-            onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) { setStyle(v === 'auto' ? '' : String(v)); setTpl(''); } }} size="sm" className="w-fit">
-            <ToggleButton id="auto" className="whitespace-nowrap">Qualsevol</ToggleButton>
+          <ToggleButtonGroup aria-label="Tema" selectionMode="single" disallowEmptySelection selectedKeys={new Set([look?.id || 'general'])}
+            onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) { setStyle(String(v)); setTpl(''); } }} size="sm" className="w-fit">
             {styles.map(st => <ToggleButton key={st.id} id={st.id} className="whitespace-nowrap">{st.label}</ToggleButton>)}
           </ToggleButtonGroup>
         </div>
@@ -222,15 +239,17 @@ function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
   const [own, setOwn] = useState<{ file: File; url: string } | null>(null);
   const [busy, setBusy] = useState<'' | 'confirm' | 'png'>('');
   const [kept, setKept] = useState(0);
+  // A carousel when Claude filled the slides after it (the menu after the announcement); the owner can still post it alone
+  const next = o.slides || [], [carousel, setCarousel] = useState(next.length > 0);
   const file = useRef<HTMLInputElement>(null);
   useEffect(() => () => { if (own) URL.revokeObjectURL(own.url); }, [own]);
-  const photo = own?.url || o.photo;
+  const photo = own?.url || o.photo, slides = carousel && next.length ? next : undefined;
 
   async function confirm() {
     setBusy('confirm');
     try {
-      const d = await api<Data>('social', { method: 'POST', body: { tpl: t.id, v: 0, photo: own ? await uploadPhoto(own.file) : o.photo, texts: o.texts, copy: inGrid(t) ? caption : '' } });
-      const added = d.posts[d.posts.length - 1], n = d.posts.filter(p => !p.published).indexOf(added) + 1;
+      const d = await api<Data>('social', { method: 'POST', body: { tpl: t.id, v: 0, photo: own ? await uploadPhoto(own.file) : o.photo, texts: o.texts, slides, copy: inGrid(t) ? caption : '' } });
+      const added = d.posts[d.posts.length - 1], n = d.posts.filter(p => !p.published && !p.story).indexOf(added) + 1;
       setData(d); setKept(n);
       done(`${t.title}: post ${n} del perfil`);
     } catch (e) { toastError(e); }
@@ -238,18 +257,19 @@ function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
   }
   async function exportPng() {
     setBusy('png');
-    try { await download(t, 0, photo, o.texts); } catch (e) { toastError(e); }
+    try { await downloadPost({ tpl: t.id, v: 0, photo, texts: o.texts, slides }); } catch (e) { toastError(e); }
     setBusy('');
   }
 
   return (
     <article className="card overflow-hidden">
-      <Art t={t} photo={photo} texts={o.texts} className="rounded-t-[var(--card-radius)]" />
+      <Carousel list={[{ tpl: t.id, v: 0, photo, texts: o.texts }, ...(slides || [])]} className="rounded-t-[var(--card-radius)]" />
       <div className="space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="mr-auto text-base font-semibold tracking-tight">{t.title}</h2>
           {kept > 0 && <Tag tone="paid">Post {kept} del perfil</Tag>}
         </div>
+        {next.length > 0 && !kept && <SingleOrCarousel carousel={carousel} onChange={setCarousel} />}
         <p className="text-sm whitespace-pre-wrap">{caption}</p>
         <div className="flex flex-wrap items-center gap-2">
           {t.photo && (
@@ -274,9 +294,209 @@ function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
   );
 }
 
+// Menús: a menu in three steps (the cover, the menu, when it goes out). It becomes the announcement with the menu after it, as
+// a carousel post in the grid, and the same cover as a story; each goes out now, at a programmed time or later, from here.
+// The menus made here are listed under the form, with when each goes out
+type Out = 'later' | 'now' | 'save';
+const OUT: { id: Out; label: string }[] = [{ id: 'later', label: 'Programa' }, { id: 'now', label: 'Ara' }, { id: 'save', label: 'Més endavant' }];
+
+function Menus({ data, setData }: { data: Data; setData: (d: Data) => void }) {
+  const [step, setStep] = useState<'cover' | 'menu' | 'out'>('cover');
+  const [m, setM] = useState<Menu>(MENU_EXAMPLE);
+  const [own, setOwn] = useState<{ file: File; url: string } | null>(null);
+  const [copy, setCopy] = useState<string | null>(null);
+  const [insta, setInsta] = useState<Insta | null>(null);
+  const tomorrow = ymd(new Date(Date.now() + 864e5));
+  const [post, setPost] = useState<{ when: Out; date: string; time: string }>({ when: 'later', date: tomorrow, time: '19:00' });
+  const [story, setStory] = useState<{ on: boolean; when: Out; date: string; time: string }>({ on: true, when: 'later', date: tomorrow, time: '12:00' });
+  const [busy, setBusy] = useState(false);
+  const [publishing, setPublishing] = useState<Post | null>(null);
+  const file = useRef<HTMLInputElement>(null);
+  useEffect(() => { api<Insta>('instagram').then(setInsta).catch(() => setInsta({ connected: false })); }, []);
+  useEffect(() => () => { if (own) URL.revokeObjectURL(own.url); }, [own]);
+  const set = (k: keyof Menu) => (v: string) => setM({ ...m, [k]: v });
+  const dish = (i: number) => (v: string) => { const dishes = [...m.dishes]; dishes[i] = v; setM({ ...m, dishes }); };
+  const shown = { ...m, photo: own?.url || m.photo }, made = menuSlides(shown);
+  const caption = copy ?? menuCaption(m);
+  const live = !!insta?.connected;
+  const atOf = (x: { date: string; time: string }) => new Date(`${x.date}T${x.time}`);
+  const late = (x: { when: Out; date: string; time: string }) => live && x.when === 'later' && !(atOf(x).getTime() > Date.now() + 60e3);
+  const ready = !!(m.title.trim() && m.name.trim() && m.price.trim() && m.dishes.some(d => d.trim())) && !late(post) && !(story.on && late(story));
+
+  async function save() {
+    setBusy(true);
+    try {
+      const photo = own ? await uploadPhoto(own.file) : m.photo, { post: p, story: st } = menuSlides({ ...m, photo });
+      let d = await api<Data>('social', { method: 'POST', body: { ...p, menu: true, copy: caption } });
+      const madePost = d.posts[d.posts.length - 1];
+      let madeStory: Post | null = null;
+      if (story.on) { d = await api<Data>('social', { method: 'POST', body: { ...st, story: true, menu: true } }); madeStory = d.posts[d.posts.length - 1]; }
+      setData(d);
+      const out: string[] = [];
+      for (const [x, w] of [[madePost, post], [madeStory, story]] as const) {
+        if (!x || !live || w.when === 'save') continue;
+        d = await sendOut(x, w.when === 'now' ? undefined : atOf(w)); setData(d);
+        out.push(`${x.story ? 'la story' : 'el post'} ${w.when === 'now' ? (x.story ? 'publicada' : 'publicat') : programmed({ at: atOf(w).toISOString(), image: '' })}`);
+      }
+      done(out.length ? `Menú desat: ${out.join(' i ')}` : 'Menú desat');
+      setStep('cover'); setOwn(null); setCopy(null);
+    } catch (e) { toastError(e); }
+    setBusy(false);
+  }
+
+  const whenFields = (label: string, x: { when: Out; date: string; time: string }, change: (x: { when: Out; date: string; time: string }) => void) => (
+    <div className="space-y-2">
+      <ToggleButtonGroup aria-label={label} selectionMode="single" disallowEmptySelection selectedKeys={new Set([x.when])}
+        onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) change({ ...x, when: v as Out }); }} size="sm">
+        {OUT.map(w => <ToggleButton key={w.id} id={w.id}>{w.label}</ToggleButton>)}
+      </ToggleButtonGroup>
+      {x.when === 'later' && (
+        <div className="flex flex-wrap items-end gap-3">
+          <DayPicker label="Dia" value={x.date} onChange={date => change({ ...x, date })} />
+          <HourField label="Hora" value={x.time} onChange={time => change({ ...x, time })} />
+        </div>
+      )}
+      {late(x) && <p className="text-xs text-warning">Aquesta hora ja ha passat.</p>}
+      {x.when === 'save' && <p className="text-xs text-muted">Es desa i el pots publicar o programar quan vulguis, des d'aquí sota.</p>}
+    </div>
+  );
+
+  // The menus made here, newest first: the post and its story
+  const list = data.posts.filter(p => p.menu && byId.has(p.tpl)).sort((a, b) => b.at.localeCompare(a.at));
+  const grid = data.posts.filter(p => !p.published && !p.story);
+  async function remove(p: Post) {
+    try { setData(await api<Data>('social', { method: 'PUT', body: { remove: p.id } })); done(p.story ? 'Story treta' : 'Post tret del perfil'); }
+    catch (e) { toastError(e); }
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
+        <section className="card space-y-4 p-4 sm:p-5" aria-label="Nou menú">
+          <ToggleButtonGroup aria-label="Pas" selectionMode="single" disallowEmptySelection selectedKeys={new Set([step])}
+            onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) setStep(v as typeof step); }} size="sm">
+            <ToggleButton id="cover">Portada</ToggleButton>
+            <ToggleButton id="menu">Menú</ToggleButton>
+            <ToggleButton id="out">Publica</ToggleButton>
+          </ToggleButtonGroup>
+          {step === 'cover' && <>
+            <div className="flex flex-wrap items-end gap-3">
+              {own ? <img src={own.url} alt="La teva foto" className="h-16 w-16 rounded-lg object-cover" />
+                : <Choice label="Foto de la portada" value={m.photo} onChange={set('photo')} items={LIBRARY.map(p => ({ id: p.src, name: p.alt }))} className="sm:max-w-sm" />}
+              <Button size="sm" variant="secondary" onPress={() => file.current?.click()}><ImageUp size={15} />{own ? 'Una altra foto' : 'La teva foto'}</Button>
+              {own && <Button size="sm" variant="ghost" onPress={() => setOwn(null)}><X size={15} />Treu la foto</Button>}
+              <input ref={file} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) setOwn({ file: f, url: URL.createObjectURL(f) }); e.target.value = ''; }} />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Damunt del títol" value={m.kicker} onChange={set('kicker')} placeholder="Torna la" />
+              <Field label="Títol" value={m.title} onChange={set('title')} placeholder="Calçotada" />
+              <Field label="Sota el títol" value={m.subtitle} onChange={set('subtitle')} placeholder="A la terrassa, cada diumenge" />
+              <Field label="Dates" value={m.dates} onChange={set('dates')} placeholder="Del 18 de gener al 29 de març" />
+            </div>
+            <div className="flex justify-end"><Button size="sm" onPress={() => setStep('menu')}>Següent</Button></div>
+          </>}
+          {step === 'menu' && <>
+            <Field label="Nom del menú" value={m.name} onChange={set('name')} placeholder="Menú de calçotada" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              {Array.from({ length: MENU_DISHES }, (_, i) => <Field key={i} label={`Plat ${i + 1}`} value={m.dishes[i] || ''} onChange={dish(i)} />)}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+              <Field label="Begudes" value={m.drinks} onChange={set('drinks')} placeholder="Vi del Penedès, aigua, cafè" />
+              <Field label="Preu per persona (€)" value={m.price} onChange={v => set('price')(v.replace(/[^\d,.]/g, ''))} inputMode="decimal" />
+            </div>
+            <div className="flex justify-between"><Button size="sm" variant="ghost" onPress={() => setStep('cover')}>Enrere</Button><Button size="sm" onPress={() => setStep('out')}>Següent</Button></div>
+          </>}
+          {step === 'out' && <>
+            {!live && insta && <p className="text-sm text-muted">Per publicar o programar des d'aquí cal connectar el compte d'Instagram. El menú es desa i el pots descarregar.</p>}
+            <TextField value={caption} onChange={setCopy} fullWidth>
+              <Label>Copy del post</Label>
+              <TextArea rows={6} />
+            </TextField>
+            {live && <>
+              <div className="space-y-2"><h3 className="text-sm font-semibold">Post, carrusel amb el menú</h3>{whenFields('Quan surt el post', post, setPost)}</div>
+              <div className="space-y-2">
+                <CheckField isSelected={story.on} onChange={on => setStory({ ...story, on })}>També com a story</CheckField>
+                {story.on && whenFields('Quan surt la story', story, x => setStory({ ...story, ...x }))}
+              </div>
+            </>}
+            {!live && <CheckField isSelected={story.on} onChange={on => setStory({ ...story, on })}>També com a story</CheckField>}
+            {story.on && <Field label="Adreça a la story" value={m.link} onChange={set('link')} help="Surt escrita a la story. Instagram no deixa posar-hi l'enllaç des d'aquí." />}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Button size="sm" variant="ghost" onPress={() => setStep('menu')}>Enrere</Button>
+              <Button size="sm" isPending={busy} isDisabled={!ready || busy} onPress={save}>{busy ? <Spinner size="sm" color="current" /> : <Check size={15} />}Desa el menú</Button>
+            </div>
+            {!ready && <p className="text-xs text-muted">Cal el títol, el nom del menú, un plat i el preu.</p>}
+          </>}
+        </section>
+        <section className="space-y-3 lg:sticky lg:top-24" aria-label="Com quedarà">
+          <Carousel list={[made.post, ...made.post.slides]} className="card overflow-hidden" />
+          {story.on && <div className="flex items-start gap-3"><Art t={byId.get('StoryPoster')!} v={0} photo={made.story.photo} texts={made.story.texts} className="w-28 shrink-0 rounded-xl" /><p className="text-sm text-muted">La story</p></div>}
+        </section>
+      </div>
+
+      {list.length > 0 && (
+        <section className="card" aria-label="Menús fets">
+          <h2 className="border-b border-separator p-4 text-base font-semibold sm:px-5">Menús fets</h2>
+          <ol className="divide-y divide-separator">
+            {list.map(p => {
+              const t = byId.get(p.tpl)!, title = [p.texts?.[1], p.texts?.[2]].filter(Boolean).join(' ') || t.title;
+              return (
+                <li key={p.id} className="flex items-center gap-3 p-3 sm:px-5">
+                  <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className={`${p.story ? 'aspect-[9/16]' : 'aspect-[3/4]'} w-11 shrink-0 rounded-md`} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold">{title}</div>
+                    <div className="truncate text-xs text-muted">{p.story ? 'Story' : p.slides?.length ? `Post, carrusel de ${p.slides.length + 1} imatges` : 'Post'}</div>
+                    {p.published ? <div className="truncate text-xs text-muted">Publicat el {day(p.published.at)}</div> : p.schedule ? <When s={p.schedule} /> : <div className="truncate text-xs text-muted">Per publicar</div>}
+                  </div>
+                  {p.published?.url && <a href={p.published.url} target="_blank" rel="noopener" aria-label="Obre a Instagram" className="grid size-8 shrink-0 place-items-center rounded-full outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={16} /></a>}
+                  {live && !p.published && <Button size="sm" variant="ghost" isIconOnly aria-label={p.schedule ? 'Canvia la programació' : 'Publica o programa'} onPress={() => setPublishing(p)}>{p.schedule ? <Clock size={16} /> : <Send size={16} />}</Button>}
+                  <DownloadButton label={`Descarrega ${title}`} run={() => downloadPost(p)} />
+                  {!p.published && <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${title}`} onPress={() => remove(p)}><X size={16} /></Button>}
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      )}
+      {publishing && <Publish later post={publishing} n={grid.indexOf(publishing) + 1} caption={data.copies[publishing.id] || ''} onClose={() => setPublishing(null)} setData={setData} />}
+    </div>
+  );
+}
+
+// A post alone or as a carousel, for templates that can open one (the announcement, with the menu after it)
+function SingleOrCarousel({ carousel, onChange }: { carousel: boolean; onChange: (c: boolean) => void }) {
+  return (
+    <ToggleButtonGroup aria-label="Format" selectionMode="single" disallowEmptySelection selectedKeys={new Set([carousel ? 'carousel' : 'single'])}
+      onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) onChange(v === 'carousel'); }} size="sm">
+      <ToggleButton id="single">Una imatge</ToggleButton>
+      <ToggleButton id="carousel">Carrusel</ToggleButton>
+    </ToggleButtonGroup>
+  );
+}
+
+// The images of a post one at a time, as Instagram shows a carousel; a single image is just the image
+function Carousel({ list, className = '' }: { list: Slide[]; className?: string }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [at, setAt] = useState(0);
+  const go = (k: number) => { const el = box.current; if (el) el.scrollTo({ left: k * el.clientWidth, behavior: 'smooth' }); };
+  useEffect(() => { if (at >= list.length) { setAt(0); box.current?.scrollTo({ left: 0 }); } }, [list.length, at]);
+  if (list.length < 2) { const x = list[0]; return <Art t={byId.get(x.tpl)!} v={x.v} photo={x.photo} texts={x.texts} className={className} />; }
+  return (
+    <div className={`relative overflow-hidden ${className}`}>
+      <div ref={box} onScroll={e => setAt(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
+        className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {list.map((x, k) => <Art key={k + x.tpl} t={byId.get(x.tpl)!} v={x.v} photo={x.photo} texts={x.texts} className="w-full shrink-0 snap-start" />)}
+      </div>
+      <span className="tnum absolute top-2 right-2 rounded-full bg-[#1a3f20]/85 px-2 py-0.5 text-xs font-semibold text-[#f3efe4]">{at + 1}/{list.length}</span>
+      {at > 0 && <Button size="sm" variant="secondary" isIconOnly aria-label="Imatge anterior" className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full" onPress={() => go(at - 1)}><ChevronLeft size={16} /></Button>}
+      {at < list.length - 1 && <Button size="sm" variant="secondary" isIconOnly aria-label="Imatge següent" className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full" onPress={() => go(at + 1)}><ChevronRight size={16} /></Button>}
+    </div>
+  );
+}
+
 function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) => void; onEmpty: () => void }) {
   // Published posts leave the plan; the preview shows them below it, marked, and Publicats lists them, newest first
-  const all = data.posts.filter(p => byId.has(p.tpl));
+  const all = data.posts.filter(p => byId.has(p.tpl) && !p.story);
   const posts = all.filter(p => !p.published), published = all.filter(p => p.published).sort((a, b) => b.published!.at.localeCompare(a.published!.at));
   const [show, setShow] = useState<'planned' | 'published'>('planned');
   const [open, setOpen] = useState<string | null>(null);
@@ -309,7 +529,7 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
       for (let i = 0; i < posts.length; i++) {
         setProgress(`${i + 1} de ${posts.length}`);
         const p = posts[i];
-        await download(byId.get(p.tpl)!, p.v, p.photo, p.texts, i + 1);
+        await downloadPost(p, i + 1);
         await new Promise(r => setTimeout(r, 400));
       }
       done(posts.length === 1 ? '1 post descarregat' : `${posts.length} posts descarregats`);
@@ -351,6 +571,7 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
                 title={p.schedule ? `Post ${n}, ${programmed(p.schedule)}` : `Post ${n}`}
                 className={`relative cursor-grab ${drag === p.id ? 'opacity-40' : ''} ${over === p.id && drag !== p.id ? 'ring-2 ring-accent ring-inset' : ''}`}>
                 <Art t={byId.get(p.tpl)!} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className="pointer-events-none aspect-[3/4]" />
+                {p.slides?.length ? <GalleryHorizontalEnd size={16} aria-label="Carrusel" className="absolute top-1.5 right-1.5 text-[#f3efe4] drop-shadow" /> : null}
                 <span className="tnum absolute top-1.5 left-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[#1a3f20]/85 px-1.5 text-xs font-semibold text-[#f3efe4]">{n}</span>
                 {p.schedule && (
                   <span className={`tnum absolute bottom-1.5 left-1.5 inline-flex h-5 items-center gap-1 rounded-full px-1.5 text-xs font-medium ${p.schedule.error ? 'bg-danger text-danger-foreground' : 'bg-[#f3efe4]/90 text-[#1a3f20]'}`}>
@@ -399,13 +620,13 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
                   <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className="aspect-[3/4] w-11 shrink-0 rounded-md" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold">{t.title}</div>
-                    <div className="truncate text-xs text-muted">{p.photo && !inLibrary(p.photo) ? 'Amb la teva foto' : p.texts ? 'Amb text propi' : `Opció ${p.v + 1}`}</div>
+                    <div className="truncate text-xs text-muted">{p.slides?.length ? `Carrusel de ${p.slides.length + 1} imatges` : p.photo && !inLibrary(p.photo) ? 'Amb la teva foto' : p.texts ? 'Amb text propi' : `Opció ${p.v + 1}`}</div>
                     <div className="truncate text-xs text-muted">{copy ? copy.split('\n')[0] : 'Sense copy'}</div>
                     {p.schedule && <When s={p.schedule} />}
                   </div>
                   <Button size="sm" variant={open === p.id ? 'secondary' : 'ghost'} isIconOnly aria-expanded={open === p.id} aria-label={`Copy del post ${i + 1}`} onPress={() => setOpen(open === p.id ? null : p.id)}><MessageSquareText size={16} /></Button>
                   {insta?.connected && t.kind === 'post' && <Button size="sm" variant="ghost" isIconOnly aria-label={p.schedule ? `Programa o publica el post ${i + 1}` : `Publica o programa el post ${i + 1}`} onPress={() => setPublishing(p)}><Send size={16} /></Button>}
-                  <DownloadButton label={`Descarrega el post ${i + 1}`} run={() => download(t, p.v, p.photo, p.texts, i + 1)} />
+                  <DownloadButton label={`Descarrega el post ${i + 1}`} run={() => downloadPost(p, i + 1)} />
                   <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${t.title} del perfil`} onPress={() => order(posts.filter(x => x !== p).map(x => x.id), `${t.title} tret del perfil`)}><X size={16} /></Button>
                 </div>
                 {open === p.id && <CopyPanel post={p} n={i + 1} data={data} setData={setData} posts={all} />}
@@ -451,7 +672,7 @@ function Published({ posts, copies }: { posts: Post[]; copies: Record<string, st
                   <ExternalLink size={15} />Obre a Instagram
                 </a>
               )}
-              <DownloadButton label={`Descarrega ${t.title}`} run={() => download(t, p.v, p.photo, p.texts)} />
+              <DownloadButton label={`Descarrega ${t.title}`} run={() => downloadPost(p)} />
             </li>
           );
         })}
@@ -466,7 +687,7 @@ const WEEK = ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'];
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) => void; onEmpty: () => void }) {
-  const all = data.posts.filter(p => byId.has(p.tpl)), planned = all.filter(p => !p.published);
+  const all = data.posts.filter(p => byId.has(p.tpl) && !p.story), planned = all.filter(p => !p.published);
   const today = ymd(new Date());
   const [month, setMonth] = useState(() => { const first = planned.find(p => p.date)?.date; const d = first && first > today ? new Date(first + 'T12:00') : new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
   const days = useMemo(() => {
@@ -490,7 +711,7 @@ function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
       const at = new Date(`${date}T${hour(p.schedule.at)}`);
       if (at.getTime() < Date.now() + 60e3) { toastError(new Error(`A les ${hour(p.schedule.at)} d'aquell dia ja ha passat: tria una altra hora a Programa`)); return; }
       setData({ ...data, posts: data.posts.map(x => x.id === p.id ? { ...x, date, schedule: { ...p.schedule!, at: at.toISOString() } } : x) });
-      try { setData(await api<Data>('social', { method: 'PUT', body: { schedule: { id: p.id, at: at.toISOString(), image: p.schedule.image } } })); }
+      try { setData(await api<Data>('social', { method: 'PUT', body: { schedule: { id: p.id, at: at.toISOString(), images: p.schedule.images || [p.schedule.image] } } })); }
       catch (e) { setData(before); toastError(e); }
       return;
     }
@@ -593,9 +814,19 @@ function Planner({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
   );
 }
 
-// Publishing: the post as a full-size JPEG on the site's photo storage, then Instagram fetches it and posts it with the saved
-// caption. Now, or at a programmed time: then the JPEG goes up when it is programmed and the cron publishes it (lib/instagram.js)
+// Publishing: the post as a full-size JPEG (one per image, for a carousel) on the site's photo storage, then Instagram fetches it
+// and posts it with the saved caption (a story, without one). Now, or at a programmed time: then the JPEGs go up when it is
+// programmed and the cron publishes it (lib/instagram.js)
+async function sendOut(post: Post, at?: Date): Promise<Data> {
+  const images: string[] = [];
+  for (const x of imagesOf(post)) images.push(await uploadPhoto(new File([await png(byId.get(x.tpl)!, x.v, x.photo, x.texts)], 'post.png', { type: 'image/png' })));
+  if (!at) return api<Data>('instagram', { method: 'POST', body: { id: post.id, images } });
+  return api<Data>('social', { method: 'PUT', body: { schedule: { id: post.id, at: at.toISOString(), images } } });
+}
+
 function Publish({ post, n, caption, onClose, setData, later = false }: { post: Post; n: number; caption: string; onClose: () => void; setData: (d: Data) => void; later?: boolean }) {
+  // How the toasts name it: «Post 3», or «La story» for a story
+  const name = post.story ? 'La story' : `Post ${n}`, theName = post.story ? 'La story' : `El post ${n}`;
   const t = byId.get(post.tpl)!, was = post.schedule && new Date(post.schedule.at);
   const tomorrow = ymd(new Date(Date.now() + 864e5));
   const [mode, setMode] = useState<'now' | 'later'>(later || post.schedule ? 'later' : 'now');
@@ -607,21 +838,20 @@ function Publish({ post, n, caption, onClose, setData, later = false }: { post: 
   async function go() {
     setBusy('go');
     try {
-      const image = await uploadPhoto(new File([await png(t, post.v, post.photo, post.texts)], 'post.png', { type: 'image/png' }));
-      if (mode === 'now') { setData(await api<Data>('instagram', { method: 'POST', body: { id: post.id, image } })); done(`Post ${n} publicat a Instagram`); }
-      else { setData(await api<Data>('social', { method: 'PUT', body: { schedule: { id: post.id, at: at.toISOString(), image } } })); done(`El post ${n} ${programmed({ at: at.toISOString(), image })}`); }
+      setData(await sendOut(post, mode === 'now' ? undefined : at));
+      done(mode === 'now' ? `${name} publicat${post.story ? 'da' : ''} a Instagram` : `${theName} ${programmed({ at: at.toISOString(), image: '' })}`);
       onClose();
     } catch (e) { toastError(e); }
     setBusy('');
   }
   async function cancel() {
     setBusy('cancel');
-    try { setData(await api<Data>('social', { method: 'PUT', body: { schedule: { id: post.id } } })); done(`El post ${n} ja no està programat`); onClose(); }
+    try { setData(await api<Data>('social', { method: 'PUT', body: { schedule: { id: post.id } } })); done(`${theName} ja no està programa${post.story ? 'da' : 't'}`); onClose(); }
     catch (e) { toastError(e); }
     setBusy('');
   }
   return (
-    <Dialog isOpen onClose={onClose} title="Publica a Instagram" subtitle={`Post ${n}: ${t.title}`}
+    <Dialog isOpen onClose={onClose} title="Publica a Instagram" subtitle={`${name}: ${t.title}`}
       footer={<>
         <Button variant="ghost" onPress={onClose} isDisabled={!!busy}>Cancel·la</Button>
         {post.schedule && <Button variant="danger-soft" onPress={cancel} isPending={busy === 'cancel'} isDisabled={busy === 'go'}>{busy === 'cancel' && <Spinner size="sm" color="current" />}Desprograma</Button>}
@@ -641,14 +871,15 @@ function Publish({ post, n, caption, onClose, setData, later = false }: { post: 
               <DayPicker label="Dia" value={date} onChange={setDate} />
               <HourField label="Hora" value={time} onChange={setTime} />
             </div>
-            <p className={`text-xs ${date && past ? 'text-warning' : 'text-muted'}`}>{date && past ? 'Aquesta hora ja ha passat.' : "Es publica sol a aquesta hora, amb el copy que tingui llavors."}</p>
+            <p className={`text-xs ${date && past ? 'text-warning' : 'text-muted'}`}>{date && past ? 'Aquesta hora ja ha passat.' : post.story ? 'Es publica sola a aquesta hora.' : 'Es publica sol a aquesta hora, amb el copy que tingui llavors.'}</p>
           </div>
         )}
         <div className="grid gap-4 sm:grid-cols-[160px_minmax(0,1fr)]">
           <Art t={t} v={post.v} photo={post.photo} texts={post.texts} className="w-40 rounded-xl" />
           <div className="min-w-0 space-y-2">
-            {caption ? <p className="max-h-72 overflow-y-auto text-sm whitespace-pre-wrap">{caption}</p> : <p className="text-sm text-warning">Aquest post encara no té copy: es publicarà sense text.</p>}
-            <p className="text-xs text-muted">Un cop publicat, es pot editar o esborrar des de l'app d'Instagram.</p>
+            {post.story ? <p className="text-sm text-muted">Les stories no porten copy. Instagram no deixa afegir-hi l'enllaç des d'aquí: l'adreça de la web ja hi surt escrita.</p>
+              : caption ? <p className="max-h-72 overflow-y-auto text-sm whitespace-pre-wrap">{caption}</p> : <p className="text-sm text-warning">Aquest post encara no té copy: es publicarà sense text.</p>}
+            <p className="text-xs text-muted">{post.story ? "Un cop publicada, es pot esborrar des de l'app d'Instagram." : "Un cop publicat, es pot editar o esborrar des de l'app d'Instagram."}</p>
           </div>
         </div>
       </div>

@@ -66,6 +66,16 @@ export const TEMPLATES: Template[] = [
   "html": "<div style=\"width: 1080px; height: 1350px; position: relative; overflow: hidden; background: #1a3f20;\"> <img data-photo src=\"/maite/social/restaurant-barra.jpg\" alt=\"La barra del restaurant amb llum càlida\" style=\"position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 55% center;\"> </div>"
  },
  {
+  "id": "PostAnnounce",
+  "title": "Anunci del restaurant",
+  "desc": "Foto del restaurant amb el titular, la data i el preu. Pot anar sol o com a carrusel amb el menú darrere.",
+  "w": 1080,
+  "h": 1350,
+  "kind": "post",
+  "photo": "/maite/social/restaurant-barra.jpg",
+  "html": "<div style=\"width: 1080px; height: 1350px; position: relative; overflow: hidden; background: #1a3f20; color: #f3efe4; font-family: 'Halyard Display', 'Helvetica Neue', Arial, sans-serif;\"> <img data-photo src=\"/maite/social/restaurant-barra.jpg\" alt=\"La barra del restaurant amb llum càlida\" style=\"position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center;\"> <div style=\"position: absolute; inset: 0; background: linear-gradient(180deg, rgba(26,63,32,.45) 0%, rgba(26,63,32,.1) 28%, rgba(26,63,32,0.85) 72%);\"></div> <p style=\"position: absolute; top: 96px; left: 0; right: 0; margin: 0; text-align: center; font-family: 'Le Monde Livre', Georgia, serif; font-size: 26px; letter-spacing: .3em; text-transform: uppercase;\">La Casa Vella, El Bedorc</p> <div style=\"position: absolute; left: 88px; right: 88px; bottom: 96px; display: flex; flex-direction: column; gap: 14px;\"> <p style=\"margin: 0; font-family: 'Le Monde Livre', Georgia, serif; font-size: 36px; letter-spacing: .2em; text-transform: uppercase;\">Torna la</p> <p style=\"margin: 0 0 10px; font-family: 'Pinyon Script', cursive; font-size: 190px; line-height: .9;\">Calçotada</p> <p style=\"margin: 0; font-size: 32px; font-weight: 300; line-height: 1.4;\">A la terrassa, cada diumenge</p> <p style=\"margin: 0; font-size: 32px; font-weight: 600;\">[DATES], [PREU] € per persona</p> <p style=\"margin: 24px 0 0; align-self: flex-start; padding: 20px 34px; border: 1px solid #f3efe4; font-size: 22px; font-weight: 600; letter-spacing: .26em; text-transform: uppercase;\">Reserva per DM</p> </div> </div>"
+ },
+ {
   "id": "PostSplit",
   "title": "Foto + franja Cava",
   "desc": "Foto a dalt i una frase a la franja Cava, amb l’emblema.",

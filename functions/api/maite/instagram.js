@@ -1,11 +1,12 @@
 // GET  /api/maite/instagram   { connected, username } Whether Maite can publish, and as which account.
 //      ?media=1                adds media: what the account has published (latest 100, kept 30 minutes in KV), for the calendar and Perfil
-// POST /api/maite/instagram   { id, image }  Publishes a post of the grid now with its saved caption. image: its JPEG, already
-//                             uploaded through /api/maite/photos ('/photos/…'); Instagram fetches it from the public web.
+// POST /api/maite/instagram   { id, images }  Publishes a post of the grid now with its saved caption. images: its JPEGs, one
+//                             per slide (a carousel has more than one), already uploaded through /api/maite/photos ('/photos/…');
+//                             Instagram fetches them from the public web. image, a single one, still works.
 // The token and the publishing itself are in lib/instagram.js.
 import { json } from '../../../lib/booking.js';
 import { load, view } from '../../../lib/social.js';
-import { IMAGE, ig, publish, token } from '../../../lib/instagram.js';
+import { ig, imagesOf, publish, token } from '../../../lib/instagram.js';
 
 export async function onRequestGet({ request, env }) {
   const t = await token(env).catch(() => null);
@@ -28,12 +29,13 @@ export async function onRequestPost({ request, env, data }) {
   if (!env.MAITE) return json({ error: 'not_configured' }, 503);
   let b;
   try { b = await request.json(); } catch { return json({ error: 'bad_request' }, 400); }
-  if (!IMAGE.test(b?.image || '')) return json({ error: 'bad_request' }, 400);
+  const images = imagesOf(b);
+  if (!images) return json({ error: 'bad_request' }, 400);
   const t = await token(env);
   if (!t) return json({ error: 'ig_not_configured' }, 503);
   const post = (await load(env)).posts.find(p => p.id === b.id);
   if (!post) return json({ error: 'bad_request' }, 400);
   if (post.published) return json({ error: 'ig_published' }, 409);
-  try { return view(await publish(env, t, post.id, b.image, data.user), env); }
+  try { return view(await publish(env, t, post.id, images, data.user), env); }
   catch (e) { return json({ error: 'ig', detail: e.message }, 502); }
 }

@@ -10,7 +10,7 @@ const ROOT = path.resolve(import.meta.dirname, '../..');
 const OUT = path.join(ROOT, 'android/app/src/main/assets/social');
 fs.mkdirSync(OUT, { recursive: true });
 const entry = path.join(OUT, '.entry.ts');
-fs.writeFileSync(entry, `export { paint, variants, onImage, photoAlt, loadBrandFonts, byId } from '${ROOT}/maite-app/src/social/paint';\nexport { TEMPLATES, PROFILE_HEAD, COPIES } from '${ROOT}/maite-app/src/social/templates';\nexport { STYLES } from '${ROOT}/maite-app/src/social/catalog';\n`);
+fs.writeFileSync(entry, `export { paint, variants, onImage, photoAlt, loadBrandFonts, byId } from '${ROOT}/maite-app/src/social/paint';\nexport { TEMPLATES, PROFILE_HEAD, COPIES } from '${ROOT}/maite-app/src/social/templates';\nexport { STYLES, CAROUSELS, LIBRARY, MENU_EXAMPLE, MENU_DISHES } from '${ROOT}/maite-app/src/social/catalog';\n`);
 
 // For the web view: one script that sets window.MaiteSocial
 await build({ input: entry, external: ['html-to-image'], output: { file: path.join(OUT, 'social.js'), format: 'iife', name: 'MaiteSocial', minify: true }, logLevel: 'silent' });
@@ -23,8 +23,13 @@ fs.rmSync(tmp); fs.rmSync(entry);
 const meta = {
   templates: S.TEMPLATES.map(t => ({ id: t.id, title: t.title, desc: t.desc, w: t.w, h: t.h, kind: t.kind, photo: t.photo, variants: S.variants(t) })),
   copies: S.COPIES,
-  // The kinds of post to ask Claude for (Foto, Només text, Menú…)
+  // What a post is about, to ask Claude for one (Menú, Habitació, Restaurant…)
   styles: S.STYLES,
+  // The templates that can open a carousel, and the slides after them
+  carousels: S.CAROUSELS,
+  // The photos to choose from, and the menu Menús starts from (the app writes the menu's words as catalog.ts menuSlides does)
+  library: S.LIBRARY,
+  menu: { example: S.MENU_EXAMPLE, dishes: S.MENU_DISHES },
   // What this copy was made from: android/tools/parity.mjs compares it with the web's templates
   source: socialSource(),
 };

@@ -98,12 +98,19 @@ data class CancelResponse(val refunded: Long = 0)
 @Serializable
 data class Published(val at: String, val url: String = "", val media: String? = null, val image: String? = null)
 
+/** One image of a post: the post itself, or a slide after it in a carousel */
 @Serializable
-data class SocialPost(val id: String, val tpl: String, val v: Int = 0, val photo: String = "", val texts: List<String>? = null, val at: String = "", val date: String? = null, val published: Published? = null, val schedule: Schedule? = null)
+data class Slide(val tpl: String, val v: Int = 0, val photo: String = "", val texts: List<String>? = null) {
+    fun body() = mapOf("tpl" to tpl, "v" to v, "photo" to photo, "texts" to texts)
+}
 
-/** A post programmed for a moment: its JPEG is already uploaded and lib/instagram.js publishes it when due */
+/** slides: the images after the first, when the post is a carousel. story: a story (never in the grid); menu: made in Menús */
 @Serializable
-data class Schedule(val at: String, val image: String = "", val error: String? = null)
+data class SocialPost(val id: String, val tpl: String, val v: Int = 0, val photo: String = "", val texts: List<String>? = null, val slides: List<Slide>? = null, val story: Boolean = false, val menu: Boolean = false, val at: String = "", val date: String? = null, val published: Published? = null, val schedule: Schedule? = null)
+
+/** A post programmed for a moment: its JPEGs are already uploaded (images, for a carousel) and lib/instagram.js publishes it when due */
+@Serializable
+data class Schedule(val at: String, val image: String = "", val images: List<String>? = null, val error: String? = null)
 
 @Serializable
 data class Social(val posts: List<SocialPost> = emptyList(), val copies: Map<String, String> = emptyMap(), val ai: Boolean = false)
@@ -116,7 +123,7 @@ data class CaptionOptions(val options: List<CaptionOption>)
 
 /** A post or story Claude made from a description (/api/maite/social-make): the template, its photo and words, and the caption */
 @Serializable
-data class Made(val tpl: String, val photo: String = "", val texts: List<String> = emptyList(), val caption: String = "", val hashtags: String = "")
+data class Made(val tpl: String, val photo: String = "", val texts: List<String> = emptyList(), val slides: List<Slide> = emptyList(), val caption: String = "", val hashtags: String = "")
 
 @Serializable
 data class MadeOptions(val options: List<Made>)

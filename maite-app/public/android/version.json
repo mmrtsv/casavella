@@ -1,5 +1,5 @@
 {
-  "versionCode": 3,
-  "version": "2.1",
-  "notes": "Logo nítid i animació en carregar, copies només en català, la graella de Perfil amb el que ja és a Instagram, i avís de versions noves."
+  "versionCode": 4,
+  "version": "2.2",
+  "notes": "Fer posts i stories amb una descripció, amb foto o sense, i triar-ne el tipus"
 }

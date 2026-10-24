@@ -70,7 +70,7 @@ El botó «Reservar taula» del restaurant obre `#taula`: l'hoste tria el dia, l
 - `GET /api/table?date=…&people=…`: les hores amb lloc per a aquell grup, per serveis.
 - `POST /api/table`: torna a comprovar les places, escriu la taula al calendari del restaurant i envia la confirmació a l'hoste i un avís a la casa.
 
-Cada servei (per defecte, dinar de dimarts a diumenge de 13 a 15 h i sopar divendres i dissabte de 20 a 22 h, amb 30 places) té els dies, la primera i l'última hora d'arribada (cada mitja hora) i les places de tot el servei. També hi ha el grup més gran que es pot reservar a la web (els més grans truquen), les hores d'antelació, quants dies endavant i els dies tancats. Tot es canvia a Maite (Restaurant, Horaris i places) i es desa a KV amb la resta de normes.
+Cada servei (per defecte, dinar de dimarts a diumenge de 13 a 15 h i sopar divendres i dissabte de 20 a 22 h, amb 15 places) té els dies, la primera i l'última hora d'arribada (cada mitja hora) i les places de tot el servei. També hi ha el grup més gran que es pot reservar a la web (els més grans truquen), les hores d'antelació, quants dies endavant i els dies tancats. Tot es canvia a Maite (Restaurant, Horaris i places) i es desa a KV amb la resta de normes.
 
 Les taules es guarden en un Google Calendar propi del restaurant, compartit amb el mateix compte de servei, a la variable `CAL_RESTAURANT`. Mentre no hi sigui, la pàgina mostra les hores però remet al telèfon i al WhatsApp per reservar.
 

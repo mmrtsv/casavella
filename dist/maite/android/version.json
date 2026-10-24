@@ -1,5 +1,5 @@
 {
-  "versionCode": 4,
-  "version": "2.2",
-  "notes": "Fer posts i stories amb una descripció, amb foto o sense, i triar-ne el tipus"
+  "versionCode": 5,
+  "version": "2.3",
+  "notes": "Menús: un menú nou amb portada i preu, com a carrusel i story, i programar-los. Anunci del restaurant com a carrusel amb el menú. Temes a l'hora de fer posts"
 }

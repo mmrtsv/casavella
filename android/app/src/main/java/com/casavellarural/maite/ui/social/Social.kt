@@ -210,8 +210,8 @@ private fun TemplateCard(t: Template, data: Social?, compact: Boolean) {
     }
 }
 
-// A post or story from a description, with the owner's photo or without: Claude picks the template (and the photo, when there
-// isn't one) and writes the words on it and the caption
+// A post or story from a description, with the owner's photo or without, on one of the templates or on the one Claude picks:
+// Claude writes the words on it and the caption (and picks a photo from the library, when there isn't one)
 private val made = mutableMapOf<String, Pair<String, List<Made>>>()
 
 @Composable
@@ -220,6 +220,7 @@ private fun Maker(start: String) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var kind by remember(start) { mutableStateOf(start) }
+    var tpl by remember(start) { mutableStateOf("") }
     var prompt by remember(start) { mutableStateOf("") }
     // The photo goes up as soon as it is picked: what the phone shows, and the address Claude gets
     var own by remember(start) { mutableStateOf<Pair<android.net.Uri, String>?>(null) }
@@ -228,8 +229,12 @@ private fun Maker(start: String) {
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) { busy = "photo"; scope.launch { try { own = uri to uploadPhoto(context, uri) } catch (e: Exception) { Toasts.error(e) }; busy = "" } }
     }
+    // The templates of that kind; with the owner's photo, only those that have one
+    val fits = Renderer.catalog?.templates.orEmpty().filter { it.kind == kind && (own == null || it.photo.isNotEmpty()) }
+    val chosen = tpl.takeIf { id -> fits.any { it.id == id } }.orEmpty()
     Card(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
         Segmented(listOf("post" to "Post", "story" to "Story"), kind, { kind = it })
+        Choice("Plantilla", chosen.ifEmpty { "auto" }, listOf("auto" to "La tria Claude") + fits.map { it.id to it.title }, { tpl = if (it == "auto") "" else it }, Modifier.fillMaxWidth().padding(top = 12.dp))
         Field(if (own != null) "Què vols dir amb aquesta foto (opcional)" else if (kind == "post") "Què vols publicar" else "Què vols explicar a la story", prompt, { prompt = it }, Modifier.padding(top = 12.dp), area = true,
             placeholder = if (kind == "post") "El sopar de Cap d'Any al restaurant, 31 de desembre, 65 € per persona" else "Aquest cap de setmana encara queda lliure Les Vinyes")
         Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -237,12 +242,12 @@ private fun Maker(start: String) {
             Btn(if (own != null) "Una altra foto" else "Afegeix una foto", { pick.launch("image/*") }, look = Look.Secondary, icon = R.drawable.ic_image_up, busy = busy == "photo")
             if (own != null) Btn("Treu la foto", { own = null }, look = Look.Ghost, icon = R.drawable.ic_x)
         }
-        Muted(if (own != null) "Claude fa ${if (kind == "post") "el post" else "la story"} amb la teva foto i n'escriu el text i el copy." else "Claude tria la plantilla i la foto, i escriu el text de la imatge i el copy.")
+        Muted(if (own != null) "Claude fa ${if (kind == "post") "el post" else "la story"} amb la teva foto i n'escriu el text i el copy." else if (chosen.isNotEmpty()) "Claude tria la foto i escriu el text de la imatge i el copy." else "Claude tria la plantilla i la foto, i escriu el text de la imatge i el copy.")
         Btn(if (result != null) "Altres propostes" else "Proposa", {
             busy = "make"
             scope.launch {
                 try {
-                    val d = Api.post<MadeOptions>("social-make", mapOf("prompt" to prompt, "kind" to kind, "photo" to own?.second.orEmpty()))
+                    val d = Api.post<MadeOptions>("social-make", mapOf("prompt" to prompt, "kind" to kind, "photo" to own?.second.orEmpty(), "tpl" to chosen))
                     result = kind to d.options.filter { Renderer.byId.containsKey(it.tpl) }; made[start] = result!!
                 } catch (e: ApiError) { Toasts.error(e) }
                 busy = ""

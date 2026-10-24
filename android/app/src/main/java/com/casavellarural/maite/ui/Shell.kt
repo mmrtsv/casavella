@@ -8,7 +8,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -96,8 +95,8 @@ val LocalLayout = androidx.compose.runtime.staticCompositionLocalOf { Layout(rai
 
 @Composable
 fun MaiteRoot() {
-    val dark = Ui.dark ?: isSystemInDarkTheme()
-    MaiteTheme(dark) {
+    // Light only, whatever the phone's mode
+    MaiteTheme(false) {
         Box(Modifier.fillMaxSize().background(T.background)) {
             Glow()
             when (Auth.state) {
@@ -210,7 +209,6 @@ private fun shortcut(k: Key, shift: Boolean): Boolean {
         k == Key.S || (k == Key.Slash && !shift) -> Ui.search = true
         k == Key.Slash && shift -> Ui.keys = true
         k == Key.R -> Maite.refresh()
-        k == Key.D -> Ui.dark = !(Ui.dark ?: false)
         else -> return false
     }
     return true
@@ -241,8 +239,6 @@ private fun TopBar(rail: Boolean) {
         Text(Ui.page.title, style = Type.xl, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         if (Ui.page == Page.Calendar) CalendarActions()
         IconBtn(R.drawable.ic_search, "Cerca", { Ui.search = true })
-        val dark = T.dark
-        if (!rail) IconBtn(if (dark) R.drawable.ic_sun else R.drawable.ic_moon, if (dark) "Mode clar" else "Mode fosc", { Ui.dark = !dark })
     }
 }
 
@@ -311,12 +307,10 @@ fun Sheet(onClose: () -> Unit, full: Boolean = false, content: @Composable () ->
 @Composable
 private fun MoreSheet() {
     val scope = rememberCoroutineScope()
-    val dark = T.dark
     Sheet({ Ui.more = false }) {
         Column(Modifier.padding(horizontal = 12.dp).padding(bottom = 24.dp).verticalScroll(rememberScrollState())) {
             MORE.forEach { p -> MenuRow(p.icon, p.title, p.hint, Ui.page == p) { Ui.go(p) } }
             Divider()
-            MenuRow(if (T.dark) R.drawable.ic_sun else R.drawable.ic_moon, if (T.dark) "Mode clar" else "Mode fosc", null, false) { Ui.dark = !dark; Ui.more = false }
             MenuRow(R.drawable.ic_keyboard, "Dreceres de teclat", "Per al teclat del Titan", false) { Ui.more = false; Ui.keys = true }
             MenuRow(R.drawable.ic_refresh_cw, "Torna a carregar", null, false) { Ui.more = false; Maite.refresh() }
             MenuRow(R.drawable.ic_log_out, "Surt", Auth.email.ifEmpty { Maite.user }, false) { Ui.more = false; scope.launch { Auth.signOut() } }
@@ -343,7 +337,7 @@ fun MenuRow(icon: Int, label: String, hint: String?, on: Boolean, onClick: () ->
 @Composable
 private fun KeysSheet() {
     val rows = Page.entries.take(9).mapIndexed { i, p -> "${i + 1}" to p.title } + listOf(
-        "N" to "Nova reserva", "T" to "Tancar dates", "S  o  /" to "Cerca", "R" to "Torna a carregar", "D" to "Mode clar o fosc", "Esc" to "Tanca o enrere", "?" to "Aquesta llista",
+        "N" to "Nova reserva", "T" to "Tancar dates", "S  o  /" to "Cerca", "R" to "Torna a carregar", "Esc" to "Tanca o enrere", "?" to "Aquesta llista",
     )
     Sheet({ Ui.keys = false }) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 28.dp).verticalScroll(rememberScrollState())) {

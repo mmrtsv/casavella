@@ -2,7 +2,7 @@
 
 Maite com a app nativa d'Android (Kotlin i Jetpack Compose): Inici, Calendari, Reserves amb la fitxa i els documents, Preus, Descomptes, Normes, Allotjaments, Correus, Xarxes socials i Restaurant. Parla amb la mateixa API que la web (`/api/maite/*`), així que les dades són les mateixes. No és a Google Play: l'APK s'instal·la a mà.
 
-La pantalla s'adapta al mòbil. En pantalles baixes com la del Titan 2 Elite (1080 × 1200) el menú és una barra lateral i el teclat físic té dreceres: 1 a 9 per anar a cada pàgina, N nova reserva, T avui, S o / cerca, R actualitza, D mode fosc, Esc enrere i ? per veure-les totes. En mòbils llargs el menú va a baix.
+La pantalla s'adapta al mòbil. En pantalles baixes com la del Titan 2 Elite (1080 × 1200) el menú és una barra lateral i el teclat físic té dreceres: 1 a 9 per anar a cada pàgina, N nova reserva, T avui, S o / cerca, R actualitza, Esc enrere i ? per veure-les totes. En mòbils llargs el menú va a baix. L'app és sempre en mode clar, encara que el mòbil estigui en mode fosc.
 
 ## Instal·lar-la
 

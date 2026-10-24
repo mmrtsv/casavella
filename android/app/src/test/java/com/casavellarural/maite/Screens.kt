@@ -57,6 +57,7 @@ abstract class Shots(private val device: String) {
     @Test fun more() = shot("12-mes") { Ui.more = true }
     @Test fun search() = shot("13-cerca") { Ui.search = true }
     @Test fun social() = shot("14-xarxes") { Ui.page = Page.Social }
+    @Test fun restaurant() = shot("15-restaurant") { Ui.page = Page.Restaurant }
 
     /** The opening animation, frame by frame: the plant grows, the name is written, then the details */
     @Test fun logo() {

@@ -76,6 +76,7 @@ import com.casavellarural.maite.data.Maite
 import com.casavellarural.maite.ui.screens.BlockDates
 import com.casavellarural.maite.ui.screens.BookingFile
 import com.casavellarural.maite.ui.screens.Bookings
+import com.casavellarural.maite.ui.screens.Restaurant
 import com.casavellarural.maite.ui.screens.CalendarActions
 import com.casavellarural.maite.ui.screens.CalendarScreen
 import com.casavellarural.maite.ui.screens.CancelBooking
@@ -166,7 +167,7 @@ private fun Modifier.widthIn360() = this.then(Modifier.fillMaxWidth()).padding(h
 // ---------- The app ----------
 private val RAIL = listOf(Page.Home, Page.Calendar, Page.Bookings, Page.Prices, Page.Social)
 private val BAR = listOf(Page.Home, Page.Calendar, Page.Bookings, Page.Prices)
-private val MORE = listOf(Page.Social, Page.Discounts, Page.Stays, Page.Rules, Page.Emails)
+private val MORE = listOf(Page.Social, Page.Restaurant, Page.Discounts, Page.Stays, Page.Rules, Page.Emails)
 
 @Composable
 fun App() {
@@ -228,6 +229,7 @@ private fun Content() {
         Page.Rules -> Rules()
         Page.Emails -> Emails()
         Page.Social -> SocialScreen()
+        Page.Restaurant -> Restaurant()
     }
 }
 
@@ -342,7 +344,7 @@ fun MenuRow(icon: Int, label: String, hint: String?, on: Boolean, onClick: () ->
 
 @Composable
 private fun KeysSheet() {
-    val rows = Page.entries.mapIndexed { i, p -> "${i + 1}" to p.title } + listOf(
+    val rows = Page.entries.take(9).mapIndexed { i, p -> "${i + 1}" to p.title } + listOf(
         "N" to "Nova reserva", "T" to "Tancar dates", "S  o  /" to "Cerca", "R" to "Torna a carregar", "D" to "Mode clar o fosc", "Esc" to "Tanca o enrere", "?" to "Aquesta llista",
     )
     Sheet({ Ui.keys = false }) {

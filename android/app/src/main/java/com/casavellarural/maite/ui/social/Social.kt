@@ -220,6 +220,7 @@ private fun Maker(start: String) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var kind by remember(start) { mutableStateOf(start) }
+    var style by remember(start) { mutableStateOf("") }
     var tpl by remember(start) { mutableStateOf("") }
     var prompt by remember(start) { mutableStateOf("") }
     // The photo goes up as soon as it is picked: what the phone shows, and the address Claude gets
@@ -229,12 +230,16 @@ private fun Maker(start: String) {
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) { busy = "photo"; scope.launch { try { own = uri to uploadPhoto(context, uri) } catch (e: Exception) { Toasts.error(e) }; busy = "" } }
     }
-    // The templates of that kind; with the owner's photo, only those that have one
-    val fits = Renderer.catalog?.templates.orEmpty().filter { it.kind == kind && (own == null || it.photo.isNotEmpty()) }
+    // The kinds of post and the templates to choose from; with the owner's photo, only those that have one
+    fun usable(t: Template?) = t != null && t.kind == kind && (own == null || t.photo.isNotEmpty())
+    val styles = Renderer.catalog?.styles.orEmpty().filter { st -> st.kind == kind && st.tpls.any { usable(Renderer.byId[it]) } }
+    val look = styles.find { it.id == style }
+    val fits = Renderer.catalog?.templates.orEmpty().filter { usable(it) && (look == null || it.id in look.tpls) }
     val chosen = tpl.takeIf { id -> fits.any { it.id == id } }.orEmpty()
     Card(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
         Segmented(listOf("post" to "Post", "story" to "Story"), kind, { kind = it })
-        Choice("Plantilla", chosen.ifEmpty { "auto" }, listOf("auto" to "La tria Claude") + fits.map { it.id to it.title }, { tpl = if (it == "auto") "" else it }, Modifier.fillMaxWidth().padding(top = 12.dp))
+        Choice("Tipus", look?.id ?: "auto", listOf("auto" to "Qualsevol") + styles.map { it.id to it.label }, { style = if (it == "auto") "" else it; tpl = "" }, Modifier.fillMaxWidth().padding(top = 12.dp))
+        if (fits.size > 1) Choice("Plantilla", chosen.ifEmpty { "auto" }, listOf("auto" to "La tria Claude") + fits.map { it.id to it.title }, { tpl = if (it == "auto") "" else it }, Modifier.fillMaxWidth().padding(top = 12.dp))
         Field(if (own != null) "Què vols dir amb aquesta foto (opcional)" else if (kind == "post") "Què vols publicar" else "Què vols explicar a la story", prompt, { prompt = it }, Modifier.padding(top = 12.dp), area = true,
             placeholder = if (kind == "post") "El sopar de Cap d'Any al restaurant, 31 de desembre, 65 € per persona" else "Aquest cap de setmana encara queda lliure Les Vinyes")
         Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -247,7 +252,7 @@ private fun Maker(start: String) {
             busy = "make"
             scope.launch {
                 try {
-                    val d = Api.post<MadeOptions>("social-make", mapOf("prompt" to prompt, "kind" to kind, "photo" to own?.second.orEmpty(), "tpl" to chosen))
+                    val d = Api.post<MadeOptions>("social-make", mapOf("prompt" to prompt, "kind" to kind, "photo" to own?.second.orEmpty(), "style" to (look?.id ?: ""), "tpl" to chosen))
                     result = kind to d.options.filter { Renderer.byId.containsKey(it.tpl) }; made[start] = result!!
                 } catch (e: ApiError) { Toasts.error(e) }
                 busy = ""

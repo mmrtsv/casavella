@@ -9,7 +9,7 @@ import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
 import { done, toastError } from '../parts/toast';
 import { Art, Wide } from '../social/Art';
-import { inLibrary } from '../social/catalog';
+import { STYLES, inLibrary } from '../social/catalog';
 import { byId, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Kind, type Template } from '../social/templates';
 
@@ -137,6 +137,7 @@ function TemplateCard({ t, data, setData }: { t: Template; data: Data | null; se
 // Claude writes the words on it and the caption (and picks a photo from the library, when there isn't one)
 function Maker({ start, setData }: { start: 'post' | 'story'; setData: (d: Data) => void }) {
   const [kind, setKind] = useState(start);
+  const [style, setStyle] = useState('');
   const [tpl, setTpl] = useState('');
   const [prompt, setPrompt] = useState('');
   const [own, setOwn] = useState<{ file: File; url: string } | null>(null);
@@ -147,8 +148,11 @@ function Maker({ start, setData }: { start: 'post' | 'story'; setData: (d: Data)
   useEffect(() => () => { if (own) URL.revokeObjectURL(own.url); }, [own]);
   const ready = !!(prompt.trim() || own) && !busy;
   const choose = (f?: File) => { if (f) { uploaded.current = ''; setOwn({ file: f, url: URL.createObjectURL(f) }); } };
-  // The templates of that kind; with the owner's photo, only those that have one
-  const fits = TEMPLATES.filter(t => t.kind === kind && (!own || t.photo));
+  // The kinds of post and the templates to choose from; with the owner's photo, only those that have one
+  const usable = (t: Template) => t.kind === kind && (!own || !!t.photo);
+  const styles = STYLES.filter(st => st.kind === kind && st.tpls.some(id => usable(byId.get(id)!)));
+  const look = styles.find(st => st.id === style);
+  const fits = TEMPLATES.filter(t => usable(t) && (!look || look.tpls.includes(t.id)));
   const chosen = fits.some(t => t.id === tpl) ? tpl : '';
 
   async function make() {
@@ -156,7 +160,7 @@ function Maker({ start, setData }: { start: 'post' | 'story'; setData: (d: Data)
     try {
       // The photo goes up once; asking again with the same one reuses it
       if (own && !uploaded.current) uploaded.current = await uploadPhoto(own.file);
-      const d = await api<{ options: Made[] }>('social-make', { method: 'POST', body: { prompt, kind, photo: own ? uploaded.current : '', tpl: chosen } });
+      const d = await api<{ options: Made[] }>('social-make', { method: 'POST', body: { prompt, kind, photo: own ? uploaded.current : '', style: look?.id || '', tpl: chosen } });
       setMade({ kind, options: d.options.filter(o => byId.has(o.tpl)) });
     } catch (e) { toastError(e); }
     setBusy(false);
@@ -169,7 +173,14 @@ function Maker({ start, setData }: { start: 'post' | 'story'; setData: (d: Data)
           <ToggleButton id="post">Post</ToggleButton>
           <ToggleButton id="story">Story</ToggleButton>
         </ToggleButtonGroup>
-        <Select value={chosen || 'auto'} onChange={(k: Key | null) => setTpl(k == null || k === 'auto' ? '' : String(k))} className="w-full sm:w-72">
+        <div className="max-w-full overflow-x-auto">
+          <ToggleButtonGroup aria-label="Tipus" selectionMode="single" disallowEmptySelection selectedKeys={new Set([look?.id || 'auto'])}
+            onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) { setStyle(v === 'auto' ? '' : String(v)); setTpl(''); } }} size="sm" className="w-fit">
+            <ToggleButton id="auto" className="whitespace-nowrap">Qualsevol</ToggleButton>
+            {styles.map(st => <ToggleButton key={st.id} id={st.id} className="whitespace-nowrap">{st.label}</ToggleButton>)}
+          </ToggleButtonGroup>
+        </div>
+        {fits.length > 1 && <Select value={chosen || 'auto'} onChange={(k: Key | null) => setTpl(k == null || k === 'auto' ? '' : String(k))} className="w-full sm:w-72">
           <Label>Plantilla</Label>
           <Select.Trigger><Select.Value /><Select.Indicator /></Select.Trigger>
           <Select.Popover>
@@ -178,7 +189,7 @@ function Maker({ start, setData }: { start: 'post' | 'story'; setData: (d: Data)
               {fits.map(t => <ListBox.Item key={t.id} id={t.id} textValue={t.title}>{t.title}<ListBox.ItemIndicator /></ListBox.Item>)}
             </ListBox>
           </Select.Popover>
-        </Select>
+        </Select>}
         <TextField value={prompt} onChange={setPrompt} fullWidth>
           <Label>{own ? 'Què vols dir amb aquesta foto (opcional)' : kind === 'post' ? 'Què vols publicar' : 'Què vols explicar a la story'}</Label>
           <TextArea rows={2} placeholder={kind === 'post' ? "El sopar de Cap d'Any al restaurant, 31 de desembre, 65 € per persona" : 'Aquest cap de setmana encara queda lliure Les Vinyes'}
@@ -326,7 +337,8 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
   return (
     <>{filter}
     <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
-      <section className="card overflow-hidden lg:sticky lg:top-24" aria-label="Com es veurà el perfil">
+      {/* Stuck beside the list on wide screens, so it scrolls inside itself, like the phone, once the published posts make it taller than the window */}
+      <section className="card overflow-hidden lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto" aria-label="Com es veurà el perfil">
         <Wide html={PROFILE_HEAD} />
         <div className="grid grid-cols-3 gap-0.5 bg-white">
           {[...posts].reverse().map(p => {

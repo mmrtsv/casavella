@@ -31,7 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @Serializable data class Template(val id: String, val title: String, val desc: String, val w: Int, val h: Int, val kind: String, val photo: String, val variants: Int)
 @Serializable data class LibCopy(val label: String, val caption: String, val note: String = "", val hashtags: String = "")
-@Serializable data class Catalog(val templates: List<Template>, val copies: List<LibCopy>)
+@Serializable data class Style(val id: String, val label: String, val kind: String, val tpls: List<String>)
+@Serializable data class Catalog(val templates: List<Template>, val copies: List<LibCopy>, val styles: List<Style> = emptyList())
 
 /**
  * The Instagram templates are HTML (maite-app/src/social). A hidden web view draws them at full size with the brand fonts and

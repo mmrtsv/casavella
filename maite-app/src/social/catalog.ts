@@ -30,3 +30,16 @@ export const inLibrary = (photo: string) => LIBRARY.some(p => p.src === photo);
 export function textSlots(t: Template): string[] {
   return [...t.html.matchAll(/>([^<]*)</g)].map(m => m[1].trim()).filter(Boolean);
 }
+
+// Kinds of post to ask for ("Foto", "Només text", "Menú"…): each one is a group of templates. Claude picks within it
+export const STYLES: { id: string; label: string; kind: 'post' | 'story'; tpls: string[] }[] = [
+  { id: 'photo', label: 'Foto', kind: 'post', tpls: ['Main', 'PostLogo', 'PostGradient', 'PostRestaurant', 'PostRestaurantPlain', 'PostFrame', 'PostDiptych', 'PostTriptych', 'CarouselSlide'] },
+  { id: 'phrase', label: 'Foto amb frase', kind: 'post', tpls: ['PostDetail', 'PostSplit', 'PostArch', 'PostSeason', 'PostHistory', 'PostRoom', 'CarouselCover'] },
+  { id: 'text', label: 'Només text', kind: 'post', tpls: ['PostWord', 'PostQuote'] },
+  { id: 'menu', label: 'Menú', kind: 'post', tpls: ['PostMenu'] },
+  { id: 'guest', label: "Paraules d'un hoste", kind: 'post', tpls: ['PostGuest'] },
+  { id: 'award', label: 'Premi o premsa', kind: 'post', tpls: ['PostAward'] },
+  { id: 'headline', label: 'Foto amb titular', kind: 'story', tpls: ['StoryPhoto'] },
+  { id: 'poster', label: 'Cartell', kind: 'story', tpls: ['StoryPoster'] },
+  { id: 'reel', label: 'Portada de reel', kind: 'story', tpls: ['StoryReel'] },
+];

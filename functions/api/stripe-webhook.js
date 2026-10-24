@@ -51,7 +51,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     // The policy the guest accepted at checkout ("fullDays/partialDays/partialPct"), else today's
     const [f, d, pct] = (m.policy || '').split('/');
     const cancel = m.policy ? { fullDays: f === '' ? null : +f, partialDays: d === '' ? null : +d, partialPct: +pct || 0 } : S.cancel;
-    const extra = { checkin: S.rules.checkin, checkout: S.rules.checkout, policy: policyText(cancel) };
+    const extra = { checkin: S.rules.checkin, checkout: S.rules.checkout, policy: policyText(cancel, m.lang) };
     await Promise.all([
       c.email && send(env, bookingConfirmation(env, meta, s.amount_total, waiting, extra)),
       send(env, bookingNotice(env, meta, s.amount_total, waiting)),

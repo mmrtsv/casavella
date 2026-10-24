@@ -2344,7 +2344,7 @@ restore();
 document.getElementById('contactForm').addEventListener('submit', async e => {
   e.preventDefault();
   const form = e.currentTarget, sent = document.getElementById('sent'), btn = form.querySelector('button[type=submit]');
-  const data = { name: form.cname.value.trim(), email: form.cmail.value.trim(), message: form.cmsg.value.trim(), website: form.cweb.value };
+  const data = { name: form.cname.value.trim(), email: form.cmail.value.trim(), message: form.cmsg.value.trim(), website: form.cweb.value, lang: LANG };
   btn.disabled = true; sent.textContent = tr('Enviant…', 'Enviando…', 'Sending…');
   let ok = false;
   try { ok = (await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })).ok; } catch {}

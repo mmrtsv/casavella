@@ -37,7 +37,8 @@ La web es veu en català, castellà o anglès. Per defecte agafa el primer d'aqu
 
 - `index.html` és escrit en català. El diccionari `I18N` (al principi del codi) té el castellà i l'anglès de cada text, amb el text català com a clau: si canvies o afegeixes un text a la pàgina, afegeix-hi l'entrada o sortirà en català.
 - El text que genera el codi (calendari, preus, avisos, reserva) passa per `tr('català', 'castellano', 'English')`.
-- Els textos dels allotjaments que es canvien a Maite només existeixen en català: en castellà i anglès la pàgina mostra els que té traduïts. Els correus de confirmació també surten en català.
+- Els textos dels allotjaments que es canvien a Maite només existeixen en català: en castellà i anglès la pàgina mostra els que té traduïts.
+- Els correus a l'hoste (reserva confirmada o pendent i resposta al formulari de contacte) surten en l'idioma en què ha fet servir la web: la pàgina l'envia amb la reserva i el formulari, i es desa a Stripe. Els avisos a la Casa Vella són en català i diuen en quin idioma escriure a l'hoste. La vista prèvia de Maite (Correus) els mostra en català.
 
 ## Publicar a Cloudflare Pages
 

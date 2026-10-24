@@ -1,5 +1,5 @@
 {
-  "versionCode": 8,
-  "version": "2.6",
-  "notes": "Menú dins de Nova publicació. Portada del carrusel amb les dates en gran, i el menú amb la web i el WhatsApp. Editar un menú sencer, post i story, i programar-los des d'allà"
+  "versionCode": 9,
+  "version": "2.7",
+  "notes": "Generador de posts: publica o programa en acabar un post, i el copy és obligatori. Perfil ara és Publicar, amb Programa i Publica ara. El calendari només mostra el pla."
 }

@@ -29,5 +29,7 @@ window.words = (id, v, photo, texts) => {
   const t = MaiteSocial.byId.get(id);
   return JSON.stringify({ onImage: MaiteSocial.onImage(t, v, texts || undefined), photo: MaiteSocial.photoAlt(t, v, photo) });
 };
+// The words on a template that can be changed, as it draws them with variation v
+window.fields = (id, v) => JSON.stringify(MaiteSocial.fields(MaiteSocial.byId.get(id), v));
 </script>
 </body></html>

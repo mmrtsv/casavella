@@ -99,14 +99,15 @@ data class CancelResponse(val refunded: Long = 0)
 data class Published(val at: String, val url: String = "", val media: String? = null, val image: String? = null)
 
 @Serializable
-data class SocialPost(val id: String, val tpl: String, val v: Int = 0, val photo: String = "", val texts: List<String>? = null, val at: String = "", val date: String? = null, val published: Published? = null, val schedule: Schedule? = null)
+data class SocialPost(val id: String, val tpl: String, val v: Int = 0, val photo: String = "", val texts: List<String?>? = null, val at: String = "", val date: String? = null, val published: Published? = null, val schedule: Schedule? = null)
 
 /** A post programmed for a moment: its JPEG is already uploaded and lib/instagram.js publishes it when due */
 @Serializable
 data class Schedule(val at: String, val image: String = "", val error: String? = null)
 
+/** templates: the words changed on each template, which new posts start from (null keeps the template's) */
 @Serializable
-data class Social(val posts: List<SocialPost> = emptyList(), val copies: Map<String, String> = emptyMap(), val ai: Boolean = false)
+data class Social(val posts: List<SocialPost> = emptyList(), val copies: Map<String, String> = emptyMap(), val templates: Map<String, List<String?>> = emptyMap(), val ai: Boolean = false)
 
 @Serializable
 data class CaptionOption(val caption: String, val hashtags: String = "")
@@ -116,7 +117,7 @@ data class CaptionOptions(val options: List<CaptionOption>)
 
 /** A post or story Claude made from a description (/api/maite/social-make): the template, its photo and words, and the caption */
 @Serializable
-data class Made(val tpl: String, val photo: String = "", val texts: List<String> = emptyList(), val caption: String = "", val hashtags: String = "")
+data class Made(val tpl: String, val photo: String = "", val texts: List<String?> = emptyList(), val caption: String = "", val hashtags: String = "")
 
 @Serializable
 data class MadeOptions(val options: List<Made>)

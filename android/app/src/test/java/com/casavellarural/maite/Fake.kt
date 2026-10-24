@@ -25,7 +25,17 @@ object Fake {
 
     private val settings = """{"stays":{"montserrat":{"base":90,"weekend":105},"la-pineda":{"base":90,"weekend":null},"les-vinyes":{"base":95,"weekend":110},"figarot":{"base":70,"weekend":80}},
       "days":{"montserrat":{"${d(8)}":{"price":120,"min":2},"${d(9)}":{"price":120}}},"discounts":[{"nights":2,"pct":5},{"nights":3,"pct":10}],
-      "rules":{"minNights":1,"maxNights":30,"minAdvance":0,"maxAdvance":365,"checkin":"15:00","checkout":"11:00"},"cancel":{"fullDays":7,"partialDays":2,"partialPct":50},"policy":""}"""
+      "rules":{"minNights":1,"maxNights":30,"minAdvance":0,"maxAdvance":365,"checkin":"15:00","checkout":"11:00"},"cancel":{"fullDays":7,"partialDays":2,"partialPct":50},"policy":"",
+      "restaurant":{"online":true,"maxParty":8,"minHours":2,"maxDays":60,"closed":["${d(10)}"],"services":[{"id":"lunch","name":"Dinar","days":[1,2,3,4,5,6,7],"from":"13:00","to":"15:00","seats":30},{"id":"dinner","name":"Sopar","days":[1,2,3,4,5,6,7],"from":"20:00","to":"22:00","seats":30}]}}"""
+
+    private fun t(id: String, day: Int, time: String, people: Int, name: String, extra: String = "") =
+        """{"id":"$id","date":"${d(day)}","time":"$time","people":$people,"name":"$name","service":"${if (time < "17:00") "lunch" else "dinner"}"$extra}"""
+    val tables = listOf(
+        t("t1", 0, "13:30", 4, "Montse Bosch", ""","phone":"+34 646 20 18 77","notes":"Un dels nens és celíac.","source":"web""""),
+        t("t2", 0, "14:00", 2, "Xavier Soler", ""","phone":"+34 677 81 30 02","source":"phone""""),
+        t("t3", 0, "21:00", 6, "Família Roca", ""","phone":"+34 619 55 41 90","notes":"Aniversari, porten pastís.","source":"whatsapp""""),
+        t("t4", 2, "13:00", 3, "Gemma Puig", ""","source":"web""""),
+    )
 
     private val stays = """[{"id":"montserrat","name":"Apartament Montserrat","short":"Montserrat","max":4},{"id":"la-pineda","name":"Apartament La Pineda","short":"La Pineda","max":5},
       {"id":"les-vinyes","name":"Habitació Les Vinyes","short":"Les Vinyes","max":3},{"id":"figarot","name":"Habitació Figarot","short":"Figarot","max":2}]"""
@@ -38,6 +48,7 @@ object Fake {
     fun answer(method: String, path: String): String? = when {
         path.startsWith("bookings?") -> """{"user":"info@casavellarural.com","stays":$stays,"bookings":[${bookings.joinToString(",")}],"errors":[]}"""
         path == "settings" -> settings
+        path.startsWith("restaurant?") -> """{"configured":true,"tables":[${tables.joinToString(",")}]}"""
         path == "social" -> social
         path.startsWith("instagram") -> """{"connected":true,"username":"casavellarural","media":[]}"""
         path.startsWith("payment") -> """{"status":"succeeded","amount":27900,"received":27900,"refunded":0,"created":1792000000,"receipt":"https://pay.stripe.com/r","method":{"type":"card","brand":"visa","last4":"4242","wallet":"google_pay"}}"""

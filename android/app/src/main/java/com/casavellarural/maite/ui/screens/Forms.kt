@@ -106,7 +106,7 @@ fun DateField(label: String, value: String, onChange: (String) -> Unit, modifier
 }
 
 @Composable
-private fun FormSheet(title: String, sub: String?, onClose: () -> Unit, footer: @Composable () -> Unit, content: @Composable () -> Unit) {
+fun FormSheet(title: String, sub: String?, onClose: () -> Unit, footer: @Composable () -> Unit, content: @Composable () -> Unit) {
     Sheet(onClose, full = true) {
         Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Column { Text(title, style = Type.xl); if (sub != null) Text(sub, style = Type.sm, color = T.muted, modifier = Modifier.padding(top = 2.dp)) }

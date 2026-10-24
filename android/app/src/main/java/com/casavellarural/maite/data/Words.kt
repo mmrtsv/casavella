@@ -21,7 +21,7 @@ val ERRORS = mapOf(
     "discount" to "Revisa els descomptes: de 2 nits en amunt, entre 1 i 90 %, sense repetir nits", "price" to "Revisa els preus",
     "email" to "Revisa el correu", "note" to "Escriu el motiu", "doc_type" to "Només es poden pujar fotos (JPG, PNG, HEIC) o PDF",
     "restaurant" to "Revisa els horaris del restaurant: cada servei necessita nom, algun dia, les hores i les places",
-    "restaurant_not_configured" to "Falta connectar el calendari del restaurant (CAL_RESTAURANT)", "time" to "Revisa l'hora", "people" to "Revisa el nombre de persones",
+    "restaurant_not_configured" to "Falta connectar el calendari del restaurant (CAL_RESTAURANT)", "calendar" to "Google Calendar no deixa llegir el calendari del restaurant: comprova que CAL_RESTAURANT és l'ID bo i que el calendari està compartit amb el compte de servei amb permís per fer canvis", "time" to "Revisa l'hora", "people" to "Revisa el nombre de persones",
     "doc_size" to "El document és massa gran (màxim 15 MB)", "docs_not_configured" to "Falta connectar la carpeta de Google Drive dels documents",
     "drive" to "Google Drive no ha deixat desar el document", "social_full" to "La graella ja té 150 posts: treu-ne algun abans de confirmar-ne més",
     "ai_busy" to "Massa peticions seguides. Espera un moment i torna-ho a provar.", "ai_not_configured" to "Falta la clau de Claude (ANTHROPIC_API_KEY)",

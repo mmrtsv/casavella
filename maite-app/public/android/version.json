@@ -1,5 +1,5 @@
 {
-  "versionCode": 6,
-  "version": "2.4",
-  "notes": "Restaurant: taules del dia, nova taula, cancel·lar, i horaris i places"
+  "versionCode": 7,
+  "version": "2.5",
+  "notes": "Menús: un menú nou amb portada i preu, com a carrusel i story, i programar-los. Anunci del restaurant com a carrusel amb el menú. Temes a l'hora de fer posts"
 }

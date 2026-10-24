@@ -28,6 +28,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -108,28 +111,32 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// Xarxes socials, as maite-app/src/pages/Social.tsx: templates, the profile grid of confirmed posts, captions, publishing, a calendar
+// Xarxes socials, as maite-app/src/pages/Social.tsx: a new post (from a description or from a template), the templates and the
+// words changed on them, the profile grid of the posts made, captions, publishing, a calendar
 
-private val TABS = listOf("posts" to "Posts", "stories" to "Stories i reels", "menus" to "Menús", "profile" to "Perfil", "calendar" to "Calendari", "copies" to "Copies")
+private val TABS = listOf("new" to "Nova publicació", "posts" to "Posts", "stories" to "Stories i reels", "menus" to "Menús", "profile" to "Perfil", "calendar" to "Calendari")
 private val KIND_OF = mapOf("posts" to "post", "stories" to "story")
 private val HELP = mapOf(
-    "posts" to "1080 × 1350 px. Només els colors de la marca. Confirma els que vulguis publicar i ordena'ls a Perfil.",
+    "new" to "Descriu-la i Claude la proposa, o fes-la tu des d'una plantilla. Abans d'afegir-la al perfil en pots canviar el text i la foto.",
+    "posts" to "1080 × 1350 px. Només els colors de la marca. Edita una plantilla per canviar el text de les publicacions que en facis.",
     "stories" to "1080 × 1920 px. El text queda lluny de les franges de dalt i de baix, on Instagram posa els botons.",
-    "copies" to "Escrits com ho fan Mas d'en Bruno, Oller del Mas, Off Grid, La Vella Farga i Mas Grimosach.",
 )
+/** What Crea'n un post on a template card hands to Nova publicació; n tells one hand-over from the next */
+private data class Start(val id: String, val v: Int, val photo: String, val n: Int)
 private fun inGrid(t: Template) = t.kind == "post" || t.id == "StoryReel"
 /** The slides that follow a template in a carousel (the menu after the announcement), as they are before anyone changes them */
 private fun nextSlides(t: Template) = Renderer.catalog?.carousels?.get(t.id).orEmpty().map { Slide(it) }
 /** Every image of a post: the post itself, then the slides of a carousel */
 private fun imagesOf(p: SocialPost) = (listOf(Slide(p.tpl, p.v, p.photo, p.texts)) + p.slides.orEmpty()).filter { Renderer.byId.containsKey(it.tpl) }
 private fun joinCopy(o: CaptionOption) = o.caption.trim() + if (o.hashtags.isNotBlank()) "\n\n" + o.hashtags.trim() else ""
-private var lastTab = "posts"
+private var lastTab = "new"
 
 @Composable
 fun SocialScreen() {
     val context = LocalContext.current
     Renderer.loadCatalog(context)
-    var tab by remember { mutableStateOf(lastTab) }
+    var tab by remember { mutableStateOf(lastTab.takeIf { t -> TABS.any { it.first == t } } ?: "new") }
+    var start by remember { mutableStateOf<Start?>(null) }
     LaunchedEffect(Unit) { runCatching { Maite.loadSocial() }.onFailure { Toasts.error(it) } }
     val cat = Renderer.catalog ?: return LoadingPage()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(pagePadding()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -138,13 +145,12 @@ fun SocialScreen() {
         val kind = KIND_OF[tab]
         val data = Maite.social
         when {
-            kind != null -> {
-                if ((kind == "post" || kind == "story") && data?.ai == true) Maker(kind)
-                TemplateGrid(cat.templates.filter { it.kind == kind }, data, kind)
+            kind != null -> TemplateGrid(cat.templates.filter { it.kind == kind }, data, kind) { t, v, own ->
+                start = Start(t.id, v, own, (start?.n ?: 0) + 1); tab = "new"; lastTab = tab
             }
-            tab == "copies" -> Library(cat.copies)
             data == null -> com.casavellarural.maite.ui.Loading()
             tab == "menus" -> Menus(data)
+            tab == "new" -> key(start?.n ?: 0) { NewPost(data, start) }
             tab == "profile" -> Profile(data) { tab = "posts"; lastTab = tab }
             else -> Planner(data) { tab = "posts"; lastTab = tab }
         }
@@ -153,7 +159,7 @@ fun SocialScreen() {
 
 /** A template, drawn by the renderer and scaled into its box: to the width, or covering it (grid tiles) */
 @Composable
-fun Art(t: Template, v: Int, photo: String, texts: List<String>? = null, modifier: Modifier = Modifier, cover: Boolean = false) {
+fun Art(t: Template, v: Int, photo: String, texts: List<String?>? = null, modifier: Modifier = Modifier, cover: Boolean = false) {
     var bmp by remember(t.id, v, photo, texts) { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(t.id, v, photo, texts) { runCatching { Renderer.thumb(t.id, v, photo, texts) }.onSuccess { bmp = it.asImageBitmap() } }
     Box(modifier.then(if (cover) Modifier else Modifier.aspectRatio(t.w / t.h.toFloat())).background(Cava)) {
@@ -183,13 +189,13 @@ private fun SingleOrCarousel(carousel: Boolean, onChange: (Boolean) -> Unit) =
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TemplateGrid(list: List<Template>, data: Social?, kind: String) {
+private fun TemplateGrid(list: List<Template>, data: Social?, kind: String, onCreate: (Template, Int, String) -> Unit) {
     val l = LocalLayout.current
     val per = if (kind == "post") (if (l.wide) 3 else if (l.rail) 2 else 1) else 2
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         list.chunked(per).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                row.forEach { t -> Box(Modifier.weight(1f)) { TemplateCard(t, data, compact = per > 1) } }
+                row.forEach { t -> Box(Modifier.weight(1f)) { TemplateCard(t, data, compact = per > 1) { v, own -> onCreate(t, v, own) } } }
                 repeat(per - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
@@ -198,43 +204,240 @@ private fun TemplateGrid(list: List<Template>, data: Social?, kind: String) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TemplateCard(t: Template, data: Social?, compact: Boolean) {
+private fun TemplateCard(t: Template, data: Social?, compact: Boolean, onCreate: (Int, String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var v by remember { mutableStateOf(0) }
     var own by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf("") }
-    val next = nextSlides(t)
-    var carousel by remember { mutableStateOf(false) }
-    val list = listOf(Slide(t.id, v, own)) + if (carousel) next else emptyList()
-    val at = data?.posts.orEmpty().filter { it.published == null && !it.story }.mapIndexedNotNull { i, p -> if (p.tpl == t.id) i + 1 else null }
+    var editing by remember { mutableStateOf(false) }
+    val texts = data?.templates?.get(t.id)
+    val at = data?.posts.orEmpty().filter { it.published == null }.mapIndexedNotNull { i, p -> if (p.tpl == t.id) i + 1 else null }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) { busy = "photo"; scope.launch { try { own = uploadPhoto(context, uri) } catch (e: Exception) { Toasts.error(e) }; busy = "" } }
     }
     Card(Modifier.fillMaxWidth()) {
-        Carousel(list, Modifier.fillMaxWidth())
+        Art(t, v, own, texts, Modifier.fillMaxWidth())
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(t.title, style = Type.base, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
             if (at.isNotEmpty()) Tag(if (at.size == 1) "Post ${at[0]} del perfil" else "Posts ${at.joinToString(", ")} del perfil", Tone.Paid)
             if (!compact) Muted(t.desc)
-            if (next.isNotEmpty()) SingleOrCarousel(carousel) { carousel = it }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (t.variants > 0) Btn(if (compact) "${v + 1}/${t.variants}" else "Una altra opció ${v + 1}/${t.variants}", { v = (v + 1) % t.variants; own = "" }, look = Look.Secondary, icon = R.drawable.ic_shuffle)
                 if (t.photo.isNotEmpty()) Btn(if (compact) "Foto" else if (own.isNotEmpty()) "Una altra foto" else "La teva foto", { pick.launch("image/*") }, look = Look.Secondary, icon = R.drawable.ic_image_up, busy = busy == "photo")
-                IconBtn(R.drawable.ic_download, "Descarrega ${t.title}", { busy = "png"; scope.launch { savePost(context, list, null); busy = "" } }, busy = busy == "png")
-                if (inGrid(t) && data != null) Btn(if (at.isNotEmpty()) "Confirma un altre" else "Confirma", {
-                    busy = "confirm"
+                IconBtn(R.drawable.ic_download, "Descarrega ${t.title}", { busy = "png"; scope.launch { saveTemplate(context, t, v, own, texts, null); busy = "" } }, busy = busy == "png")
+                if (data != null) IconBtn(R.drawable.ic_pencil, "Edita la plantilla ${t.title}", { editing = true })
+                if (inGrid(t) && data != null) Btn("Crea'n un post", { onCreate(v, own); own = "" }, icon = R.drawable.ic_plus)
+            }
+        }
+    }
+    if (editing && data != null) TemplateEditor(t, data) { editing = false }
+}
+
+// ---------- Nova publicació ----------
+/** The words with one changed, the others as they were (null keeps the template's) */
+private fun List<String?>.with(i: Int, s: String): List<String?> = List(maxOf(size, i + 1)) { k -> if (k == i) s else getOrNull(k) }
+
+/** Only the words that differ from the template's own (null for the rest), so a change of variation still changes those (paint.ts, changed) */
+private suspend fun changed(t: Template, v: Int, texts: List<String?>?): List<String?> {
+    val own = Renderer.fields(t.id, v)
+    val out = own.mapIndexed { i, d -> texts?.getOrNull(i)?.trim()?.takeIf { it != d } }.toMutableList()
+    while (out.isNotEmpty() && out.last() == null) out.removeAt(out.lastIndex)
+    return out
+}
+
+/** The template drawn as the draft has it, and what can be changed on it: the variation and the photo (look), and its words */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Editor(t: Template, v: Int, photo: String, texts: List<String?>, onChange: (Int, String, List<String?>) -> Unit, look: Boolean = true) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var defaults by remember(t.id, v) { mutableStateOf<List<String>?>(null) }
+    LaunchedEffect(t.id, v) { defaults = runCatching { Renderer.fields(t.id, v) }.getOrDefault(emptyList()) }
+    // The drawing follows the typing a moment later, not at every key
+    var shown by remember { mutableStateOf(texts) }
+    LaunchedEffect(texts) { delay(300); shown = texts }
+    var busy by remember { mutableStateOf(false) }
+    val now by androidx.compose.runtime.rememberUpdatedState(Triple(v, photo, texts))
+    val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) { busy = true; scope.launch { try { val up = uploadPhoto(context, uri); onChange(now.first, up, now.third) } catch (e: Exception) { Toasts.error(e) }; busy = false } }
+    }
+    Column {
+        Art(t, v, photo, shown, Modifier.align(Alignment.CenterHorizontally).fillMaxWidth(0.7f).widthIn(max = 320.dp).clip(RoundedCornerShape(12.dp)))
+        if (look && (t.variants > 0 || t.photo.isNotEmpty())) FlowRow(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (t.variants > 0) Btn("Una altra opció ${v + 1}/${t.variants}", { onChange((v + 1) % t.variants, "", texts) }, look = Look.Secondary, icon = R.drawable.ic_shuffle)
+            if (t.photo.isNotEmpty()) Btn(if (photo.isNotEmpty()) "Una altra foto" else "La teva foto", { pick.launch("image/*") }, look = Look.Secondary, icon = R.drawable.ic_image_up, busy = busy)
+            if (photo.isNotEmpty()) Btn("La foto de la plantilla", { onChange(v, "", texts) }, look = Look.Ghost)
+        }
+        defaults?.let { d ->
+            if (d.isEmpty()) Muted("Aquesta plantilla no porta text.", Modifier.padding(top = 12.dp))
+            d.forEachIndexed { i, own ->
+                val value = texts.getOrNull(i) ?: own
+                Field("Text ${i + 1}", value, { onChange(v, photo, texts.with(i, it)) }, Modifier.padding(top = 12.dp), area = maxOf(own.length, value.length) > 40)
+            }
+        }
+    }
+}
+
+/** Nova publicació: from a description (Claude proposes it) or from a template, changed, added to the end of the profile */
+@Composable
+private fun NewPost(data: Social, start: Start?) {
+    var how by remember { mutableStateOf(if (start != null || !data.ai) "template" else "prompt") }
+    if (data.ai) Segmented(listOf("prompt" to "Amb una descripció", "template" to "Des d'una plantilla"), how, { how = it })
+    if (how == "prompt" && data.ai) Maker("post") else Composer(data, start)
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Composer(data: Social, start: Start?) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val list = Renderer.catalog!!.templates.filter(::inGrid)
+    var id by remember { mutableStateOf(start?.id?.takeIf { s -> list.any { it.id == s } } ?: list.first().id) }
+    var v by remember { mutableStateOf(start?.v ?: 0) }
+    var photo by remember { mutableStateOf(start?.photo.orEmpty()) }
+    var texts by remember { mutableStateOf(data.templates[id].orEmpty()) }
+    var busy by remember { mutableStateOf("") }
+    val t = Renderer.byId.getValue(id)
+    // The announcement can open a carousel, with the menu after it
+    val next = nextSlides(t)
+    var carousel by remember { mutableStateOf(false) }
+    val images = listOf(Slide(t.id, v, photo, texts)) + if (carousel) next else emptyList()
+    fun blank(x: String) { id = x; v = 0; photo = ""; texts = data.templates[x].orEmpty(); carousel = false }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Text("Plantilla", style = Type.base, fontWeight = FontWeight.SemiBold)
+            Row(Modifier.padding(top = 10.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                list.forEach { x ->
+                    Column(Modifier.width(84.dp)) {
+                        Art(x, 0, "", data.templates[x.id], Modifier.fillMaxWidth().aspectRatio(4 / 5f).clip(RoundedCornerShape(8.dp))
+                            .border(if (x.id == id) 2.dp else 0.dp, if (x.id == id) T.accent else Color.Transparent, RoundedCornerShape(8.dp))
+                            .clickable { blank(x.id) }, cover = true)
+                        Text(x.title, style = Type.xs, color = if (x.id == id) T.foreground else T.muted, fontWeight = if (x.id == id) FontWeight.SemiBold else FontWeight.Normal,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
+                    }
+                }
+            }
+        }
+    }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Text(t.title, style = Type.base, fontWeight = FontWeight.SemiBold)
+            Muted(t.desc, Modifier.padding(bottom = 12.dp))
+            Editor(t, v, photo, texts, { nv, np, nt -> v = nv; photo = np; texts = nt })
+            if (next.isNotEmpty()) {
+                SingleOrCarousel(carousel) { carousel = it }
+                if (carousel) Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    next.forEach { x -> Art(Renderer.byId.getValue(x.tpl), x.v, x.photo, x.texts, Modifier.width(100.dp).clip(RoundedCornerShape(8.dp))) }
+                }
+            }
+            FlowRow(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Btn("Descarrega", { busy = "png"; scope.launch { savePost(context, images, null); busy = "" } }, look = Look.Secondary, icon = R.drawable.ic_download, busy = busy == "png", enabled = busy.isEmpty())
+                Btn("Afegeix al perfil", {
+                    busy = "add"
                     scope.launch {
                         try {
-                            val d = Api.post<Social>("social", mapOf("tpl" to t.id, "v" to v, "photo" to own, "slides" to list.drop(1).map { it.body() }))
-                            Maite.social = d; own = ""
+                            val d = Api.post<Social>("social", mapOf("tpl" to t.id, "v" to v, "photo" to photo, "texts" to changed(t, v, texts), "slides" to images.drop(1).map { it.body() }))
+                            Maite.social = d; blank(id)
                             Toasts.done("${t.title}: post ${d.posts.count { it.published == null && !it.story }} del perfil")
-                        } catch (e: ApiError) { Toasts.error(e) }
+                        } catch (e: Exception) { Toasts.error(e) }
                         busy = ""
                     }
-                }, icon = R.drawable.ic_plus, busy = busy == "confirm")
+                }, icon = R.drawable.ic_plus, busy = busy == "add", enabled = busy.isEmpty(), small = false)
+            }
+        }
+    }
+}
+
+/** The words of a template, for the posts made from it from now on; the ones already made keep theirs */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TemplateEditor(t: Template, data: Social, onClose: () -> Unit) {
+    val saved = data.templates[t.id].orEmpty()
+    var texts by remember { mutableStateOf(saved) }
+    var busy by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    fun keep(b: String) {
+        busy = b
+        scope.launch {
+            try {
+                val tx = if (b == "save") changed(t, 0, texts) else emptyList()
+                Maite.social = Api.put<Social>("social", mapOf("template" to mapOf("id" to t.id, "texts" to tx)))
+                Toasts.done(if (b == "save") "Plantilla ${t.title} desada" else "${t.title} torna a tenir el text original"); onClose()
+            } catch (e: Exception) { Toasts.error(e) }
+            busy = ""
+        }
+    }
+    Sheet(onClose) {
+        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 28.dp).verticalScroll(rememberScrollState())) {
+            Text("Edita la plantilla", style = Type.xl); Muted(t.title)
+            Muted("Les publicacions noves en surten amb aquest text. Les que ja has fet no canvien.", Modifier.padding(top = 10.dp, bottom = 12.dp))
+            Editor(t, 0, "", texts, { _, _, nt -> texts = nt }, look = false)
+            FlowRow(Modifier.fillMaxWidth().padding(top = 18.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Btn("Cancel·la", onClose, look = Look.Ghost, enabled = busy.isEmpty())
+                if (saved.isNotEmpty()) Btn("Torna a l'original", { keep("reset") }, look = Look.Secondary, busy = busy == "reset", enabled = busy.isEmpty())
+                Btn("Desa la plantilla", { keep("save") }, busy = busy == "save", enabled = busy.isEmpty(), small = false)
+            }
+        }
+    }
+}
+
+/** A post not yet published, changed; a programmed one gets its new image for the program */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PostEditor(post: SocialPost, n: Int, onClose: () -> Unit) {
+    val t = Renderer.byId.getValue(post.tpl)
+    var v by remember { mutableStateOf(post.v) }
+    var photo by remember { mutableStateOf(post.photo) }
+    var texts by remember { mutableStateOf(post.texts.orEmpty()) }
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    Sheet(onClose) {
+        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 28.dp).verticalScroll(rememberScrollState())) {
+            Text("Edita el post", style = Type.xl); Muted("Post $n: ${t.title}")
+            if (post.schedule != null) Muted("Està programat: es publicarà amb aquests canvis.", Modifier.padding(top = 10.dp))
+            Spacer(Modifier.height(12.dp))
+            Editor(t, v, photo, texts, { nv, np, nt -> v = nv; photo = np; texts = nt })
+            FlowRow(Modifier.fillMaxWidth().padding(top = 18.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Btn("Cancel·la", onClose, look = Look.Ghost, enabled = !busy)
+                Btn("Desa els canvis", {
+                    busy = true
+                    scope.launch {
+                        try {
+                            val tx = changed(t, v, texts)
+                            // A programmed post gets its new JPEGs: the first as changed, the slides of a carousel as they are
+                            val images = if (post.schedule != null) imagesOf(post.copy(v = v, photo = photo, texts = tx)).map { x ->
+                                uploadJpeg(withContext(Dispatchers.Default) { jpeg(Renderer.full(x.tpl, x.v, x.photo, x.texts), 1440, 92) })
+                            } else null
+                            Maite.social = Api.put<Social>("social", mapOf("edit" to mapOf("id" to post.id, "v" to v, "photo" to photo, "texts" to tx, "images" to images)))
+                            Toasts.done("Post $n desat"); onClose()
+                        } catch (e: Exception) { Toasts.error(e) }
+                        busy = false
+                    }
+                }, busy = busy, small = false)
+            }
+        }
+    }
+}
+
+/** Changing a proposal from Claude before it is confirmed: the template's words and photo, and the caption */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MadeEditor(t: Template, photo: String, texts: List<String?>, caption: String, onDone: (String, List<String?>, String) -> Unit, onClose: () -> Unit) {
+    var p by remember { mutableStateOf(photo) }
+    var tx by remember { mutableStateOf(texts) }
+    var c by remember { mutableStateOf(caption) }
+    Sheet(onClose) {
+        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 28.dp).verticalScroll(rememberScrollState())) {
+            Text("Edita la proposta", style = Type.xl); Muted(t.title)
+            Spacer(Modifier.height(12.dp))
+            Editor(t, 0, p, tx, { _, np, nt -> p = np; tx = nt })
+            if (inGrid(t)) Field("Copy", c, { c = it }, Modifier.padding(top = 16.dp), area = true)
+            FlowRow(Modifier.fillMaxWidth().padding(top = 18.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Btn("Cancel·la", onClose, look = Look.Ghost)
+                Btn("Fet", { onDone(p, tx, c.trim()) }, small = false)
             }
         }
     }
@@ -304,14 +507,16 @@ private fun MadeCard(o: Made, compact: Boolean) {
     val t = Renderer.byId[o.tpl] ?: return
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val caption = joinCopy(CaptionOption(o.caption, o.hashtags))
+    var caption by remember(o) { mutableStateOf(joinCopy(CaptionOption(o.caption, o.hashtags))) }
     var own by remember(o) { mutableStateOf("") }
+    var texts by remember(o) { mutableStateOf(o.texts) }
     var busy by remember(o) { mutableStateOf("") }
     var kept by remember(o) { mutableStateOf(0) }
+    var editing by remember(o) { mutableStateOf(false) }
     // A carousel when Claude filled the slides after it (the menu after the announcement); it can still go alone
     var carousel by remember(o) { mutableStateOf(o.slides.isNotEmpty()) }
     val photo = own.ifEmpty { o.photo }
-    val list = listOf(Slide(t.id, 0, photo, o.texts)) + if (carousel) o.slides else emptyList()
+    val list = listOf(Slide(t.id, 0, photo, texts)) + if (carousel) o.slides else emptyList()
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) { busy = "photo"; scope.launch { try { own = uploadPhoto(context, uri) } catch (e: Exception) { Toasts.error(e) }; busy = "" } }
     }
@@ -323,14 +528,15 @@ private fun MadeCard(o: Made, compact: Boolean) {
             if (o.slides.isNotEmpty() && kept == 0) SingleOrCarousel(carousel) { carousel = it }
             Text(caption, style = Type.sm, maxLines = if (compact) 6 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (t.photo.isNotEmpty()) Btn(if (compact) "Foto" else if (own.isNotEmpty()) "Una altra foto" else "La teva foto", { pick.launch("image/*") }, look = Look.Secondary, icon = R.drawable.ic_image_up, busy = busy == "photo")
+                if (kept == 0) Btn("Edita", { editing = true }, look = Look.Secondary, icon = R.drawable.ic_pencil)
+                if (t.photo.isNotEmpty() && kept == 0) Btn(if (compact) "Foto" else if (own.isNotEmpty()) "Una altra foto" else "La teva foto", { pick.launch("image/*") }, look = Look.Secondary, icon = R.drawable.ic_image_up, busy = busy == "photo")
                 IconBtn(R.drawable.ic_copy, "Copia el copy", { (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("Copy", caption)); Toasts.done("Copy copiat") })
                 IconBtn(R.drawable.ic_download, "Descarrega ${t.title}", { busy = "png"; scope.launch { savePost(context, list, null); busy = "" } }, busy = busy == "png")
                 if (inGrid(t) && kept == 0) Btn("Confirma", {
                     busy = "confirm"
                     scope.launch {
                         try {
-                            val d = Api.post<Social>("social", mapOf("tpl" to t.id, "v" to 0, "photo" to photo, "texts" to o.texts, "slides" to list.drop(1).map { it.body() }, "copy" to caption))
+                            val d = Api.post<Social>("social", mapOf("tpl" to t.id, "v" to 0, "photo" to photo, "texts" to texts, "slides" to list.drop(1).map { it.body() }, "copy" to caption))
                             Maite.social = d
                             kept = d.posts.filter { it.published == null && !it.story }.indexOf(d.posts.last()) + 1
                             Toasts.done("${t.title}: post $kept del perfil")
@@ -341,11 +547,12 @@ private fun MadeCard(o: Made, compact: Boolean) {
             }
         }
     }
+    if (editing) MadeEditor(t, photo, texts, caption, { p, tx, c -> own = if (p == o.photo) "" else p; texts = tx; caption = c; editing = false }) { editing = false }
 }
 
 /** Saves the full-size PNG to the phone's Pictures/Maite folder */
 /** slide: the image's place in a carousel, so its files sort together and in order */
-suspend fun saveTemplate(context: Context, t: Template, v: Int, photo: String, texts: List<String>?, n: Int?, slide: Int? = null, toast: Boolean = true): Boolean = try {
+suspend fun saveTemplate(context: Context, t: Template, v: Int, photo: String, texts: List<String?>?, n: Int?, slide: Int? = null, toast: Boolean = true): Boolean = try {
     val bmp = Renderer.full(t.id, v, photo, texts)
     val name = (if (n != null) "%02d-".format(n) else "la-casa-vella-") + (if (slide != null) "$slide-" else "") + slug(t.title) + ".png"
     withContext(Dispatchers.IO) { saveBitmap(context, bmp, name) }
@@ -386,6 +593,7 @@ private fun Profile(data: Social, onEmpty: () -> Unit) {
     var progress by remember { mutableStateOf("") }
     var insta by remember { mutableStateOf<Insta?>(null) }
     var publishing by remember { mutableStateOf<SocialPost?>(null) }
+    var editing by remember { mutableStateOf<SocialPost?>(null) }
     var head by remember { mutableStateOf<ImageBitmap?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -470,6 +678,7 @@ private fun Profile(data: Social, onEmpty: () -> Unit) {
                     }
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.End) {
+                    IconBtn(R.drawable.ic_pencil, "Edita el post ${i + 1}", { editing = p })
                     IconBtn(R.drawable.ic_message_square_text, "Copy del post ${i + 1}", { open = if (open == p.id) null else p.id }, on = open == p.id)
                     if (insta?.connected == true && t.kind == "post") IconBtn(if (p.schedule != null) R.drawable.ic_clock else R.drawable.ic_send, "Publica o programa el post ${i + 1}", { publishing = p }, on = p.schedule != null)
                     var dl by remember { mutableStateOf(false) }
@@ -480,6 +689,7 @@ private fun Profile(data: Social, onEmpty: () -> Unit) {
             }
         }
     }
+    editing?.let { p -> PostEditor(p, posts.indexOf(p) + 1) { editing = null } }
     publishing?.let { p -> Publish(p, posts.indexOf(p) + 1, data.copies[p.id].orEmpty()) { publishing = null } }
 }
 
@@ -517,11 +727,14 @@ private fun Published(posts: List<SocialPost>, copies: Map<String, String>) {
 // Options Claude already wrote, per post, so closing and reopening a panel doesn't pay for them again
 private val written = mutableMapOf<String, List<CaptionOption>>()
 
-private fun libraryFor(t: Template): List<CaptionOption> {
+// The house captions (written as Mas d'en Bruno, Oller del Mas, Off Grid, La Vella Farga and Mas Grimosach do), the
+// template's own first: all of them on Biblioteca, three when Claude is not available
+private fun library(t: Template): List<CaptionOption> {
     val all = Renderer.catalog?.copies.orEmpty().filter { it.hashtags.isNotEmpty() }
     val own = all.find { it.label == t.title }
-    return ((if (own != null) listOf(own) + (all - own) else all).take(3)).map { CaptionOption(it.caption, it.hashtags) }
+    return (if (own != null) listOf(own) + (all - own) else all).map { CaptionOption(it.caption, it.hashtags) }
 }
+private fun libraryFor(t: Template) = library(t).take(3)
 
 @Composable
 private fun CopyPanel(post: SocialPost, n: Int, data: Social, posts: List<SocialPost>) {
@@ -534,7 +747,7 @@ private fun CopyPanel(post: SocialPost, n: Int, data: Social, posts: List<Social
     val scope = rememberCoroutineScope()
     val dirty = text.trim() != saved
     Panel(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        Muted(if (data.ai) "Claude escriu quatre opcions en català. L'última explica el que es veu." else "Sense la clau de Claude, et proposo els copies de la pestanya Copies.")
+        Muted(if (data.ai) "Claude escriu quatre opcions en català. L'última explica el que es veu." else "Sense la clau de Claude, et proposo els copies de la casa.")
         Btn(if (options != null) "Altres opcions" else "Proposa copies", {
             if (!data.ai) { options = libraryFor(t); return@Btn }
             busy = "gen"
@@ -548,6 +761,7 @@ private fun CopyPanel(post: SocialPost, n: Int, data: Social, posts: List<Social
                 busy = ""
             }
         }, Modifier.padding(top = 8.dp), look = Look.Secondary, icon = R.drawable.ic_sparkles, busy = busy == "gen")
+        if (data.ai) Btn("Biblioteca", { options = library(t) }, Modifier.padding(top = 6.dp), look = Look.Ghost, icon = R.drawable.ic_book_open)
         options?.forEach { o ->
             Column(Modifier.padding(top = 8.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(T.surface).border(1.dp, T.border, RoundedCornerShape(12.dp)).padding(12.dp)) {
                 Text(joinCopy(o), style = Type.sm)
@@ -737,22 +951,6 @@ private fun Planner(data: Social, onEmpty: () -> Unit) {
                     if (p.date != null) Text("Treu la data", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 4.dp).clickable { plan(p, "") })
                 }
             }
-        }
-    }
-}
-
-// ---------- Copies ----------
-@Composable
-private fun Library(list: List<LibCopy>) {
-    val context = LocalContext.current
-    list.forEach { c ->
-        val full = c.caption + if (c.hashtags.isNotEmpty()) "\n\n" + c.hashtags else ""
-        Card(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
-            Text(c.label, style = Type.base, fontWeight = FontWeight.SemiBold)
-            Text(full, style = Type.sm, modifier = Modifier.padding(top = 8.dp))
-            if (c.note.isNotEmpty()) Text(c.note, style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 8.dp))
-            Btn("Copia", { (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("Copy", full)); Toasts.done("Copy copiat") },
-                Modifier.padding(top = 10.dp), look = Look.Secondary, icon = R.drawable.ic_copy)
         }
     }
 }

@@ -1,12 +1,12 @@
 // A template drawn at full size and scaled into its box: to the box's width (cards), or covering it (grid tiles)
 import { useLayoutEffect, useRef, useState } from 'react';
-import { paint } from './paint';
+import { paint, type Texts } from './paint';
 import type { Template } from './templates';
 
-export function Art({ t, v = 0, photo = '', texts, fit = 'width', className = '' }: { t: Template; v?: number; photo?: string; texts?: string[]; fit?: 'width' | 'cover'; className?: string }) {
+export function Art({ t, v = 0, photo = '', texts, fit = 'width', className = '' }: { t: Template; v?: number; photo?: string; texts?: Texts; fit?: 'width' | 'cover'; className?: string }) {
   const box = useRef<HTMLDivElement>(null), art = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
-  const words = texts?.join('\n');
+  const words = JSON.stringify(texts || []);
   useLayoutEffect(() => { if (art.current) paint(art.current, t, v, photo, texts); }, [t, v, photo, words]);
   useLayoutEffect(() => {
     const ro = new ResizeObserver(([e]) => setSize({ w: e.contentRect.width, h: e.contentRect.height }));

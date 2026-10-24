@@ -53,7 +53,7 @@ export const STYLES: { id: string; label: string; about: string; kind: 'post' | 
 // Templates that can open a carousel, and the slides that follow them on Instagram (the announcement, then the menu)
 export const CAROUSELS: Record<string, string[]> = { PostAnnounce: ['PostMenu'] };
 // One slide after the first: a template with its variation, photo and words, as a post has them
-export type Slide = { tpl: string; v: number; photo: string; texts?: string[] };
+export type Slide = { tpl: string; v: number; photo: string; texts?: (string | null)[] };
 
 // A menu made in Xarxes socials > Menús: the cover (photo, the line above the title, the title, the line under it, the dates)
 // and the menu (its name, the dishes, the drinks and the price). It becomes the announcement with the menu after it, as a

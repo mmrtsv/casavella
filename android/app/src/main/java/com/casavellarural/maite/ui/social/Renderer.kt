@@ -143,13 +143,13 @@ object Renderer {
     }
 
     private fun q(s: String) = JSONObject.quote(s)
-    private fun q(texts: List<String>?) = texts?.let { org.json.JSONArray(it).toString() } ?: "null"
+    private fun q(texts: List<String?>?) = texts?.let { org.json.JSONArray(it).toString() } ?: "null"
 
-    /** texts: the post's own words on the image, one per text line of the template (a post made from a prompt) */
-    suspend fun full(id: String, v: Int, photo: String, texts: List<String>? = null): Bitmap = drawNow { r -> "draw($r, ${q(id)}, $v, ${q(photo)}, ${q(texts)})" }
+    /** texts: the post's own words on the image, one per text line of the template (null keeps the template's) */
+    suspend fun full(id: String, v: Int, photo: String, texts: List<String?>? = null): Bitmap = drawNow { r -> "draw($r, ${q(id)}, $v, ${q(photo)}, ${q(texts)})" }
 
     /** A small version for the screens, kept in memory */
-    suspend fun thumb(id: String, v: Int, photo: String, texts: List<String>? = null, width: Int = 420): Bitmap {
+    suspend fun thumb(id: String, v: Int, photo: String, texts: List<String?>? = null, width: Int = 420): Bitmap {
         val key = "$id|$v|$photo|${texts?.joinToString("\u0000")}|$width"
         thumbs.get(key)?.let { return it }
         val big = full(id, v, photo, texts)
@@ -168,12 +168,21 @@ object Renderer {
     }
 
     /** The words on the image and what the photo shows, for the caption request */
-    suspend fun words(id: String, v: Int, photo: String, texts: List<String>?): Pair<String, String> {
+    suspend fun words(id: String, v: Int, photo: String, texts: List<String?>?): Pair<String, String> {
         if (web == null) return "" to ""
         withTimeout(20_000) { ready.await() }
         val raw = js("words(${q(id)}, $v, ${q(photo)}, ${q(texts)})")
         val o = JSONObject(JSONObject("{\"x\":$raw}").getString("x"))
         return o.getString("onImage") to o.getString("photo")
+    }
+
+    /** The words on a template that can be changed, as it draws them with variation v (paint.ts, fields) */
+    suspend fun fields(id: String, v: Int): List<String> {
+        if (web == null) return emptyList()
+        withTimeout(20_000) { ready.await() }
+        val raw = js("fields(${q(id)}, $v)")
+        val a = org.json.JSONArray(JSONObject("{\"x\":$raw}").getString("x"))
+        return List(a.length()) { a.getString(it) }
     }
 
     fun main(block: () -> Unit) { main.post(block) }

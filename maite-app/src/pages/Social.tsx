@@ -1,17 +1,18 @@
-// Xarxes socials: the Instagram templates in the brand (posts, stories, highlight covers), the profile grid built from
-// the posts confirmed here, their captions, and PNGs at full size. The posts and captions live in KV (/api/maite/social).
+// Xarxes socials: a new post (from a description, or from a template with its variation, photo and words), the Instagram
+// templates in the brand (posts, stories, highlight covers) and the words changed on them, the profile grid built from the
+// posts made here, their captions, and PNGs at full size. The posts, captions and template words live in KV (/api/maite/social).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Calendar, DateField, DatePicker, I18nProvider, Label, ListBox, Select, Skeleton, Spinner, Tabs, TextArea, TextField, TimeField, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
 import { getLocalTimeZone, parseDate, parseTime, today as todayIn, type DateValue, type Time } from '@internationalized/date';
-import { Check, ChevronLeft, ChevronRight, Clock, Copy as CopyIcon, Download, ExternalLink, GalleryHorizontalEnd, ImageUp, MessageSquareText, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
+import { BookOpen, Check, ChevronLeft, ChevronRight, Clock, Copy as CopyIcon, Download, ExternalLink, GalleryHorizontalEnd, ImageUp, MessageSquareText, Pencil, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
 import { api, uploadPhoto } from '../lib/api';
+import { Check as CheckField, Choice, Field } from '../parts/fields';
 import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
 import { done, toastError } from '../parts/toast';
 import { Art, Wide } from '../social/Art';
 import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, STYLES, inLibrary, menuCaption, menuSlides, type Menu, type Slide } from '../social/catalog';
-import { Check as CheckField, Choice, Field } from '../parts/fields';
-import { byId, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants } from '../social/paint';
+import { byId, changed, fields, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants, type Texts } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Kind, type Template } from '../social/templates';
 
 // story: a story (never in the grid); menu: made in Menús, which lists it
@@ -22,28 +23,32 @@ type Schedule = { at: string; image: string; images?: string[]; error?: string; 
 type Insta = { connected: boolean; username?: string; detail?: string; media?: Live[] };
 // A post on the Instagram account, published from Maite or from the app
 type Live = { id: string; at: string; url: string; image: string; caption: string };
-type Data = { posts: Post[]; copies: Record<string, string>; ai: boolean };
+// templates: the words changed on each template, which new posts start from
+type Data = { posts: Post[]; copies: Record<string, string>; templates: Record<string, Texts>; ai: boolean };
 type Option = { caption: string; hashtags: string };
 // A post or story Claude made from a description: the template, its photo and words, and the caption
 type Made = Option & { tpl: string; photo: string; texts: string[]; slides?: Slide[] };
 // Destacats (the highlight covers) is out of the tabs for now; its templates stay
-type Tab = 'posts' | 'stories' | 'menus' | 'profile' | 'calendar' | 'copies';
+type Tab = 'new' | 'posts' | 'stories' | 'menus' | 'profile' | 'calendar';
+// A post being made or changed: the variation, the photo (an upload, or one just picked and not yet uploaded) and the words
+type Own = { file: File; url: string };
+type Draft = { v: number; photo: string; own: Own | null; texts: Texts };
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'posts', label: 'Posts' }, { id: 'stories', label: 'Stories i reels' }, { id: 'menus', label: 'Menús' },
-  { id: 'profile', label: 'Perfil' }, { id: 'calendar', label: 'Calendari' }, { id: 'copies', label: 'Copies' },
+  { id: 'new', label: 'Nova publicació' }, { id: 'posts', label: 'Posts' }, { id: 'stories', label: 'Stories i reels' },
+  { id: 'menus', label: 'Menús' }, { id: 'profile', label: 'Perfil' }, { id: 'calendar', label: 'Calendari' },
 ];
 const KIND_OF: Partial<Record<Tab, Kind>> = { posts: 'post', stories: 'story' };
 const HELP: Partial<Record<Tab, string>> = {
-  posts: '1080 × 1350 px. Només els colors de la marca. Confirma els que vulguis publicar i ordena\'ls a Perfil.',
+  new: 'Descriu-la i Claude la proposa, o fes-la tu des d\'una plantilla. Abans d\'afegir-la al perfil en pots canviar el text i la foto.',
+  posts: '1080 × 1350 px. Només els colors de la marca. Edita una plantilla per canviar el text de les publicacions que en facis.',
   stories: '1080 × 1920 px. El text queda lluny de les franges de dalt i de baix, on Instagram posa els botons.',
-  copies: 'Escrits com ho fan Mas d\'en Bruno, Oller del Mas, Off Grid, La Vella Farga i Mas Grimosach.',
 };
 // Templates that can go in the grid: every post, and the reel cover
 const inGrid = (t: Template) => t.kind === 'post' || t.id === 'StoryReel';
 const joinCopy = (o: Option) => o.caption.trim() + (o.hashtags ? '\n\n' + o.hashtags.trim() : '');
 
-async function download(t: Template, v: number, photo: string, texts?: string[], n?: number, slide?: number) {
+async function download(t: Template, v: number, photo: string, texts?: Texts, n?: number, slide?: number) {
   save(await png(t, v, photo, texts), fileName(t, n, slide));
 }
 // Every image of a post: the post itself, then the slides of a carousel
@@ -60,8 +65,12 @@ async function downloadPost(p: Slide & { slides?: Slide[] }, n?: number) {
 const nextSlides = (t: Template): Slide[] => (CAROUSELS[t.id] || []).map(tpl => ({ tpl, v: 0, photo: '' }));
 
 export default function Social() {
-  const [tab, setTab] = useState<Tab>(() => { try { return (TABS.find(t => t.id === localStorage.getItem('maite-social-tab'))?.id) || 'posts'; } catch { return 'posts'; } });
+  const [tab, setTab] = useState<Tab>(() => {
+    try { const t = localStorage.getItem('maite-social-tab'); return TABS.some(x => x.id === t) ? t as Tab : 'new'; } catch { return 'new'; }
+  });
   const [data, setData] = useState<Data | null>(null);
+  // What Crea'n un post on a template card hands to Nova publicació
+  const [start, setStart] = useState<{ id: string; v: number; own: Own | null; n: number } | null>(null);
   useEffect(() => { loadBrandFonts(); api<Data>('social').then(setData).catch(toastError); }, []);
   const pick = (t: Tab) => { setTab(t); try { localStorage.setItem('maite-social-tab', t); } catch { /* private window */ } };
   const kind = KIND_OF[tab];
@@ -74,60 +83,50 @@ export default function Social() {
         </Tabs.List></Tabs.ListContainer>
       </Tabs>
       {HELP[tab] && <p className="mb-5 max-w-3xl text-sm text-muted">{HELP[tab]}</p>}
-      {(kind === 'post' || kind === 'story') && data?.ai && <Maker key={kind} start={kind} setData={setData} />}
+      {tab === 'new' && (data ? <NewPost key={start?.n || 0} data={data} setData={setData} start={start} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {kind && (
         <ul className={`grid gap-5 ${kind === 'post' ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-5'}`}>
-          {TEMPLATES.filter(t => t.kind === kind).map(t => <li key={t.id}><TemplateCard t={t} data={data} setData={setData} /></li>)}
+          {TEMPLATES.filter(t => t.kind === kind).map(t => <li key={t.id}><TemplateCard t={t} data={data} setData={setData} onCreate={(v, own) => { setStart({ id: t.id, v, own, n: (start?.n || 0) + 1 }); pick('new'); }} /></li>)}
         </ul>
       )}
       {tab === 'calendar' && (data ? <Planner data={data} setData={setData} onEmpty={() => pick('posts')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {tab === 'profile' && (data ? <Profile data={data} setData={setData} onEmpty={() => pick('posts')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {tab === 'menus' && (data ? <Menus data={data} setData={setData} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
-      {tab === 'copies' && <Library />}
     </div>
   );
 }
 
-function TemplateCard({ t, data, setData }: { t: Template; data: Data | null; setData: (d: Data) => void }) {
+// A template with its words as changed: its variations and a photo to try, a PNG, and Crea'n un post, which takes them to
+// Nova publicació
+function TemplateCard({ t, data, setData, onCreate }: { t: Template; data: Data | null; setData: (d: Data) => void; onCreate: (v: number, own: Own | null) => void }) {
   const n = variants(t);
   const [v, setV] = useState(0);
-  const [own, setOwn] = useState<{ file: File; url: string } | null>(null);
-  const [busy, setBusy] = useState<'' | 'confirm' | 'png'>('');
-  const next = nextSlides(t), [carousel, setCarousel] = useState(false);
+  const [own, setOwn] = useState<Own | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
   const file = useRef<HTMLInputElement>(null);
-  useEffect(() => () => { if (own) URL.revokeObjectURL(own.url); }, [own]);
-  const at = (data?.posts || []).filter(p => !p.published && !p.story).map((p, i) => (p.tpl === t.id ? i + 1 : 0)).filter(Boolean);
-  const choose = (f?: File) => { if (f) { setOwn({ file: f, url: URL.createObjectURL(f) }); } };
+  const texts = data?.templates[t.id];
+  const at = (data?.posts || []).filter(p => !p.published).map((p, i) => (p.tpl === t.id ? i + 1 : 0)).filter(Boolean);
+  const choose = (f?: File) => { if (f) { if (own) URL.revokeObjectURL(own.url); setOwn({ file: f, url: URL.createObjectURL(f) }); } };
 
-  async function confirm() {
-    setBusy('confirm');
-    try {
-      const photo = own ? await uploadPhoto(own.file) : '';
-      const d = await api<Data>('social', { method: 'POST', body: { tpl: t.id, v, photo, slides: carousel ? next : undefined } });
-      setData(d); setOwn(null);
-      done(`${t.title}: post ${d.posts.length} del perfil`);
-    } catch (e) { toastError(e); }
-    setBusy('');
-  }
   async function exportPng() {
-    setBusy('png');
-    try { await downloadPost({ tpl: t.id, v, photo: own?.url || '', slides: carousel ? next : undefined }); } catch (e) { toastError(e); }
-    setBusy('');
+    setBusy(true);
+    try { await download(t, v, own?.url || '', texts); } catch (e) { toastError(e); }
+    setBusy(false);
   }
 
   return (
     <article className="card overflow-hidden">
-      <Carousel list={[{ tpl: t.id, v, photo: own?.url || '' }, ...(carousel ? next : [])]} className="rounded-t-[var(--card-radius)]" />
+      <Art t={t} v={v} photo={own?.url} texts={texts} className="rounded-t-[var(--card-radius)]" />
       <div className="space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="mr-auto text-base font-semibold tracking-tight">{t.title}</h2>
           {at.length > 0 && <Tag tone="paid">{at.length === 1 ? `Post ${at[0]} del perfil` : `Posts ${at.join(', ')} del perfil`}</Tag>}
         </div>
         <p className="text-sm text-muted">{t.desc}</p>
-        {next.length > 0 && <SingleOrCarousel carousel={carousel} onChange={setCarousel} />}
         <div className="flex flex-wrap items-center gap-2">
           {n > 0 && (
-            <Button size="sm" variant="secondary" onPress={() => { setV((v + 1) % n); setOwn(null); }} aria-label={`Una altra opció (${v + 1} de ${n})`}>
+            <Button size="sm" variant="secondary" onPress={() => { setV((v + 1) % n); if (own) URL.revokeObjectURL(own.url); setOwn(null); }} aria-label={`Una altra opció (${v + 1} de ${n})`}>
               <Shuffle size={15} />Una altra opció<span className="tnum text-muted">{v + 1}/{n}</span>
             </Button>
           )}
@@ -137,17 +136,191 @@ function TemplateCard({ t, data, setData }: { t: Template; data: Data | null; se
               <input ref={file} type="file" accept="image/*" hidden onChange={e => { choose(e.target.files?.[0]); e.target.value = ''; }} />
             </>
           )}
-          <Button size="sm" variant="ghost" isIconOnly aria-label={`Descarrega ${t.title} en PNG`} isPending={busy === 'png'} onPress={exportPng}>
-            {busy === 'png' ? <Spinner size="sm" color="current" /> : <Download size={16} />}
+          <Button size="sm" variant="ghost" isIconOnly aria-label={`Descarrega ${t.title} en PNG`} isPending={busy} onPress={exportPng}>
+            {busy ? <Spinner size="sm" color="current" /> : <Download size={16} />}
           </Button>
+          {data && <Button size="sm" variant="ghost" isIconOnly aria-label={`Edita la plantilla ${t.title}`} onPress={() => setEditing(true)}><Pencil size={16} /></Button>}
           {inGrid(t) && data && (
-            <Button size="sm" className="ml-auto" isPending={busy === 'confirm'} onPress={confirm}>
-              {busy === 'confirm' ? <Spinner size="sm" color="current" /> : <Plus size={15} />}{at.length ? 'Confirma un altre' : 'Confirma'}
-            </Button>
+            <Button size="sm" className="ml-auto" onPress={() => { onCreate(v, own); setOwn(null); }}><Plus size={15} />Crea'n un post</Button>
           )}
         </div>
       </div>
+      {editing && data && <TemplateEditor t={t} data={data} setData={setData} onClose={() => setEditing(false)} />}
     </article>
+  );
+}
+
+// The words with one changed, the others as they were (null keeps the template's)
+const setWord = (texts: Texts, i: number, s: string): Texts => Array.from({ length: Math.max(texts.length, i + 1) }, (_, k) => (k === i ? s : texts[k] ?? null));
+
+// The template drawn as the draft has it, and what can be changed on it: the variation and the photo (look), and its words
+function Editor({ t, draft, set, look = true }: { t: Template; draft: Draft; set: (d: Draft) => void; look?: boolean }) {
+  const n = variants(t), own = useMemo(() => fields(t, draft.v), [t, draft.v]);
+  const file = useRef<HTMLInputElement>(null);
+  const photo = draft.own?.url || draft.photo;
+  const drop = () => { if (draft.own) URL.revokeObjectURL(draft.own.url); };
+  const choose = (f?: File) => { if (f) { drop(); set({ ...draft, own: { file: f, url: URL.createObjectURL(f) } }); } };
+  return (
+    <div className="grid items-start gap-5 md:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
+      <Art t={t} v={draft.v} photo={photo} texts={draft.texts} className="rounded-xl" />
+      <div className="space-y-4">
+        {look && (n > 0 || t.photo) && (
+          <div className="flex flex-wrap gap-2">
+            {n > 0 && (
+              <Button size="sm" variant="secondary" onPress={() => { drop(); set({ ...draft, v: (draft.v + 1) % n, own: null, photo: '' }); }} aria-label={`Una altra opció (${draft.v + 1} de ${n})`}>
+                <Shuffle size={15} />Una altra opció<span className="tnum text-muted">{draft.v + 1}/{n}</span>
+              </Button>
+            )}
+            {t.photo && (
+              <>
+                <Button size="sm" variant="secondary" onPress={() => file.current?.click()}><ImageUp size={15} />{photo ? 'Una altra foto' : 'La teva foto'}</Button>
+                <input ref={file} type="file" accept="image/*" hidden onChange={e => { choose(e.target.files?.[0]); e.target.value = ''; }} />
+                {photo && <Button size="sm" variant="ghost" onPress={() => { drop(); set({ ...draft, own: null, photo: '' }); }}>La foto de la plantilla</Button>}
+              </>
+            )}
+          </div>
+        )}
+        {own.length ? own.map((d, i) => {
+          const value = draft.texts[i] ?? d;
+          return <Field key={`${t.id}-${i}`} label={`Text ${i + 1}`} value={value} area={Math.max(d.length, value.length) > 40}
+            onChange={s => set({ ...draft, texts: setWord(draft.texts, i, s) })} />;
+        }) : <p className="text-sm text-muted">Aquesta plantilla no porta text.</p>}
+      </div>
+    </div>
+  );
+}
+
+// Nova publicació: from a description (Claude proposes it) or from a template, changed, added to the end of the profile
+function NewPost({ data, setData, start }: { data: Data; setData: (d: Data) => void; start: { id: string; v: number; own: Own | null } | null }) {
+  const [how, setHow] = useState<'prompt' | 'template'>(start || !data.ai ? 'template' : 'prompt');
+  return (
+    <>
+      {data.ai && (
+        <ToggleButtonGroup aria-label="Com la vols fer" selectionMode="single" disallowEmptySelection selectedKeys={new Set([how])}
+          onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) setHow(v as typeof how); }} size="sm" className="mb-5">
+          <ToggleButton id="prompt">Amb una descripció</ToggleButton>
+          <ToggleButton id="template">Des d'una plantilla</ToggleButton>
+        </ToggleButtonGroup>
+      )}
+      {how === 'prompt' && data.ai ? <Maker start="post" setData={setData} /> : <Composer data={data} setData={setData} start={start} />}
+    </>
+  );
+}
+
+function Composer({ data, setData, start }: { data: Data; setData: (d: Data) => void; start: { id: string; v: number; own: Own | null } | null }) {
+  const list = TEMPLATES.filter(inGrid);
+  const blank = (id: string, v = 0, own: Own | null = null): Draft => ({ v, photo: '', own, texts: [...(data.templates[id] || [])] });
+  const [id, setId] = useState(start && byId.has(start.id) ? start.id : list[0].id);
+  const [draft, setDraft] = useState<Draft>(() => blank(id, start?.v, start?.own));
+  const [busy, setBusy] = useState<'' | 'add' | 'png'>('');
+  const t = byId.get(id)!;
+  // The announcement can open a carousel, with the menu after it
+  const next = nextSlides(t), [carousel, setCarousel] = useState(false), slides = carousel && next.length ? next : undefined;
+  const choose = (x: string) => { if (draft.own) URL.revokeObjectURL(draft.own.url); setId(x); setDraft(blank(x)); setCarousel(false); };
+
+  async function add() {
+    setBusy('add');
+    try {
+      const photo = draft.own ? await uploadPhoto(draft.own.file) : draft.photo;
+      const d = await api<Data>('social', { method: 'POST', body: { tpl: t.id, v: draft.v, photo, texts: changed(t, draft.v, draft.texts), slides } });
+      setData(d); setDraft(blank(id));
+      done(`${t.title}: post ${d.posts.filter(p => !p.published && !p.story).length} del perfil`);
+    } catch (e) { toastError(e); }
+    setBusy('');
+  }
+  async function exportPng() {
+    setBusy('png');
+    try { await downloadPost({ tpl: t.id, v: draft.v, photo: draft.own?.url || draft.photo, texts: draft.texts, slides }); } catch (e) { toastError(e); }
+    setBusy('');
+  }
+
+  return (
+    <div className="space-y-5">
+      <section className="card p-4 sm:p-5" aria-label="Plantilla">
+        <h2 className="mb-3 text-base font-semibold">Plantilla</h2>
+        <ul className="flex gap-3 overflow-x-auto pb-1">
+          {list.map(x => (
+            <li key={x.id} className="w-24 shrink-0">
+              <button type="button" onClick={() => choose(x.id)} aria-pressed={x.id === id}
+                className={`block w-full overflow-hidden rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-focus ${x.id === id ? 'ring-2 ring-accent' : 'opacity-80 hover:opacity-100'}`}>
+                <Art t={x} texts={data.templates[x.id]} fit="cover" className="pointer-events-none aspect-[4/5]" />
+              </button>
+              <span className={`mt-1.5 block truncate text-xs ${x.id === id ? 'font-semibold' : 'text-muted'}`}>{x.title}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section className="card p-4 sm:p-5" aria-label={t.title}>
+        <h2 className="text-base font-semibold">{t.title}</h2>
+        <p className="mb-4 text-sm text-muted">{t.desc}</p>
+        <Editor t={t} draft={draft} set={setDraft} />
+        {next.length > 0 && (
+          <div className="mt-5 space-y-3">
+            <SingleOrCarousel carousel={carousel} onChange={setCarousel} />
+            {slides && <div className="flex gap-3">{slides.map((x, k) => <Art key={k} t={byId.get(x.tpl)!} v={x.v} photo={x.photo} texts={x.texts} className="w-28 rounded-lg" />)}</div>}
+          </div>
+        )}
+        <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-separator pt-4">
+          <Button variant="secondary" isPending={busy === 'png'} onPress={exportPng}>{busy === 'png' ? <Spinner size="sm" color="current" /> : <Download size={15} />}Descarrega</Button>
+          <Button isPending={busy === 'add'} isDisabled={busy === 'png'} onPress={add}>{busy === 'add' ? <Spinner size="sm" color="current" /> : <Plus size={15} />}Afegeix al perfil</Button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// The words of a template, for the posts made from it from now on; the ones already made keep theirs
+function TemplateEditor({ t, data, setData, onClose }: { t: Template; data: Data; setData: (d: Data) => void; onClose: () => void }) {
+  const saved = data.templates[t.id] || [];
+  const [draft, setDraft] = useState<Draft>({ v: 0, photo: '', own: null, texts: [...saved] });
+  const [busy, setBusy] = useState<'' | 'save' | 'reset'>('');
+  async function keep(texts: Texts, b: 'save' | 'reset') {
+    setBusy(b);
+    try {
+      setData(await api<Data>('social', { method: 'PUT', body: { template: { id: t.id, texts } } }));
+      done(b === 'save' ? `Plantilla ${t.title} desada` : `${t.title} torna a tenir el text original`); onClose();
+    } catch (e) { toastError(e); }
+    setBusy('');
+  }
+  return (
+    <Dialog isOpen onClose={onClose} title="Edita la plantilla" subtitle={t.title} size="lg"
+      footer={<>
+        <Button variant="ghost" onPress={onClose} isDisabled={!!busy}>Cancel·la</Button>
+        {saved.length > 0 && <Button variant="secondary" isPending={busy === 'reset'} isDisabled={busy === 'save'} onPress={() => keep([], 'reset')}>Torna a l'original</Button>}
+        <Button isPending={busy === 'save'} isDisabled={busy === 'reset'} onPress={() => keep(changed(t, 0, draft.texts), 'save')}>{busy === 'save' && <Spinner size="sm" color="current" />}Desa la plantilla</Button>
+      </>}>
+      <p className="mb-4 text-sm text-muted">Les publicacions noves en surten amb aquest text. Les que ja has fet no canvien.</p>
+      <Editor t={t} draft={draft} set={setDraft} look={false} />
+    </Dialog>
+  );
+}
+
+// A post not yet published, changed; a programmed one gets its new image for the program
+function PostEditor({ post, n, setData, onClose }: { post: Post; n: number; setData: (d: Data) => void; onClose: () => void }) {
+  const t = byId.get(post.tpl)!;
+  const [draft, setDraft] = useState<Draft>({ v: post.v, photo: post.photo, own: null, texts: [...(post.texts || [])] });
+  const [busy, setBusy] = useState(false);
+  async function keep() {
+    setBusy(true);
+    try {
+      const photo = draft.own ? await uploadPhoto(draft.own.file) : draft.photo, texts = changed(t, draft.v, draft.texts);
+      // A programmed post gets its new JPEGs: the first as changed, the slides of a carousel as they are
+      const images: string[] = [];
+      if (post.schedule) for (const x of imagesOf({ ...post, v: draft.v, photo, texts })) images.push(await uploadPhoto(new File([await png(byId.get(x.tpl)!, x.v, x.photo, x.texts)], 'post.png', { type: 'image/png' })));
+      setData(await api<Data>('social', { method: 'PUT', body: { edit: { id: post.id, v: draft.v, photo, texts, images: post.schedule ? images : undefined } } }));
+      done(`Post ${n} desat`); onClose();
+    } catch (e) { toastError(e); }
+    setBusy(false);
+  }
+  return (
+    <Dialog isOpen onClose={onClose} title="Edita el post" subtitle={`Post ${n}: ${t.title}`} size="lg"
+      footer={<>
+        <Button variant="ghost" onPress={onClose} isDisabled={busy}>Cancel·la</Button>
+        <Button isPending={busy} onPress={keep}>{busy && <Spinner size="sm" color="current" />}Desa els canvis</Button>
+      </>}>
+      {post.schedule && <p className="mb-4 text-sm text-muted">Està programat: es publicarà amb aquests canvis.</p>}
+      <Editor t={t} draft={draft} set={setDraft} />
+    </Dialog>
   );
 }
 
@@ -234,21 +407,25 @@ function Maker({ start, setData }: { start: 'post' | 'story'; setData: (d: Data)
   );
 }
 
+// A proposal from Claude, with Edita to change its words, photo and caption before it goes to the profile
 function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
-  const t = byId.get(o.tpl)!, caption = joinCopy(o);
-  const [own, setOwn] = useState<{ file: File; url: string } | null>(null);
+  const t = byId.get(o.tpl)!;
+  const [draft, setDraft] = useState<Draft>({ v: 0, photo: o.photo, own: null, texts: o.texts });
+  const [caption, setCaption] = useState(joinCopy(o));
   const [busy, setBusy] = useState<'' | 'confirm' | 'png'>('');
   const [kept, setKept] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const file = useRef<HTMLInputElement>(null);
+  const photo = draft.own?.url || draft.photo;
+  const choose = (f?: File) => { if (f) { if (draft.own) URL.revokeObjectURL(draft.own.url); setDraft({ ...draft, own: { file: f, url: URL.createObjectURL(f) } }); } };
   // A carousel when Claude filled the slides after it (the menu after the announcement); the owner can still post it alone
   const next = o.slides || [], [carousel, setCarousel] = useState(next.length > 0);
-  const file = useRef<HTMLInputElement>(null);
-  useEffect(() => () => { if (own) URL.revokeObjectURL(own.url); }, [own]);
-  const photo = own?.url || o.photo, slides = carousel && next.length ? next : undefined;
+  const slides = carousel && next.length ? next : undefined;
 
   async function confirm() {
     setBusy('confirm');
     try {
-      const d = await api<Data>('social', { method: 'POST', body: { tpl: t.id, v: 0, photo: own ? await uploadPhoto(own.file) : o.photo, texts: o.texts, slides, copy: inGrid(t) ? caption : '' } });
+      const d = await api<Data>('social', { method: 'POST', body: { tpl: t.id, v: draft.v, photo: draft.own ? await uploadPhoto(draft.own.file) : draft.photo, texts: draft.texts, slides, copy: inGrid(t) ? caption : '' } });
       const added = d.posts[d.posts.length - 1], n = d.posts.filter(p => !p.published && !p.story).indexOf(added) + 1;
       setData(d); setKept(n);
       done(`${t.title}: post ${n} del perfil`);
@@ -257,13 +434,13 @@ function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
   }
   async function exportPng() {
     setBusy('png');
-    try { await downloadPost({ tpl: t.id, v: 0, photo, texts: o.texts, slides }); } catch (e) { toastError(e); }
+    try { await downloadPost({ tpl: t.id, v: draft.v, photo, texts: draft.texts, slides }); } catch (e) { toastError(e); }
     setBusy('');
   }
 
   return (
     <article className="card overflow-hidden">
-      <Carousel list={[{ tpl: t.id, v: 0, photo, texts: o.texts }, ...(slides || [])]} className="rounded-t-[var(--card-radius)]" />
+      <Carousel list={[{ tpl: t.id, v: draft.v, photo, texts: draft.texts }, ...(slides || [])]} className="rounded-t-[var(--card-radius)]" />
       <div className="space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="mr-auto text-base font-semibold tracking-tight">{t.title}</h2>
@@ -272,10 +449,11 @@ function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
         {next.length > 0 && !kept && <SingleOrCarousel carousel={carousel} onChange={setCarousel} />}
         <p className="text-sm whitespace-pre-wrap">{caption}</p>
         <div className="flex flex-wrap items-center gap-2">
-          {t.photo && (
+          {!kept && <Button size="sm" variant="secondary" onPress={() => setEditing(true)}><Pencil size={15} />Edita</Button>}
+          {t.photo && !kept && (
             <>
-              <Button size="sm" variant="secondary" onPress={() => file.current?.click()}><ImageUp size={15} />{own ? 'Una altra foto' : 'La teva foto'}</Button>
-              <input ref={file} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) setOwn({ file: f, url: URL.createObjectURL(f) }); e.target.value = ''; }} />
+              <Button size="sm" variant="secondary" onPress={() => file.current?.click()}><ImageUp size={15} />{draft.own ? 'Una altra foto' : 'La teva foto'}</Button>
+              <input ref={file} type="file" accept="image/*" hidden onChange={e => { choose(e.target.files?.[0]); e.target.value = ''; }} />
             </>
           )}
           <Button size="sm" variant="ghost" isIconOnly aria-label="Copia el copy"
@@ -290,6 +468,7 @@ function MadeCard({ o, setData }: { o: Made; setData: (d: Data) => void }) {
           )}
         </div>
       </div>
+      {editing && <MadeEditor t={t} draft={draft} caption={caption} onDone={(d, c) => { setDraft(d); setCaption(c); setEditing(false); }} onClose={() => setEditing(false)} />}
     </article>
   );
 }
@@ -494,6 +673,22 @@ function Carousel({ list, className = '' }: { list: Slide[]; className?: string 
   );
 }
 
+// Changing a proposal before it is confirmed: the template's words and photo, and the caption
+function MadeEditor({ t, draft: start, caption: was, onDone, onClose }: { t: Template; draft: Draft; caption: string; onDone: (d: Draft, caption: string) => void; onClose: () => void }) {
+  const [draft, setDraft] = useState(start);
+  const [caption, setCaption] = useState(was);
+  return (
+    <Dialog isOpen onClose={onClose} title="Edita la proposta" subtitle={t.title} size="lg"
+      footer={<>
+        <Button variant="ghost" onPress={onClose}>Cancel·la</Button>
+        <Button onPress={() => onDone(draft, caption.trim())}>Fet</Button>
+      </>}>
+      <Editor t={t} draft={draft} set={setDraft} />
+      {inGrid(t) && <Field label="Copy" value={caption} onChange={setCaption} area className="mt-5" />}
+    </Dialog>
+  );
+}
+
 function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) => void; onEmpty: () => void }) {
   // Published posts leave the plan; the preview shows them below it, marked, and Publicats lists them, newest first
   const all = data.posts.filter(p => byId.has(p.tpl) && !p.story);
@@ -503,6 +698,7 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
   const [progress, setProgress] = useState('');
   const [insta, setInsta] = useState<Insta | null>(null);
   const [publishing, setPublishing] = useState<Post | null>(null);
+  const [editing, setEditing] = useState<Post | null>(null);
   const [drag, setDrag] = useState<string | null>(null), [over, setOver] = useState<string | null>(null);
   useEffect(() => { api<Insta>('instagram?media=1').then(setInsta).catch(() => setInsta({ connected: false })); }, []);
   // Below the plan the grid goes on with what is already on Instagram, newest first, whoever published it
@@ -624,6 +820,7 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
                     <div className="truncate text-xs text-muted">{copy ? copy.split('\n')[0] : 'Sense copy'}</div>
                     {p.schedule && <When s={p.schedule} />}
                   </div>
+                  <Button size="sm" variant="ghost" isIconOnly aria-label={`Edita el post ${i + 1}`} onPress={() => setEditing(p)}><Pencil size={16} /></Button>
                   <Button size="sm" variant={open === p.id ? 'secondary' : 'ghost'} isIconOnly aria-expanded={open === p.id} aria-label={`Copy del post ${i + 1}`} onPress={() => setOpen(open === p.id ? null : p.id)}><MessageSquareText size={16} /></Button>
                   {insta?.connected && t.kind === 'post' && <Button size="sm" variant="ghost" isIconOnly aria-label={p.schedule ? `Programa o publica el post ${i + 1}` : `Publica o programa el post ${i + 1}`} onPress={() => setPublishing(p)}><Send size={16} /></Button>}
                   <DownloadButton label={`Descarrega el post ${i + 1}`} run={() => downloadPost(p, i + 1)} />
@@ -635,6 +832,7 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
           })}
         </ol>
       </section>
+      {editing && <PostEditor post={editing} n={posts.indexOf(editing) + 1} setData={setData} onClose={() => setEditing(null)} />}
       {publishing && <Publish post={publishing} n={posts.indexOf(publishing) + 1} caption={data.copies[publishing.id] || ''} onClose={() => { setPublishing(null); }} setData={setData} />}
     </div>
     </>
@@ -941,11 +1139,13 @@ function DownloadButton({ label, run }: { label: string; run: () => Promise<void
   );
 }
 
-// Library captions to start from when Claude is not available: the template's own first
-function libraryFor(t: Template): Option[] {
+// The house captions (written as Mas d'en Bruno, Oller del Mas, Off Grid, La Vella Farga and Mas Grimosach do), the
+// template's own first: all of them on Biblioteca, three when Claude is not available
+function library(t: Template): Option[] {
   const all = COPIES.filter(c => c.hashtags), own = all.find(c => c.label === t.title);
-  return (own ? [own, ...all.filter(c => c !== own)] : all).slice(0, 3);
+  return own ? [own, ...all.filter(c => c !== own)] : all;
 }
+const libraryFor = (t: Template) => library(t).slice(0, 3);
 
 // Options Claude already wrote, per post, so closing and reopening a panel doesn't pay for them again
 const written = new Map<string, Option[]>();
@@ -984,7 +1184,8 @@ function CopyPanel({ post, n, data, setData, posts }: { post: Post; n: number; d
   return (
     <div className="mt-3 space-y-3 rounded-2xl bg-default/50 p-3 sm:p-4 fade-in">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="mr-auto text-sm text-muted">{data.ai ? "Claude escriu quatre opcions en català. L'última explica el que es veu." : 'Sense la clau de Claude, et proposo els copies de la pestanya Copies.'}</p>
+        <p className="mr-auto text-sm text-muted">{data.ai ? "Claude escriu quatre opcions en català. L'última explica el que es veu." : 'Sense la clau de Claude, et proposo els copies de la casa.'}</p>
+        {data.ai && <Button size="sm" variant="ghost" onPress={() => setOptions(library(t))}><BookOpen size={15} />Biblioteca</Button>}
         <Button size="sm" variant="secondary" isPending={busy === 'gen'} onPress={generate}>
           {busy === 'gen' ? <Spinner size="sm" color="current" /> : <Sparkles size={15} />}{options ? 'Altres opcions' : 'Proposa copies'}
         </Button>
@@ -1009,27 +1210,5 @@ function CopyPanel({ post, n, data, setData, posts }: { post: Post; n: number; d
         <Button size="sm" variant="secondary" isDisabled={!text.trim()} onPress={copy}><CopyIcon size={15} />Copia</Button>
       </div>
     </div>
-  );
-}
-
-function Library() {
-  const list = useMemo(() => COPIES, []);
-  return (
-    <ul className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-      {list.map(c => {
-        const full = c.caption + (c.hashtags ? '\n\n' + c.hashtags : '');
-        return (
-          <li key={c.label} className="card flex flex-col gap-3 p-5">
-            <h2 className="text-base font-semibold">{c.label}</h2>
-            <p className="flex-1 text-sm whitespace-pre-wrap">{full}</p>
-            {c.note && <p className="text-xs text-muted">{c.note}</p>}
-            <Button size="sm" variant="secondary" className="self-start"
-              onPress={() => navigator.clipboard.writeText(full).then(() => done('Copy copiat'), () => toastError(new Error("No s'ha pogut copiar")))}>
-              <CopyIcon size={15} />Copia
-            </Button>
-          </li>
-        );
-      })}
-    </ul>
   );
 }

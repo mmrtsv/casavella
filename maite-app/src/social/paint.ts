@@ -31,12 +31,16 @@ export function variants(t: Template) {
   return t.photo ? PHOTOS.length : 0;
 }
 
+// A post's or template's own words on the image: one per text node that isn't blank, in the order textSlots lists them;
+// null (or a missing one) keeps the template's
+export type Texts = (string | null)[];
+
 const find = (root: Element, needle: string) => root.querySelector<HTMLElement>(`[style*="${needle}"]`);
 const text = (el: HTMLElement | null, s: string) => { if (el) el.textContent = s; };
 
 // Fill host with the template, then apply variation v, the photo (the owner's or one from the library), if any, and the
 // post's own words, if it has them (one per text node, as textSlots lists them; a missing one keeps the template's)
-export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?: string[]) {
+export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?: Texts) {
   host.innerHTML = t.html;
   const root = host.firstElementChild as HTMLElement | null;
   if (!root) return;
@@ -71,10 +75,11 @@ export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?:
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     for (let i = 0, n = walk.nextNode(); n; n = walk.nextNode()) {
       if (!n.nodeValue?.trim()) continue;
-      if (texts[i] != null) {
-        n.nodeValue = texts[i];
+      const w = texts[i];
+      if (w != null) {
+        n.nodeValue = w;
         // A line left empty goes, with its room (a dish fewer on a menu)
-        if (!texts[i].trim() && n.parentElement) n.parentElement.style.display = 'none';
+        if (!w.trim() && n.parentElement) n.parentElement.style.display = 'none';
       }
       i++;
     }
@@ -86,8 +91,24 @@ export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?:
   }
 }
 
+// The words on a template with variation v, as it draws them before any change: one per entry of Texts
+export function fields(t: Template, v: number): string[] {
+  const d = document.createElement('div');
+  paint(d, t, v);
+  const out: string[] = [], walk = document.createTreeWalker(d, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.nodeValue?.trim()) out.push(n.nodeValue.replace(/\s+/g, ' ').trim());
+  return out;
+}
+// Only the words that differ from the template's own (null for the rest), so a change of variation still changes those
+export function changed(t: Template, v: number, texts?: Texts): Texts {
+  const own = fields(t, v);
+  const out = own.map((d, i) => { const s = texts?.[i]?.trim(); return s != null && s !== d ? s : null; });
+  while (out.length && out[out.length - 1] == null) out.pop();
+  return out;
+}
+
 // The words on the image, for the caption prompt
-export function onImage(t: Template, v: number, texts?: string[]) {
+export function onImage(t: Template, v: number, texts?: Texts) {
   const d = document.createElement('div');
   paint(d, t, v, '', texts);
   return (d.textContent || '').replace(/\s+/g, ' ').trim();
@@ -122,7 +143,7 @@ export const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀
 export const fileName = (t: Template, n?: number, slide?: number) => (n ? pad(n) + '-' : 'la-casa-vella-') + (slide ? slide + '-' : '') + slug(t.title) + '.png';
 
 // Full-size PNG, drawn off screen
-export async function png(t: Template, v = 0, photo = '', texts?: string[]): Promise<Blob> {
+export async function png(t: Template, v = 0, photo = '', texts?: Texts): Promise<Blob> {
   const { toBlob } = await import('html-to-image');
   const stage = document.createElement('div');
   stage.className = 'social-art';

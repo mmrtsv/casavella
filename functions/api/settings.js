@@ -5,6 +5,7 @@
 import { settings, publicSettings, json } from '../../lib/booking.js';
 import { content, ICONS } from '../../lib/stays.js';
 import { load } from '../../lib/social.js';
+import { sendReviewRequests } from '../../lib/review-requests.js';
 
 async function menus(env) {
   if (!env.MAITE) return [];
@@ -14,7 +15,9 @@ async function menus(env) {
     .sort((a, b) => a.from.localeCompare(b.from));
 }
 
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ env, waitUntil }) {
+  // Every visit asks for this: it also sends the day's review emails if nothing else has yet (once a day, after the answer)
+  waitUntil(sendReviewRequests(env).catch(() => {}));
   const [S, C, M] = await Promise.all([settings(env), content(env), menus(env).catch(() => [])]);
   for (const c of Object.values(C)) c.feats = c.feats.map(f => ({ text: f.text, svg: ICONS[f.icon] || ICONS.star }));
   return json({ ...publicSettings(S), content: C, menus: M });

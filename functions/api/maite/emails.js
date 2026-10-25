@@ -1,7 +1,7 @@
 // GET /api/maite/emails  Every email the house sends, rendered from the real templates with example data, to read in Maite.
 // Times and the cancellation policy are today's, so the preview matches what a guest would get now.
 import { settings, policyText, addDays, json } from '../../../lib/booking.js';
-import { bookingConfirmation, bookingNotice, contactNotice, contactReply, tableConfirmation, tableNotice } from '../../../lib/email.js';
+import { bookingConfirmation, bookingNotice, contactNotice, contactReply, tableConfirmation, tableNotice, reviewRequest } from '../../../lib/email.js';
 
 export async function onRequestGet({ env }) {
   const S = await settings(env);
@@ -17,6 +17,7 @@ export async function onRequestGet({ env }) {
     { id: 'pending', name: 'Reserva rebuda, pendent del banc', for: 'guest', when: "Quan l'hoste paga amb un mètode que el banc confirma més tard.", ...bookingConfirmation(env, meta, amount, true, extra) },
     { id: 'notice', name: 'Avís de nova reserva', for: 'house', when: 'A la Casa Vella, cada vegada que entra una reserva a la web.', ...bookingNotice(env, meta, amount, false) },
     { id: 'notice-pending', name: 'Avís de reserva pendent', for: 'house', when: 'A la Casa Vella, quan entra una reserva que el banc encara ha de confirmar.', ...bookingNotice(env, meta, amount, true) },
+    { id: 'review', name: "Demanar l'opinió", for: 'guest', when: "L'endemà que l'hoste marxa, a totes les reserves de la web i de Maite amb correu (no a les cancel·lades). En l'idioma de la reserva; les de Maite, en català.", ...reviewRequest(env, { ...meta, lang: 'ca' }) },
     { id: 'table', name: 'Taula reservada', for: 'guest', when: 'Quan algú reserva taula al restaurant des de la web.', ...tableConfirmation(env, table) },
     { id: 'table-notice', name: 'Avís de taula reservada', for: 'house', when: 'A la Casa Vella, cada vegada que es reserva una taula a la web.', ...tableNotice(env, table) },
     { id: 'contact-reply', name: 'Resposta al formulari de contacte', for: 'guest', when: 'A qui escriu des del formulari de contacte de la web.', ...contactReply(env, msg) },

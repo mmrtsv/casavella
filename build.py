@@ -43,11 +43,14 @@ DESCRIPTION = {
 }
 OG_IMAGE = 'img/hero-vinyes-cel.jpg'
 
-# Ad tags. They load only after the guest accepts cookies; while all three are empty
+# Ad tags. They load only after the guest accepts cookies; while all are empty
 # the page loads no tags and shows no cookie banner.
 META_PIXEL_ID = ''           # Meta Events Manager, the Pixel's ID (digits only)
 GOOGLE_TAG_ID = ''           # Google tag: GA4 'G-…' or Google Ads 'AW-…'
 GOOGLE_ADS_CONVERSION = ''   # Google Ads, the booking conversion: 'AW-…/label'
+# PostHog (EU), the site's own analytics: full tracking and session recordings for guests who accept
+# cookies, a cookieless count for those who reject them. The project token is public by design.
+POSTHOG_KEY = 'phc_wKuEYoNuGTakEhSHMUcAtm8Ms9xsKTpkMfSXuxiAQj69'
 
 
 # ---- Structured data: the facts the page states, for search engines and AI assistants ----
@@ -150,7 +153,7 @@ src = cut(src, '<div class="variants"', '</div>\n')
 src = src.replace('<meta name="claude:viewport-fit-sides" content="cover">\n', '')
 src = re.sub(r'<title>.*?</title>\n', '', src, count=1)
 
-ads = json.dumps({'meta': META_PIXEL_ID, 'google': GOOGLE_TAG_ID, 'conversion': GOOGLE_ADS_CONVERSION})
+ads = json.dumps({'meta': META_PIXEL_ID, 'google': GOOGLE_TAG_ID, 'conversion': GOOGLE_ADS_CONVERSION, 'posthog': POSTHOG_KEY})
 i18n = src[src.index('const I18N = ') + len('const I18N = '):]
 i18n = i18n[:i18n.index('\n} };\n') + 4].replace('{ es: {', '{"es": {', 1).replace('\n}, en: {', '\n}, "en": {', 1)
 WORDS = {'ca': {}, **json.loads(i18n)}

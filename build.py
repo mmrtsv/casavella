@@ -111,6 +111,46 @@ def structured_data(lang):
     return json.dumps(data, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
 
 
+# ---- Agenda: what is on nearby in the coming weeks, from content/agenda.json (kept up to date by the weekly SEO routine,
+# docs/seo-rutina.md). Each item has its source; the past ones drop out on each build. Nothing to show, no block. ----
+AGENDA_HEAD = {
+    'ca': ('Aquestes setmanes', 'Què passa a prop', 'Més informació'),
+    'es': ('Estas semanas', 'Qué pasa cerca', 'Más información'),
+    'en': ('These weeks', "What's on nearby", 'More information'),
+}
+MONTHS = {
+    'ca': ['de gener', 'de febrer', 'de març', "d'abril", 'de maig', 'de juny', 'de juliol', "d'agost", 'de setembre', "d'octubre", 'de novembre', 'de desembre'],
+    'es': ['de enero', 'de febrero', 'de marzo', 'de abril', 'de mayo', 'de junio', 'de julio', 'de agosto', 'de septiembre', 'de octubre', 'de noviembre', 'de diciembre'],
+    'en': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+}
+
+
+def when(item, lang):
+    a = datetime.date.fromisoformat(item['from'])
+    b = datetime.date.fromisoformat(item.get('to') or item['from'])
+    day = lambda d: f'{d.day} {MONTHS[lang][d.month - 1]}'
+    to = ' to ' if lang == 'en' else ' al '
+    if a == b:
+        return day(a)
+    return f'{a.day}{to}{day(b)}' if (a.year, a.month) == (b.year, b.month) else f'{day(a)}{to}{day(b)}'
+
+
+
+def agenda(lang, today):
+    items = json.loads((ROOT / 'content' / 'agenda.json').read_text(encoding='utf-8'))['items']
+    items = sorted((i for i in items if (i.get('to') or i['from']) >= today), key=lambda i: i['from'])[:6]
+    if not items:
+        return ''
+    label, title, more = AGENDA_HEAD[lang]
+    e = html.escape
+    cards = ''.join(
+        f'      <article><span class="label">{e(when(i, lang))}</span><h3>{e(i["title"][lang])}</h3>'
+        f'<p>{e(i["text"][lang])} ({e(i["place"])}{", " + str(i["minutes"]) + " min" if i.get("minutes") else ""})</p>'
+        f'<p><a href="{e(i["url"])}" target="_blank" rel="noopener">{more}</a></p></article>\n' for i in items)
+    return (f'    <div class="seal-head"><span class="label">{label}</span><h3>{title}</h3></div>\n'
+            f'    <div class="near agenda">\n{cards}    </div>\n')
+
+
 def translate(body, words):
     """What the page's script does in the browser for Spanish and English, done here so the HTML is already translated:
     every text node and the same attributes, looked up in I18N with the Catalan text (spaces collapsed) as the key."""
@@ -157,6 +197,7 @@ ads = json.dumps({'meta': META_PIXEL_ID, 'google': GOOGLE_TAG_ID, 'conversion': 
 i18n = src[src.index('const I18N = ') + len('const I18N = '):]
 i18n = i18n[:i18n.index('\n} };\n') + 4].replace('{ es: {', '{"es": {', 1).replace('\n}, en: {', '\n}, "en": {', 1)
 WORDS = {'ca': {}, **json.loads(i18n)}
+AGENDA_MARK = '    <!-- agenda: build.py puts here what is on nearby in the coming weeks (content/agenda.json) -->\n'
 # Everything up to and including </style> goes in <head>, the rest in <body>
 split = src.index('</style>') + len('</style>')
 
@@ -190,6 +231,7 @@ def page(lang):
 <style>:root{{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}}body{{margin:0}}img{{max-width:100%}}[hidden]{{display:none!important}}</style>
 '''
     body = src[split:].lstrip()
+    body = body.replace(AGENDA_MARK, agenda(lang, datetime.date.today().isoformat()))
     if lang != 'ca':
         body = translate(body, WORDS[lang])
     doc = head + src[:split] + '\n</head>\n<body>\n' + body + '\n</body>\n</html>\n'

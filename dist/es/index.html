@@ -537,6 +537,7 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .near article { display: grid; gap: 8px; align-content: start; padding-block: 24px; border-bottom: 1px solid var(--line); min-width: 0; }
 .near h3 { font-size: 24px; }
 .near p { font-size: 15px; color: var(--muted); }
+.near.agenda a { color: var(--ink); text-underline-offset: 3px; }
 @media (max-width: 880px) { .near { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 520px) { .near { grid-template-columns: 1fr; } }
 
@@ -567,6 +568,12 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .g-badge { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
 .g-badge svg { width: 20px; height: 20px; fill: var(--basil); }
 .reviews-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+.rv-list { text-align: left; margin-top: clamp(40px, 6vw, 64px); }
+.rv-list h3 a { color: inherit; text-decoration: none; }
+.rv-list h3 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.rv-list p { white-space: pre-line; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 10; overflow: hidden; }
+.rv-list .rv-note, .reviews .rv-source { font-size: 13px; }
+.reviews .rv-source { margin-top: 20px; }
 /* Footer */
 footer { background: #1A3F20; color: #e3ddd0; font-size: 14px; padding-block: 64px 32px; }
 footer a { color: inherit; text-decoration: none; }
@@ -1173,12 +1180,14 @@ footer { padding-bottom: 32px !important; }
     <div class="reviews-head">
       <span class="g-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12.2c0-.6-.1-1.2-.2-1.7H12v3.3h4.8a4.2 4.2 0 0 1-1.8 2.7v2.2h2.9c1.7-1.6 2.6-3.9 2.6-6.5Z"/><path d="M12 21c2.4 0 4.4-.8 5.9-2.2L15 16.5c-.8.5-1.8.9-3 .9-2.3 0-4.3-1.6-5-3.7H4v2.3A9 9 0 0 0 12 21Z"/><path d="M7 13.7a5.4 5.4 0 0 1 0-3.4V8H4a9 9 0 0 0 0 8l3-2.3Z"/><path d="M12 6.6c1.3 0 2.5.5 3.4 1.3L18 5.4A9 9 0 0 0 4 8l3 2.3c.7-2.1 2.7-3.7 5-3.7Z"/></svg><span>Opiniones en Google</span></span>
       <h2>Lo que dicen nuestros huéspedes</h2>
-      <p>Aquí se mostrarán las reseñas reales de Google de La Casa Vella, con la puntuación y las opiniones más recientes.</p>
+      <p id="rvSummary" hidden></p>
       <div class="reviews-actions">
         <a class="btn solid" href="https://www.google.com/maps/search/?api=1&amp;query=La+Casa+Vella+El+Bedorc&amp;query_place_id=ChIJK6vlrrVlpBIRBAeTHj5ufvE" target="_blank" rel="noopener">Leer las reseñas en Google</a>
         <a class="btn" href="https://search.google.com/local/writereview?placeid=ChIJK6vlrrVlpBIRBAeTHj5ufvE" target="_blank" rel="noopener">Déjanos tu opinión</a>
       </div>
     </div>
+    <div class="near rv-list" id="rvList" hidden></div>
+    <p class="rv-source" id="rvSource" hidden>Reseñas de Google Maps</p>
   </div>
 </section>
 
@@ -1438,7 +1447,7 @@ const I18N = { es: {
 "La muntanya que veieu des de casa: el monestir, l'Escolania i camins fins a Sant Jeroni.": "La montaña que veis desde casa: el monasterio, la Escolanía y caminos hasta Sant Jeroni.",
 "Opinions a Google": "Opiniones en Google",
 "El que diuen els nostres hostes": "Lo que dicen nuestros huéspedes",
-"Aquí es mostraran les ressenyes reals de Google de La Casa Vella, amb la puntuació i les opinions més recents.": "Aquí se mostrarán las reseñas reales de Google de La Casa Vella, con la puntuación y las opiniones más recientes.",
+"Ressenyes de Google Maps": "Reseñas de Google Maps",
 "Llegir les ressenyes a Google": "Leer las reseñas en Google",
 "Deixa'ns la teva opinió": "Déjanos tu opinión",
 "Escriu-nos, t'esperem": "Escríbenos, te esperamos",
@@ -1656,7 +1665,7 @@ const I18N = { es: {
 "La muntanya que veieu des de casa: el monestir, l'Escolania i camins fins a Sant Jeroni.": "The mountain you see from the house: the monastery, the boys' choir and paths up to Sant Jeroni.",
 "Opinions a Google": "Google reviews",
 "El que diuen els nostres hostes": "What our guests say",
-"Aquí es mostraran les ressenyes reals de Google de La Casa Vella, amb la puntuació i les opinions més recents.": "La Casa Vella's real Google reviews will appear here, with the rating and the latest reviews.",
+"Ressenyes de Google Maps": "Reviews from Google Maps",
 "Llegir les ressenyes a Google": "Read the reviews on Google",
 "Deixa'ns la teva opinió": "Leave us a review",
 "Escriu-nos, t'esperem": "Write to us",
@@ -2613,6 +2622,33 @@ eventForm.addEventListener('submit', async e => {
   $('evDoneText').textContent = tr(`Us escriurem a ${d.email} amb una proposta de dia i menú per a ${diners(d.people)}.`, `Os escribiremos a ${d.email} con una propuesta de día y menú para ${diners(d.people)}.`, `We'll write to ${d.email} with a suggested day and menu for ${diners(d.people)}.`);
   scrollTo({ top: 0, behavior: 'smooth' });
 });
+// ---- Google reviews (/api/reviews): the rating and the reviews Google shows first, asked for when the section is near ----
+// Without the Places API configured the section keeps its two buttons (read and write reviews on Google).
+{
+  const list = $('rvList'), sum = $('rvSummary');
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const one = n => n.toLocaleString(LOC, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  async function load() {
+    let d;
+    try { const r = await fetch('/api/reviews?lang=' + LANG); if (!r.ok) return; d = await r.json(); } catch (e) { return; }
+    if (d.rating && d.count) {
+      sum.textContent = d.count === 1
+        ? tr(`${one(d.rating)} de 5 a Google, amb 1 opinió`, `${one(d.rating)} de 5 en Google, con 1 opinión`, `${one(d.rating)} out of 5 on Google, from 1 review`)
+        : tr(`${one(d.rating)} de 5 a Google, amb ${d.count} opinions`, `${one(d.rating)} de 5 en Google, con ${d.count} opiniones`, `${one(d.rating)} out of 5 on Google, from ${d.count} reviews`);
+      sum.hidden = false;
+    }
+    if (!d.reviews?.length) return;
+    list.innerHTML = d.reviews.map(r => '<article>' + (r.when ? `<span class="label">${esc(r.when)}</span>` : '')
+      + `<h3>${r.authorUrl ? `<a href="${esc(r.authorUrl)}" target="_blank" rel="noopener">${esc(r.author)}</a>` : esc(r.author)}</h3>`
+      + `<p>${esc(r.text)}</p>` + (r.translated ? `<p class="rv-note">${tr('Traduïda per Google', 'Traducida por Google', 'Translated by Google')}</p>` : '') + '</article>').join('');
+    list.hidden = false; $('rvSource').hidden = false;
+  }
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(e => { if (e.some(x => x.isIntersecting)) { io.disconnect(); load(); } }, { rootMargin: '600px 0px' });
+    io.observe($('opinions'));
+  } else load();
+}
+
 // ---- Analytics and ads: PostHog, the Meta Pixel and the Google tag ----
 // The ids are set in build.py; the review version has none, so it loads nothing and shows no banner.
 // PostHog loads on every visit but captures nothing until the guest chooses: accepting turns on full tracking

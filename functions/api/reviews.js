@@ -36,13 +36,14 @@ export async function onRequestGet({ request, env }) {
   if (env.GOOGLE_PLACES_KEY) headers['x-goog-api-key'] = env.GOOGLE_PLACES_KEY;
   else if (env.GOOGLE_SA_EMAIL && env.GOOGLE_SA_KEY) {
     try { headers.authorization = 'Bearer ' + await googleToken(env, 'https://www.googleapis.com/auth/cloud-platform'); }
-    catch (e) { return json({ error: 'auth' }, 502); }
+    catch (e) { return json({ error: 'auth', detail: String(e.message).slice(0, 200) }); }
     // Billed to the service account's own project: name@PROJECT.iam.gserviceaccount.com
     const project = (env.GOOGLE_SA_EMAIL.match(/@([^.]+)\./) || [])[1];
     if (project) headers['x-goog-user-project'] = project;
-  } else return json({ error: 'not_configured' }, 503);
+  } else return json({ error: 'not_configured' });
 
   const r = await fetch(`https://places.googleapis.com/v1/places/${PLACE_ID}?languageCode=${lang}`, { headers }).catch(() => null);
-  if (!r || !r.ok) return json({ error: 'google', status: r ? r.status : 0 }, 502);
+  // Errors go out as 200 with what Google said (Cloudflare replaces the body of a 502), so it can be read from outside
+  if (!r || !r.ok) return json({ error: 'google', status: r ? r.status : 0, detail: r ? ((await r.json().catch(() => null))?.error?.message || '').slice(0, 300) : '' });
   return json(shape(await r.json()), 200, 'private, max-age=3600');
 }

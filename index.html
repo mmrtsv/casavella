@@ -260,6 +260,13 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .nt-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }
 .nt-actions .btn { padding: 14px 22px; }
 .nt-actions .btn[hidden] { display: none; }
+/* Cookie choice: a quiet bar at the foot of the screen, only when build.py sets an ad tag */
+.cookies { position: fixed; inset: auto 0 0; z-index: 55; padding: 18px 0 calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--paper); border-top: 1px solid var(--line); box-shadow: 0 -10px 30px rgba(0, 0, 0, .08); }
+.cookies .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 28px; }
+.cookies p { margin: 0; max-width: 62ch; font-size: 15px; }
+.ck-actions { display: flex; gap: 10px; }
+.ck-actions .btn { padding: 13px 20px; }
+@media (max-width: 560px) { .ck-actions { width: 100%; } .ck-actions .btn { flex: 1; } }
 .cmp-more { background: none; border: 0; padding: 0; font: 500 13.5px var(--body); color: var(--basil); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
 /* Stay details popup (from the compare page) */
@@ -339,7 +346,7 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 }
 
 /* Booking page (#reserva): guest details next to the stay summary, then Stripe */
-:root.booking-open body > :not(header.top):not(.subpage):not(footer):not(.lightbox):not(.phone-view):not(.stay-modal):not(.notice) { display: none !important; }
+:root.booking-open body > :not(header.top):not(.subpage):not(footer):not(.lightbox):not(.phone-view):not(.stay-modal):not(.notice):not(.cookies) { display: none !important; }
 .bookpage { padding-block: clamp(32px, 5vw, 64px) clamp(64px, 9vw, 112px); }
 .bp-back { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; text-decoration: none; color: var(--muted); }
 .bp-back:hover { color: var(--ink); }
@@ -1174,7 +1181,7 @@ footer { padding-bottom: 32px !important; }
   </div>
   <div class="wrap foot-legal">
     <span>© 2026 La Casa Vella, El Bedorc. Núm. registre turístic per confirmar</span>
-    <div><a href="#contacte">Avís legal</a><a href="#contacte">Privacitat</a><a href="#contacte">Cookies</a></div>
+    <div><a href="#contacte">Avís legal</a><a href="#contacte">Privacitat</a><a href="#contacte" data-cookies>Cookies</a></div>
   </div>
 </footer>
 
@@ -1208,6 +1215,13 @@ footer { padding-bottom: 32px !important; }
     <h3 id="ntTitle"></h3>
     <p id="ntText"></p>
     <div class="nt-actions"><button type="button" class="btn solid" id="ntMain"></button><button type="button" class="btn" id="ntAlt"></button></div>
+  </div>
+</div>
+
+<div class="cookies" id="cookies" hidden role="region" aria-labelledby="ckText">
+  <div class="wrap">
+    <p id="ckText"></p>
+    <div class="ck-actions"><button type="button" class="btn" id="ckNo"></button><button type="button" class="btn solid" id="ckYes"></button></div>
   </div>
 </div>
 
@@ -2225,7 +2239,12 @@ function showSub(id) {
   document.documentElement.classList.toggle('booking-open', !!id);
   bp.hidden = id !== 'reserva'; av.hidden = id !== 'disponibles'; tb.hidden = id !== 'taula';
   if (id === 'taula') openTable();
-  if (id === 'reserva') { $('bpBack').href = $('bpChange').href = cameFrom; renderSummary(); showQuote(); }
+  if (id === 'reserva') {
+    $('bpBack').href = $('bpChange').href = cameFrom; renderSummary(); showQuote();
+    // Not when the page opens on it (an ad's link, the return from Stripe): only a guest who chose a stay counts
+    const q = price(); if (q && !q.error && !bp.classList.contains('done') && !bp.dataset.quiet) track('checkout', { stay: fstay.value, value: q.total });
+    delete bp.dataset.quiet;
+  }
   if (id === 'disponibles') showCompare();
   if (id) { scrollTo({ top: 0, behavior: 'instant' }); requestAnimationFrame(() => scrollTo({ top: 0, behavior: 'instant' })); }
 }
@@ -2500,12 +2519,89 @@ tableForm.addEventListener('submit', async e => {
   tnote.textContent = tableError(res);
   if (res.error === 'full' || res.error === 'too_soon' || res.error === 'closed') loadOpenings().then(() => { tnote.textContent = tableError(res); });
 });
+// ---- Ads: Meta Pixel and the Google tag, only once the guest accepts cookies ----
+// The ids are set in build.py; the review version has none, so it loads nothing and shows no banner.
+// Events: begin_checkout / InitiateCheckout when the booking page opens, purchase / Purchase when a booking is paid.
+const ADS = window.ADS || {}, adsOn = !!(ADS.meta || ADS.google), ck = $('cookies'), adQueue = [];
+let consent = null, tagsLoaded = false;
+try { consent = localStorage.getItem('lcv-consent'); } catch (e) {}
+function loadTags() {
+  if (tagsLoaded) return;
+  tagsLoaded = true;
+  const add = src => { const el = document.createElement('script'); el.async = true; el.src = src; document.head.append(el); };
+  if (ADS.meta) {
+    const f = window.fbq = function () { f.callMethod ? f.callMethod.apply(f, arguments) : f.queue.push(arguments); };
+    if (!window._fbq) window._fbq = f;
+    f.push = f; f.loaded = true; f.version = '2.0'; f.queue = [];
+    add('https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', ADS.meta); fbq('track', 'PageView');
+  }
+  if (ADS.google) {
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { dataLayer.push(arguments); };
+    gtag('consent', 'default', { ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'granted', analytics_storage: 'granted' });
+    gtag('js', new Date()); gtag('config', ADS.google);
+    const aw = (ADS.conversion || '').split('/')[0];
+    if (aw && aw !== ADS.google) gtag('config', aw);
+    add('https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(ADS.google));
+  }
+}
+function track(ev, d) {
+  if (!adsOn || consent === 'no' || !(d.value > 0)) return;
+  if (consent !== 'yes') { adQueue.push([ev, d]); return; }
+  const value = d.value, currency = 'EUR', items = [{ item_id: d.stay, item_name: (STAY_INFO[d.stay] || {}).name || d.stay, price: value, quantity: 1 }];
+  if (ev === 'checkout') {
+    if (window.fbq) fbq('track', 'InitiateCheckout', { value, currency, content_ids: [d.stay], content_type: 'product' });
+    if (window.gtag) gtag('event', 'begin_checkout', { value, currency, items });
+  }
+  if (ev === 'purchase') {
+    // The Stripe session id is the order id: a reload or a second report of the same booking counts once
+    if (window.fbq) fbq('track', 'Purchase', { value, currency, content_ids: [d.stay], content_type: 'product' }, { eventID: d.id });
+    if (window.gtag) gtag('event', 'purchase', { transaction_id: d.id, value, currency, items });
+    if (window.gtag && ADS.conversion) gtag('event', 'conversion', { send_to: ADS.conversion, transaction_id: d.id, value, currency });
+  }
+}
+function decide(v) {
+  const was = consent;
+  consent = v; ck.hidden = true;
+  try { localStorage.setItem('lcv-consent', v); } catch (e) {}
+  if (v === 'yes') { loadTags(); adQueue.splice(0).forEach(a => track(...a)); return; }
+  adQueue.length = 0;
+  // Taking consent back: clear the tags' cookies and reload without them
+  if (was === 'yes') {
+    const host = location.hostname.split('.').slice(-2).join('.');
+    document.cookie.split(';').map(c => c.split('=')[0].trim()).filter(n => /^(_ga|_gcl|_gid|_fbp|_fbc)/.test(n))
+      .forEach(n => [location.hostname, '.' + host].forEach(dm => { document.cookie = `${n}=; Max-Age=0; path=/; domain=${dm}`; }));
+    location.reload();
+  }
+}
+if (adsOn) {
+  $('ckText').textContent = tr('Amb el teu permís, fem servir galetes de Google i Meta per saber quins anuncis porten a una reserva.', 'Con tu permiso, usamos cookies de Google y Meta para saber qué anuncios llevan a una reserva.', 'With your permission, we use Google and Meta cookies to see which ads lead to a booking.');
+  $('ckNo').textContent = tr('Rebutjar', 'Rechazar', 'Reject'); $('ckYes').textContent = tr('Acceptar', 'Aceptar', 'Accept');
+  $('ckNo').onclick = () => decide('no'); $('ckYes').onclick = () => decide('yes');
+  document.querySelectorAll('[data-cookies]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); ck.hidden = false; }));
+  if (consent === 'yes') loadTags(); else if (consent !== 'no') ck.hidden = false;
+}
+
 // ---- Start: default dates, restore a booking in progress, handle the return from Stripe ----
 setDates(iso(new Date()), addDays(iso(new Date()), 1));
 guestsPick.set(fguests.value, true);
 restore();
+// Links from ads open the booking with the dates (and, if given, the stay and guests) already chosen:
+// ?in=2026-11-13&out=2026-11-15&stay=montserrat&guests=2. The rest of the query (utm_…) stays for the tags.
+{
+  const q = new URLSearchParams(location.search), a = q.get('in'), b = q.get('out'), stay = q.get('stay');
+  const day = /^\d{4}-\d{2}-\d{2}$/;
+  if (day.test(a || '') && day.test(b || '') && a >= iso(new Date()) && b > a && !q.get('reserva')) {
+    if (STAY_INFO[stay]) stayPick.set(stay, true); else if (stay === null) stayPick.set('', true);
+    if (+q.get('guests') > 0) guestsPick.set(String(Math.min(+q.get('guests'), (STAY_INFO[fstay.value] || { max: 3 }).max)), true);
+    setDates(a, b);
+    if (!location.hash) try { history.replaceState(null, '', location.pathname + location.search + (fstay.value ? '#reserva' : '#disponibles')); } catch (e) {}
+  }
+}
 {
   const params = new URLSearchParams(location.search), r = params.get('reserva'), sid = params.get('session_id');
+  bp.dataset.quiet = '1';
   if (r) try { history.replaceState(null, '', location.pathname + '#reserva'); } catch (e) {}
   const markDone = pending => {
     bp.classList.add('done'); $('bpDone').hidden = false; $('bpTitle').textContent = pending ? tr('Reserva rebuda', 'Reserva recibida', 'Booking received') : tr('Reserva confirmada', 'Reserva confirmada', 'Booking confirmed');
@@ -2514,11 +2610,13 @@ restore();
   };
   if (r === 'ok' && sid) {
     fetch('/api/status?session_id=' + encodeURIComponent(sid)).then(x => x.json()).then(st => {
+      if (st.paid || st.pending) track('purchase', { id: sid, stay: st.stay, value: st.amount });
       if (st.paid || st.pending) { if (price()) { markDone(st.pending); route(); } else note.textContent = tr("Gràcies! La reserva està confirmada i t'hem enviat el rebut per correu.", '¡Gracias! La reserva está confirmada y te hemos enviado el recibo por correo.', "Thank you. Your booking is confirmed and we've emailed you the receipt."); }
       else payNote.textContent = tr("El pagament no s'ha completat i no s'ha cobrat res. Quan vulguis, pots tornar-ho a provar.", 'El pago no se ha completado y no se ha cobrado nada. Cuando quieras, puedes volver a intentarlo.', "The payment didn't go through and nothing was charged. You can try again whenever you like.");
     }).catch(() => {});
   }
   route();
+  delete bp.dataset.quiet;
 }
 
 document.getElementById('contactForm').addEventListener('submit', async e => {

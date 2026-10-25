@@ -8,6 +8,7 @@ review tools (draft banner, design switcher, phone preview).
 Usage:  python3 build.py [https://www.your-domain.com]
 Then upload the dist/ folder to Netlify, Cloudflare Pages or any static host.
 """
+import json
 import re
 import shutil
 import sys
@@ -21,6 +22,12 @@ TITLE = 'La Casa Vella, allotjament rural al Bedorc'
 DESCRIPTION = ("Casa de poble familiar de 1898 al Bedorc, entre vinyes i amb Montserrat a l'horitzó. "
                "Dos apartaments, dues habitacions i restaurant.")
 OG_IMAGE = 'img/hero-vinyes-cel.jpg'
+
+# Ad tags. They load only after the guest accepts cookies; while all three are empty
+# the page loads no tags and shows no cookie banner.
+META_PIXEL_ID = ''           # Meta Events Manager, the Pixel's ID (digits only)
+GOOGLE_TAG_ID = ''           # Google tag: GA4 'G-…' or Google Ads 'AW-…'
+GOOGLE_ADS_CONVERSION = ''   # Google Ads, the booking conversion: 'AW-…/label'
 
 
 def cut(html, start_pattern, end_marker):
@@ -42,6 +49,7 @@ src = cut(src, '<div class="variants"', '</div>\n')
 src = src.replace('<meta name="claude:viewport-fit-sides" content="cover">\n', '')
 src = re.sub(r'<title>.*?</title>\n', '', src, count=1)
 
+ads = json.dumps({'meta': META_PIXEL_ID, 'google': GOOGLE_TAG_ID, 'conversion': GOOGLE_ADS_CONVERSION})
 og_image = f'{SITE_URL}/{OG_IMAGE}' if SITE_URL else OG_IMAGE
 canonical = f'<link rel="canonical" href="{SITE_URL}/">\n' if SITE_URL else ''
 head = f'''<!doctype html>
@@ -57,6 +65,7 @@ head = f'''<!doctype html>
 <meta property="og:description" content="{DESCRIPTION}">
 <meta property="og:image" content="{og_image}">
 <meta name="twitter:card" content="summary_large_image">
+<script>window.ADS = {ads};</script>
 <style>:root{{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}}body{{margin:0}}img{{max-width:100%}}[hidden]{{display:none!important}}</style>
 '''
 # Everything up to and including </style> goes in <head>, the rest in <body>

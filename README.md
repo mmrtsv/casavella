@@ -40,6 +40,14 @@ La web es veu en català, castellà o anglès. Per defecte agafa el primer d'aqu
 - Els textos dels allotjaments que es canvien a Maite només existeixen en català: en castellà i anglès la pàgina mostra els que té traduïts.
 - Els correus a l'hoste (reserva confirmada o pendent i resposta al formulari de contacte) surten en l'idioma en què ha fet servir la web: la pàgina l'envia amb la reserva i el formulari, i es desa a Stripe. Els avisos a la Casa Vella són en català i diuen en quin idioma escriure a l'hoste. La vista prèvia de Maite (Correus) els mostra en català.
 
+## Anuncis (Meta i Google)
+
+Les etiquetes de Meta (Pixel) i de Google (Google tag i la conversió de Google Ads) es configuren a dalt de `build.py`: `META_PIXEL_ID`, `GOOGLE_TAG_ID` i `GOOGLE_ADS_CONVERSION`. Mentre estiguin buides, la web no carrega cap etiqueta ni mostra l'avís de galetes. La versió de revisió (`index.html`) no en carrega mai.
+
+- **Galetes**: amb alguna etiqueta configurada, la primera visita mostra una barra a peu de pantalla per acceptar-les o rebutjar-les. Fins que l'hoste no accepta no es carrega res. L'enllaç «Cookies» del peu torna a obrir la barra; si les rebutja després d'haver-les acceptat, se n'esborren les galetes.
+- **Esdeveniments**: `begin_checkout` / `InitiateCheckout` quan l'hoste tria un allotjament i passa a la pàgina de reserva, i `purchase` / `Purchase` (més la conversió de Google Ads) quan la reserva està pagada, amb l'import que diu Stripe (`/api/status`) i l'id de la sessió de Stripe com a número de comanda, perquè no es compti dues vegades. Si l'hoste encara no ha triat, s'esperen i s'envien si accepta.
+- **Enllaços dels anuncis**: `?in=2026-11-13&out=2026-11-15` obre la web amb aquestes dates i la llista d'allotjaments lliures. Amb `&stay=montserrat` (o `la-pineda`, `les-vinyes`, `figarot`) va directament a la pàgina de reserva d'aquell allotjament, i `&guests=2` tria les persones. Afegeix-hi els `utm_source`, `utm_campaign`… que vulguis: Google els llegeix de l'adreça.
+
 ## Publicar a Cloudflare Pages
 
 1. Cloudflare → Workers & Pages → Create → Pages → Connect to Git, i tria aquest repositori.

@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.casavellarural.maite.R
 import com.casavellarural.maite.data.Api
+import com.casavellarural.maite.data.ERRORS
 import com.casavellarural.maite.data.ApiError
 import com.casavellarural.maite.data.Maite
 import com.casavellarural.maite.data.RestaurantSettings
@@ -69,9 +70,10 @@ import com.casavellarural.maite.ui.T
 import com.casavellarural.maite.ui.Tabs
 import com.casavellarural.maite.ui.Toasts
 import com.casavellarural.maite.ui.Type
+import com.casavellarural.maite.ui.Ui
 import kotlinx.coroutines.launch
 
-// Restaurant: the tables booked for a day (web and phone), a new one, cancelling, and the openings (a day and a time each),
+// Restaurant: the tables booked for a day (web and phone), a new one, changing or cancelling one, what each table paid by day, and the openings (a day and a time each),
 // seats and limits the web follows. Like maite-app/src/pages/Restaurant.tsx.
 
 fun atOf(t: Table) = "${t.date}T${t.time}"
@@ -92,9 +94,10 @@ fun Restaurant() {
 // ---------- Tables ----------
 @Composable
 private fun Tables(cfg: RestaurantSettings) {
-    var date by remember { mutableStateOf(cfg.open.firstOrNull { it.take(10) >= TODAY }?.take(10) ?: TODAY) }
+    var date by remember { mutableStateOf(Ui.restaurantDay.ifEmpty { null }?.also { Ui.restaurantDay = "" } ?: cfg.open.firstOrNull { it.take(10) >= TODAY }?.take(10) ?: TODAY) }
     var error by remember { mutableStateOf("") }
     var adding by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<Table?>(null) }
     var cancel by remember { mutableStateOf<Table?>(null) }
     // Loads a window around the day shown, once
     LaunchedEffect(date) {
@@ -124,10 +127,10 @@ private fun Tables(cfg: RestaurantSettings) {
             val list = live.filter { atOf(it) == at }
             Group(at.drop(11), "${seated(list)} de ${cfg.seats} places")
             if (list.isEmpty()) Muted("Cap taula.", Modifier.padding(vertical = 10.dp))
-            list.forEach { t -> TableRow(t) { cancel = t } }
+            list.forEach { t -> TableRow(t, { editing = t }) { cancel = t } }
         }
-        if (rest.isNotEmpty()) { Group(if (opens.isEmpty()) "Taules" else "A una altra hora", null); rest.forEach { t -> TableRow(t) { cancel = t } } }
-        if (ofDay.any { it.cancelled }) { Group("Cancel·lades", null, muted = true); ofDay.filter { it.cancelled }.forEach { TableRow(it, null) } }
+        if (rest.isNotEmpty()) { Group(if (opens.isEmpty()) "Taules" else "A una altra hora", null); rest.forEach { t -> TableRow(t, { editing = t }) { cancel = t } } }
+        if (ofDay.any { it.cancelled }) { Group("Cancel·lades", null, muted = true); ofDay.filter { it.cancelled }.forEach { TableRow(it, null, null) } }
     }
 
     // The openings ahead and any other day that has tables, in order
@@ -148,7 +151,8 @@ private fun Tables(cfg: RestaurantSettings) {
         }
     }
 
-    if (adding) NewTable(cfg, date, all, { adding = false }) { t -> put(t); date = t.date }
+    if (adding) TableForm(cfg, null, date, all, { adding = false }) { t -> put(t); date = t.date }
+    editing?.let { e -> TableForm(cfg, e, date, all, { editing = null }) { t -> put(t); date = t.date } }
     cancel?.let { t -> CancelTable(t, { cancel = null }, put) }
 }
 
@@ -162,7 +166,7 @@ private fun Group(title: String, sub: String?, muted: Boolean = false) {
 }
 
 @Composable
-private fun TableRow(t: Table, onCancel: (() -> Unit)?) {
+private fun TableRow(t: Table, onEdit: (() -> Unit)?, onCancel: (() -> Unit)?) {
     val context = LocalContext.current
     Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.Top) {
         Text(t.time.ifEmpty { "Tot el dia" }, style = Type.sm, fontWeight = FontWeight.SemiBold, color = if (t.cancelled) T.muted else T.foreground, modifier = Modifier.width(56.dp))
@@ -175,32 +179,37 @@ private fun TableRow(t: Table, onCancel: (() -> Unit)?) {
             Text(SOURCE[t.source] ?: "Maite", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 2.dp))
             if (t.paid != null) Text("Ha pagat ${euro(t.paid)}", style = Type.xs, color = T.muted)
         }
-        if (onCancel != null && t.source != "calendar") Btn("Cancel·la", onCancel, look = Look.Ghost)
+        if (onCancel != null && t.source != "calendar") {
+            if (onEdit != null) Btn("Edita", onEdit, look = Look.Ghost)
+            Btn("Cancel·la", onCancel, look = Look.Ghost)
+        }
     }
     Divider()
 }
 
+/** A new table, or the one given (t) to change */
 @Composable
-private fun NewTable(cfg: RestaurantSettings, date0: String, tables: List<Table>, onClose: () -> Unit, onSaved: (Table) -> Unit) {
-    var date by remember { mutableStateOf(date0) }; var time by remember { mutableStateOf(cfg.open.firstOrNull { it.take(10) == date0 }?.drop(11) ?: "21:00") }
-    var people by remember { mutableStateOf("2") }; var name by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }; var email by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }; var source by remember { mutableStateOf("phone") }
+private fun TableForm(cfg: RestaurantSettings, t: Table?, date0: String, tables: List<Table>, onClose: () -> Unit, onSaved: (Table) -> Unit) {
+    var date by remember { mutableStateOf(t?.date ?: date0) }; var time by remember { mutableStateOf(t?.time ?: cfg.open.firstOrNull { it.take(10) == date0 }?.drop(11) ?: "21:00") }
+    var people by remember { mutableStateOf(t?.people?.toString() ?: if (t == null) "2" else "") }; var name by remember { mutableStateOf(t?.name ?: "") }
+    var phone by remember { mutableStateOf(t?.phone ?: "") }; var email by remember { mutableStateOf(t?.email ?: "") }
+    var notes by remember { mutableStateOf(t?.notes ?: "") }; var source by remember { mutableStateOf(t?.source ?: "phone") }
     var err by remember { mutableStateOf("") }; var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     // How full that opening already is, so the house can judge
     val at = "${date}T$time"
-    val taken = seated(tables.filter { !it.cancelled && atOf(it) == at })
-    FormSheet("Nova taula", null, onClose, {
+    val taken = seated(tables.filter { !it.cancelled && it.id != t?.id && atOf(it) == at })
+    FormSheet(if (t != null) "Canviar la taula" else "Nova taula", null, onClose, {
         Btn("Cancel·la", onClose, look = Look.Ghost)
         Spacer(Modifier.width(8.dp))
         Btn("Desa la taula", {
             busy = true; err = ""
             scope.launch {
                 try {
-                    val d = Api.post<TableResponse>("restaurant", mapOf("date" to date, "time" to time, "people" to people, "name" to name, "phone" to phone,
-                        "email" to email, "notes" to notes, "source" to source))
-                    onSaved(d.table); onClose(); Toasts.done("Taula desada")
+                    val body = mapOf("date" to date, "time" to time, "people" to people, "name" to name, "phone" to phone, "email" to email, "notes" to notes, "source" to source)
+                    val d = if (t == null) Api.post<TableResponse>("restaurant", body)
+                        else json.decodeFromString(TableResponse.serializer(), Api.raw("PATCH", "restaurant", Api.encode(mapOf("id" to t.id) + body)))
+                    onSaved(d.table); onClose(); Toasts.done(if (t != null) "Taula canviada" else "Taula desada")
                 } catch (e: ApiError) { err = e.message.orEmpty() }
                 busy = false
             }
@@ -215,7 +224,7 @@ private fun NewTable(cfg: RestaurantSettings, date0: String, tables: List<Table>
         Field("Persones", people, { people = it }, type = KeyboardType.Number)
         Field("Telèfon", phone, { phone = it }, type = KeyboardType.Phone)
         Field("Correu", email, { email = it }, type = KeyboardType.Email)
-        Choice("Via", source, SOURCES, { source = it })
+        Choice("Via", source, if (source == "web") listOf("web" to "Web") + SOURCES else SOURCES, { source = it })
         Field("Comentaris", notes, { notes = it }, area = true, placeholder = "Al·lèrgies, cadira per al nadó…")
         ErrorNote(err)
     }
@@ -296,13 +305,14 @@ private fun Paid(cfg: RestaurantSettings) {
             }
         }
     }
-    PaidDay(sel, byDay(sel))
+    PaidDay(cfg, sel, byDay(sel), live)
 }
 
 /** The day's tables, each with what it paid; amounts in euros, saved one table at a time */
 @Composable
-private fun PaidDay(date: String, list: List<Table>) {
+private fun PaidDay(cfg: RestaurantSettings, date: String, list: List<Table>, tables: List<Table>) {
     var edit by remember(date) { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var editing by remember { mutableStateOf<Table?>(null) }
     var busy by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     fun shown(t: Table) = t.paid?.let { (it / 100.0).let { v -> if (v == Math.floor(v)) v.toLong().toString() else v.toString() }.replace('.', ',') } ?: ""
@@ -320,6 +330,7 @@ private fun PaidDay(date: String, list: List<Table>) {
                     Text(t.name.ifEmpty { "Sense nom" }, style = Type.sm, fontWeight = FontWeight.Medium, maxLines = 1)
                     Text(t.time + (t.people?.let { ", ${persones(it)}" } ?: ""), style = Type.xs, color = T.muted)
                 }
+                if (t.source != "calendar") IconBtn(R.drawable.ic_pencil, "Edita la taula de ${t.name}", { editing = t })
                 Field("Ha pagat (€)", value, { v -> edit = edit + (t.id to v) }, Modifier.width(110.dp), type = KeyboardType.Decimal, placeholder = "0")
                 Btn("Desa", {
                     val v = value.trim().replace(',', '.')
@@ -336,6 +347,7 @@ private fun PaidDay(date: String, list: List<Table>) {
             }
         }
     }
+    editing?.let { e -> TableForm(cfg, e, date, tables, { editing = null }) { Maite.setTable(it) } }
 }
 
 // ---------- Openings, seats and limits ----------
@@ -379,6 +391,7 @@ private fun Openings(cfg: RestaurantSettings) {
         }
         ErrorNote(err)
         Btn("Desa", {
+            if ((maxParty.toIntOrNull() ?: 0) > (seats.toIntOrNull() ?: 0)) { err = ERRORS.getValue("max_party"); return@Btn }
             busy = true; err = ""
             scope.launch {
                 try {

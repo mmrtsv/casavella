@@ -19,6 +19,7 @@ export const ERRORS: Record<string, string> = {
   social_full: 'La graella ja té 150 posts: treu-ne algun abans de confirmar-ne més', ai_busy: 'Massa peticions seguides. Espera un moment i torna-ho a provar.',
   ig_not_configured: "Falta connectar el compte d'Instagram", ig_published: 'Aquest post ja està publicat',
   ai_not_configured: 'Falta la clau de Claude (ANTHROPIC_API_KEY)', ai: "Claude no ha pogut escriure el copy", ai_make: "Claude no ha pogut fer el post. Torna-ho a provar.",
+  max_party: 'Les persones per taula no poden ser més que les places',
   restaurant: 'Revisa els horaris del restaurant: cada servei necessita nom, algun dia, les hores i les places',
   calendar: "Google Calendar no deixa llegir el calendari del restaurant: comprova que CAL_RESTAURANT és l'ID bo i que el calendari està compartit amb el compte de servei amb permís per fer canvis",
   restaurant_not_configured: 'Falta connectar el calendari del restaurant (CAL_RESTAURANT)', time: "Revisa l'hora", people: 'Revisa el nombre de persones',

@@ -926,7 +926,10 @@ private fun Publish(post: SocialPost, n: Int, caption: String, later: Boolean? =
     val name = if (post.story) "La story" else "Post $n"; val theName = if (post.story) "La story" else "El post $n"
     val t = Renderer.byId.getValue(post.tpl)
     val was = post.schedule
+    // link: a story published by hand from Instagram, to add the link sticker (storyLink)
     var mode by remember { mutableStateOf(if (later ?: (was != null)) "later" else "now") }
+    val link = storyLink(post.pack != null)
+    val context = LocalContext.current
     var date by remember { mutableStateOf(was?.let { dayOfIso(it.at) } ?: post.date?.takeIf { it > TODAY } ?: addDays(TODAY, 1)) }
     var time by remember { mutableStateOf(was?.let { hourOf(it.at) } ?: "19:00") }
     var busy by remember { mutableStateOf("") }
@@ -936,7 +939,9 @@ private fun Publish(post: SocialPost, n: Int, caption: String, later: Boolean? =
     Sheet(onClose) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 28.dp).verticalScroll(rememberScrollState())) {
             Text("Publica a Instagram", style = Type.xl); Muted("$name: ${t.title}")
-            Segmented(listOf("now" to "Ara", "later" to "Programa"), mode, { mode = it }, Modifier.padding(top = 14.dp))
+            Segmented(listOf("now" to "Ara", "later" to "Programa") + (if (post.story) listOf("link" to "Amb enllaç") else emptyList()), mode, { mode = it }, Modifier.padding(top = 14.dp))
+            if (mode == "link") Text("Instagram no deixa posar l'enllaç des de Maite. S'obre Instagram amb la story: tria Story i afegeix-hi l'adhesiu Enllaç amb ${link.removePrefix("https://")}, que ja estarà copiat." +
+                (if (was != null) " Deixa de ser programada." else ""), style = Type.sm, color = T.muted, modifier = Modifier.padding(top = 12.dp))
             if (mode == "later") {
                 Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Bottom) {
                     DateField("Dia", date, { date = it }, Modifier.weight(1f), min = TODAY)
@@ -949,7 +954,7 @@ private fun Publish(post: SocialPost, n: Int, caption: String, later: Boolean? =
                 Art(t, post.v, post.photo, post.texts, Modifier.width(120.dp).clip(RoundedCornerShape(12.dp)))
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
-                    if (post.story) Text("Les stories no porten copy. Instagram no deixa afegir-hi l'enllaç des d'aquí: l'adreça de la web ja hi surt escrita.", style = Type.sm, color = T.muted)
+                    if (post.story) Text("Les stories no porten copy. Per posar-hi l'enllaç, tria Amb enllaç.", style = Type.sm, color = T.muted)
                     else if (caption.isNotEmpty()) Text(caption, style = Type.sm, maxLines = 12, overflow = TextOverflow.Ellipsis)
                     else Text("Aquest post encara no té copy: es publicarà sense text.", style = Type.sm, color = T.warningText)
                     if (first) Text("Més endavant el deixa al perfil, per publicar quan vulguis.", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 8.dp))
@@ -968,7 +973,19 @@ private fun Publish(post: SocialPost, n: Int, caption: String, later: Boolean? =
                         busy = ""
                     }
                 }, look = Look.Danger, busy = busy == "cancel", enabled = busy.isEmpty())
-                Btn(if (mode == "now") "Publica ara" else if (was != null) "Desa la programació" else "Programa", {
+                if (mode == "link") Btn("Obre a Instagram", {
+                    busy = "go"
+                    scope.launch {
+                        try {
+                            // A programmed story is unprogrammed first, so it doesn't go out twice
+                            if (was != null) Maite.social = Api.put<Social>("social", mapOf("schedule" to mapOf("id" to post.id)))
+                            toInstagram(context, t, post, link)
+                            Toasts.done("Enllaç copiat")
+                        } catch (e: Exception) { Toasts.error(e) }
+                        busy = ""
+                    }
+                }, icon = R.drawable.ic_external_link, busy = busy == "go", enabled = busy.isEmpty(), small = false)
+                else Btn(if (mode == "now") "Publica ara" else if (was != null) "Desa la programació" else "Programa", {
                     busy = "go"
                     scope.launch {
                         try {
@@ -1073,8 +1090,24 @@ private fun www(link: String): String {
     val l = link.trim().removePrefix("https://").removePrefix("http://").removeSuffix("/").ifEmpty { "casavellarural.com" }
     return if (l.startsWith("www.")) l else "www.$l"
 }
-/** The stories send people to book a table: the web's table page, unless the menu has its own address (catalog.ts tableLink) */
-private fun tableLink(link: String): String = www(link).let { if (it == "www.casavellarural.com") "www.casavellarural.com/#taula" else it }
+/** The stories write the web's name, and the link to book a table goes in Instagram's link sticker (catalog.ts storyText) */
+private fun storyText(link: String): String = www(link).let { if (it == "www.casavellarural.com") "casavellarural.com" else it }
+/** The link for a story's sticker: a menu's stories go to the table booking page, any other story to the web (catalog.ts storyLink) */
+private fun storyLink(menu: Boolean) = if (menu) "https://www.casavellarural.com/#taula" else "https://www.casavellarural.com"
+
+/** A story published by hand from Instagram, to add the link sticker Maite can't add: the JPEG goes to Instagram's own
+ *  sharing (Feed, Story…) and the link is on the clipboard */
+private suspend fun toInstagram(context: Context, t: Template, post: SocialPost, link: String) {
+    val big = Renderer.full(t.id, post.v, post.photo, post.texts)
+    val file = java.io.File(context.cacheDir, "social").apply { mkdirs() }.let { java.io.File(it, "story.jpg") }
+    withContext(Dispatchers.IO) { file.writeBytes(jpeg(big, 1920, 92)) }
+    (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("Enllaç", link))
+    val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("image/jpeg").putExtra(android.content.Intent.EXTRA_STREAM, uri)
+        .addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    val insta = android.content.Intent(send).setPackage("com.instagram.android")
+    context.startActivity(if (insta.resolveActivity(context.packageManager) != null) insta else android.content.Intent.createChooser(send, "Comparteix la story"))
+}
 /** The days a menu runs, as the cover writes them (catalog.ts datesText): «Del 18 de gener al 29 de març», «De l'1 d'abril a l'11 de maig» */
 private fun datesText(from: String, until: String): String {
     if (from.isEmpty()) return ""
@@ -1096,9 +1129,9 @@ private fun menuSlides(m: Menu, dishes: Int): MenuMade {
     val cover = listOf("La Casa Vella, El Bedorc", m.kicker.trim(), m.title.trim(), dates, m.subtitle.trim())
     val menu: List<String?> = listOf(m.subtitle.trim(), m.name.trim()) + (0 until dishes).map { m.dishes.getOrElse(it) { "" }.trim() } +
         listOf(m.drinks.trim(), if (price.isNotEmpty()) "$price€" else "", "persona", "Reserva a", link)
-    val story = listOf(m.kicker.trim(), m.title.trim(), m.subtitle.trim(), whenLine, tableLink(m.link)).mapIndexed { i, x -> m.story.getOrNull(i) ?: x }
+    val story = listOf(m.kicker.trim(), m.title.trim(), m.subtitle.trim(), whenLine, storyText(m.link)).mapIndexed { i, x -> m.story.getOrNull(i) ?: x }
     return MenuMade(Slide("PostMenuCover", 0, m.photo, cover), listOf(Slide("PostMenu", 0, "", menu)),
-        Slide("StoryPoster", 0, m.photo, listOf("La Casa Vella, El Bedorc") + story), Slide("StoryMenu", 0, "", menu.dropLast(1) + tableLink(m.link)))
+        Slide("StoryPoster", 0, m.photo, listOf("La Casa Vella, El Bedorc") + story), Slide("StoryMenu", 0, "", menu.dropLast(1) + storyText(m.link)))
 }
 
 /** A first caption for the menu, to change before it goes out (catalog.ts menuCaption) */

@@ -46,8 +46,8 @@ OG_IMAGE = 'img/hero-vinyes-cel.jpg'
 # Ad tags. They load only after the guest accepts cookies; while all are empty
 # the page loads no tags and shows no cookie banner.
 META_PIXEL_ID = ''           # Meta Events Manager, the Pixel's ID (digits only)
-GOOGLE_TAG_ID = ''           # Google tag: GA4 'G-…' or Google Ads 'AW-…'
-GOOGLE_ADS_CONVERSION = ''   # Google Ads, the booking conversion: 'AW-…/label'
+GOOGLE_TAG_ID = 'AW-18519911811'  # Google tag: GA4 'G-…' or Google Ads 'AW-…'
+GOOGLE_ADS_CONVERSION = 'AW-18519911811/r1CdCI6Xx6kdEIPb_f5E'  # Google Ads, the booking conversion «Reserva»
 # PostHog (EU), the site's own analytics: full tracking and session recordings for guests who accept
 # cookies, a cookieless count for those who reject them. The project token is public by design.
 POSTHOG_KEY = 'phc_wKuEYoNuGTakEhSHMUcAtm8Ms9xsKTpkMfSXuxiAQj69'

@@ -766,7 +766,7 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
               <Field label="Begudes" value={m.drinks} onChange={set('drinks')} placeholder="Vi del Penedès, aigua, cafè" />
               <Field label="Preu per persona (€)" value={m.price} onChange={v => set('price')(v.replace(/[^\d,.]/g, ''))} inputMode="decimal" />
             </div>
-            <Field label="Web per reservar" value={m.link} onChange={set('link')} help="Surt al menú i a les stories. Instagram no deixa posar-hi l'enllaç des d'aquí." />
+            <Field label="Web per reservar" value={m.link} onChange={set('link')} help="Surt al menú. Les stories porten a reservar taula (www.casavellarural.com/#taula). Instagram no deixa posar-hi l'enllaç des d'aquí." />
             <div className="flex justify-between"><Button size="sm" variant="ghost" onPress={() => setStep('cover')}>Enrere</Button><Button size="sm" onPress={() => setStep('stories')}>Següent</Button></div>
           </>}
           {step === 'stories' && <>

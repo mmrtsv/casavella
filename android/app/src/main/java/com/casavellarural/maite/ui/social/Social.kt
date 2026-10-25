@@ -1073,6 +1073,8 @@ private fun www(link: String): String {
     val l = link.trim().removePrefix("https://").removePrefix("http://").removeSuffix("/").ifEmpty { "casavellarural.com" }
     return if (l.startsWith("www.")) l else "www.$l"
 }
+/** The stories send people to book a table: the web's table page, unless the menu has its own address (catalog.ts tableLink) */
+private fun tableLink(link: String): String = www(link).let { if (it == "www.casavellarural.com") "www.casavellarural.com/#taula" else it }
 /** The days a menu runs, as the cover writes them (catalog.ts datesText): «Del 18 de gener al 29 de març», «De l'1 d'abril a l'11 de maig» */
 private fun datesText(from: String, until: String): String {
     if (from.isEmpty()) return ""
@@ -1094,9 +1096,9 @@ private fun menuSlides(m: Menu, dishes: Int): MenuMade {
     val cover = listOf("La Casa Vella, El Bedorc", m.kicker.trim(), m.title.trim(), dates, m.subtitle.trim())
     val menu: List<String?> = listOf(m.subtitle.trim(), m.name.trim()) + (0 until dishes).map { m.dishes.getOrElse(it) { "" }.trim() } +
         listOf(m.drinks.trim(), if (price.isNotEmpty()) "$price€" else "", "persona", "Reserva a", link)
-    val story = listOf(m.kicker.trim(), m.title.trim(), m.subtitle.trim(), whenLine, link).mapIndexed { i, x -> m.story.getOrNull(i) ?: x }
+    val story = listOf(m.kicker.trim(), m.title.trim(), m.subtitle.trim(), whenLine, tableLink(m.link)).mapIndexed { i, x -> m.story.getOrNull(i) ?: x }
     return MenuMade(Slide("PostMenuCover", 0, m.photo, cover), listOf(Slide("PostMenu", 0, "", menu)),
-        Slide("StoryPoster", 0, m.photo, listOf("La Casa Vella, El Bedorc") + story), Slide("StoryMenu", 0, "", menu))
+        Slide("StoryPoster", 0, m.photo, listOf("La Casa Vella, El Bedorc") + story), Slide("StoryMenu", 0, "", menu.dropLast(1) + tableLink(m.link)))
 }
 
 /** A first caption for the menu, to change before it goes out (catalog.ts menuCaption) */
@@ -1281,7 +1283,7 @@ private fun Menus(data: Social, toEdit: String = "", onOpened: () -> Unit = {}) 
                     for (i in 0 until defaults.dishes) Field("Plat ${i + 1}", m.dishes.getOrElse(i) { "" }, { v -> m = m.copy(dishes = List(defaults.dishes) { k -> if (k == i) v else m.dishes.getOrElse(k) { "" } }) })
                     Field("Begudes", m.drinks, { m = m.copy(drinks = it) }, placeholder = "Vi del Penedès, aigua, cafè")
                     Field("Preu per persona (€)", m.price, { v -> m = m.copy(price = v.filter { it.isDigit() || it == ',' || it == '.' }) }, type = KeyboardType.Decimal)
-                    Field("Web per reservar", m.link, { m = m.copy(link = it) }, help = "Surt al menú i a les stories. Instagram no deixa posar-hi l'enllaç des d'aquí.")
+                    Field("Web per reservar", m.link, { m = m.copy(link = it) }, help = "Surt al menú. Les stories porten a reservar taula (www.casavellarural.com/#taula). Instagram no deixa posar-hi l'enllaç des d'aquí.")
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Btn("Enrere", { step = "cover" }, look = Look.Ghost); Btn("Següent", { step = "stories" })
                     }

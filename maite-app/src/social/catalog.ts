@@ -74,6 +74,9 @@ export const MENU_EXAMPLE: Menu = {
 };
 // The web address as the menu writes it: without https://, with www.
 export const www = (link: string) => { const l = link.trim().replace(/^https?:\/\//, '').replace(/\/$/, '') || 'casavellarural.com'; return /^www\./.test(l) ? l : 'www.' + l; };
+// The stories send people to book a table: the web's table page, unless the menu has its own address
+export const TABLE = 'www.casavellarural.com/#taula';
+export const tableLink = (link: string) => { const l = www(link); return l === 'www.casavellarural.com' ? TABLE : l; };
 // The days a menu runs, as the cover writes them: «Del 18 de gener al 29 de març», «De l'1 d'abril a l'11 de maig», «El 6 de gener»
 export function datesText(from: string, until: string) {
   if (!from) return '';
@@ -91,11 +94,11 @@ export function menuSlides(m: Menu): { post: Slide & { slides: Slide[] }; story:
   const cover = ['La Casa Vella, El Bedorc', m.kicker.trim(), m.title.trim(), dates, m.subtitle.trim()];
   const dishes = Array.from({ length: MENU_DISHES }, (_, i) => (m.dishes[i] || '').trim());
   const menu = [m.subtitle.trim(), m.name.trim(), ...dishes, m.drinks.trim(), price ? `${price}€` : '', 'persona', 'Reserva a', link];
-  const story = [m.kicker.trim(), m.title.trim(), m.subtitle.trim(), when, link].map((x, i) => m.story?.[i] ?? x);
+  const story = [m.kicker.trim(), m.title.trim(), m.subtitle.trim(), when, tableLink(m.link)].map((x, i) => m.story?.[i] ?? x);
   return {
     post: { tpl: 'PostMenuCover', v: 0, photo: m.photo, texts: cover, slides: [{ tpl: 'PostMenu', v: 0, photo: '', texts: menu }] },
     story: { tpl: 'StoryPoster', v: 0, photo: m.photo, texts: ['La Casa Vella, El Bedorc', ...story] },
-    storyMenu: { tpl: 'StoryMenu', v: 0, photo: '', texts: menu },
+    storyMenu: { tpl: 'StoryMenu', v: 0, photo: '', texts: [...menu.slice(0, -1), tableLink(m.link)] },
   };
 }
 // The lines of the announcement story that can be changed, in order (Menu.story)

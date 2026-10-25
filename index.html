@@ -2436,25 +2436,28 @@ async function loadOpenings() {
   full = new Set(res && Array.isArray(res.open) ? res.open.filter(x => !x.free).map(x => x.at) : []);
   const left = openings();
   topenPick.set(left.includes(keep) ? keep : left[0] || '', true);
+  showMenus();
   if (!left.length) tnote.textContent = tr(`Ja no queden places per a ${diners(n)}.`, `Ya no quedan plazas para ${diners(n)}.`, `There are no places left for ${diners(n)}.`) + ' ' + TABLE_CONTACT;
 }
 TF.people.addEventListener('change', loadOpenings);
-TF.open.addEventListener('change', () => TF.open.closest('.field').querySelector('.pick').removeAttribute('aria-invalid'));
+TF.open.addEventListener('change', () => { TF.open.closest('.field').querySelector('.pick').removeAttribute('aria-invalid'); showMenus(); });
 function applyTables(R) {
   TABLES = R;
   if (TF.people.value !== 'more' && +TF.people.value > R.maxParty) tpeoplePick.set(String(R.maxParty), true);
   if (!tb.hidden && !tb.classList.contains('done')) openTable();
 }
-// The menus made in Maite (Xarxes socials › Menú) that haven't ended, as their image and their days
+// The menus made in Maite (Xarxes socials › Menú) that haven't ended, as their image and their days. Only the one for the picked day shows.
 const menuDays = (from, until) => {
   const d = x => new Date(x + 'T12:00').toLocaleDateString(LOC, { day: 'numeric', month: 'long' }).replace(/’/g, "'");
   const l = x => [1, 11].includes(+x.slice(8, 10));
   if (!until || until === from) return capFirst(tr((l(from) ? "l'" : 'el ') + d(from), 'el ' + d(from), d(from)));
   return tr((l(from) ? "De l'" : 'Del ') + d(from) + (l(until) ? " a l'" : ' al ') + d(until), `Del ${d(from)} al ${d(until)}`, `From ${d(from)} to ${d(until)}`);
 };
-function applyMenus(list) {
-  const box = $('tbMenus');
-  box.replaceChildren(...list.filter(m => m.image && m.from).map(m => {
+let MENUS = [];
+function applyMenus(list) { MENUS = list.filter(m => m.image && m.from); showMenus(); }
+function showMenus() {
+  const box = $('tbMenus'), day = tableForm.hidden && !tb.classList.contains('done') ? '' : TF.open.value.slice(0, 10);
+  box.replaceChildren(...MENUS.filter(m => day && m.from <= day && day <= (m.until || m.from)).map(m => {
     const f = document.createElement('figure'), img = document.createElement('img'), c = document.createElement('figcaption');
     Object.assign(img, { src: m.image, alt: m.alt, width: 1080, height: 1350, loading: 'lazy' });
     c.textContent = menuDays(m.from, m.until);
@@ -2464,13 +2467,14 @@ function applyMenus(list) {
   box.parentElement.classList.toggle('menus', !box.hidden);
 }
 // The page says so when the web doesn't take tables or there's no opening ahead; otherwise each visit starts a fresh table
-function tableMessage(title, text) { tableForm.hidden = true; tnote.textContent = ''; $('tbDone').hidden = false; $('tbDone').querySelector('h3').textContent = title; $('tbDoneText').textContent = text; }
+function tableMessage(title, text) { tableForm.hidden = true; tnote.textContent = ''; $('tbDone').hidden = false; $('tbDone').querySelector('h3').textContent = title; $('tbDoneText').textContent = text; showMenus(); }
 function openTable() {
   if (tb.classList.contains('done')) { tb.classList.remove('done'); tableForm.reset(); TF.open.value = ''; }
   if (!TABLES.online) return tableMessage(tr('Reserves per telèfon', 'Reservas por teléfono', 'Bookings by phone'), TABLE_CONTACT);
   if (!TABLES.open.some(at => at.slice(0, 10) >= iso(new Date())))
     return tableMessage(tr('Ara no hi ha dies oberts', 'Ahora no hay días abiertos', 'No open days right now'), tr("El restaurant obre en dates concretes. Quan n'hi hagi, les veuràs aquí.", 'El restaurante abre en fechas concretas. Cuando haya, las verás aquí.', 'The restaurant opens on specific dates. When there are some, you will see them here.') + ' ' + TABLE_CONTACT);
   tableForm.hidden = false; $('tbDone').hidden = true; $('tbDone').querySelector('h3').textContent = T('Us esperem a taula');
+  showMenus();
   tpeoplePick.set(TF.people.value || '2', true);
   loadOpenings();
 }

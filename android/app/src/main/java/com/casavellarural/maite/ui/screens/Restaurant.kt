@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.casavellarural.maite.R
 import com.casavellarural.maite.data.Api
+import com.casavellarural.maite.data.ERRORS
 import com.casavellarural.maite.data.ApiError
 import com.casavellarural.maite.data.Maite
 import com.casavellarural.maite.data.RestaurantSettings
@@ -379,6 +380,7 @@ private fun Openings(cfg: RestaurantSettings) {
         }
         ErrorNote(err)
         Btn("Desa", {
+            if ((maxParty.toIntOrNull() ?: 0) > (seats.toIntOrNull() ?: 0)) { err = ERRORS.getValue("max_party"); return@Btn }
             busy = true; err = ""
             scope.launch {
                 try {

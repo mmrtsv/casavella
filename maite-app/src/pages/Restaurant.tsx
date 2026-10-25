@@ -8,7 +8,7 @@ import { addDays, cap, day, euro, iso, longDay, parse, TODAY } from '../lib/date
 import { setSettings, useStore } from '../lib/store';
 import { atOf, putTable, seated, useTables } from '../lib/tables';
 import { useGuard } from '../lib/guard';
-import { SOURCE } from '../lib/words';
+import { ERRORS, SOURCE } from '../lib/words';
 import { Dialog } from '../parts/Sheet';
 import { Check, Choice, Field } from '../parts/fields';
 import { done, toastError } from '../parts/toast';
@@ -301,6 +301,7 @@ function Openings() {
   const add = () => { const at = `${day0}T${time}`; if (day0 >= TODAY && /^\d\d:\d\d$/.test(time) && !f.open.includes(at)) setF(x => ({ ...x, open: [...x.open, at].sort() })); };
   const dirty = JSON.stringify(f) !== JSON.stringify(toForm(R));
   const save = async () => {
+    if (Number(f.maxParty) > Number(f.seats)) { setErr(ERRORS.max_party); return false; }
     setBusy(true); setErr(''); let ok = false;
     try {
       const next = await api<Settings>('settings', { method: 'PUT', body: { restaurant: { ...f, maxParty: Number(f.maxParty), minHours: Number(f.minHours), seats: Number(f.seats) } } });

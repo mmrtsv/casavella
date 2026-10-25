@@ -55,6 +55,8 @@ export async function onRequestPut({ request, env, data }) {
     const open = [...new Set([].concat(r.open || []))].filter(a => isAt(a) && a.slice(0, 10) >= t).sort();
     const R = { online: !!r.online, maxParty: int(r.maxParty), minHours: int(r.minHours), seats: int(r.seats), open };
     if (!ok(R.seats, 1, 500) || !ok(R.maxParty, 1, 50) || !ok(R.minHours, 0, 72) || open.length > 400) return json({ error: 'restaurant' }, 400);
+    // A table can't seat more people than the day has places
+    if (R.maxParty > R.seats) return json({ error: 'max_party' }, 400);
     S.restaurant = R;
   }
   await env.MAITE.put('settings', JSON.stringify({ ...S, by: data.user, at: new Date().toISOString() }));

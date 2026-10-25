@@ -8,7 +8,7 @@ Web de La Casa Vella, casa de poble familiar al Bedorc (1898): allotjaments, res
 | --- | --- |
 | `index.html` | Versió de treball. Conté tota la pàgina (HTML, CSS i JavaScript) i les eines de revisió: el selector de propostes, la vista mòbil (tecla M) i la franja d'esborrany. |
 | `build.py` | Genera la versió per al domini a `dist/`. |
-| `dist/` | Versió per publicar: document HTML complet, etiquetes per a Google i xarxes, sense les eines de revisió. |
+| `dist/` | Versió per publicar: una pàgina per idioma (`index.html`, `es/`, `en/`) amb les etiquetes per a Google i xarxes i sense les eines de revisió, `robots.txt` i `sitemap.xml`. |
 | `maite-app/` | Maite, el back office (React, Vite, HeroUI). Es construeix a `dist/maite/` (vegeu més avall). Com està fet i quines llibreries fa servir: `maite-app/README.md`. |
 | `android/` | Maite per a Android: app nativa (Compose) amb tot el que fa la web, per instal·lar a mà (vegeu `android/README.md`). |
 | `lib/` | Lògica compartida de les funcions: reserves i preus (`booking.js`), Maite (`maite.js`), contingut dels allotjaments (`stays.js`) i taules del restaurant (`restaurant.js`). |
@@ -33,12 +33,16 @@ Web de La Casa Vella, casa de poble familiar al Bedorc (1898): allotjaments, res
 
 ## Idiomes
 
-La web es veu en català, castellà o anglès. Per defecte agafa el primer d'aquests tres que trobi als idiomes del navegador (si no n'hi ha cap, anglès), i el selector CA ES EN de la capçalera (al menú en mòbil) desa l'elecció. També es pot forçar amb `?lang=es`.
+La web es veu en català, castellà o anglès, cada idioma a la seva adreça: `/` (català), `/es/` i `/en/`. `build.py` escriu les tres pàgines ja traduïdes, perquè Google i els assistents d'IA les llegeixin sense executar JavaScript. Qui obre `/` per primer cop va a l'idioma del navegador (el primer de català, castellà o anglès; si no n'hi ha cap, anglès); després, al de l'última pàgina que ha vist o al que ha triat amb el selector CA ES EN de la capçalera (al menú en mòbil). Ho fa `functions/_middleware.js` amb la galeta `lcv-lang`. Els enllaços antics amb `?lang=es` porten a `/es/`. Els rastrejadors, que no envien idioma, llegeixen cada pàgina on és. La versió de revisió (`index.html` sol) continua traduint al navegador i accepta `?lang=es`.
 
 - `index.html` és escrit en català. El diccionari `I18N` (al principi del codi) té el castellà i l'anglès de cada text, amb el text català com a clau: si canvies o afegeixes un text a la pàgina, afegeix-hi l'entrada o sortirà en català.
 - El text que genera el codi (calendari, preus, avisos, reserva) passa per `tr('català', 'castellano', 'English')`.
 - Els textos dels allotjaments que es canvien a Maite només existeixen en català: en castellà i anglès la pàgina mostra els que té traduïts.
 - Els correus a l'hoste (reserva confirmada o pendent i resposta al formulari de contacte) surten en l'idioma en què ha fet servir la web: la pàgina l'envia amb la reserva i el formulari, i es desa a Stripe. Els avisos a la Casa Vella són en català i diuen en quin idioma escriure a l'hoste. La vista prèvia de Maite (Correus) els mostra en català.
+
+## Cercadors i assistents d'IA
+
+`build.py` posa a cada pàgina el títol i la descripció del seu idioma, l'enllaç canònic, les alternatives d'idioma (`hreflang`) i les dades estructurades (JSON-LD: l'allotjament amb els quatre allotjaments, l'adreça, el telèfon, les hores d'entrada i sortida i els serveis, i el restaurant). També escriu `robots.txt` (tots els rastrejadors, els d'IA inclosos, poden llegir la web; `/api/` no) i `sitemap.xml`. `/llms.txt` és una funció (`functions/llms.txt.js`) amb els fets de la casa en text pla i els preus, les normes i els dies del restaurant que hi ha a Maite en aquell moment. No hi ha puntuació de Google a les dades estructurades: Google no accepta les que marca el mateix negoci. El pla de tot el que no es fa des del codi (Google Business Profile, Search Console, directoris…) és a `docs/seo.md`.
 
 ## Anuncis (Meta i Google)
 

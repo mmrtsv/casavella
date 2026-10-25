@@ -887,7 +887,7 @@ footer { padding-bottom: 32px !important; }
     <div class="tb-main">
       <form id="eventForm" class="bp-form" novalidate aria-label="Demanar un esdeveniment">
         <p class="ev-intro">Si voleu compartir un dia especial amb la família o els amics (un aniversari, un dinar de colla, una celebració) i no trobeu el dia que us va bé, expliqueu-nos què teniu al cap. Us proposarem el dia, l'hora i el menú.</p>
-        <div class="bp-row field"><label class="label" id="lbEpeople">Persones</label><button type="button" class="pick" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbEpeople epeopleVal"><span class="val" id="epeopleVal">2 persones</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><input type="hidden" id="epeople" value="2"></div>
+        <div class="bp-row field"><label class="label" id="lbEpeople">Persones</label><button type="button" class="pick" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lbEpeople epeopleVal"><span class="val" id="epeopleVal">8 persones</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><input type="hidden" id="epeople" value="8"></div>
         <div class="bp-row"><label class="label" for="emsg">Què us agradaria?</label><textarea id="emsg" rows="4" maxlength="2000" placeholder="Un dinar d'aniversari un dissabte de novembre, un menú per a la colla…"></textarea></div>
         <div class="bp-row"><label class="label" for="ename">Nom i cognoms</label><input id="ename" autocomplete="name" maxlength="100" placeholder="Com et dius?"></div>
         <div class="bp-two">
@@ -2542,15 +2542,15 @@ tableForm.addEventListener('submit', async e => {
   tnote.textContent = tableError(res);
   if (res.error === 'full' || res.error === 'too_soon' || res.error === 'closed') loadOpenings().then(() => { tnote.textContent = tableError(res); });
 });
-// ---- Restaurant: an event on a day of their choosing, for up to 16 people (/api/event). A request by email: the house answers with a day and a menu. ----
+// ---- Restaurant: an event on a day of their choosing, for 8 to 16 people (/api/event). A request by email: the house answers with a day and a menu. ----
 const ev = $('esdeveniment'), eventForm = $('eventForm'), enote = $('eventNote'), eventBtn = eventForm.querySelector('.bp-pay');
 const EF = { people: $('epeople'), msg: $('emsg'), name: $('ename'), email: $('eemail'), phone: $('ephone'), terms: $('eterms') };
-const epeoplePick = makeSelect(EF.people, () => Array.from({ length: 16 }, (_, i) => ({ value: String(i + 1), text: diners(i + 1) })));
+const epeoplePick = makeSelect(EF.people, () => Array.from({ length: 9 }, (_, i) => ({ value: String(i + 8), text: diners(i + 8) })));
 $('epeopleList').classList.add('long');
 // Each visit after a sent request starts a fresh one
 function openEvent() {
   if (ev.classList.contains('done')) { ev.classList.remove('done'); eventForm.reset(); eventForm.hidden = false; $('evDone').hidden = true; }
-  epeoplePick.set(EF.people.value || '2', true);
+  epeoplePick.set(EF.people.value || '8', true);
 }
 eventForm.addEventListener('submit', async e => {
   e.preventDefault();

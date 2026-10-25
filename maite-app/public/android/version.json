@@ -1,5 +1,5 @@
 {
-  "versionCode": 16,
-  "version": "2.14",
-  "notes": "Es pot canviar una taula del restaurant (a Taules i a Cobrat), i el Calendari té una fila per al restaurant."
+  "versionCode": 17,
+  "version": "2.15",
+  "notes": "Restaurant: les persones per taula no poden ser més que les places."
 }

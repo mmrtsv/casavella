@@ -18,8 +18,8 @@ android {
         applicationId 'com.casavellarural.maite'
         minSdk 26
         targetSdk 35
-        versionCode 16
-        versionName '2.14'
+        versionCode 17
+        versionName '2.15'
         buildConfigField 'String', 'BASE_URL', '"https://maite.casavellarural.com"'
         buildConfigField 'String', 'CF_CLIENT_ID', "\"${env('MAITE_CF_CLIENT_ID')}\""
         buildConfigField 'String', 'CF_CLIENT_SECRET', "\"${env('MAITE_CF_CLIENT_SECRET')}\""

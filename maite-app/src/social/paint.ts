@@ -73,6 +73,8 @@ export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?:
   if (img && inLibrary(photo)) img.alt = LIBRARY.find(p => p.src === photo)!.alt;
   // Menus saved before the web went in bold had «Reserva a casavellarural.com» in one line, and the WhatsApp after it
   if ((t.id === 'PostMenu' || t.id === 'StoryMenu') && texts && /^Reserva a \S/.test(texts[9] || '')) texts = [...texts.slice(0, 9), 'Reserva a', www(texts[9]!.slice(10))];
+  // Stories saved while they wrote the table page's address show the web's name now (the link goes in the sticker)
+  if ((t.id === 'StoryPoster' || t.id === 'StoryMenu') && texts?.some(x => x === 'www.casavellarural.com/#taula')) texts = texts.map(x => x === 'www.casavellarural.com/#taula' ? 'casavellarural.com' : x);
   if (texts?.length) {
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     for (let i = 0, n = walk.nextNode(); n; n = walk.nextNode()) {

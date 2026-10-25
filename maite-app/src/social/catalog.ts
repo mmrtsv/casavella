@@ -61,7 +61,7 @@ export type Slide = { tpl: string; v: number; photo: string; texts?: (string | n
 // the menu. The words go in the templates' text lines, in order (textSlots); an empty one is hidden, null keeps the template's.
 // from, until: the first and last day (YYYY-MM-DD); dates is the line written from them (older menus only have that line).
 // story: the announcement story's own words, one per line after the first (null follows the menu). image: the menu as a JPEG, for the restaurant's booking page on the web while the menu runs.
-// link: the web address on the menu and on the stories (Instagram's API can't add a link sticker)
+// link: the web address on the menu and on the stories (Instagram's API can't add a link sticker: see storyLink)
 export type Menu = {
   photo: string; kicker: string; title: string; subtitle: string; dates: string; from: string; until: string; name: string; dishes: string[];
   drinks: string; price: string; link: string; story: (string | null)[]; image: string;
@@ -74,9 +74,11 @@ export const MENU_EXAMPLE: Menu = {
 };
 // The web address as the menu writes it: without https://, with www.
 export const www = (link: string) => { const l = link.trim().replace(/^https?:\/\//, '').replace(/\/$/, '') || 'casavellarural.com'; return /^www\./.test(l) ? l : 'www.' + l; };
-// The stories send people to book a table: the web's table page, unless the menu has its own address
-export const TABLE = 'www.casavellarural.com/#taula';
-export const tableLink = (link: string) => { const l = www(link); return l === 'www.casavellarural.com' ? TABLE : l; };
+// The stories write the web's name, and the link to book a table goes in Instagram's link sticker (storyLink), which
+// Maite can't add itself; a menu with its own address writes that one
+export const storyText = (link: string) => { const l = www(link); return l === 'www.casavellarural.com' ? 'casavellarural.com' : l; };
+// The link for a story's sticker: a menu's stories go to the table booking page, any other story to the web
+export const storyLink = (menu: boolean) => menu ? 'https://www.casavellarural.com/#taula' : 'https://www.casavellarural.com';
 // The days a menu runs, as the cover writes them: «Del 18 de gener al 29 de març», «De l'1 d'abril a l'11 de maig», «El 6 de gener»
 export function datesText(from: string, until: string) {
   if (!from) return '';
@@ -94,11 +96,11 @@ export function menuSlides(m: Menu): { post: Slide & { slides: Slide[] }; story:
   const cover = ['La Casa Vella, El Bedorc', m.kicker.trim(), m.title.trim(), dates, m.subtitle.trim()];
   const dishes = Array.from({ length: MENU_DISHES }, (_, i) => (m.dishes[i] || '').trim());
   const menu = [m.subtitle.trim(), m.name.trim(), ...dishes, m.drinks.trim(), price ? `${price}€` : '', 'persona', 'Reserva a', link];
-  const story = [m.kicker.trim(), m.title.trim(), m.subtitle.trim(), when, tableLink(m.link)].map((x, i) => m.story?.[i] ?? x);
+  const story = [m.kicker.trim(), m.title.trim(), m.subtitle.trim(), when, storyText(m.link)].map((x, i) => m.story?.[i] ?? x);
   return {
     post: { tpl: 'PostMenuCover', v: 0, photo: m.photo, texts: cover, slides: [{ tpl: 'PostMenu', v: 0, photo: '', texts: menu }] },
     story: { tpl: 'StoryPoster', v: 0, photo: m.photo, texts: ['La Casa Vella, El Bedorc', ...story] },
-    storyMenu: { tpl: 'StoryMenu', v: 0, photo: '', texts: [...menu.slice(0, -1), tableLink(m.link)] },
+    storyMenu: { tpl: 'StoryMenu', v: 0, photo: '', texts: [...menu.slice(0, -1), storyText(m.link)] },
   };
 }
 // The lines of the announcement story that can be changed, in order (Menu.story)

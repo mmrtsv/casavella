@@ -11,7 +11,7 @@ import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
 import { done, toastError } from '../parts/toast';
 import { Art, Wide } from '../social/Art';
-import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, STORY_LINES, STYLES, datesText, inLibrary, menuCaption, menuSlides, type Menu, type Slide } from '../social/catalog';
+import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, STORY_LINES, STYLES, datesText, inLibrary, menuCaption, menuSlides, storyLink, type Menu, type Slide } from '../social/catalog';
 import { byId, changed, fields, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants, type Texts } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Kind, type Template } from '../social/templates';
 
@@ -1212,7 +1212,9 @@ function Publish({ post, n, caption, onClose, setData, later, first = false }: {
   const name = post.story ? 'La story' : `Post ${n}`, theName = post.story ? 'La story' : `El post ${n}`;
   const t = byId.get(post.tpl)!, was = post.schedule && new Date(post.schedule.at);
   const tomorrow = ymd(new Date(Date.now() + 864e5));
-  const [mode, setMode] = useState<'now' | 'later'>(later ?? !!post.schedule ? 'later' : 'now');
+  // link: a story published by hand from Instagram, to add the link sticker Maite can't add (storyLink)
+  const [mode, setMode] = useState<'now' | 'later' | 'link'>(later ?? !!post.schedule ? 'later' : 'now');
+  const link = storyLink(!!post.pack);
   const [date, setDate] = useState(was ? ymd(was) : post.date && post.date > ymd(new Date()) ? post.date : tomorrow);
   const [time, setTime] = useState(was ? hour(post.schedule!.at) : '19:00');
   const [busy, setBusy] = useState<'' | 'go' | 'cancel'>('');
@@ -1227,6 +1229,17 @@ function Publish({ post, n, caption, onClose, setData, later, first = false }: {
     } catch (e) { toastError(e); }
     setBusy('');
   }
+  // Downloads the story and copies its link; a programmed story is unprogrammed first, so it doesn't go out twice
+  async function byHand() {
+    setBusy('go');
+    try {
+      if (post.schedule) setData(await api<Data>('social', { method: 'PUT', body: { schedule: { id: post.id } } }));
+      save(await png(t, post.v, post.photo, post.texts), fileName(t));
+      await navigator.clipboard.writeText(link);
+      done("Story baixada i enllaç copiat");
+    } catch (e) { toastError(e); }
+    setBusy('');
+  }
   async function cancel() {
     setBusy('cancel');
     try { setData(await api<Data>('social', { method: 'PUT', body: { schedule: { id: post.id } } })); done(`${theName} ja no està programa${post.story ? 'da' : 't'}`); onClose(); }
@@ -1238,16 +1251,22 @@ function Publish({ post, n, caption, onClose, setData, later, first = false }: {
       footer={<>
         <Button variant="ghost" onPress={onClose} isDisabled={!!busy}>{first ? 'Més endavant' : 'Cancel·la'}</Button>
         {post.schedule && <Button variant="danger-soft" onPress={cancel} isPending={busy === 'cancel'} isDisabled={busy === 'go'}>{busy === 'cancel' && <Spinner size="sm" color="current" />}Desprograma</Button>}
-        <Button isPending={busy === 'go'} isDisabled={busy === 'cancel' || mode === 'later' && past} onPress={go}>
+        {mode === 'link' ? <Button isPending={busy === 'go'} isDisabled={busy === 'cancel'} onPress={byHand}>
+          {busy === 'go' ? <Spinner size="sm" color="current" /> : <Download size={15} />}Baixa i copia l'enllaç
+        </Button> : <Button isPending={busy === 'go'} isDisabled={busy === 'cancel' || mode === 'later' && past} onPress={go}>
           {busy === 'go' ? <Spinner size="sm" color="current" /> : mode === 'now' ? <Send size={15} /> : <Clock size={15} />}{mode === 'now' ? 'Publica ara' : post.schedule ? 'Desa la programació' : 'Programa'}
-        </Button>
+        </Button>}
       </>}>
       <div className="space-y-4">
         <ToggleButtonGroup aria-label="Quan" selectionMode="single" disallowEmptySelection selectedKeys={new Set([mode])}
           onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) setMode(v as typeof mode); }} size="sm">
           <ToggleButton id="now">Ara</ToggleButton>
           <ToggleButton id="later">Programa</ToggleButton>
+          {post.story && <ToggleButton id="link">Amb enllaç</ToggleButton>}
         </ToggleButtonGroup>
+        {mode === 'link' && (
+          <p className="text-sm text-muted">Instagram no deixa posar l'enllaç des de Maite. Baixa la story, publica-la des de l'app d'Instagram i afegeix-hi l'adhesiu Enllaç amb <span className="break-all">{link.replace('https://', '')}</span>, que ja estarà copiat.{post.schedule ? ' Deixa de ser programada.' : ''}</p>
+        )}
         {mode === 'later' && (
           <div className="space-y-2">
             <div className="flex flex-wrap items-end gap-3">
@@ -1260,7 +1279,7 @@ function Publish({ post, n, caption, onClose, setData, later, first = false }: {
         <div className="grid gap-4 sm:grid-cols-[160px_minmax(0,1fr)]">
           <Art t={t} v={post.v} photo={post.photo} texts={post.texts} className="w-40 rounded-xl" />
           <div className="min-w-0 space-y-2">
-            {post.story ? <p className="text-sm text-muted">Les stories no porten copy. Instagram no deixa afegir-hi l'enllaç des d'aquí: l'adreça de la web ja hi surt escrita.</p>
+            {post.story ? <p className="text-sm text-muted">Les stories no porten copy. Per posar-hi l'enllaç, tria Amb enllaç.</p>
               : caption ? <p className="max-h-72 overflow-y-auto text-sm whitespace-pre-wrap">{caption}</p> : <p className="text-sm text-warning">Aquest post encara no té copy: es publicarà sense text.</p>}
             {first && <p className="text-xs text-muted">Més endavant el deixa al perfil, per publicar quan vulguis.</p>}
             <p className="text-xs text-muted">{post.story ? "Un cop publicada, es pot esborrar des de l'app d'Instagram." : "Un cop publicat, es pot editar o esborrar des de l'app d'Instagram."}</p>

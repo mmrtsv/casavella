@@ -72,6 +72,8 @@ export default function Social() {
   const [data, setData] = useState<Data | null>(null);
   // What Crea'n un post on a template card hands to Nova publicació
   const [start, setStart] = useState<{ id: string; v: number; own: Own | null; n: number } | null>(null);
+  // The menu post whose pencil was pressed in Publicar: Nova publicació › Menú opens its pack, as Edita does there
+  const [menu, setMenu] = useState<{ id: string; n: number } | null>(null);
   useEffect(() => { loadBrandFonts(); api<Data>('social').then(setData).catch(toastError); }, []);
   const pick = (t: Tab) => { setTab(t); try { localStorage.setItem('maite-social-tab', t); } catch { /* private window */ } };
   const kind = KIND_OF[tab];
@@ -84,14 +86,14 @@ export default function Social() {
         </Tabs.List></Tabs.ListContainer>
       </Tabs>
       {HELP[tab] && <p className="mb-5 max-w-3xl text-sm text-muted">{HELP[tab]}</p>}
-      {tab === 'new' && (data ? <NewPost key={start?.n || 0} data={data} setData={setData} start={start} go={pick} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
+      {tab === 'new' && (data ? <NewPost key={`${start?.n || 0}-${menu?.n || 0}`} data={data} setData={setData} start={start} menu={menu?.id || ''} onMenuOpened={() => setMenu(m => m && { ...m, id: '' })} go={pick} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {kind && (
         <ul className={`grid gap-5 ${kind === 'post' ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-5'}`}>
-          {TEMPLATES.filter(t => t.kind === kind).map(t => <li key={t.id}><TemplateCard t={t} data={data} setData={setData} onCreate={(v, own) => { setStart({ id: t.id, v, own, n: (start?.n || 0) + 1 }); pick('new'); }} /></li>)}
+          {TEMPLATES.filter(t => t.kind === kind).map(t => <li key={t.id}><TemplateCard t={t} data={data} setData={setData} onCreate={(v, own) => { setStart({ id: t.id, v, own, n: (start?.n || 0) + 1 }); setMenu(null); pick('new'); }} /></li>)}
         </ul>
       )}
       {tab === 'calendar' && (data ? <Planner data={data} onEmpty={() => pick('posts')} onPublish={() => pick('profile')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
-      {tab === 'profile' && (data ? <Profile data={data} setData={setData} onEmpty={() => pick('posts')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
+      {tab === 'profile' && (data ? <Profile data={data} setData={setData} onEmpty={() => pick('posts')} onEditMenu={p => { setMenu({ id: p.id, n: (menu?.n || 0) + 1 }); pick('new'); }} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
     </div>
   );
 }
@@ -194,10 +196,10 @@ function Editor({ t, draft, set, look = true }: { t: Template; draft: Draft; set
 // to the profile.
 // Once a post is added it can go out from here (now or programmed), and Publicar or the calendar is one step away
 type Then = { live: boolean; go: (t: Tab) => void };
-function NewPost({ data, setData, start, go }: { data: Data; setData: (d: Data) => void; start: { id: string; v: number; own: Own | null } | null; go: (t: Tab) => void }) {
+function NewPost({ data, setData, start, menu, onMenuOpened, go }: { data: Data; setData: (d: Data) => void; start: { id: string; v: number; own: Own | null } | null; menu: string; onMenuOpened: () => void; go: (t: Tab) => void }) {
   const [how, setHow] = useState<'template' | 'prompt'>('template');
-  // From a template: a post, or a menu (Menus)
-  const [what, setWhat] = useState<'post' | 'menu'>('post');
+  // From a template: a post, or a menu (Menus); menu: a menu post to open there
+  const [what, setWhat] = useState<'post' | 'menu'>(menu ? 'menu' : 'post');
   const [insta, setInsta] = useState<Insta | null>(null);
   useEffect(() => { api<Insta>('instagram').then(setInsta).catch(() => setInsta({ connected: false })); }, []);
   const then: Then = { live: !!insta?.connected, go };
@@ -220,7 +222,7 @@ function NewPost({ data, setData, start, go }: { data: Data; setData: (d: Data) 
         </Tabs>
       )}
       {ai ? <Maker start="post" data={data} setData={setData} then={then} />
-        : what === 'menu' ? <Menus data={data} setData={setData} /> : <Composer data={data} setData={setData} start={start} then={then} />}
+        : what === 'menu' ? <Menus data={data} setData={setData} toEdit={menu} onOpened={onMenuOpened} /> : <Composer data={data} setData={setData} start={start} then={then} />}
     </>
   );
 }
@@ -587,7 +589,7 @@ const packOf = (data: Data, p: Post) => ({
   storyMenu: data.posts.find(x => x.pack === p.id && x.tpl === 'StoryMenu') || null,
 });
 
-function Menus({ data, setData }: { data: Data; setData: (d: Data) => void }) {
+function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: (d: Data) => void; toEdit?: string; onOpened?: () => void }) {
   const tomorrow = ymd(new Date(Date.now() + 864e5));
   const [step, setStep] = useState<'cover' | 'menu' | 'stories' | 'out'>('cover');
   const [m, setM] = useState<Menu>(MENU_EXAMPLE);
@@ -629,6 +631,12 @@ function Menus({ data, setData }: { data: Data; setData: (d: Data) => void }) {
     setPost(was(p, post)); setStory({ on: !!st, ...was(st, story) }); setStoryMenu({ on: !!sm, ...was(sm, storyMenu) });
     top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+  // A menu post opened from Publicar
+  useEffect(() => {
+    const p = toEdit && data.posts.find(x => x.id === toEdit);
+    if (p) edit(p);
+    if (toEdit) onOpened?.();
+  }, []);
 
   async function save() {
     setBusy(true);
@@ -758,7 +766,7 @@ function Menus({ data, setData }: { data: Data; setData: (d: Data) => void }) {
               <Field label="Begudes" value={m.drinks} onChange={set('drinks')} placeholder="Vi del Penedès, aigua, cafè" />
               <Field label="Preu per persona (€)" value={m.price} onChange={v => set('price')(v.replace(/[^\d,.]/g, ''))} inputMode="decimal" />
             </div>
-            <Field label="Web per reservar" value={m.link} onChange={set('link')} help="Surt al menú i a les stories. Instagram no deixa posar-hi l'enllaç des d'aquí." />
+            <Field label="Web per reservar" value={m.link} onChange={set('link')} help="Surt al menú. Les stories porten a reservar taula (www.casavellarural.com/#taula). Instagram no deixa posar-hi l'enllaç des d'aquí." />
             <div className="flex justify-between"><Button size="sm" variant="ghost" onPress={() => setStep('cover')}>Enrere</Button><Button size="sm" onPress={() => setStep('stories')}>Següent</Button></div>
           </>}
           {step === 'stories' && <>
@@ -888,7 +896,8 @@ function MadeEditor({ t, draft: start, caption: was, onDone, onClose }: { t: Tem
   );
 }
 
-function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) => void; onEmpty: () => void }) {
+// onEditMenu: a menu post's pencil, which opens it in Nova publicació › Menú
+function Profile({ data, setData, onEmpty, onEditMenu }: { data: Data; setData: (d: Data) => void; onEmpty: () => void; onEditMenu: (p: Post) => void }) {
   // Published posts leave the plan; the preview shows them below it, marked, and Publicats lists them, newest first
   const all = data.posts.filter(p => byId.has(p.tpl) && !p.story);
   const posts = all.filter(p => !p.published), published = all.filter(p => p.published).sort((a, b) => b.published!.at.localeCompare(a.published!.at));
@@ -1022,7 +1031,7 @@ function Profile({ data, setData, onEmpty }: { data: Data; setData: (d: Data) =>
                   </div>
                   {/* On a phone the actions go on their own line, so the title keeps its room */}
                   <div className="flex w-full justify-end sm:w-auto">
-                  <Button size="sm" variant="ghost" isIconOnly aria-label={`Edita el post ${i + 1}`} onPress={() => setEditing(p)}><Pencil size={16} /></Button>
+                  <Button size="sm" variant="ghost" isIconOnly aria-label={`Edita el post ${i + 1}`} onPress={() => (menuValues(p) ? onEditMenu(p) : setEditing(p))}><Pencil size={16} /></Button>
                   <Button size="sm" variant={open === p.id ? 'secondary' : 'ghost'} isIconOnly aria-expanded={open === p.id} aria-label={`Copy del post ${i + 1}`} onPress={() => setOpen(open === p.id ? null : p.id)}><MessageSquareText size={16} /></Button>
                   {insta?.connected && t.kind === 'post' && <>
                     <Button size="sm" variant={p.schedule ? 'secondary' : 'ghost'} isIconOnly aria-label={p.schedule ? `Canvia la programació del post ${i + 1}` : `Programa el post ${i + 1}`} onPress={() => setPublishing({ post: p, later: true })}><Clock size={16} /></Button>

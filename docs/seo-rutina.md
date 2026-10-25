@@ -2,7 +2,7 @@
 
 Lo que hace cada lunes la sesión programada de Claude (Routine «SEO setmanal de La Casa Vella»). También se puede lanzar a mano pidiéndoselo a Claude: «haz la rutina de docs/seo-rutina.md».
 
-Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne datos, verifica y redacta; una persona decide qué se publica. Todo lo que sale en la web lleva su fuente y nada se inventa (ver las reglas de `CLAUDE.md` y `.claude/rules/`). Google penaliza el contenido generado en masa sin valor propio («scaled content abuse»); por eso la rutina no crea páginas en serie: actualiza datos reales.
+Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne datos, verifica y redacta. El dueño ha decidido que la rutina integre sola en `main` cuando todas las comprobaciones pasan; el informe semanal le cuenta qué se ha publicado. Todo lo que sale en la web lleva su fuente y nada se inventa (ver las reglas de `CLAUDE.md` y `.claude/rules/`). Google penaliza el contenido generado en masa sin valor propio («scaled content abuse»); por eso la rutina no crea páginas en serie: actualiza datos reales.
 
 ## Pasos
 
@@ -48,4 +48,8 @@ Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne da
 
 7. **Informe**: `docs/informes/AAAA-MM-DD.md` en castellano, corto: qué se ha cambiado en la agenda (con las fuentes), estado de la web, visibilidad, problemas encontrados y los borradores del paso 5.
 
-8. **Entrega**: commit claro, push de la rama y pull request a `main` con el resumen del informe. El dueño lo revisa y lo integra; al integrarlo, Cloudflare publica. Si no hay ningún cambio en la agenda ni nada que reportar, no abras PR: deja el informe en la rama y termina.
+8. **Entrega**: commit claro y push de la rama. Después, si todo lo del paso 6 ha salido bien:
+   - `git fetch origin main` y `git merge origin/main` en la rama; vuelve a ejecutar `python3 build.py` y `git checkout origin/main -- dist/maite`, y repite la comprobación del paso 6.
+   - `git push origin HEAD:main`. Cloudflare publica en uno o dos minutos; comprueba con `curl` que `/` responde 200 y que la agenda nueva está en el HTML.
+   - Si algo falla (conflicto, comprobación en rojo, una fuente dudosa), no integres: abre una pull request a `main` con el problema explicado al principio, para que la revise el dueño.
+   El informe va siempre en el commit, aunque la agenda no cambie.

@@ -43,7 +43,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     colorId: waiting ? '5' : '10',
     // Read back by Maite (the back office) to list the booking and refund it
     extendedProperties: { private: { lcv: waiting ? 'pending' : 'paid', session: s.id, pi: s.payment_intent || '', amount: String(s.amount_total ?? ''),
-      guests: String(m.guests || ''), policy: m.policy || '', name: c.name || '', email: c.email || '', phone: c.phone || '' } },
+      guests: String(m.guests || ''), policy: m.policy || '', lang: m.lang || '', name: c.name || '', email: c.email || '', phone: c.phone || '' } },
   };
   // Confirmation to the guest and a notice to the house; a failed email never fails the webhook
   const notify = () => waitUntil((async () => {

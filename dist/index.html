@@ -274,13 +274,12 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .nt-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }
 .nt-actions .btn { padding: 14px 22px; }
 .nt-actions .btn[hidden] { display: none; }
-/* Cookie choice: a quiet bar at the foot of the screen, only when build.py sets an ad tag */
-.cookies { position: fixed; inset: auto 0 0; z-index: 55; padding: 18px 0 calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--paper); border-top: 1px solid var(--line); box-shadow: 0 -10px 30px rgba(0, 0, 0, .08); }
-.cookies .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 28px; }
-.cookies p { margin: 0; max-width: 62ch; font-size: 15px; }
-.ck-actions { display: flex; gap: 10px; }
-.ck-actions .btn { padding: 13px 20px; }
-@media (max-width: 560px) { .ck-actions { width: 100%; } .ck-actions .btn { flex: 1; } }
+/* Cookie choice: a small note in the corner, only when build.py sets an ad tag */
+.cookies { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 55; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; max-width: 460px; padding: 12px 14px 12px 18px; background: var(--paper); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0, 0, 0, .08); }
+.cookies p { margin: 0; flex: 1 1 200px; font-size: 13px; color: var(--muted); }
+.ck-actions { display: flex; gap: 6px; }
+.ck-actions .btn { padding: 9px 12px; font-size: 10.5px; letter-spacing: .16em; }
+@media (max-width: 480px) { .cookies { right: 16px; } }
 .cmp-more { background: none; border: 0; padding: 0; font: 500 13.5px var(--body); color: var(--basil); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
 /* Stay details popup (from the compare page) */
@@ -1228,10 +1227,8 @@ footer { padding-bottom: 32px !important; }
 </div>
 
 <div class="cookies" id="cookies" hidden role="region" aria-labelledby="ckText">
-  <div class="wrap">
-    <p id="ckText"></p>
-    <div class="ck-actions"><button type="button" class="btn" id="ckNo"></button><button type="button" class="btn solid" id="ckYes"></button></div>
-  </div>
+  <p id="ckText"></p>
+  <div class="ck-actions"><button type="button" class="btn" id="ckNo"></button><button type="button" class="btn solid" id="ckYes"></button></div>
 </div>
 
 <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Foto ampliada">
@@ -2568,7 +2565,7 @@ function decide(v) {
   }
 }
 if (adsOn) {
-  $('ckText').textContent = tr('Amb el teu permís, fem servir galetes de Google i Meta per saber quins anuncis porten a una reserva.', 'Con tu permiso, usamos cookies de Google y Meta para saber qué anuncios llevan a una reserva.', 'With your permission, we use Google and Meta cookies to see which ads lead to a booking.');
+  $('ckText').textContent = tr('Fem servir galetes per saber com ens has trobat.', 'Usamos cookies para saber cómo nos has encontrado.', 'We use cookies to see how you found us.');
   $('ckNo').textContent = tr('Rebutjar', 'Rechazar', 'Reject'); $('ckYes').textContent = tr('Acceptar', 'Aceptar', 'Accept');
   $('ckNo').onclick = () => decide('no'); $('ckYes').onclick = () => decide('yes');
   document.querySelectorAll('[data-cookies]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); ck.hidden = false; }));

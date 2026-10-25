@@ -1,14 +1,15 @@
-// Restaurant: the tables booked for a day (web and phone), a new one, cancelling, what each table paid by day,
+// Restaurant: the tables booked for a day (web and phone), a new one, changing or cancelling one, what each table paid by day,
 // and the openings (a day and a time each), seats and limits the web follows
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Spinner, Tabs } from '@heroui/react';
-import { ChevronLeft, ChevronRight, Phone, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { addDays, cap, day, euro, iso, longDay, parse, TODAY } from '../lib/dates';
 import { setSettings, useStore } from '../lib/store';
 import { atOf, putTable, seated, useTables } from '../lib/tables';
 import { useGuard } from '../lib/guard';
 import { SOURCE } from '../lib/words';
+import { takeRestaurantDay } from '../lib/ui';
 import { Dialog } from '../parts/Sheet';
 import { Check, Choice, Field } from '../parts/fields';
 import { done, toastError } from '../parts/toast';
@@ -39,9 +40,10 @@ export default function Restaurant() {
 // ---------- Tables ----------
 function Tables() {
   const R = useStore(s => s.settings)!.restaurant;
-  const [date, setDate] = useState(() => R.open.find(a => a.slice(0, 10) >= TODAY)?.slice(0, 10) || TODAY);
+  const [date, setDate] = useState(() => takeRestaurantDay() || R.open.find(a => a.slice(0, 10) >= TODAY)?.slice(0, 10) || TODAY);
   const { tables, configured, error } = useTables(addDays(date, -7), addDays(date, 90));
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<Table | null>(null);
   const [cancel, setCancel] = useState<Table | null>(null);
   const put = putTable;
 
@@ -77,14 +79,14 @@ function Tables() {
                 <h3 className="text-base font-semibold tnum">{at.slice(11)}</h3>
                 <span className="text-sm text-muted tnum">{seated(list)} de {R.seats} places</span>
               </div>
-              {list.length ? list.map(t => <Row key={t.id} t={t} onCancel={() => setCancel(t)} />) : <p className="py-3 text-sm text-muted">Cap taula.</p>}
+              {list.length ? list.map(t => <Row key={t.id} t={t} onEdit={() => setEditing(t)} onCancel={() => setCancel(t)} />) : <p className="py-3 text-sm text-muted">Cap taula.</p>}
             </div>
           );
         })}
         {rest.length > 0 && (
           <div className="mt-6">
             <h3 className="border-b border-separator pb-2 text-base font-semibold">{opens.length ? 'A una altra hora' : 'Taules'}</h3>
-            {rest.map(t => <Row key={t.id} t={t} onCancel={() => setCancel(t)} />)}
+            {rest.map(t => <Row key={t.id} t={t} onEdit={() => setEditing(t)} onCancel={() => setCancel(t)} />)}
           </div>
         )}
         {ofDay.some(t => t.cancelled) && (
@@ -111,13 +113,13 @@ function Tables() {
           </ul>
         ) : <p className="mt-2 text-sm text-muted">Cap dia obert.</p>}
       </section>
-      <NewTable isOpen={adding} date={date} tables={all} onClose={() => setAdding(false)} onSaved={t => { put(t); setDate(t.date); }} />
+      <TableForm isOpen={adding || !!editing} t={editing} date={date} tables={all} onClose={() => { setAdding(false); setEditing(null); }} onSaved={t => { put(t); setDate(t.date); }} />
       <CancelTable t={cancel} onClose={() => setCancel(null)} onSaved={put} />
     </div>
   );
 }
 
-function Row({ t, onCancel }: { t: Table; onCancel?: () => void }) {
+function Row({ t, onEdit, onCancel }: { t: Table; onEdit?: () => void; onCancel?: () => void }) {
   return (
     <div className={`grid grid-cols-[3.5rem_minmax(0,1fr)_auto] items-start gap-3 border-b border-separator py-3 text-sm ${t.cancelled ? 'text-muted' : ''}`}>
       <div className="font-semibold tnum">{t.time || 'Tot el dia'}</div>
@@ -128,29 +130,42 @@ function Row({ t, onCancel }: { t: Table; onCancel?: () => void }) {
         <div className="mt-1 text-xs text-muted">{SOURCE[t.source] || 'Maite'}</div>
         {t.paid != null && <div className="text-xs text-muted">Ha pagat {euro(t.paid)}</div>}
       </div>
-      {onCancel && t.source !== 'calendar' && <Button variant="ghost" size="sm" onPress={onCancel}>Cancel·la</Button>}
+      {onCancel && t.source !== 'calendar' && (
+        <div className="flex gap-1">
+          {onEdit && <Button variant="ghost" size="sm" onPress={onEdit}>Edita</Button>}
+          <Button variant="ghost" size="sm" onPress={onCancel}>Cancel·la</Button>
+        </div>
+      )}
     </div>
   );
 }
 
-function NewTable({ isOpen, date, tables, onClose, onSaved }: { isOpen: boolean; date: string; tables: Table[]; onClose: () => void; onSaved: (t: Table) => void }) {
+// A new table, or the one given (t) to change
+export function TableForm({ isOpen, t, date, tables, onClose, onSaved }: { isOpen: boolean; t?: Table | null; date: string; tables: Table[]; onClose: () => void; onSaved: (t: Table) => void }) {
   const R = useStore(s => s.settings)!.restaurant;
   const empty = { date, time: '', people: '2', name: '', phone: '', email: '', notes: '', source: 'phone' };
   const [f, setF] = useState(empty);
   const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
-  useEffect(() => { if (isOpen) { setF({ ...empty, date, time: R.open.find(a => a.slice(0, 10) === date)?.slice(11) || '21:00' }); setErr(''); } }, [isOpen]);
+  useEffect(() => {
+    if (!isOpen) return;
+    setF(t ? { date: t.date, time: t.time, people: t.people ? String(t.people) : '', name: t.name, phone: t.phone, email: t.email, notes: t.notes, source: t.source }
+      : { ...empty, date, time: R.open.find(a => a.slice(0, 10) === date)?.slice(11) || '21:00' });
+    setErr('');
+  }, [isOpen, t]);
   const set = (k: keyof typeof empty) => (v: string) => setF(x => ({ ...x, [k]: v }));
   // How full that opening already is, so the house can judge
   const at = `${f.date}T${f.time}`, isOpening = R.open.includes(at);
-  const taken = seated(tables.filter(t => !t.cancelled && atOf(t) === at));
+  const taken = seated(tables.filter(x => !x.cancelled && x.id !== t?.id && atOf(x) === at));
   const submit = async () => {
     setBusy(true); setErr('');
-    try { const d = await api<{ table: Table }>('restaurant', { method: 'POST', body: f }); onSaved(d.table); onClose(); done('Taula desada'); }
-    catch (e) { setErr((e as Error).message); }
+    try {
+      const d = await api<{ table: Table }>('restaurant', t ? { method: 'PATCH', body: { id: t.id, ...f } } : { method: 'POST', body: f });
+      onSaved(d.table); onClose(); done(t ? 'Taula canviada' : 'Taula desada');
+    } catch (e) { setErr((e as Error).message); }
     setBusy(false);
   };
   return (
-    <Dialog isOpen={isOpen} onClose={onClose} title="Nova taula"
+    <Dialog isOpen={isOpen} onClose={onClose} title={t ? 'Canviar la taula' : 'Nova taula'}
       footer={<><Button variant="ghost" onPress={onClose}>Cancel·la</Button><Button isPending={busy} onPress={submit}>{busy && <Spinner size="sm" color="current" />}Desa la taula</Button></>}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Dia" type="date" value={f.date} onChange={set('date')} />
@@ -159,7 +174,7 @@ function NewTable({ isOpen, date, tables, onClose, onSaved }: { isOpen: boolean;
         <Field label="Persones" value={f.people} onChange={set('people')} inputMode="numeric" />
         <Field label="Telèfon" type="tel" value={f.phone} onChange={set('phone')} inputMode="tel" />
         <Field label="Correu" type="email" value={f.email} onChange={set('email')} inputMode="email" />
-        <Choice label="Via" value={f.source} onChange={set('source')} items={SOURCES} />
+        <Choice label="Via" value={f.source} onChange={set('source')} items={f.source === 'web' ? [{ id: 'web', name: 'Web' }, ...SOURCES] : SOURCES} />
         <Field label="Comentaris" value={f.notes} onChange={set('notes')} area placeholder="Al·lèrgies, cadira per al nadó…" />
       </div>
       {err && <p role="alert" className="mt-3 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">{err}</p>}
@@ -231,14 +246,15 @@ function Paid() {
           })}
         </div>
       </section>
-      <PaidDay date={sel} list={byDay(sel)} />
+      <PaidDay date={sel} list={byDay(sel)} tables={live} />
     </div>
   );
 }
 
 // The day's tables, each with what it paid; amounts are in euros and saved one table at a time
-function PaidDay({ date, list }: { date: string; list: Table[] }) {
+function PaidDay({ date, list, tables }: { date: string; list: Table[]; tables: Table[] }) {
   const [edit, setEdit] = useState<Record<string, string>>({});
+  const [editing, setEditing] = useState<Table | null>(null);
   const [busy, setBusy] = useState('');
   useEffect(() => { setEdit({}); }, [date]);
   const shown = (t: Table) => t.paid == null ? '' : String(t.paid / 100).replace('.', ',');
@@ -264,10 +280,13 @@ function PaidDay({ date, list }: { date: string; list: Table[] }) {
           {list.map(t => {
             const dirty = edit[t.id] !== undefined && value(t) !== shown(t);
             return (
-              <li key={t.id} className="grid grid-cols-[minmax(0,1fr)_7rem_auto] items-end gap-2 border-b border-separator py-3">
-                <div className="min-w-0 text-sm">
-                  <div className="truncate font-medium">{t.name || 'Sense nom'}</div>
-                  <div className="text-xs text-muted tnum">{t.time}{t.people ? `, ${persones(t.people)}` : ''}</div>
+              <li key={t.id} className="grid grid-cols-[minmax(0,1fr)_6.5rem_auto] items-end gap-2 border-b border-separator py-3">
+                <div className="flex min-w-0 items-start gap-1 text-sm">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">{t.name || 'Sense nom'}</div>
+                    <div className="text-xs text-muted tnum">{t.time}{t.people ? `, ${persones(t.people)}` : ''}</div>
+                  </div>
+                  {t.source !== 'calendar' && <Button isIconOnly variant="ghost" size="sm" aria-label={`Edita la taula de ${t.name}`} onPress={() => setEditing(t)}><Pencil size={15} /></Button>}
                 </div>
                 <Field label="Ha pagat (€)" value={value(t)} onChange={v => setEdit(e => ({ ...e, [t.id]: v }))} inputMode="decimal" placeholder="0" />
                 <Button size="sm" variant={dirty ? 'primary' : 'secondary'} isDisabled={!dirty} isPending={busy === t.id} onPress={() => save(t)}>{busy === t.id && <Spinner size="sm" color="current" />}Desa</Button>
@@ -276,6 +295,7 @@ function PaidDay({ date, list }: { date: string; list: Table[] }) {
           })}
         </ul>
       ) : <p className="mt-2 text-sm text-muted">Cap taula aquest dia.</p>}
+      <TableForm isOpen={!!editing} t={editing} date={date} tables={tables} onClose={() => setEditing(null)} onSaved={putTable} />
     </section>
   );
 }

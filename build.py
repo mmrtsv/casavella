@@ -254,6 +254,16 @@ for lang in LANGS:
 for folder in ('img', 'fonts'):
     shutil.copytree(ROOT / folder, DIST / folder)
 
+# A real "not found": without 404.html, Cloudflare Pages answers any unknown address with the home page and a 200,
+# which search engines index as duplicates of it
+not_found = guides.page(
+    SITE_URL, 'ca', 'Pàgina no trobada (La Casa Vella)', 'Aquesta pàgina no existeix.', '/', guides.HOME,
+    {'@context': 'https://schema.org', '@type': 'WebPage', 'name': 'Pàgina no trobada'},
+    '<h1>Aquesta pàgina no existeix</h1>\n<p class="lede">Potser l\'adreça ha canviat. '
+    '<a href="/">La Casa Vella</a>, <a href="/es/">en castellano</a>, <a href="/en/">in English</a>.</p>')
+not_found = re.sub(r'<link rel="(canonical|alternate)"[^>]*>\n', '', not_found).replace('<head>\n', '<head>\n<meta name="robots" content="noindex">\n', 1)
+(DIST / '404.html').write_text(not_found, encoding='utf-8')
+
 # Crawlers: everyone may read the web, AI assistants included (named so a later default can't block them); not the API.
 AI_BOTS = ('GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'PerplexityBot', 'Perplexity-User', 'ClaudeBot', 'Claude-User',
            'Claude-SearchBot', 'Google-Extended', 'Applebot-Extended', 'Bingbot', 'Googlebot', 'CCBot', 'Meta-ExternalAgent')

@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.casavellarural.maite.R
 import com.casavellarural.maite.data.Maite
 import com.casavellarural.maite.data.TODAY
+import com.casavellarural.maite.ui.Ico
 import com.casavellarural.maite.data.addDays
 import com.casavellarural.maite.data.dayMonth
 import com.casavellarural.maite.data.longDay
@@ -91,6 +92,8 @@ fun CalendarScreen() {
         val bookings = Maite.all().filter { it.blocks && it.first < to && it.until > from }
         fun busyNight(stay: String, d: String) = bookings.any { it.stay == stay && it.first <= d && it.until > d }
         LaunchedEffect(from, span) { busy = true; runCatching { Maite.ensure(from, to) }.onFailure { Toasts.error(it) }; busy = false }
+        LaunchedEffect(from, span) { runCatching { Maite.ensureTables(from, to) } }
+        val open = Maite.settings?.restaurant?.open.orEmpty()
         fun move(next: String) { from = next; sel = null }
         fun pick(stay: String, d: String) {
             val s = sel
@@ -121,6 +124,9 @@ fun CalendarScreen() {
                                 Text(s.short, style = Type.sm, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             }
                         }
+                        Box(Modifier.height(rowH).fillMaxWidth().border(0.5.dp, T.separator).padding(start = 12.dp), contentAlignment = Alignment.CenterStart) {
+                            Text("Restaurant", style = Type.sm, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
                     val scroll = rememberScrollState()
                     LaunchedEffect(from) { scroll.scrollTo(0) }
@@ -145,13 +151,36 @@ fun CalendarScreen() {
                                 }
                             }
                         }
+                        // The restaurant: the opening times and the people booked each day; a day opens in Restaurant
+                        Row {
+                            days.forEach { d ->
+                                val list = Maite.tables.values.filter { it.date == d && !it.cancelled }
+                                val hours = open.filter { it.take(10) == d }.map { it.drop(11) }; val n = seated(list)
+                                Box(
+                                    Modifier.width(col).height(rowH).border(0.5.dp, T.separator).background(if (weekend(d) && d >= TODAY) T.default.copy(alpha = 0.4f) else Color.Transparent)
+                                        .clickable { Ui.openRestaurant(d) }
+                                        .semantics { contentDescription = "Restaurant, ${longDay(d)}" + (if (hours.isNotEmpty()) ", obert a les ${hours.joinToString(" i ")}" else "") + (if (list.isNotEmpty()) ", ${persones(n)}" else "") }
+                                        .padding(3.dp),
+                                ) {
+                                    if (hours.isNotEmpty() || list.isNotEmpty()) Column(
+                                        Modifier.fillMaxSize().padding(vertical = 5.dp).clip(RoundedCornerShape(12.dp)).background(barFill(if (hours.isNotEmpty()) "paid" else "other")).padding(horizontal = if (l.compact) 5.dp else 8.dp),
+                                        verticalArrangement = Arrangement.Center,
+                                    ) {
+                                        Text(hours.joinToString(", ").ifEmpty { if (list.size == 1) "1 taula" else "${list.size} taules" }, style = if (l.compact) Type.xs else Type.sm, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        if (list.isNotEmpty()) Row(Modifier.padding(top = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Ico(R.drawable.ic_users, tint = T.muted, size = 12.dp); Spacer(Modifier.width(4.dp)); Text("$n", style = Type.xs, color = T.muted)
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
             Row(Modifier.padding(top = 14.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 Legend(T.accent, "Pagada"); Legend(T.warning, "Pendent de cobrar"); Legend(T.muted.copy(alpha = 0.6f), "Tancat"); Legend(T.cava, "Altres")
             }
-            Text("Toca la primera nit i després l'última per tancar dates o afegir una reserva. Toca una reserva per veure'n la fitxa.", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 8.dp))
+            Text("Toca la primera nit i després l'última per tancar dates o afegir una reserva. Toca una reserva per veure'n la fitxa, o un dia del restaurant per veure'n les taules.", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 8.dp))
         }
 
         AnimatedVisibility(sel != null, Modifier.align(Alignment.BottomCenter)) {

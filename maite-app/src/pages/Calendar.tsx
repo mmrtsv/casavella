@@ -1,11 +1,13 @@
 // Calendar: one row per stay, one column per night, three weeks from two days before the chosen day.
 // Tap the first night and then the last one to close dates or add a booking; tap a booking to open its file.
+// The last row is the restaurant: the people booked each day; tap a day to open it in Restaurant.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@heroui/react';
 import { ChevronLeft, ChevronRight, Lock, Plus, Users, X } from 'lucide-react';
 import { addDays, day, nightsBetween, nitsTxt, parse, range, TODAY, euro } from '../lib/dates';
 import { ensure, keyOf, shortName, useStore } from '../lib/store';
-import { openBlock, openBook, openDetail } from '../lib/ui';
+import { openBlock, openBook, openDetail, openRestaurant } from '../lib/ui';
+import { seated, useTables } from '../lib/tables';
 import { who } from '../lib/words';
 import type { Booking } from '../lib/types';
 import { toastError } from '../parts/toast';
@@ -32,6 +34,7 @@ export function CalendarActions() {
 
 export function Calendar() {
   const stays = useStore(s => s.stays);
+  const open = useStore(s => s.settings)?.restaurant.open || [];
   const bookingsMap = useStore(s => s.bookings);
   const [from, setFrom] = useState(() => addDays(TODAY, -2));
   const wrap = useRef<HTMLDivElement>(null);
@@ -50,6 +53,7 @@ export function Calendar() {
   const to = addDays(from, SPAN), last = addDays(to, -1);
   const days = useMemo(() => Array.from({ length: SPAN }, (_, i) => addDays(from, i)), [from, SPAN]);
   const bookings = useMemo(() => [...bookingsMap.values()].filter(b => b.blocks && b.first < to && b.until > from), [bookingsMap, from, to]);
+  const { tables } = useTables(from, to);
   const busyNight = (stay: string, d: string) => bookings.some(b => b.stay === stay && b.first <= d && b.until > d);
 
   useEffect(() => { ensure(from, addDays(from, SPAN)).catch(toastError); }, [SPAN]);
@@ -120,6 +124,23 @@ export function Calendar() {
               {bookings.filter(b => b.stay === s.id).map(b => <Bar key={keyOf(b)} b={b} row={r + 2} from={from} span={SPAN} />)}
             </div>
           ))}
+          <div className="sticky left-0 z-10 flex items-center border-b border-separator bg-surface px-4 text-sm font-semibold" style={{ gridRow: stays.length + 2, gridColumn: 1 }}>Restaurant</div>
+          {days.map((d, i) => {
+            const list = [...tables.values()].filter(t => t.date === d && !t.cancelled), hours = open.filter(a => a.slice(0, 10) === d).map(a => a.slice(11));
+            const dt = parse(d), we = dt.getDay() === 0 || dt.getDay() === 6, n = seated(list);
+            return (
+              <button key={d} type="button" style={{ gridRow: stays.length + 2, gridColumn: i + 2 }} onClick={() => openRestaurant(d)}
+                aria-label={`Restaurant, ${day(d, { weekday: 'long', day: 'numeric', month: 'long' })}${hours.length ? `, obert a les ${hours.join(' i ')}` : ''}${list.length ? `, ${n} ${n === 1 ? 'persona' : 'persones'}` : ''}`}
+                className={`h-[84px] border-b border-l border-separator p-1 text-left outline-none transition-colors duration-100 hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus ${we && d >= TODAY ? 'bg-default/40' : ''}`}>
+                {(hours.length > 0 || list.length > 0) && (
+                  <span aria-hidden="true" className={`flex h-full flex-col justify-center rounded-xl px-1.5 sm:px-2 ${hours.length ? tone.paid : tone.other}`}>
+                    <span className="truncate text-xs font-semibold tnum sm:text-[13px]">{hours.join(', ') || (list.length === 1 ? '1 taula' : `${list.length} taules`)}</span>
+                    {list.length > 0 && <span className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted tnum"><Users size={12} />{n}</span>}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
       </div>
@@ -129,7 +150,7 @@ export function Calendar() {
       <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted">
         <Legend c="bg-accent" t="Pagada" /><Legend c="bg-warning" t="Pendent de cobrar" /><Legend c="bg-muted/60" t="Tancat" /><Legend c="bg-[var(--brand-cava)]" t="Altres (Google Calendar)" />
       </div>
-      <p className="mt-2 text-xs text-muted">Toca la primera nit i després l'última per tancar dates o afegir una reserva. Toca una reserva per veure'n la fitxa.</p>
+      <p className="mt-2 text-xs text-muted">Toca la primera nit i després l'última per tancar dates o afegir una reserva. Toca una reserva per veure'n la fitxa, o un dia del restaurant per veure'n les taules.</p>
       </div>
 
       {sel && (

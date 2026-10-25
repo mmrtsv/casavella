@@ -26,3 +26,8 @@ export const getPalette = () => ui.palette;
 let bookingsFilter = '';
 export function openBookings(filter: string) { bookingsFilter = filter; go('bookings'); }
 export function takeBookingsFilter() { const f = bookingsFilter; bookingsFilter = ''; return f; }
+
+// Calendari opens Restaurant on a day; the page takes it once, when it opens
+let restaurantDay = '';
+export function openRestaurant(date: string) { restaurantDay = date; go('restaurant'); }
+export function takeRestaurantDay() { const d = restaurantDay; restaurantDay = ''; return d; }

@@ -32,9 +32,12 @@ object Ui {
     var more by mutableStateOf(false)
     var keys by mutableStateOf(false)
     var bookingsFilter by mutableStateOf("")
+    var restaurantDay by mutableStateOf("")
 
     fun go(p: Page) { page = p; more = false }
     fun openBookings(filter: String) { bookingsFilter = filter; go(Page.Bookings) }
+    /** Calendari opens Restaurant on a day; the page takes it once, when it opens */
+    fun openRestaurant(date: String) { restaurantDay = date; go(Page.Restaurant) }
     fun openCancel(key: String) { cancel = key; detail = null }
     /** Back: closes the top window, then goes to Inici; false lets Android leave the app */
     fun back(): Boolean = when {

@@ -1,5 +1,5 @@
 {
-  "versionCode": 15,
-  "version": "2.13",
-  "notes": "Les stories dels menús porten a reservar taula: www.casavellarural.com/#taula"
+  "versionCode": 16,
+  "version": "2.14",
+  "notes": "Es pot canviar una taula del restaurant (a Taules i a Cobrat), i el Calendari té una fila per al restaurant."
 }

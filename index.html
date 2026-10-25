@@ -514,6 +514,8 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .near h3 { font-size: 24px; }
 .near p { font-size: 15px; color: var(--muted); }
 .near.agenda a { color: var(--ink); text-underline-offset: 3px; }
+.near.guides h3 a { text-decoration: none; }
+.near.guides h3 a:hover { text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 880px) { .near { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 520px) { .near { grid-template-columns: 1fr; } }
 
@@ -1149,6 +1151,7 @@ footer { padding-bottom: 32px !important; }
       <article><span class="label">45 min</span><h3>Montserrat</h3><p>La muntanya que veieu des de casa: el monestir, l'Escolania i camins fins a Sant Jeroni.</p></article>
     </div>
     <!-- agenda: build.py puts here what is on nearby in the coming weeks (content/agenda.json) -->
+    <!-- guides: build.py puts here the links to the guides (content/guides/) -->
   </div>
 </section>
 

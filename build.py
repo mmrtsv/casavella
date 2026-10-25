@@ -21,6 +21,8 @@ import shutil
 import sys
 from pathlib import Path
 
+import guides
+
 ROOT = Path(__file__).resolve().parent
 DIST = ROOT / 'dist'
 SITE_URL = (sys.argv[1] if len(sys.argv) > 1 else 'https://casavellarural.com').rstrip('/')
@@ -194,6 +196,8 @@ ads = json.dumps({'meta': META_PIXEL_ID, 'google': GOOGLE_TAG_ID, 'conversion': 
 i18n = src[src.index('const I18N = ') + len('const I18N = '):]
 i18n = i18n[:i18n.index('\n} };\n') + 4].replace('{ es: {', '{"es": {', 1).replace('\n}, en: {', '\n}, "en": {', 1)
 WORDS = {'ca': {}, **json.loads(i18n)}
+GUIDES_MARK = '    <!-- guides: build.py puts here the links to the guides (content/guides/) -->\n'
+GUIDE_BLOCKS = {}
 AGENDA_MARK = '    <!-- agenda: build.py puts here what is on nearby in the coming weeks (content/agenda.json) -->\n'
 # Everything up to and including </style> goes in <head>, the rest in <body>
 split = src.index('</style>') + len('</style>')
@@ -228,7 +232,7 @@ def page(lang):
 <style>:root{{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}}body{{margin:0}}img{{max-width:100%}}[hidden]{{display:none!important}}</style>
 '''
     body = src[split:].lstrip()
-    body = body.replace(AGENDA_MARK, agenda(lang, datetime.date.today().isoformat()))
+    body = body.replace(AGENDA_MARK, agenda(lang, datetime.date.today().isoformat())).replace(GUIDES_MARK, GUIDE_BLOCKS.get(lang, ''))
     if lang != 'ca':
         body = translate(body, WORDS[lang])
     doc = head + src[:split] + '\n</head>\n<body>\n' + body + '\n</body>\n</html>\n'
@@ -239,6 +243,7 @@ def page(lang):
 if DIST.exists():
     shutil.rmtree(DIST)
 DIST.mkdir()
+GUIDE_PAGES, GUIDE_BLOCKS = guides.build(ROOT, DIST, SITE_URL)
 for lang in LANGS:
     folder = DIST / PATHS[lang].strip('/')
     folder.mkdir(exist_ok=True)
@@ -260,6 +265,10 @@ links += f'    <xhtml:link rel="alternate" hreflang="x-default" href="{SITE_URL}
     '<?xml version="1.0" encoding="UTF-8"?>\n'
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
     + ''.join(f'  <url>\n    <loc>{SITE_URL}{PATHS[l]}</loc>\n    <lastmod>{today}</lastmod>\n{links}  </url>\n' for l in LANGS)
+    + ''.join(f'  <url>\n    <loc>{SITE_URL}{alt[l]}</loc>\n    <lastmod>{lastmod}</lastmod>\n'
+              + ''.join(f'    <xhtml:link rel="alternate" hreflang="{k}" href="{SITE_URL}{alt[k]}"/>\n' for k in LANGS)
+              + f'    <xhtml:link rel="alternate" hreflang="x-default" href="{SITE_URL}{alt["ca"]}"/>\n  </url>\n'
+              for alt, lastmod in GUIDE_PAGES for l in LANGS)
     + '</urlset>\n', encoding='utf-8')
 # Cloudflare Pages headers: the Stripe payment form (another origin) loads our brand font
 # Maite (the back office on maite.casavellarural.com) is built by Vite into dist/maite/ afterwards (npm run build).

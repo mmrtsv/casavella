@@ -3,9 +3,16 @@
 <script>
 // Language: ?lang= or the visitor's earlier choice, else the first of Catalan, Spanish or English in the browser's languages, else English.
 // The page is written in Catalan; until the other language is applied the body stays hidden (at most 2 s).
+// On the domain each language has its own page (/, /es/, /en/, written by build.py and already translated): PAGE_LANG says
+// which, and the lcv-lang cookie tells functions/_middleware.js where to send a visitor who opens / again.
 (() => {
   const ok = l => ['ca', 'es', 'en'].includes(l);
   let l = null;
+  if (window.PAGE_LANG) {
+    l = window.PAGE_LANG; window.LANG = l; document.documentElement.lang = l;
+    document.cookie = 'lcv-lang=' + l + '; path=/; max-age=31536000; samesite=lax';
+    return;
+  }
   try { l = new URLSearchParams(location.search).get('lang'); if (ok(l)) localStorage.setItem('lcv-lang', l); else l = localStorage.getItem('lcv-lang'); } catch (e) {}
   if (!ok(l)) l = (navigator.languages || [navigator.language || '']).map(x => String(x).slice(0, 2).toLowerCase()).find(ok) || 'en';
   window.LANG = l; document.documentElement.lang = l;
@@ -14,9 +21,9 @@
 </script>
 <style>
 html.i18n body { visibility: hidden; }
-/* LeMondeLivre.woff2 is the same font with TrueType outlines: Chrome rejects the original CFF file */
+/* LeMondeLivre.woff2 is the same font with TrueType outlines: Chrome rejects the original CFF file. HalyardDisplay.woff2 is the .ttf compressed (a third of the size) */
 @font-face { font-family: "Le Monde Livre"; src: url(fonts/LeMondeLivre.woff2) format("woff2"), url(fonts/LeMondeLivreClassic-Normal.otf) format("opentype"); font-weight: 400 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Halyard Display"; src: url(fonts/HalyardDisplay.ttf) format("truetype"); font-weight: 300 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Halyard Display"; src: url(fonts/HalyardDisplay.woff2) format("woff2"), url(fonts/HalyardDisplay.ttf) format("truetype"); font-weight: 300 700; font-style: normal; font-display: swap; }
 /* Layout: full-bleed photo bands alternating with quiet "cava" text bands; asymmetric two-column splits; deep-green bands for brand moments (hero, quote, contact). */
 :root {
   --ground: #efebe3;     /* light cava, page ground */
@@ -903,7 +910,7 @@ footer { padding-bottom: 32px !important; }
 </section>
 
 <section class="hero" id="inici" aria-label="Portada">
-  <img id="heroImg" src="img/hero-vinyes-cel.jpg" alt="Vinyes amb la muntanya de Montserrat al fons">
+  <img id="heroImg" src="img/hero-vinyes-cel.jpg" fetchpriority="high" alt="Vinyes amb la muntanya de Montserrat al fons">
   <div class="copy wrap">
     <img class="mark" src="img/logo-light.png" alt="La Casa Vella, 1898, El Bedorc">
     <img class="mark mark-dark" src="img/logo-dark.png" alt="La Casa Vella, 1898, El Bedorc">
@@ -1730,6 +1737,12 @@ const LOC = tr('ca-ES', 'es-ES', 'en-GB');
   document.querySelectorAll('[data-lang]').forEach(b => {
     b.setAttribute('aria-pressed', b.dataset.lang === LANG);
     b.addEventListener('click', () => {
+      if (window.LANG_PAGES) {
+        document.cookie = 'lcv-lang=' + b.dataset.lang + '; path=/; max-age=31536000; samesite=lax';
+        const u = new URL(location.href); u.searchParams.delete('lang'); u.pathname = LANG_PAGES[b.dataset.lang];
+        location.href = u.href;
+        return;
+      }
       try { localStorage.setItem('lcv-lang', b.dataset.lang); } catch (e) {}
       const u = new URL(location.href); u.searchParams.delete('lang');
       if (u.href !== location.href) history.replaceState(null, '', u.href);

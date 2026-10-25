@@ -33,7 +33,7 @@ export async function onRequestPost({ request, env }) {
       customer_email: guest.email,
       billing_address_collection: 'auto',
       expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
-      return_url: `${site}/?reserva=ok&session_id={CHECKOUT_SESSION_ID}#reserva`,
+      return_url: `${site}/${['es', 'en'].includes(body.lang) ? body.lang + '/' : ''}?reserva=ok&session_id={CHECKOUT_SESSION_ID}#reserva`,
       // The cancellation policy the guest accepted, so Maite refunds by it even if it changes later
       metadata: { stay: q.stay, checkin: q.checkin, checkout: q.checkout, nights: q.nights, guests, policy: `${S.cancel.fullDays ?? ''}/${S.cancel.partialDays ?? ''}/${S.cancel.partialPct}`, lang: ['es', 'en'].includes(body.lang) ? body.lang : 'ca', ...guest },
       payment_intent_data: { description: `${q.name}, ${label}`, metadata: { stay: q.stay, checkin: q.checkin, checkout: q.checkout } },

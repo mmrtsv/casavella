@@ -32,11 +32,14 @@ Los asistentes de IA responden con lo que encuentran en tres sitios: la web de l
 - **sitemap.xml** con las tres páginas y sus alternativas de idioma.
 - **llms.txt** (`/llms.txt`): los datos de la casa en texto plano para asistentes de IA, con los precios, descuentos, horarios, política de cancelación y próximos días del restaurante que hay en Maite en ese momento (`functions/llms.txt.js`).
 - **Rendimiento**: precarga de la foto de portada y de la tipografía; Halyard en WOFF2 (31 KB en vez de 98 KB).
+- **Reseñas de Google en la web**: la sección de opiniones muestra la nota, el número de opiniones y las reseñas que Google enseña primero (hasta cinco, es lo que da la API), traducidas al idioma de la página y con el nombre de cada autor, como pide Google (`functions/api/reviews.js`). Para encenderlo: en Google Cloud, en el proyecto del compte de servei del calendario, activar «Places API (New)» (con facturación; según la tarifa actual de Google, unos 0,025 $ por consulta, y la página solo consulta cuando el visitante llega a la sección). Opcionalmente, una clave limitada a esa API en `GOOGLE_PLACES_KEY`. Mientras no esté, la sección enseña solo los dos botones, sin el texto de relleno.
+- **Agenda del entorno automatizada**: bloque «Qué pasa cerca» en la sección del entorno, generado desde `content/agenda.json`. Lo mantiene la rutina semanal.
+- **Rutina semanal de Claude** (`docs/seo-rutina.md`): cada lunes una sesión de Claude actualiza la agenda con fuentes oficiales, comprueba la web publicada y los datos estructurados, busca si la casa sale en las consultas clave, redacta la publicación de Google Business Profile de la semana y las respuestas a reseñas nuevas, y abre una pull request con el informe en `docs/informes/`. El dueño la revisa e integra.
 
 ## 3. Pendiente en la web (necesita una decisión o datos del dueño)
 
 1. **Número de registro turístico** (HUTB-… o el que corresponda): en cuanto lo haya, va en el pie, en `llms.txt` y en los datos estructurados.
-2. **Sección de opiniones**: sustituir el texto de relleno. Dos opciones: (a) quitar el párrafo y dejar el título con los dos botones (leer y escribir reseñas en Google); (b) mostrar unas pocas reseñas reales copiadas a mano con el permiso del autor. No se marca la puntuación en los datos estructurados en ningún caso.
+2. **Sección de opiniones**: hecho (reseñas de Google en vivo). Falta activar la Places API (ver punto 2). La puntuación no se marca en los datos estructurados.
 3. **Preguntas frecuentes**: no se ha añadido una sección visible. La página no tiene ninguna sección hermana con ese formato y casi todo lo que respondería ya está escrito (capacidad, cocina, aparcamiento, horarios, descuentos). Lo que sí aportaría son respuestas que hoy no están en ninguna parte y que solo el dueño puede dar:
    - ¿Se admiten mascotas?
    - ¿Hay desayuno? ¿El restaurante abre para los huéspedes los días que no abre al público?
@@ -108,6 +111,16 @@ Booking.com y Airbnb también aparecen mucho en las respuestas de los asistentes
 - Páginas del entorno (punto 3.4) con textos del dueño.
 - Pedir mención a quien ya habla de la zona: cavas de Sant Sadurní con las que se trabaje, la DO Penedès, blogs de escapadas por Cataluña, prensa comarcal (Anoia Diari, La Veu de l'Anoia). Una historia real (la casa de 1898, Casa Parellada, el caballo «Macho») funciona mejor que una nota de prensa.
 - Mantener la web al día: los precios, normas y días del restaurante ya salen de Maite en `llms.txt`.
+
+## Qué hace la gente con Claude para SEO (investigación, octubre 2026)
+
+No hay casos publicados de un hotel concreto que haya automatizado su SEO con Claude con resultados medidos; lo que hay son agencias y guías que describen el mismo patrón, y es el que se ha copiado aquí:
+
+- **Claude como orquestador** que lee datos (Search Console, Analytics, herramientas de palabras clave) y redacta informes y borradores, con una persona que decide qué se publica. Las agencias citan ahorros de una jornada de informe mensual a menos de dos horas, pero son cifras propias, no estudios independientes ([TripleDart](https://www.tripledart.com/ai-seo/claude-for-seo), [Databar](https://databar.ai/blog/article/automate-seo-claude-code), [SE Ranking](https://seranking.com/blog/claude-code-for-seo/)). Se aconseja empezar por un flujo estrecho: aquí, la agenda y el informe semanal.
+- **Qué hace que un asistente cite una web**: el estudio de Princeton sobre «Generative Engine Optimization» midió hasta un 40 % más de visibilidad añadiendo datos concretos, citas y fuentes, y ninguna mejora (o peor) repitiendo palabras clave ([arXiv 2311.09735](https://arxiv.org/html/2311.09735v3)). Por eso `llms.txt` y la agenda llevan cifras, fechas y fuentes.
+- **Hoteles y asistentes**: las agencias del sector coinciden en que los asistentes dan una lista corta de opciones y el huésped a menudo no llega a la web; lo que entra en esa lista sale de la ficha de Google, las reseñas y datos estructurados claros ([Gourmet Marketing](https://www.gourmetmarketing.net/blog/how-do-we-get-found-by-ai-assistants-not-just-google), [Hospitality Net](https://www.hospitalitynet.org/opinion/4125743.html), [UpHotel](https://uphotel.agency/geo-ai-optimisation-for-hotels/)).
+- **Lo que no se hace**: generar páginas en serie («casa rural en [pueblo]» × 50) con IA. Google lo trata como «scaled content abuse» y lo hunde ([Innsight](https://www.innsight.com/blog/google-ai-search-spam-rules-for-hoteliers)).
+- **Reseñas de Google en la web**: la API da como mucho cinco reseñas, obliga a mostrar el autor junto a cada una y no deja guardarlas ([política de Places API](https://developers.google.com/maps/documentation/places/web-service/policies)).
 
 ## 5. Cómo medir
 

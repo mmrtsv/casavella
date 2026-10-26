@@ -41,6 +41,8 @@ object Auth {
     @Volatile var idToken: String? = null
         private set
     private var expires = 0L
+    /** Signed in with a token that still works for a few minutes, so a call needs no renewal (which needs the app open) */
+    val valid get() = state == State.SignedIn && idToken != null && System.currentTimeMillis() < expires - 5 * 60_000
     private var prefs: SharedPreferences? = null
     private var activity = WeakReference<Activity>(null)
     private val lock = Mutex()
@@ -109,6 +111,7 @@ object Auth {
 
     fun signedOut() { if (state == State.SignedIn) state = State.SignedOut }
     suspend fun signOut() {
+        Push.unregister()
         activity.get()?.let { runCatching { CredentialManager.create(it).clearCredentialState(ClearCredentialStateRequest()) } }
         idToken = null; expires = 0; email = ""
         prefs?.edit()?.remove("token")?.remove("email")?.remove("expires")?.apply()

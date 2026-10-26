@@ -11,7 +11,7 @@ Web de La Casa Vella, casa de poble familiar al Bedorc (1898): allotjaments, res
 | `dist/` | Versió per publicar: una pàgina per idioma (`index.html`, `es/`, `en/`) amb les etiquetes per a Google i xarxes i sense les eines de revisió, `robots.txt` i `sitemap.xml`. |
 | `maite-app/` | Maite, el back office (React, Vite, HeroUI). Es construeix a `dist/maite/` (vegeu més avall). Com està fet i quines llibreries fa servir: `maite-app/README.md`. |
 | `android/` | Maite per a Android: app nativa (Compose) amb tot el que fa la web, per instal·lar a mà (vegeu `android/README.md`). |
-| `lib/` | Lògica compartida de les funcions: reserves i preus (`booking.js`), Maite (`maite.js`), contingut dels allotjaments (`stays.js`) i taules del restaurant (`restaurant.js`). |
+| `lib/` | Lògica compartida de les funcions: reserves i preus (`booking.js`), Maite (`maite.js`), contingut dels allotjaments (`stays.js`), taules del restaurant (`restaurant.js`) i avisos a l'app d'Android (`push.js`). |
 | `cron/` | Un Worker de Cloudflare que cada 5 minuts publica els posts d'Instagram programats (vegeu `cron/README.md`). |
 | `img/` | Fotos, logo, isotip i plaques dels allotjaments. |
 | `fonts/` | Tipografies de marca: Le Monde Livre i Halyard Display. |
@@ -138,6 +138,7 @@ Tot el que hi ha al calendari continua sent la referència: el que es crea a mà
 | Preus, descomptes, normes, política, horaris del restaurant i textos dels allotjaments | Cloudflare KV, espai `MAITE` (claus `settings` i `stays`) | La web (`/api/settings`) i Maite |
 | Posts confirmats per a Instagram, el seu ordre, els seus copies i si ja s'han publicat | Cloudflare KV, espai `MAITE` (clau `social`; el testimoni renovat d'Instagram, a `instagram`) | Maite |
 | Fotos pujades a Maite | Cloudflare R2, bucket `PHOTOS`, servides a `/photos/…` | La web i Maite |
+| Mòbils que reben els avisos de l'app | Cloudflare KV, espai `MAITE` (una clau `push:…` per mòbil, amb qui hi ha entrat) | `lib/push.js` |
 | Fotos originals, disseny i codi | Aquest repositori (`img/`, `index.html`, `functions/`, `lib/`) | Cloudflare Pages el publica a cada push |
 
 No hi ha cap altra base de dades: tot el que es canvia a Maite es llegeix al moment des de la web.
@@ -164,6 +165,13 @@ No hi ha cap altra base de dades: tot el que es canvia a Maite es llegeix al mom
 
    Cada post de la graella té el botó de publicar: Maite en fa un JPEG (un per imatge, si és un carrusel), el desa a R2 i Instagram l'agafa de `SITE_URL/photos/…` amb el copy desat. Les stories de *Menús* es publiquen igual, sense copy. Sense el secret, el botó no surt.
    5. Per programar posts: secret `SOCIAL_CRON_SECRET` a Cloudflare Pages i el Worker de `cron/` en marxa amb el mateix secret (`cron/README.md`).
+9. **Avisos a l'app d'Android** (Firebase Cloud Messaging): els mòbils amb l'app reben un avís quan es paga una reserva a la web, quan es puja el primer document d'una reserva, quan es reserva una taula o es demana un esdeveniment a la web, i quan es cancel·la una reserva o una taula a Maite. Qui ho fa a Maite no rep l'avís del que acaba de fer. En tocar-lo, l'app obre la reserva o el restaurant aquell dia.
+   1. A [console.firebase.google.com](https://console.firebase.google.com) crea un projecte (o afegeix Firebase al projecte de Google Cloud que ja hi ha).
+   2. Configuració del projecte → General → Les teves apps → Afegeix una app d'Android amb el paquet `com.casavellarural.maite`. Baixa `google-services.json` només per llegir-hi quatre valors (no va al repositori, l'app els agafa en compilar): `mobilesdk_app_id` per a `MAITE_FCM_APP_ID`, `current_key` per a `MAITE_FCM_API_KEY`, `project_id` per a `MAITE_FCM_PROJECT_ID` i `project_number` per a `MAITE_FCM_SENDER_ID`. Es posen com a variables d'entorn en fer la versió de l'app (`android/README.md`).
+   3. Pestanya Cloud Messaging: comprova que la **Firebase Cloud Messaging API (V1)** està activada (si no, l'enllaç porta a activar-la a Google Cloud).
+   4. Pestanya Comptes de servei → Genera una clau privada nova. Baixa un JSON: enganxa'l sencer com a secret `FCM_SERVICE_ACCOUNT` a Cloudflare Pages (Production).
+
+   Sense el secret, el servidor no envia res. Sense les quatre variables, l'app es compila i funciona igual, sense avisos. Android 13 o posterior demana permís per als avisos una vegada, després d'entrar; si es diu que no, es canvia a Configuració → Aplicacions → Maite → Notificacions.
 
 Cada crida de Maite comprova el testimoni de Cloudflare Access, de manera que sense els passos 2 i 4 no s'hi pot entrar. Sense el pas 3, Maite funciona però no deixa desar preus ni normes, i la web fa servir els valors per defecte de `lib/booking.js`.
 

@@ -81,6 +81,8 @@ object Maite {
         } catch (e: ApiError) { tablesLoaded.remove(from to to); throw e }
     }
     fun setTable(t: Table) { tables = tables + (t.id to t) }
+    /** The next ensureTables reads the calendar again (a new table arrived) */
+    fun forgetTables() { tablesLoaded.clear() }
     suspend fun loadContent(): Content { content?.let { return it }; return Api.get<Content>("stays").also { content = it } }
     suspend fun loadSocial(): Social = Api.get<Social>("social").also { social = it }
 }

@@ -1,7 +1,8 @@
 // Checks that the Android app keeps up with Maite web. Run from the repository root:
 //   node android/tools/parity.mjs        (or npm run check)
 // It fails when:
-// - an endpoint in functions/api/maite/ isn't called by the web or by the app,
+// - an endpoint in functions/api/maite/ isn't called by the web or by the app (android/parity-skip.txt can list one the
+//   web has no use for, as /api/maite/<name> and the reason),
 // - a page in maite-app/src/pages/ has no screen in the app (ui/Ui.kt, enum Page),
 // - a web page has commits newer than the app screens it maps to (below), unless android/parity-skip.txt lists the
 //   commit with the reason it needs nothing in the app,
@@ -39,18 +40,21 @@ function check() {
   const problems = [];
   const app = read(KT), web = read(path.join(ROOT, 'maite-app/src'));
 
+  const skipped = fs.existsSync(path.join(ROOT, 'android/parity-skip.txt'))
+    ? fs.readFileSync(path.join(ROOT, 'android/parity-skip.txt'), 'utf8').split('\n').map(l => l.trim().split(/\s/)[0]) : [];
+  const skip = skipped.filter(l => /^[0-9a-f]{7,}$/.test(l));
+  const appOnly = skipped.filter(l => l.startsWith('/api/maite/')).map(l => l.slice('/api/maite/'.length));
+
   for (const f of fs.readdirSync(path.join(ROOT, 'functions/api/maite'))) {
     const name = f.replace(/\.js$/, '');
     if (name.startsWith('_')) continue;
     const called = src => new RegExp(`["'\`/]${name}(["'\`?/]|\\$\\{)`).test(src);
     if (!called(app)) problems.push(`The app never calls /api/maite/${name}`);
-    if (!called(web)) problems.push(`The web never calls /api/maite/${name}`);
+    if (!called(web) && !appOnly.includes(name)) problems.push(`The web never calls /api/maite/${name}`);
   }
 
   const pages = fs.readdirSync(path.join(ROOT, 'maite-app/src/pages')).map(f => f.replace(/\.tsx$/, ''));
   const ui = fs.readFileSync(path.join(KT, 'ui/Ui.kt'), 'utf8');
-  const skip = fs.existsSync(path.join(ROOT, 'android/parity-skip.txt'))
-    ? fs.readFileSync(path.join(ROOT, 'android/parity-skip.txt'), 'utf8').split('\n').map(l => l.trim().split(/\s/)[0]).filter(l => /^[0-9a-f]{7,}$/.test(l)) : [];
   for (const page of pages) {
     if (!new RegExp(`^\\s*${page}\\(`, 'm').test(ui)) { problems.push(`Page ${page} has no screen in the app (ui/Ui.kt)`); continue; }
     const files = SCREENS[page];

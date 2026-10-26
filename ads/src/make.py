@@ -23,14 +23,17 @@ body {{ background: #1a3f20; }}
 # Concepts: photo, how to crop it, and the words in each language
 CONCEPTS = {
   'montserrat': {'photo': 'hero-vinyes-cel', 'pos': '58% center',
-    'es': ['Un fin de semana con Montserrat a la vista', 'A una hora de Barcelona'],
-    'ca': ['Un cap de setmana amb Montserrat a la vista', 'A una hora de Barcelona']},
-  'casa-1898': {'photo': 'hab-llit', 'pos': '50% center',
-    'es': ['Dormir en una casa de 1898', 'Dos apartamentos y dos habitaciones en El Bedorc'],
-    'ca': ['Dormir en una casa de 1898', 'Dos apartaments i dues habitacions al Bedorc']},
+    'es': ['Un fin de semana con Montserrat a la vista', 'A 45 minutos de Barcelona'],
+    'ca': ['Un cap de setmana amb Montserrat a la vista', 'A 45 minuts de Barcelona'],
+    'en': ['A weekend with Montserrat in view', '45 minutes from Barcelona']},
+  'vinyes': {'photo': 'hero-vinyes-capvespre', 'pos': '50% center',
+    'es': ['Desconecta entre viñedos', 'Una casa de pueblo de 1898 en El Bedorc'],
+    'ca': ['Desconnecta entre vinyes', 'Una casa de poble de 1898 al Bedorc'],
+    'en': ['Unwind among the vineyards', 'An 1898 village house in El Bedorc']},
   'cava': {'photo': 'apt-cuina-detall', 'pos': '62% center',
-    'es': ['Un fin de semana de cava y viñas', 'Las cavas de Sant Sadurní, al lado'],
-    'ca': ['Un cap de setmana de cava i vinyes', 'Les caves de Sant Sadurní, a tocar']},
+    'es': ['Un fin de semana de cava y viñas', 'Las cavas de Sant Sadurní, a 15 minutos'],
+    'ca': ['Un cap de setmana de cava i vinyes', 'Les caves de Sant Sadurní, a 15 minuts'],
+    'en': ['A weekend of cava and vineyards', 'The Sant Sadurní cava cellars, 15 minutes away']},
   'castanyada': {'photo': 'hero-vinyes-capvespre', 'pos': '50% center', 'date': True,
     'es': ['Del 30 de octubre al 1 de noviembre', 'La castanyada entre viñedos', 'Desde 80 € la noche', 'Con Montserrat en el horizonte'],
     'ca': ["Del 30 d'octubre a l'1 de novembre", 'La castanyada entre vinyes', 'Des de 80 € la nit', "Amb Montserrat a l'horitzó"]},
@@ -44,8 +47,9 @@ CONCEPTS = {
     'es': ['Del 30 de octubre al 1 de noviembre', 'La castanyada entre viñedos', 'Desde 80 € la noche', 'Con Montserrat en el horizonte'],
     'ca': ["Del 30 d'octubre a l'1 de novembre", 'La castanyada entre vinyes', 'Des de 80 € la nit', "Amb Montserrat a l'horitzó"]},
   'oferta': {'photo': 'apt-sala-2', 'pos': '45% center', 'date': True,
-    'es': ['Del 13 al 15 de noviembre', 'Dos noches en el apartamento, 209 €', 'Hasta tres personas', '5,0 en Google, 22 opiniones'],
-    'ca': ['Del 13 al 15 de novembre', "Dues nits a l'apartament, 209 €", 'Fins a tres persones', '5,0 a Google, 22 opinions']},
+    'es': ['Del 13 al 15 de noviembre', 'Un fin de semana en El Bedorc', 'Desde 80 € la noche', 'Apartamentos con cocina y habitaciones'],
+    'ca': ['Del 13 al 15 de novembre', 'Un cap de setmana al Bedorc', 'Des de 80 € la nit', 'Apartaments amb cuina i habitacions'],
+    'en': ['13 to 15 November', 'A weekend in El Bedorc', 'From €80 a night', 'Apartments with a kitchen and rooms']},
 }
 
 def words(c, t):
@@ -76,10 +80,10 @@ def story(c, t):
 
 # Carousel: one card per stay. Weekday price from Maite's base (the web says "from")
 STAYS = [
-  ('montserrat', 'apt-sala-2', '45% center', ['Apartamento Montserrat', 'Hasta 3 personas, con cocina', 'Desde 90 € la noche'], ['Apartament Montserrat', 'Fins a 3 persones, amb cuina', 'Des de 90 € la nit']),
-  ('la-pineda', 'apt-dormitori-3', '40% center', ['Apartamento La Pineda', 'Hasta 3 personas, con cocina', 'Desde 90 € la noche'], ['Apartament La Pineda', 'Fins a 3 persones, amb cuina', 'Des de 90 € la nit']),
-  ('les-vinyes', 'hab-armari', '50% center', ['Habitación Les Vinyes', '2 personas, baño privado', 'Desde 70 € la noche'], ['Habitació Les Vinyes', '2 persones, bany privat', 'Des de 70 € la nit']),
-  ('figarot', 'hab-llit', '50% center', ['Habitación Figarot', '2 personas, baño privado', 'Desde 70 € la noche'], ['Habitació Figarot', '2 persones, bany privat', 'Des de 70 € la nit']),
+  ('montserrat', 'apt-sala-2', '45% center', {'es': ['Apartamento Montserrat', 'Hasta 3 personas, con cocina', 'Desde 90 € la noche'], 'ca': ['Apartament Montserrat', 'Fins a 3 persones, amb cuina', 'Des de 90 € la nit'], 'en': ['Montserrat apartment', 'Sleeps 3, with a kitchen', 'From €90 a night']}),
+  ('la-pineda', 'apt-dormitori-3', '40% center', {'es': ['Apartamento La Pineda', 'Hasta 3 personas, con cocina', 'Desde 90 € la noche'], 'ca': ['Apartament La Pineda', 'Fins a 3 persones, amb cuina', 'Des de 90 € la nit'], 'en': ['La Pineda apartment', 'Sleeps 3, with a kitchen', 'From €90 a night']}),
+  ('les-vinyes', 'hab-armari', '50% center', {'es': ['Habitación Les Vinyes', '2 personas, baño privado', 'Desde 70 € la noche'], 'ca': ['Habitació Les Vinyes', '2 persones, bany privat', 'Des de 70 € la nit'], 'en': ['Les Vinyes room', 'For 2, private bathroom', 'From €70 a night']}),
+  ('figarot', 'hab-llit', '50% center', {'es': ['Habitación Figarot', '2 personas, baño privado', 'Desde 70 € la noche'], 'ca': ['Habitació Figarot', '2 persones, bany privat', 'Des de 70 € la nit'], 'en': ['Figarot room', 'For 2, private bathroom', 'From €70 a night']}),
 ]
 def card(photo, pos, t):
     name, what, price = t
@@ -91,12 +95,13 @@ def card(photo, pos, t):
 
 pages = {}
 for key, c in CONCEPTS.items():
-    for lang in ('es', 'ca'):
+    for lang in ('es', 'ca', 'en'):
+        if lang not in c: continue
         pages[f'{key}-feed-{lang}'] = feed(c, c[lang])
         pages[f'{key}-story-{lang}'] = story(c, c[lang])
-for key, photo, pos, es, ca in STAYS:
-    pages[f'carrusel-{key}-es'] = card(photo, pos, es)
-    pages[f'carrusel-{key}-ca'] = card(photo, pos, ca)
+for key, photo, pos, t in STAYS:
+    for lang in t:
+        pages[f'carrusel-{key}-{lang}'] = card(photo, pos, t[lang])
 # Facebook page: the cover is the photo alone (the page name and profile picture sit on it); the profile picture is the isotype
 pages['facebook-portada'] = f'<div class="c" style="width:1640px;height:924px"><img class="photo" src="{IMG}/hero-vinyes-cel.jpg" style="inset:0;height:100%;object-position:58% 60%"></div>'
 pages['perfil'] = f'<div class="c" style="width:1080px;height:1080px;display:grid;place-items:center"><img src="{IMG}/iso-light.png" alt="La Casa Vella" style="width:420px"></div>'

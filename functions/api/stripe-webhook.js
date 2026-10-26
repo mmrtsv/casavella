@@ -4,6 +4,7 @@
 // If the dates were taken meanwhile (two guests paying at once), the payment is refunded.
 import { STAYS, calendar, stripe, verifyStripe, json, euros, settings, policyText } from '../../lib/booking.js';
 import { send, bookingConfirmation, bookingNotice } from '../../lib/email.js';
+import { pushLater, nights, stayName, guests, phrase } from '../../lib/push.js';
 
 export async function onRequestPost({ request, env, waitUntil }) {
   const body = await request.text();
@@ -46,7 +47,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
       guests: String(m.guests || ''), policy: m.policy || '', lang: m.lang || '', name: c.name || '', email: c.email || '', phone: c.phone || '' } },
   };
   // Confirmation to the guest and a notice to the house; a failed email never fails the webhook
-  const notify = () => waitUntil((async () => {
+  const mail = () => waitUntil((async () => {
     const meta = { ...m, ...c }, S = await settings(env);
     // The policy the guest accepted at checkout ("fullDays/partialDays/partialPct"), else today's
     const [f, d, pct] = (m.policy || '').split('/');
@@ -57,23 +58,28 @@ export async function onRequestPost({ request, env, waitUntil }) {
       send(env, bookingNotice(env, meta, s.amount_total, waiting)),
     ]);
   })().catch(() => {}));
+  // Once it is paid, the phones with the Maite app hear of it too (id: the booking's calendar event)
+  const notify = id => {
+    mail();
+    if (paidNow) pushLater(waitUntil, env, { title: 'Reserva nova', body: phrase(c.name, stayName(m.stay), nights(m.checkin, m.checkout), guests(m.guests)), type: 'booking', stay: m.stay, id });
+  };
 
   const existing = await mine();
   if (existing) {
     const was = existing.extendedProperties.private.lcv;
     if (was !== 'paid') await cal.patch(existing.id, booking);
-    if (was === 'pending' && paidNow) notify(); // the bank payment has cleared
+    if (was === 'pending' && paidNow) notify(existing.id); // the bank payment has cleared
     return json({ ok: true });
   }
   const old = m.event && await cal.get(m.event);
   if (old && old.status !== 'cancelled' && old.extendedProperties?.private?.lcv === 'hold') {
     await cal.patch(m.event, booking);
-    notify();
+    notify(m.event);
     return json({ ok: true });
   }
   if ((await cal.conflicts(m.checkin, m.checkout)).length === 0) {
-    await cal.create(booking);
-    notify();
+    const ev = await cal.create(booking);
+    notify(ev?.id);
     return json({ ok: true });
   }
   // Someone else completed a booking for these dates first

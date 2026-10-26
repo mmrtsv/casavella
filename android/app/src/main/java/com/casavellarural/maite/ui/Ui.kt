@@ -19,6 +19,8 @@ enum class Page(val title: String, @DrawableRes val icon: Int, val hint: String)
 }
 
 data class BookDraft(val stay: String? = null, val first: String? = null, val until: String? = null)
+/** What a tapped notification points to (lib/push.js): type booking, docs or cancelled (stay and id), table (date) or event */
+data class Opening(val type: String, val stay: String, val id: String, val date: String)
 data class BlockDraft(val stays: List<String> = emptyList(), val first: String? = null, val until: String? = null)
 
 /** Which page and which window is open (booking file, new booking, close dates, cancel, search), like lib/ui.ts */
@@ -33,6 +35,7 @@ object Ui {
     var keys by mutableStateOf(false)
     var bookingsFilter by mutableStateOf("")
     var restaurantDay by mutableStateOf("")
+    var opening by mutableStateOf<Opening?>(null)
 
     fun go(p: Page) { page = p; more = false }
     fun openBookings(filter: String) { bookingsFilter = filter; go(Page.Bookings) }

@@ -38,8 +38,8 @@ CONCEPTS = {
     'es': ['Del 30 de octubre al 1 de noviembre', 'La castanyada entre viñedos', 'Desde 80 € la noche', 'Con Montserrat en el horizonte'],
     'ca': ["Del 30 d'octubre a l'1 de novembre", 'La castanyada entre vinyes', 'Des de 80 € la nit', "Amb Montserrat a l'horitzó"]},
   'castanyada-habitacion': {'photo': 'hab-llit', 'pos': '50% center', 'date': True,
-    'es': ['Del 30 de octubre al 1 de noviembre', 'La castanyada en una casa de 1898', 'Habitación desde 80 € la noche', 'Entre viñedos, cerca de Montserrat'],
-    'ca': ["Del 30 d'octubre a l'1 de novembre", 'La castanyada en una casa de 1898', 'Habitació des de 80 € la nit', 'Entre vinyes, a prop de Montserrat']},
+    'es': ['Del 30 de octubre al 1 de noviembre', 'Aquí las mañanas empiezan despacio', 'Habitación desde 80 € la noche', 'La castanyada entre viñedos'],
+    'ca': ["Del 30 d'octubre a l'1 de novembre", 'Aquí els matins comencen a poc a poc', 'Habitació des de 80 € la nit', 'La castanyada entre vinyes']},
   'castanyada-cava': {'photo': 'apt-cuina-detall', 'pos': '62% center', 'date': True,
     'es': ['Del 30 de octubre al 1 de noviembre', 'La castanyada entre viñedos', 'Desde 80 € la noche', 'Con Montserrat en el horizonte'],
     'ca': ["Del 30 d'octubre a l'1 de novembre", 'La castanyada entre vinyes', 'Des de 80 € la nit', "Amb Montserrat a l'horitzó"]},
@@ -71,6 +71,7 @@ def story(c, t):
     return f'''<div class="c" style="width:1080px;height:1920px">
 <img src="{IMG}/logo-light.png" alt="La Casa Vella" style="position:absolute;top:262px;left:50%;width:170px;margin-left:-85px">
 <img class="photo" src="{IMG}/{c['photo']}.jpg" style="top:540px;height:680px;object-position:{c['pos']}">
+<div style="position:absolute;left:0;right:0;top:540px;height:680px;background:linear-gradient(180deg,rgba(26,63,32,1) 0%,rgba(26,63,32,0) 22%,rgba(26,63,32,0) 55%,rgba(26,63,32,1) 100%)"></div>
 <div style="position:absolute;left:88px;right:88px;top:1270px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center">{words(c, t).replace('font-size: 80px', 'font-size: 74px').replace('font-size: 76px', 'font-size: 62px')}</div></div>'''
 
 # Carousel: one card per stay. Weekday price from Maite's base (the web says "from")

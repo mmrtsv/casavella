@@ -4,6 +4,7 @@
     <!-- To install the new versions it downloads from Maite (data/Update.kt) -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Reminders on the phone: menus to send by WhatsApp, stories to post (data/Reminders.kt) -->
+    <!-- Push notifications (PushService), asked once after signing in -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -26,6 +27,11 @@
             </intent-filter>
         </activity>
         <receiver android:name=".data.ReminderReceiver" android:exported="false" />
+        <service android:name=".PushService" android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"

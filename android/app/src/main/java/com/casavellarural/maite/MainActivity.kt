@@ -1,5 +1,6 @@
 package com.casavellarural.maite
 
+import android.content.Intent
 import android.os.Bundle
 import android.graphics.Color
 import androidx.activity.ComponentActivity
@@ -10,6 +11,8 @@ import com.casavellarural.maite.data.Auth
 import com.casavellarural.maite.ui.MaiteRoot
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import com.casavellarural.maite.ui.Opening
+import com.casavellarural.maite.ui.Ui
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,7 +24,7 @@ class MainActivity : ComponentActivity() {
         setContent { MaiteRoot() }
         // The hidden view that draws the Instagram templates
         com.casavellarural.maite.ui.social.Renderer.attach(this)
-        opened(intent)
+        if (savedInstanceState == null) opened(intent)
         // The reminders follow the plan each time the app opens, not only when Xarxes socials is visited (data/Reminders.kt)
         lifecycleScope.launch {
             kotlinx.coroutines.delay(4000)
@@ -39,14 +42,21 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    override fun onNewIntent(intent: android.content.Intent) { super.onNewIntent(intent); opened(intent) }
-    /** A reminder's notification (data/Reminders.kt) opens Xarxes socials on its tab, or Restaurant on Cobrat on its day */
-    private fun opened(intent: android.content.Intent?) {
-        val tab = intent?.getStringExtra("open") ?: return
-        intent.removeExtra("open")
-        if (tab.startsWith("cobrat:")) return com.casavellarural.maite.ui.Ui.openRestaurant(tab.removePrefix("cobrat:"), "paid")
-        com.casavellarural.maite.ui.social.openSocialTab = tab
-        com.casavellarural.maite.ui.Ui.go(com.casavellarural.maite.ui.Page.Social)
-    }
     override fun onResume() { super.onResume(); Auth.attach(this) }
+    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); opened(intent) }
+
+    /** A tapped notification says which screen to open: a reminder set on the phone (data/Reminders.kt, extra open: a tab of
+     *  Xarxes socials, or cobrat:<day>) or a push from the server (PushService, extra type, and open for Xarxes socials) */
+    private fun opened(i: Intent?) {
+        if (i == null || (i.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0) return
+        i.getStringExtra("open")?.let { tab ->
+            i.removeExtra("open")
+            if (tab.startsWith("cobrat:")) return Ui.openRestaurant(tab.removePrefix("cobrat:"), "paid")
+            com.casavellarural.maite.ui.social.openSocialTab = tab
+            return Ui.go(com.casavellarural.maite.ui.Page.Social)
+        }
+        val type = i.getStringExtra("type") ?: return
+        i.removeExtra("type")
+        Ui.opening = Opening(type, i.getStringExtra("stay").orEmpty(), i.getStringExtra("id").orEmpty(), i.getStringExtra("date").orEmpty())
+    }
 }

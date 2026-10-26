@@ -1,2 +1,4 @@
 # Web commits that need nothing in the Android app, one per line: the short hash, then why.
 # android/tools/parity.mjs ignores them when it compares the web's pages with the app's screens.
+# Endpoints only the app calls, one per line: /api/maite/<name>, then why the web doesn't.
+/api/maite/push  The phones register for push notifications (lib/push.js); the web gets no push.

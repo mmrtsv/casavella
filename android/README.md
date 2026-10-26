@@ -28,6 +28,10 @@ printf '{"id":"<client id>","secret":"<client secret>","google":"<client web>.ap
 
 L'app el desa xifrat al mòbil. També es poden posar els tres valors en compilar (`MAITE_CF_CLIENT_ID`, `MAITE_CF_CLIENT_SECRET`, `MAITE_GOOGLE_CLIENT_ID`) i llavors no el demana.
 
+## Avisos
+
+L'app rep avisos amb Firebase Cloud Messaging (`PushService.kt` i `data/Push.kt`): reserves pagades a la web, documents rebuts, taules i peticions d'esdeveniment de la web, i cancel·lacions. En entrar, envia el testimoni del mòbil a `/api/maite/push` i, en sortir, l'esborra. Firebase s'inicia amb quatre valors que es posen en compilar: `MAITE_FCM_APP_ID`, `MAITE_FCM_API_KEY`, `MAITE_FCM_PROJECT_ID` i `MAITE_FCM_SENDER_ID` (d'on surten i el secret del servidor: `README.md`, Maite, pas 9). Sense ells, l'app no té avisos.
+
 ## Plantilles de xarxes
 
 Les plantilles són les mateixes que a la web (`maite-app/src/social/`). L'app les dibuixa en una WebView oculta (`ui/social/Renderer.kt` i `assets/social/renderer.html`) i en fa un JPEG per descarregar o publicar. Si canvien les plantilles, les fotos o les fonts, regenera'n la còpia i fes una versió nova:
@@ -38,7 +42,7 @@ node android/tools/social-assets.mjs
 
 ## Igual que la web
 
-Tot el que canvia a Maite web ha d'arribar a l'app. `npm run check` (o `node android/tools/parity.mjs`) falla si un endpoint de `/api/maite/` no el crida la web o l'app, si una pàgina no té pantalla a l'app, si una pàgina de la web ha canviat després de la seva pantalla a l'app (llevat dels commits que hi ha a `parity-skip.txt`, amb el motiu) o si la còpia de les plantilles és antiga. Claude Code ho comprova sol abans d'acabar (`.claude/settings.json`).
+Tot el que canvia a Maite web ha d'arribar a l'app. `npm run check` (o `node android/tools/parity.mjs`) falla si un endpoint de `/api/maite/` no el crida la web o l'app (els que només fa servir l'app, com `push`, són a `parity-skip.txt` amb el motiu), si una pàgina no té pantalla a l'app, si una pàgina de la web ha canviat després de la seva pantalla a l'app (llevat dels commits que hi ha a `parity-skip.txt`, amb el motiu) o si la còpia de les plantilles és antiga. Claude Code ho comprova sol abans d'acabar (`.claude/settings.json`).
 
 ## Fer-ne una versió nova
 
@@ -47,6 +51,7 @@ Cal la clau `maite.keystore` (no és al repositori), la seva contrasenya, el SDK
 ```bash
 cd android
 export ANDROID_HOME=/ruta/al/android-sdk MAITE_KEYSTORE=/ruta/a/maite.keystore MAITE_KEYSTORE_PASSWORD=…
+export MAITE_FCM_APP_ID=… MAITE_FCM_API_KEY=… MAITE_FCM_PROJECT_ID=… MAITE_FCM_SENDER_ID=…   # avisos (vegeu Avisos)
 gradle assembleRelease          # app/build/outputs/apk/release/app-release.apk
 gradle recordRoborazziDebug     # captures a app/screenshots/{titan,xiaomi}
 cd .. && node android/tools/release.mjs "Què hi ha de nou" && npm run build

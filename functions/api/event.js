@@ -4,6 +4,7 @@
 // Without RESEND_API_KEY it answers 503 and the page gives the phone.
 import { json } from '../../lib/booking.js';
 import { send, eventNotice, eventReply, langOf } from '../../lib/email.js';
+import { pushLater, diners, phrase } from '../../lib/push.js';
 
 const MIN_EVENT = 8, MAX_EVENT = 16;
 
@@ -21,5 +22,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
   if (!(await send(env, eventNotice(env, e)))) return json({ error: 'send_failed' }, 502);
   waitUntil(send(env, eventReply(env, e)).catch(() => {}));
+  // The request itself is in the house's inbox; the phones get who and how many
+  pushLater(waitUntil, env, { title: "Petició d'esdeveniment", body: phrase(e.name, diners(e.people)), type: 'event' });
   return json({ ok: true });
 }

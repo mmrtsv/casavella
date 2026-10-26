@@ -1,7 +1,10 @@
 package com.casavellarural.maite.ui
 
+import android.Manifest
 import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -72,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import com.casavellarural.maite.R
 import com.casavellarural.maite.data.Auth
 import com.casavellarural.maite.data.Maite
+import com.casavellarural.maite.data.Push
 import com.casavellarural.maite.ui.screens.BlockDates
 import com.casavellarural.maite.ui.screens.BookingFile
 import com.casavellarural.maite.ui.screens.Bookings
@@ -172,6 +176,27 @@ fun App() {
     val activity = LocalContext.current as? Activity
     LaunchedEffect(Unit) { Maite.reload() }
     LaunchedEffect(Unit) { com.casavellarural.maite.data.Update.check() }
+    // Push: this phone's token to the server, and on Android 13 and later the permission, asked once
+    val allow = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    LaunchedEffect(Unit) {
+        Push.register()
+        if (activity != null && Push.shouldAsk(activity)) allow.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+    // A tapped notification: once Maite has loaded, read again and open the booking, or Restaurant on that day
+    LaunchedEffect(Ui.opening, Maite.ready) {
+        val o = Ui.opening ?: return@LaunchedEffect
+        if (!Maite.ready) return@LaunchedEffect
+        if (o.type == "table" || o.type == "event") {
+            Maite.forgetTables()
+            if (o.date.isNotEmpty()) Ui.openRestaurant(o.date) else Ui.go(Page.Restaurant)
+        } else {
+            Maite.reload()
+            val key = "${o.stay}|${o.id}"
+            if (key in Maite.bookings) Ui.detail = key else Ui.go(Page.Bookings)
+        }
+        // Cleared last: changing it restarts this effect
+        Ui.opening = null
+    }
     BackHandler { if (!Ui.back()) activity?.finish() }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }

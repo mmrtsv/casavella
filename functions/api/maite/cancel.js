@@ -3,8 +3,9 @@
 // and for web bookings, `refund` cents go back to the guest's card through Stripe.
 import { STAYS, configured, calendar, stripe, json, euros } from '../../../lib/booking.js';
 import { asBooking } from '../../../lib/maite.js';
+import { pushLater, nights, stayName, phrase } from '../../../lib/push.js';
 
-export async function onRequestPost({ request, env, data }) {
+export async function onRequestPost({ request, env, data, waitUntil }) {
   let b;
   try { b = await request.json(); } catch { return json({ error: 'bad_request' }, 400); }
   if (!STAYS[b.stay] || typeof b.id !== 'string') return json({ error: 'bad_request' }, 400);
@@ -13,7 +14,8 @@ export async function onRequestPost({ request, env, data }) {
   const ev = await cal.get(b.id);
   if (!ev || ev.status === 'cancelled') return json({ error: 'not_found' }, 404);
   const p = ev.extendedProperties?.private || {};
-  const bk = asBooking(b.stay, { ...ev, first: '', until: '' });
+  const day = v => v.date || v.dateTime.slice(0, 10);
+  const bk = asBooking(b.stay, { ...ev, first: day(ev.start), until: day(ev.end) });
 
   if (bk.kind === 'block') {
     await cal.remove(b.id);
@@ -43,5 +45,7 @@ export async function onRequestPost({ request, env, data }) {
     description: `Cancel·lada a Maite per ${data.user} el ${when}.` + (refunded ? ` Retornats ${euros(refunded)} per Stripe.` : '') + '\n\n' + (ev.description || ''),
     extendedProperties: { private: { ...p, lcv: 'cancelled', was: bk.kind, refunded: String(refunded), by: data.user } },
   });
+  pushLater(waitUntil, env, { title: 'Reserva cancel·lada', body: phrase(bk.name || bk.title, stayName(b.stay), nights(bk.first, bk.until), refunded && `retornats ${euros(refunded)}`),
+    type: 'cancelled', stay: b.stay, id: b.id }, data.user);
   return json({ ok: true, refunded });
 }

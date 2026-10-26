@@ -8,6 +8,7 @@
 import { isDate, addDays, json } from '../../../lib/booking.js';
 import { isSource } from '../../../lib/maite.js';
 import { tablesConfigured, tables, tableEvent, asTable, isTime } from '../../../lib/restaurant.js';
+import { pushLater, when as at, diners, phrase } from '../../../lib/push.js';
 
 export async function onRequestGet({ request, env }) {
   const u = new URL(request.url), from = u.searchParams.get('from'), to = u.searchParams.get('to');
@@ -42,7 +43,7 @@ export async function onRequestPost({ request, env, data }) {
   return json({ ok: true, table: { ...asTable(ev), date: t.date, time: t.time } });
 }
 
-export async function onRequestPatch({ request, env, data }) {
+export async function onRequestPatch({ request, env, data, waitUntil }) {
   let b;
   try { b = await request.json(); } catch { return json({ error: 'bad_request' }, 400); }
   const paid = b.paid === undefined ? undefined : b.paid === null || b.paid === '' ? null : Math.round(Number(b.paid));
@@ -68,12 +69,17 @@ export async function onRequestPatch({ request, env, data }) {
     p = { ...p, ...next.extendedProperties.private };
   }
   if (paid !== undefined) p.paid = paid === null ? '' : String(paid);
-  if (b.cancelled === true && p.state !== 'cancelled') {
+  const cancelling = b.cancelled === true && p.state !== 'cancelled';
+  if (cancelling) {
     const when = new Intl.DateTimeFormat('ca-ES', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Madrid' }).format(new Date());
     Object.assign(patch, { summary: 'CANCEL·LADA: ' + (ev.summary || ''), colorId: '8', description: `Cancel·lada a Maite per ${data.user} el ${when}.\n\n` + (ev.description || '') });
     Object.assign(p, { state: 'cancelled', by: data.user });
   }
   const next = await cal.patch(b.id, { ...patch, extendedProperties: { private: p } });
+  if (cancelling) {
+    const t = asTable(ev);
+    pushLater(waitUntil, env, { title: 'Taula cancel·lada', body: phrase(t.name, t.people && diners(t.people), at(t.date, t.time)), type: 'table', id: b.id, date: t.date }, data.user);
+  }
   // Google answers the change in the calendar's own time zone; the day and time are the ones sent or read above
   const when = patch.start ? { date: patch.start.dateTime.slice(0, 10), time: patch.start.dateTime.slice(11, 16) } : asTable(ev);
   return json({ ok: true, table: { ...asTable(next), date: when.date, time: when.time } });

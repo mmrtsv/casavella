@@ -7,6 +7,7 @@
 import { settings, addDays, json } from '../../lib/booking.js';
 import { tablesConfigured, tables, tableEvent, taken, inTime, isAt, madridNow } from '../../lib/restaurant.js';
 import { send, tableConfirmation, tableNotice, langOf } from '../../lib/email.js';
+import { pushLater, when, diners, phrase } from '../../lib/push.js';
 
 // Google refused the restaurant's calendar (not shared with the service account, or a wrong ID): the page falls back to phone
 const calendarError = e => json({ error: 'calendar', detail: String(e.message || e) }, 502);
@@ -54,7 +55,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
   try {
     const cal = await tables(env);
     if (taken(await cal.list(t.date, addDays(t.date, 1)), at) + t.people > R.seats) return json({ error: 'full' }, 409);
-    await cal.create(tableEvent(t));
+    const ev = await cal.create(tableEvent(t));
+    pushLater(waitUntil, env, { title: 'Taula reservada', body: phrase(t.name, diners(t.people), when(t.date, t.time)), type: 'table', id: ev?.id, date: t.date });
   } catch (e) { return calendarError(e); }
 
   waitUntil(Promise.all([send(env, tableConfirmation(env, t)), send(env, tableNotice(env, t))]).catch(() => {}));

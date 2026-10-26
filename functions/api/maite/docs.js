@@ -5,12 +5,13 @@
 import { STAYS, configured, calendar, json } from '../../../lib/booking.js';
 import { asBooking } from '../../../lib/maite.js';
 import { drive, driveConfigured } from '../../../lib/drive.js';
+import { pushLater, nights, stayName, phrase } from '../../../lib/push.js';
 
 const TYPES = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'application/pdf'];
 const MAX = 15 * 1024 * 1024;
 const dmy = d => d.split('-').reverse().join('/');
 
-export async function onRequestPost({ request, env, data }) {
+export async function onRequestPost({ request, env, data, waitUntil }) {
   const u = new URL(request.url), stay = u.searchParams.get('stay'), id = u.searchParams.get('id');
   const name = (u.searchParams.get('name') || 'document').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, ' ').trim().slice(0, 120) || 'document';
   const type = (request.headers.get('content-type') || '').split(';')[0];
@@ -40,7 +41,10 @@ export async function onRequestPost({ request, env, data }) {
     }
     await d.upload(p.docsFolder, name, type, bytes);
   } catch (e) { return json({ error: 'drive', detail: String(e.message || e) }, 502); }
+  const first = p.docs !== 'yes';
   p.docs = 'yes'; p.checkedBy = data.user;
   const out = await cal.patch(id, { extendedProperties: { private: p } });
+  // The first document of a booking tells the other phones; the rest of the files are the same news
+  if (first) pushLater(waitUntil, env, { title: 'Documents rebuts', body: phrase(b.name || b.title, stayName(stay), nights(b.first, b.until)), type: 'docs', stay, id }, data.user);
   return json({ ok: true, booking: asBooking(stay, { ...out, first: day(out.start), until: day(out.end) }) });
 }

@@ -1,0 +1,162 @@
+<!doctype html><meta charset="utf-8">
+<style>
+@font-face { font-family: "Le Monde Livre"; src: url(../../fonts/LeMondeLivre.woff2) format("woff2"); }
+@font-face { font-family: "Halyard Display"; src: url(../../fonts/HalyardDisplay.ttf) format("truetype"); font-weight: 300 700; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #1a3f20; }
+body { font-family: "Halyard Display", sans-serif; color: #f3efe4; }
+.scene { position: absolute; inset: 0; opacity: 0; overflow: hidden; }
+.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(26,63,32,.92) 0%, rgba(26,63,32,.75) 42%, rgba(26,63,32,.15) 75%); }
+.shade-b { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(26,63,32,.95) 0%, rgba(26,63,32,.4) 45%, rgba(26,63,32,0) 70%); }
+.pad { position: absolute; left: 140px; top: 0; bottom: 0; width: 900px; display: flex; flex-direction: column; justify-content: center; gap: 28px; }
+h1, h2 { font-family: "Le Monde Livre", serif; font-weight: 400; line-height: 1.06; }
+h1 { font-size: 120px; }
+h2 { font-size: 88px; }
+p { font-size: 40px; line-height: 1.3; color: #e3ddd0; }
+.small { font-size: 30px; color: #c6bfaf; }
+.num { font-family: "Le Monde Livre", serif; font-size: 64px; color: #f3efe4; }
+.row { display: flex; gap: 28px; align-items: baseline; }
+.list { display: grid; gap: 22px; }
+.list p { font-size: 38px; }
+.paper { background: #f7f5f0; color: #1a3f20; }
+.paper p { color: #26302a; }
+.paper .small { color: #5f6a5f; }
+.ad { position: absolute; right: 140px; top: 270px; width: 720px; background: #fff; color: #202124; border-radius: 18px; padding: 40px 44px; box-shadow: 0 20px 60px rgba(0,0,0,.25); font-family: Arial, sans-serif; display: grid; gap: 12px; }
+.ad .sp { font-size: 22px; font-weight: 700; }
+.ad .url { font-size: 22px; color: #4d5156; }
+.ad .t { font-size: 34px; color: #1a0dab; line-height: 1.25; }
+.ad .d { font-size: 24px; color: #4d5156; line-height: 1.4; }
+.thumbs { position: absolute; right: 120px; top: 170px; display: flex; gap: 26px; }
+.thumbs img { width: 300px; height: 375px; object-fit: cover; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+.logo { width: 260px; }
+.center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; text-align: center; }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 36px; position: absolute; left: 140px; right: 140px; top: 470px; }
+.step { border-top: 2px solid #79a57a; padding-top: 24px; display: grid; gap: 10px; }
+.step .when { font-size: 30px; color: #79a57a; }
+.step p { font-size: 32px; }
+</style>
+
+<!-- 1. Title -->
+<div class="scene" data-a="0" data-b="6.5">
+  <img class="bg kb" src="../../img/hero-vinyes-cel.jpg">
+  <div class="shade"></div>
+  <div class="pad">
+    <img class="logo" data-d="0.3" src="../../img/logo-light.png">
+    <h1 data-d="0.8">Plan de anuncios</h1>
+    <p data-d="1.4">Noviembre de 2026</p>
+  </div>
+</div>
+
+<!-- 2. Goal -->
+<div class="scene" data-a="6" data-b="13.5">
+  <img class="bg kb" src="../../img/bedorc-capvespre.jpg">
+  <div class="shade"></div>
+  <div class="pad">
+    <h2 data-d="0.3">Reservas directas en la web</h2>
+    <p data-d="1.0">La web es nuestro único canal de venta. Cada reserva que traigan los anuncios es nuestra, sin comisión.</p>
+    <div class="row" data-d="2.0"><span class="num">40 €</span><p>como máximo por reserva</p></div>
+  </div>
+</div>
+
+<!-- 3. Message -->
+<div class="scene" data-a="13" data-b="21.5">
+  <img class="bg kb" src="../../img/hero-vinyes-capvespre.jpg">
+  <div class="shade"></div>
+  <div class="pad">
+    <p class="small" data-d="0.2">Lo que vendemos</p>
+    <h2 data-d="0.6">Entre viñedos</h2>
+    <h2 data-d="1.8">Cerca de Montserrat</h2>
+    <h2 data-d="3.0">A tocar del Penedès</h2>
+  </div>
+</div>
+
+<!-- 4. Google -->
+<div class="scene paper" data-a="21" data-b="30">
+  <div class="pad" style="width: 820px">
+    <h2 data-d="0.3">Google: quien ya busca</h2>
+    <div class="list">
+      <p data-d="1.0">Búsquedas de la zona: casa rural entre viñedos, cerca de Montserrat, Penedès</p>
+      <p data-d="1.8">10 € al día, puja máxima de 0,50 €</p>
+      <p data-d="2.6">Castellano y catalán, cada uno con sus palabras</p>
+    </div>
+  </div>
+  <div class="ad" data-d="1.2">
+    <span class="sp">Patrocinado</span>
+    <span class="url">casavellarural.com</span>
+    <span class="t">Casa rural entre viñedos. Cerca de Montserrat</span>
+    <span class="d">Casa de pueblo de 1898 entre viñedos, con Montserrat en el horizonte y el Penedès al lado.</span>
+  </div>
+</div>
+
+<!-- 5. Meta -->
+<div class="scene" data-a="29.5" data-b="38">
+  <div class="pad" style="width: 760px">
+    <h2 data-d="0.3">Instagram y Facebook: quien aún no nos conoce</h2>
+    <div class="list">
+      <p data-d="1.1">5 € al día, un solo anuncio en tres idiomas</p>
+      <p data-d="1.9">Aprende de quien abre la reserva</p>
+    </div>
+  </div>
+  <div class="thumbs">
+    <img data-d="0.8" src="../montserrat-feed-es.png">
+    <img data-d="1.3" src="../cava-feed-es.png" style="margin-top: 120px">
+    <img data-d="1.8" src="../casa-1898-feed-es.png" style="margin-top: 240px">
+  </div>
+</div>
+
+<!-- 6. Measurement -->
+<div class="scene" data-a="37.5" data-b="46">
+  <img class="bg kb" src="../../img/apt-sala-2.jpg">
+  <div class="shade"></div>
+  <div class="pad">
+    <h2 data-d="0.3">Medimos cada reserva</h2>
+    <div class="list">
+      <p data-d="1.0">Google y Meta saben qué anuncio trae cada reserva pagada</p>
+      <p data-d="1.8">PostHog cuenta también a quien rechaza las cookies</p>
+      <p data-d="2.6">Sin reservas de prueba: solo pagos reales</p>
+    </div>
+  </div>
+</div>
+
+<!-- 7. Timeline -->
+<div class="scene" data-a="45.5" data-b="54.5">
+  <div class="pad" style="top: 0; bottom: auto; padding-top: 170px; width: 1500px">
+    <h2 data-d="0.3">Dos semanas para aprender</h2>
+  </div>
+  <div class="steps">
+    <div class="step" data-d="1.0"><span class="when">Día 1</span><p>Se activa con 15 € al día</p></div>
+    <div class="step" data-d="2.0"><span class="when">Día 3</span><p>Si casi no sale, la puja sube a 0,80 €</p></div>
+    <div class="step" data-d="3.0"><span class="when">Días 7 y 14</span><p>Se para lo que no lleva a reservar</p></div>
+    <div class="step" data-d="4.0"><span class="when">Después</span><p>Puente de diciembre, del 5 al 8</p></div>
+  </div>
+</div>
+
+<!-- 8. Close -->
+<div class="scene" data-a="54" data-b="60">
+  <img class="bg kb" src="../../img/hero-vinyes-cel.jpg">
+  <div class="shade-b"></div>
+  <div class="center" style="justify-content: flex-end; padding-bottom: 150px">
+    <img class="logo" data-d="0.3" src="../../img/iso-light.png" style="width: 90px">
+    <h2 data-d="0.8">Viñas, Montserrat y Penedès</h2>
+    <p data-d="1.4">Reserva directa en casavellarural.com</p>
+  </div>
+</div>
+
+<script>
+const S = [...document.querySelectorAll('.scene')];
+const ease = x => x <= 0 ? 0 : x >= 1 ? 1 : 1 - Math.pow(1 - x, 3);
+window.render = t => {
+  for (const s of S) {
+    const a = +s.dataset.a, b = +s.dataset.b, local = t - a;
+    s.style.opacity = t < a || t > b ? 0 : Math.min(ease(local / 0.6), ease((b - t) / 0.6), 1);
+    for (const el of s.querySelectorAll('[data-d]')) {
+      const p = ease((local - +el.dataset.d) / 0.8);
+      el.style.opacity = p;
+      el.style.transform = `translateY(${(1 - p) * 30}px)`;
+    }
+    for (const img of s.querySelectorAll('.kb')) img.style.transform = `scale(${1.03 + 0.07 * Math.max(0, Math.min(1, local / (b - a)))})`;
+  }
+};
+render(0);
+</script>

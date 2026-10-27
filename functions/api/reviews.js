@@ -5,8 +5,10 @@
 // comes into view, and the browser keeps the answer for an hour.
 // Access: GOOGLE_PLACES_KEY, an API key limited to the Places API (New). Nothing else: without the key it asks Google nothing.
 // Google lets the quota go up to 125,000 a day and a budget only warns, so the cap is here: at most PLACES_PER_DAY calls a
-// day and PLACES_PER_MONTH a month (defaults 30 and 900, under the 1,000 free ones), counted in KV (MAITE). Past the cap
-// the section shows only its two buttons until the next day or month.
+// day and PLACES_PER_MONTH a month (defaults 30 and 900, under the 1,000 free ones). They are counted by the Durable
+// Object PlacesBudget of the cron Worker (cron/worker.js), bound as PLACES_BUDGET, which takes one request at a time; a
+// KV counter could be passed by simultaneous visits. Without the binding, or past the cap, Google isn't asked and the
+// section shows only its two buttons.
 export const PLACE_ID = 'ChIJK6vlrrVlpBIRBAeTHj5ufvE';
 const FIELDS = 'rating,userRatingCount,googleMapsUri,reviews';
 
@@ -30,23 +32,21 @@ export function shape(place) {
   };
 }
 
-// Counts one call against the day's and the month's cap (Madrid time); false when either is used up.
-// KV isn't atomic, so two visits in the same instant can both pass: the caps sit well under the free 1,000 for that.
+// Counts one call against the day's and the month's cap (Madrid time); false when either is used up or the budget is unreachable
 export async function allowed(env, now = new Date()) {
-  const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(now), month = day.slice(0, 7);
-  const perDay = +env.PLACES_PER_DAY || 30, perMonth = +env.PLACES_PER_MONTH || 900;
-  const [d, m] = await Promise.all([env.MAITE.get('places-' + day), env.MAITE.get('places-' + month)]).then(v => v.map(x => +x || 0));
-  if (d >= perDay || m >= perMonth) return false;
-  await Promise.all([
-    env.MAITE.put('places-' + day, String(d + 1), { expirationTtl: 3 * 86400 }),
-    env.MAITE.put('places-' + month, String(m + 1), { expirationTtl: 40 * 86400 }),
-  ]);
-  return true;
+  if (!env.PLACES_BUDGET) return false;
+  const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(now);
+  const budget = env.PLACES_BUDGET.get(env.PLACES_BUDGET.idFromName('places'));
+  try {
+    const r = await budget.fetch('https://budget/', { method: 'POST', body: JSON.stringify({
+      day, month: day.slice(0, 7), perDay: +env.PLACES_PER_DAY || 30, perMonth: +env.PLACES_PER_MONTH || 900 }) });
+    return (await r.json()).ok === true;
+  } catch (e) { return false; }
 }
 
 export async function onRequestGet({ request, env }) {
   const asked = new URL(request.url).searchParams.get('lang'), lang = ['ca', 'es', 'en'].includes(asked) ? asked : 'ca';
-  if (!env.GOOGLE_PLACES_KEY || !env.MAITE) return json({ error: 'not_configured' });
+  if (!env.GOOGLE_PLACES_KEY || !env.PLACES_BUDGET) return json({ error: 'not_configured' });
   if (!await allowed(env)) return json({ error: 'limit' });
   const headers = { 'x-goog-fieldmask': FIELDS, 'x-goog-api-key': env.GOOGLE_PLACES_KEY };
 

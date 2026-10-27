@@ -48,7 +48,7 @@ OG_IMAGE = 'img/hero-vinyes-cel.jpg'
 # Ad tags. They load only after the guest accepts cookies; while all are empty
 # the page loads no tags and shows no cookie banner.
 META_PIXEL_ID = '1825787501907485'  # Meta Events Manager, the web dataset «casavellarural.com»
-GOOGLE_TAG_ID = 'AW-18519911811'  # Google tag: GA4 'G-…' or Google Ads 'AW-…'
+GOOGLE_TAG_ID = 'G-LQ02L5RK73'  # Google tag: the GA4 property; Google Ads (AW-18519911811) is configured from the conversion below
 GOOGLE_ADS_CONVERSION = 'AW-18519911811/r1CdCI6Xx6kdEIPb_f5E'  # Google Ads, the booking conversion «Reserva»
 # PostHog (EU), the site's own analytics: full tracking and session recordings for guests who accept
 # cookies, a cookieless count for those who reject them. The project token is public by design.

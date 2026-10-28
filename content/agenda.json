@@ -1,4 +1,65 @@
 {
-  "updated": "2026-10-25",
-  "items": []
+  "updated": "2026-10-28",
+  "items": [
+    {
+      "from": "2026-11-04", "to": "2026-11-07", "place": "Igualada",
+      "title": {"ca": "Rec.0", "es": "Rec.0", "en": "Rec.0"},
+      "text": {
+        "ca": "Festival de moda efímer a les antigues adoberies del barri del Rec: estocs de dissenyadors, food trucks i concerts, de 10 a 21 h. Entrada lliure.",
+        "es": "Festival de moda efímero en las antiguas curtidurías del barrio del Rec: estocs de diseñadores, food trucks y conciertos, de 10 a 21 h. Entrada libre.",
+        "en": "A pop-up fashion festival in the old tanneries of the Rec quarter: designer stock sales, food trucks and concerts, 10 am to 9 pm. Free entry."
+      },
+      "url": "https://surtdecasa.cat/centre/agenda/2026/rec0/270490"
+    },
+    {
+      "from": "2026-11-05", "to": "2026-11-15", "place": "Vilafranca del Penedès", "minutes": 25,
+      "title": {"ca": "Most, Festival Internacional de Cinema del Vi", "es": "Most, Festival Internacional de Cine del Vino", "en": "Most, International Wine Film Festival"},
+      "text": {
+        "ca": "La 15a edició del festival del Vinseum: 37 pel·lícules de 15 països sobre el vi i la vinya, en diversos espais de la vila.",
+        "es": "La 15.ª edición del festival del Vinseum: 37 películas de 15 países sobre el vino y la viña, en varios espacios de la villa.",
+        "en": "The 15th edition of the Vinseum's festival: 37 films from 15 countries about wine and vineyards, at several venues in town."
+      },
+      "url": "https://surtdecasa.cat/penedes/agenda/2026/15e-most-festival-internacional-de-cinema-del-vi/270041"
+    },
+    {
+      "from": "2026-11-07", "place": "Vilafranca del Penedès", "minutes": 25,
+      "title": {"ca": "Visita teatralitzada nocturna al cementiri", "es": "Visita teatralizada nocturna al cementerio", "en": "Night theatre tour of the cemetery"},
+      "text": {
+        "ca": "Visita guiada amb actors al cementiri municipal, a les 20 h. Entrades a entrades.vilafranca.cat (14 €, reduïda 7 €).",
+        "es": "Visita guiada con actores al cementerio municipal, a las 20 h. Entradas en entrades.vilafranca.cat (14 €, reducida 7 €).",
+        "en": "A guided tour of the town cemetery with actors, at 8 pm. Tickets at entrades.vilafranca.cat (€14, reduced €7)."
+      },
+      "url": "https://surtdecasa.cat/penedes/agenda/2026/visita-teatralitzada-nocturna-al-cementiri-de-vilafranca/260333"
+    },
+    {
+      "from": "2026-11-08", "place": "Pontons (Alt Penedès)",
+      "title": {"ca": "Fira de la Poma de Pontons", "es": "Feria de la Manzana de Pontons", "en": "Pontons Apple Fair"},
+      "text": {
+        "ca": "Quarta fira de la poma de muntanya, amb mercat de productors i artesans i tast de cava, vi i cervesa de la zona, de 10 a 18.30 h.",
+        "es": "Cuarta feria de la manzana de montaña, con mercado de productores y artesanos y cata de cava, vino y cerveza de la zona, de 10 a 18.30 h.",
+        "en": "The fourth mountain-apple fair, with a producers' and crafts market and tastings of local cava, wine and beer, 10 am to 6.30 pm."
+      },
+      "url": "https://surtdecasa.cat/penedes/agenda/2026/4a-fira-de-la-poma-de-pontons/270447"
+    },
+    {
+      "from": "2026-11-21", "place": "Igualada",
+      "title": {"ca": "Festa de la Ratafia de l'Anoia", "es": "Fiesta de la Ratafía de l'Anoia", "en": "Anoia Ratafia Festival"},
+      "text": {
+        "ca": "La 21a festa de la ratafia a la plaça Catarineu: tast, concurs de ratafia casolana, concerts i dinar amb tiquet (18 €).",
+        "es": "La 21.ª fiesta de la ratafía en la plaza Catarineu: cata, concurso de ratafía casera, conciertos y comida con tique (18 €).",
+        "en": "The 21st ratafia festival in Plaça Catarineu: tasting, a homemade ratafia contest, concerts and a ticketed lunch (€18)."
+      },
+      "url": "https://surtdecasa.cat/centre/agenda/2026/xxi-festa-de-la-ratafia-de-lanoia/270479"
+    },
+    {
+      "from": "2026-10-03", "to": "2026-11-28", "place": "Piera",
+      "title": {"ca": "Concurs de Teatre Amateur Vila de Piera", "es": "Concurso de Teatro Amateur Vila de Piera", "en": "Vila de Piera Amateur Theatre Competition"},
+      "text": {
+        "ca": "La 50a edició al Teatre Foment: nou companyies de tot Catalunya, els dissabtes a les 19 h.",
+        "es": "La 50.ª edición en el Teatre Foment: nueve compañías de toda Cataluña, los sábados a las 19 h.",
+        "en": "The 50th edition at Teatre Foment: nine companies from across Catalonia, on Saturdays at 7 pm."
+      },
+      "url": "https://surtdecasa.cat/centre/agenda/2026/50e-concurs-de-teatre-amateur/270481"
+    }
+  ]
 }

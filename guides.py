@@ -163,7 +163,7 @@ def page(site, lang, title, description, canonical, alternates, ld, main, image=
 {main}
 </main>
 <footer><div class="wrap">
-<div>Carrer Munné Orpí, 23, 08784 El Bedorc (Barcelona)<br><a href="tel:+34667409859">+34 667 40 98 59</a><br><a href="mailto:info@casavellarural.com">info@casavellarural.com</a></div>
+<div>Carrer Munné Orpí, 23, 08784 El Bedorc (Barcelona)<br><a href="tel:+34667409859">+34 667 40 98 59</a><br><!--email_off--><a href="mailto:info@casavellarural.com">info@casavellarural.com</a><!--/email_off--></div>
 <nav class="langs" aria-label="{w['lang']}">{langs}</nav>
 </div></footer>
 </body>

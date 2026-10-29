@@ -61,7 +61,7 @@ Built between 1898 and 1900 as a farmhouse (Casa Parellada). For decades its own
 Guides to the area, with sources: ${SITE}/en/guides/ (Catalan: ${SITE}/guies/, Spanish: ${SITE}/es/guias/).
 
 
-- Castell de la Ventosa, in El Bedorc itself: remains of the castle the village grew from, documented more than a thousand years ago.
+- Castell de la Ventosa, in El Bedorc itself: remains of the castle the village grew from, documented since 1188. Guide: ${SITE}/en/guides/what-to-see-in-el-bedorc/
 - Sant Sadurní d'Anoia (15 min): the capital of cava, with century-old cava cellars and tastings among the vineyards.
 - Capellades (20 min): the Molí Paperer paper mill museum and La Bassa.
 - Vilafranca del Penedès (25 min): the Vinseum wine museum, the market and the castellers at the festa major.

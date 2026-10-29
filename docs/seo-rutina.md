@@ -1,5 +1,7 @@
 # Rutina semanal de SEO y contenido
 
+De martes a domingo corre la rutina diaria (`docs/seo-diaria.md`): web, IndexNow, foros del día, menciones nuevas y agenda urgente. El ciclo de preguntas y el cambio de la semana son solo de los lunes.
+
 Lo que hace cada lunes la sesión programada de Claude (Routine «SEO setmanal de La Casa Vella»). También se puede lanzar a mano pidiéndoselo a Claude: «haz la rutina de docs/seo-rutina.md».
 
 Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne datos, verifica y redacta. El dueño ha decidido que la rutina integre sola en `main` cuando todas las comprobaciones pasan; el informe semanal le cuenta qué se ha publicado. Todo lo que sale en la web lleva su fuente y nada se inventa (ver las reglas de `CLAUDE.md` y `.claude/rules/`). Google penaliza el contenido generado en masa sin valor propio («scaled content abuse»); por eso la rutina no crea páginas en serie: actualiza datos reales.

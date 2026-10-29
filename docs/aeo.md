@@ -22,6 +22,9 @@ Salen de las decisiones que toma un huésped antes de reservar, no de palabras c
 | P10 | Elegir esta casa | La Casa Vella El Bedorc Piera | `/` |
 | P11 | Elegir esta casa | La Casa Vella El Bedorc opiniones | `/` (opiniones), ficha de Google |
 | P12 | Elegir esta casa | La Casa Vella El Bedorc precio | `/`, `/llms.txt` |
+| P13 | Plan del viaje | El Bedorc Piera qué ver | `/es/guias/que-ver-en-el-bedorc/` |
+| P14 | Zona | casa rural con restaurante cerca de Barcelona escapada pareja | `/es/` |
+| P15 | Plan del viaje | Montserrat day trip from Barcelona or stay overnight nearby village | `/en/guides/montserrat-from-el-bedorc/` |
 
 Se añade una pregunta cuando aparece una decisión nueva (una temporada, una oferta) y se quita solo si deja de tener sentido. Nunca más de 15: el objetivo es seguirlas, no acumularlas.
 
@@ -65,7 +68,13 @@ Fuentes vistas en la primera medición (29 de octubre de 2026):
 | [Time Out Barcelona](https://www.timeout.es/barcelona/es/viaje/alt-penedes-un-dia-en-sant-sadurni-danoia) | Ganar | P2, P3 | Historia real (la casa de 1898, la familia, el restaurante) a quien escribe las escapadas | Dueño o agencia |
 | [Penedès Turisme](https://www.penedesturisme.cat/en/activity/weekend-wine-getaway-spa) | Ganar | P4 | Ver si una escapada con una cava de Sant Sadurní puede entrar como actividad | Dueño |
 | [elbedorc.com](https://elbedorc.com) | Ganar | P10 | La web del pueblo sale en la búsqueda de la casa: pedir una mención con enlace | Dueño |
-| Foros (Rick Steves, TripAdvisor, Reddit) | Ganar | P4, P7 | Lo de la rutina, paso 5: respuestas útiles en primera persona | Dueño |
+| [Sensación Rural, casas rurales con restaurante](https://www.sensacionrural.es/casas-rurales-en-barcelona/con-restaurante) | Reclamar | P14 | Lista 27 alojamientos rurales con restaurante en la provincia; la casa encaja exactamente | Dueño |
+| TripAdvisor | Reclamar | P11 | Las respuestas sobre opiniones mandan a «Google Maps, Tripadvisor o Booking»; en TripAdvisor no hay ficha. Dos fichas: alojamiento y restaurante | Dueño |
+| [Escapada Rural, blog de calçotadas](https://www.escapadarural.com/blog/casas-rurales-para-disfrutar-de-una-rica-calcotada/) | Ganar | P8 | El artículo es de 2024 y lo citan los asistentes para 2027. Si el restaurante hace calçots, pedir entrar en la próxima edición | Dueño |
+| [Penedès Turisme, calçotada entre viñas](https://www.penedesturisme.cat/en/calcotada-among-vineyards-penedes) | Ganar | P8 | Lo mismo, para la temporada 2027 | Dueño |
+| [Barcelona Secreta](https://barcelonasecreta.com/en/eat-calcots-barcelona/) y [Barcelona Urbana](https://barcelonaurbana.com/blog/donde-comer-calcots-cerca-barcelona) | Ganar | P8 | Listas de dónde comer calçots cerca de Barcelona; se actualizan cada invierno | Dueño o agencia |
+| [Picuco](https://www.picuco.com/es-es/trips/escapadas/penedes-experiences/escapada-enologica-cultural-penedes/) | Ganar | P4 | Vende escapadas de 2 noches en el Penedès con casa rural; ver si la casa puede ser uno de sus alojamientos | Dueño |
+| Foros (Rick Steves, TripAdvisor, Reddit) | Ganar | P4, P7, P15 | Lo de la rutina, paso 5: respuestas útiles en primera persona | Dueño |
 | [gites.fr](https://www.gites.fr/gites_piera_277354.html) y [cybevasion.fr](https://www.cybevasion.fr/tous-les-hebergements-piera-v277354.html) | Corregir | P10 | Sitúan la casa en «Vallbona» y la describen como un gîte de 30 m² para 2. Copian de otro canal (Booking u otro): corregir ahí la ubicación y la descripción | Dueño |
 
 ## 4. Google y asistentes, por separado
@@ -98,14 +107,19 @@ Cada semana:
 | P1 | No | Escapada Rural, casasrurales.net, Airbnb (Monistrol, El Cavall Bernat), Femturisme | Rastreo, Terceros | |
 | P2 | No | Femturisme, Clubrural, Time Out, Hotels.com | Rastreo, Terceros | |
 | P3 | No | Femturisme, Barcelona és molt més, Time Out (Hotel La Pedra), Escapada Rural | Rastreo, Terceros | |
-| P4 | No | Hotels.com, Expedia, intothevineyard.com, Penedès Turisme | Rastreo, Floja: la descripción de `/en/` no dice que las caves están a 15 minutos | Candidato para la próxima semana |
+| P4 | No | Hotels.com, Expedia, intothevineyard.com, Penedès Turisme | Rastreo, Floja: la descripción de `/en/` no dice que las caves están a 15 minutos | 29 oct: la descripción de las tres portadas dice «a 15 minutos de las cavas de Sant Sadurní» |
 | P5 | No | Escapada Rural, casasrurales.net, Clubrural, Airbnb | Rastreo, Terceros | |
 | P6 | No (28 oct) | gites.fr, tuscasasrurales.com | Rastreo, Terceros | |
 | P7 | No | ofertitas.es, excursiones de un día (Civitatis, Musement) | Rastreo, Floja: la respuesta dice que no encuentra dónde dormir en el Penedès; las guías de Montserrat y del cava responden cada mitad por separado | 29 oct: la guía del cava gana el apartado «Montserrat y el cava en un fin de semana», enlazado a la de Montserrat |
-| P8 | Sin medir | | | |
+| P8 | No | Escapada Rural (blog de 2024), Penedès Turisme, Barcelona Secreta, Barcelona Urbana | Rastreo, Terceros. La guía de calçots no dice si el restaurante los hace: falta el dato del dueño | |
 | P9 | No | venuu.com, Gastroranking (Piera, Sant Sadurní) | Rastreo, Floja: los grupos de 8 a 16 solo están en el formulario y en `llms.txt`, no en el texto de la página | |
 | P10 | Ficha de gites.fr (datos mal) | gites.fr, cybevasion.fr, Wikipedia (Piera), patrimonicultural.diba.cat | Rastreo, Terceros (Corregir) | |
-| P11 | Sin medir | | | |
+| P11 | No (solo gites.fr, ahora con 8,7 y otra vez en Vallbona) | gites.fr; el resto son casas con nombre parecido (La Casa Vella del Pantà, Casa Vella de Mallorca) | Rastreo, Terceros: las 23 opiniones de Google con 5,0 no las ve ningún rastreador | |
 | P12 | Sin medir | | | |
+| P13 | No | Fichas de patrimonio de la Diputació (PDF), tuscasasrurales.com (Maset de la Costa) | Falta: ninguna página explica qué ver en El Bedorc; los asistentes lo montan con las fichas de patrimonio | 29 oct: guía «Qué ver en El Bedorc» con las fichas de la Diputació y Castells Catalans |
+| P14 | No | Sensación Rural, tuscasasrurales.com, Escapada Rural, Zonas Rurales | Rastreo, Terceros | |
+| P15 | No | Blogs que recomiendan dormir en Monistrol de Montserrat | Rastreo, Terceros. La guía de Montserrat ya dice cómo ir desde la casa | |
+
+Segunda ronda (29 de octubre, por la tarde): seis preguntas nuevas o sin medir. Dos cambios propios: la guía de El Bedorc (P13, la única pregunta donde nadie da una respuesta hecha) y las descripciones de las portadas (P4). De paso salió un dato propio mal: la portada y `llms.txt` decían que el castillo está «documentado hace más de mil años»; la primera mención escrita es de 1188 (la torre se atribuye al siglo X, pero sin documento). Corregido en los tres idiomas.
 
 Lectura de la primera medición: la casa no sale en ninguna pregunta y la causa común es **Rastreo** (Search Console tiene la indexación en cola desde el 27 de octubre). Mientras tanto, lo que más pesa son los directorios: Escapada Rural, casasrurales.net, Clubrural y Femturisme salen en casi todas las preguntas de zona y tipo, y la casa no está en ninguno.

@@ -30,7 +30,7 @@ Debajo: el texto en pantalla, el copy del post y la duración estimada.
 
 ## Auditoría
 
-- El guion no se aleja más de un 10 % de la duración del original y cada momento va en su línea.
+- Si el original dura más de un minuto, se copia solo un tramo de 20 a 30 segundos (normalmente la apertura) y se dice cuál. El guion no se aleja más de un 10 % de la duración de lo que copia, y cada momento va en su línea.
 - Cada guion cita el vídeo del que sale.
 - Nada que la casa no tenga o no haga (comprobar en `contexto.md` y `/llms.txt`): ni piscina, ni desayuno, ni precios inventados.
 - Las reglas de `.claude/rules/`: sin exclamaciones, sin frases de folleto, sin rayas largas.

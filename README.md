@@ -12,6 +12,7 @@ Web de La Casa Vella, casa de poble familiar al Bedorc (1898): allotjaments, res
 | `maite-app/` | Maite, el back office (React, Vite, HeroUI). Es construeix a `dist/maite/` (vegeu més avall). Com està fet i quines llibreries fa servir: `maite-app/README.md`. |
 | `android/` | Maite per a Android: app nativa (Compose) amb tot el que fa la web, per instal·lar a mà (vegeu `android/README.md`). |
 | `lib/` | Lògica compartida de les funcions: reserves i preus (`booking.js`), Maite (`maite.js`), contingut dels allotjaments (`stays.js`) i taules del restaurant (`restaurant.js`). |
+| `docs/social/` | L'equip de xarxes de Claude Code: el context de la casa, les regles i els informes de cada dilluns. Els agents són a `.claude/agents/social-*.md` i les skills a `.claude/skills/social-*/` (vegeu `docs/social/README.md`). |
 | `cron/` | Un Worker de Cloudflare que cada 5 minuts publica els posts d'Instagram programats (vegeu `cron/README.md`). |
 | `img/` | Fotos, logo, isotip i plaques dels allotjaments. |
 | `fonts/` | Tipografies de marca: Le Monde Livre i Halyard Display. |

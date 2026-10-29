@@ -56,6 +56,6 @@ Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne da
 
 8. **Entrega**: commit claro y push de la rama. Después, si todo lo del paso 6 ha salido bien:
    - `git fetch origin main` y `git merge origin/main` en la rama; vuelve a ejecutar `python3 build.py` y `git checkout origin/main -- dist/maite`, y repite la comprobación del paso 6.
-   - `git push origin HEAD:main`. Cloudflare publica en uno o dos minutos; comprueba con `curl` que `/` responde 200 y que la agenda nueva está en el HTML.
+   - `git push origin HEAD:main`. Cloudflare publica en uno o dos minutos; comprueba con `curl` que `/` responde 200 y que la agenda nueva está en el HTML. Después, `python3 indexnow.py` avisa a Bing (el buscador de ChatGPT) de todas las páginas del sitemap.
    - Si algo falla (conflicto, comprobación en rojo, una fuente dudosa), no integres: abre una pull request a `main` con el problema explicado al principio, para que la revise el dueño.
    El informe va siempre en el commit, aunque la agenda no cambie.

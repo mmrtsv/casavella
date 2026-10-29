@@ -53,6 +53,8 @@ GOOGLE_ADS_CONVERSION = 'AW-18519911811/r1CdCI6Xx6kdEIPb_f5E'  # Google Ads, the
 # PostHog (EU), the site's own analytics: full tracking and session recordings for guests who accept
 # cookies, a cookieless count for those who reject them. The project token is public by design.
 POSTHOG_KEY = 'phc_wKuEYoNuGTakEhSHMUcAtm8Ms9xsKTpkMfSXuxiAQj69'
+# IndexNow key, public by design: served at /<key>.txt (see indexnow.py).
+INDEXNOW_KEY = '02b241b7ed2c744a840d88e0cff40c2c'
 
 
 # ---- Structured data: the facts the page states, for search engines and AI assistants ----
@@ -271,6 +273,8 @@ AI_BOTS = ('GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'PerplexityBot', 'Perplexi
     ''.join(f'User-agent: {b}\n' for b in AI_BOTS) + 'Allow: /\nDisallow: /api/\n\n'
     'User-agent: *\nAllow: /\nDisallow: /api/\n\n'
     f'Sitemap: {SITE_URL}/sitemap.xml\n', encoding='utf-8')
+# IndexNow (Bing, which ChatGPT searches with, Yandex, Seznam): the key file proves the site is ours; indexnow.py sends the URLs.
+(DIST / f'{INDEXNOW_KEY}.txt').write_text(INDEXNOW_KEY, encoding='utf-8')
 today = datetime.date.today().isoformat()
 links = ''.join(f'    <xhtml:link rel="alternate" hreflang="{l}" href="{SITE_URL}{PATHS[l]}"/>\n' for l in LANGS)
 links += f'    <xhtml:link rel="alternate" hreflang="x-default" href="{SITE_URL}/"/>\n'

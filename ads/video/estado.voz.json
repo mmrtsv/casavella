@@ -1,0 +1,61 @@
+{
+ "seconds": 195.06,
+ "voice": [
+  {
+   "at": 0.6,
+   "file": "estado-voz/01.mp3"
+  },
+  {
+   "at": 11.63,
+   "file": "estado-voz/02.mp3"
+  },
+  {
+   "at": 24.91,
+   "file": "estado-voz/03.mp3"
+  },
+  {
+   "at": 39.94,
+   "file": "estado-voz/04.mp3"
+  },
+  {
+   "at": 52.01,
+   "file": "estado-voz/05.mp3"
+  },
+  {
+   "at": 65.76,
+   "file": "estado-voz/06.mp3"
+  },
+  {
+   "at": 80.63,
+   "file": "estado-voz/07.mp3"
+  },
+  {
+   "at": 93.99,
+   "file": "estado-voz/08.mp3"
+  },
+  {
+   "at": 107.58,
+   "file": "estado-voz/09.mp3"
+  },
+  {
+   "at": 124.7,
+   "file": "estado-voz/10.mp3"
+  },
+  {
+   "at": 140.61,
+   "file": "estado-voz/11.mp3"
+  },
+  {
+   "at": 155.82,
+   "file": "estado-voz/12.mp3"
+  },
+  {
+   "at": 169.99,
+   "file": "estado-voz/13.mp3"
+  },
+  {
+   "at": 186.14,
+   "file": "estado-voz/14.mp3"
+  }
+ ]
+}

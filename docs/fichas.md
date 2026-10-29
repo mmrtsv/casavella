@@ -44,6 +44,8 @@ Datos, siempre exactamente iguales en todos:
 - Servicios: wifi gratuito, aparcamiento gratuito, aire acondicionado, calefacción, baño privado, smart TV, nevera, toallas y ropa de cama, jardín con terraza, restaurante.
 - Fotos: las de `img/` del repositorio (las mismas de la web). Al menos la fachada, cada alojamiento, el restaurante y la vista a Montserrat.
 
+Textos completos por directorio (descripciones corta y larga en tres idiomas, alojamientos, restaurante, OpenStreetMap): `docs/fichas-textos.md`.
+
 ### Descripción en castellano
 
 > La Casa Vella es una casa de pueblo de 1898 en El Bedorc (Piera, Anoia), entre viñas y con Montserrat en el horizonte. La familia la ha restaurado conservando los muros de piedra y las vigas de madera. Tiene dos apartamentos con cocina (Montserrat y La Pineda, hasta 3 personas) y dos habitaciones con baño privado (Les Vinyes y Figarot, 2 personas). Wifi, aire acondicionado y aparcamiento gratuitos. En la planta baja, un restaurante que abre los días anunciados y para grupos de 8 a 16 personas. Sant Sadurní d'Anoia y sus cavas están a 15 minutos; Montserrat y Barcelona, a 45. Los caminos entre viñas empiezan en la puerta.

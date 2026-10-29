@@ -133,6 +133,8 @@ Cada semana:
 | P19 | No | felicesvacaciones.es, Rumbo, Barcelona Urbana; el Penedès sale como ruta del vino | Rastreo, Falta | 29 oct: la guía del fin de semana |
 | P20 | Sin medir | | | |
 
+Rastreo, 29 de octubre por la noche: Instinct confirma `/`, `/es/` y `/en/` indexadas en Google, el sitemap en Search Console y Bing, los rastreadores de IA permitidos en Cloudflare, Crawler Hints activo, el correo sin ofuscar y GA4 vinculado con Search Console. Comprobado desde fuera: los rastreadores de IA reciben 200 y el correo se lee en el HTML. Search Console leyó el sitemap con 15 páginas; hoy tiene 21 (faltaban las guías de El Bedorc y del fin de semana): hay que volver a enviarlo.
+
 Tercera ronda (29 de octubre): preguntas genéricas, porque casi nadie busca El Bedorc ni Piera. Las escapadas cerca de Barcelona las ganan listas de medios y directorios (Barcelona Secreta, Barcelona Urbana, Sensación Rural, Som Rurals) y el Penedès sale como la zona recomendada, sin nombrar ninguna casa. Dos líneas: entrar en esas listas (Instinct y el dueño, sección 3) y una página propia que responde la pregunta con datos concretos (la guía del fin de semana).
 
 Segunda ronda (29 de octubre, por la tarde): seis preguntas nuevas o sin medir. Dos cambios propios: la guía de El Bedorc (P13, la única pregunta donde nadie da una respuesta hecha) y las descripciones de las portadas (P4). De paso salió un dato propio mal: la portada y `llms.txt` decían que el castillo está «documentado hace más de mil años»; la primera mención escrita es de 1188 (la torre se atribuye al siglo X, pero sin documento). Corregido en los tres idiomas.

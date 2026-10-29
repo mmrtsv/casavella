@@ -6,7 +6,8 @@ Writes docs/social/datos/<date>.json and .md with three things:
      docs/social/contexto.md: views against the median of the channel's own recent uploads.
      With YOUTUBE_API_KEY (YouTube Data API v3, free) it also has the date, likes and comments;
      without it, it reads YouTube's public listings with yt-dlp (views only).
-  2. La Casa Vella's own Instagram posts, with INSTAGRAM_TOKEN (the same token Maite uses).
+  2. La Casa Vella's own Instagram posts, from /api/social-stats on the live site, which uses Maite's
+     Instagram token. Needs SOCIAL_CRON_SECRET, the same secret as the cron Worker in cron/.
   3. The TikTok and Instagram links in docs/social/enlaces.md, with the author and title from
      TikTok's public oEmbed.
 
@@ -27,7 +28,8 @@ ROOT = Path(__file__).resolve().parent
 SOCIAL = ROOT / 'docs' / 'social'
 TODAY = date.today()
 YT_KEY = os.environ.get('YOUTUBE_API_KEY')
-IG_TOKEN = os.environ.get('INSTAGRAM_TOKEN')
+CRON_SECRET = os.environ.get('SOCIAL_CRON_SECRET')
+SITE_URL = os.environ.get('SITE_URL', 'https://casavellarural.com')
 PER_PHRASE = 15        # videos per search phrase
 CHANNEL_SAMPLE = 20    # recent uploads that make a channel's median
 MAX_CHANNELS = 40
@@ -160,23 +162,21 @@ def youtube(phrases, exclude):
 # Own Instagram ---------------------------------------------------------------------------------
 
 def instagram():
-    if not IG_TOKEN:
+    """{username, followers, insights, posts} from the site, or {'error': …}; None without the secret."""
+    if not CRON_SECRET:
         return None
-    base = 'https://graph.instagram.com/v23.0'
-    fields = 'id,caption,media_type,permalink,timestamp,like_count,comments_count'
-    posts = get(f'{base}/me/media?fields={fields}&limit=30&access_token={IG_TOKEN}').get('data', [])
-    for p in posts:
-        p['caption'] = (p.get('caption') or '')[:120]
-        try:
-            ins = get(f'{base}/{p["id"]}/insights?metric=reach,saved,shares,views&access_token={IG_TOKEN}')
-            p.update({m['name']: m['values'][0]['value'] for m in ins.get('data', [])})
-        except Exception:
-            pass  # Insights need instagram_business_manage_insights; likes and comments still count.
-    likes = [p.get('like_count') or 0 for p in posts]
+    req = urllib.request.Request(SITE_URL + '/api/social-stats',
+                                 headers={'Authorization': 'Bearer ' + CRON_SECRET, 'User-Agent': 'casavella-social'})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            d = json.load(r)
+    except Exception as e:
+        return {'error': str(e)}
+    likes = [p['likes'] for p in d['posts'] if p.get('likes') is not None]
     median = statistics.median(likes) if likes else 0
-    for p in posts:
-        p['ratio'] = round((p.get('like_count') or 0) / median, 1) if median else None
-    return posts
+    for p in d['posts']:
+        p['ratio'] = round(p['likes'] / median, 1) if median and p.get('likes') is not None else None
+    return d
 
 
 # Links dropped by hand -------------------------------------------------------------------------
@@ -222,14 +222,19 @@ def report(videos, ig, dropped):
                   f'| {v["published"] or "sin dato"} | {v["phrase"]} |')
     md += ['', '## Instagram de la casa', '']
     if ig is None:
-        md.append('Sin datos: falta INSTAGRAM_TOKEN.')
+        md.append('Sin datos: falta SOCIAL_CRON_SECRET.')
+    elif 'error' in ig:
+        md.append(f'Sin datos: /api/social-stats ha fallado ({cell(ig["error"])}).')
     else:
-        md += ['Veces: likes del post dividido por la mediana de los últimos 30 posts.', '',
-               '| Post | Fecha | Likes | Comentarios | Alcance | Guardados | Compartidos | Veces |', '|---|---|---|---|---|---|---|---|']
-        for p in sorted(ig, key=lambda p: -(p['ratio'] or 0)):
-            md.append(f'| [{cell(p["caption"])[:60] or p["media_type"]}]({p["permalink"]}) | {p["timestamp"][:10]} '
-                      f'| {num(p.get("like_count"))} | {num(p.get("comments_count"))} | {num(p.get("reach"))} '
-                      f'| {num(p.get("saved"))} | {num(p.get("shares"))} | {num(p["ratio"])} |')
+        md += [f'@{ig["username"]}: {num(ig["followers"])} seguidores.', '',
+               'Veces: likes del post dividido por la mediana de los últimos 30 posts.'
+               + ('' if ig['insights'] else ' Alcance, guardados, compartidos y reproducciones: sin dato, el token no tiene el permiso de estadísticas.'), '',
+               '| Post | Fecha | Likes | Comentarios | Alcance | Guardados | Compartidos | Reproducciones | Veces |',
+               '|---|---|---|---|---|---|---|---|---|']
+        for p in sorted(ig['posts'], key=lambda p: -(p['ratio'] or 0)):
+            md.append(f'| [{cell(p["caption"])[:60] or p["type"]}]({p["url"]}) | {p["at"][:10]} '
+                      f'| {num(p.get("likes"))} | {num(p.get("comments"))} | {num(p.get("reach"))} '
+                      f'| {num(p.get("saved"))} | {num(p.get("shares"))} | {num(p.get("views"))} | {num(p["ratio"])} |')
     md += ['', '## Enlaces de TikTok e Instagram', '']
     if not dropped:
         md.append('Ninguno en docs/social/enlaces.md esta semana.')
@@ -248,7 +253,7 @@ def main():
     (out / f'{TODAY}.json').write_text(json.dumps({'date': str(TODAY), 'youtube_api': bool(YT_KEY), 'youtube': videos,
                                                    'instagram': ig, 'links': dropped}, ensure_ascii=False, indent=1), encoding='utf-8')
     (out / f'{TODAY}.md').write_text(report(videos, ig, dropped), encoding='utf-8')
-    print(f'{len(videos)} vídeos de YouTube, {len(ig or [])} posts propios, {len(dropped)} enlaces: docs/social/datos/{TODAY}.md')
+    print(f'{len(videos)} vídeos de YouTube, {len((ig or {}).get('posts') or [])} posts propios, {len(dropped)} enlaces: docs/social/datos/{TODAY}.md')
 
 
 if __name__ == '__main__':

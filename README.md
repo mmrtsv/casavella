@@ -159,7 +159,7 @@ No hi ha cap altra base de dades: tot el que es canvia a Maite es llegeix al mom
 8. **Publicar a Instagram** (Xarxes socials):
    1. Al mòbil, passa el compte d'Instagram a professional (Configuració → Tipus de compte → Empresa o Creador).
    2. A [developers.facebook.com](https://developers.facebook.com) crea una app de tipus *Business* i afegeix-hi el producte **Instagram** amb «API setup with Instagram login». No cal pàgina de Facebook ni revisió de Meta: l'app només publica al teu compte.
-   3. A «Generate access tokens», afegeix el compte d'Instagram, accepta els permisos `instagram_business_basic` i `instagram_business_content_publish`, i copia el testimoni.
+   3. A «Generate access tokens», afegeix el compte d'Instagram, accepta els permisos `instagram_business_basic` i `instagram_business_content_publish` (i `instagram_business_manage_insights` perquè l'equip de xarxes vegi l'abast, els desats i els compartits de cada post, a `/api/social-stats`), i copia el testimoni.
    4. Posa'l com a secret `INSTAGRAM_TOKEN` a Cloudflare Pages (Production). Maite el renova cada setmana sol (dura 60 dies) i desa el renovat a KV (clau `instagram`). Si mai caduca, n'hi ha prou amb generar-ne un de nou i canviar el secret.
 
    Cada post de la graella té el botó de publicar: Maite en fa un JPEG (un per imatge, si és un carrusel), el desa a R2 i Instagram l'agafa de `SITE_URL/photos/…` amb el copy desat. Les stories de *Menús* es publiquen igual, sense copy. Sense el secret, el botó no surt.

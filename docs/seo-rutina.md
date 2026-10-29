@@ -37,14 +37,13 @@ Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne da
    - `/llms.txt`: que precios, horarios y días del restaurante coincidan con `/api/settings`.
    - `/api/reviews?lang=ca`: si responde, apunta la nota y el número de opiniones.
 
-4. **Visibilidad**: busca en la web (WebSearch) estas consultas y apunta si sale casavellarural.com o una ficha de La Casa Vella, en qué posición y con qué datos:
-   - casa rural cerca de Montserrat
-   - dónde dormir cerca de Sant Sadurní d'Anoia
-   - allotjament rural Anoia
-   - casa rural Piera
-   - rural guesthouse near Montserrat
-   - La Casa Vella El Bedorc
-   Si algún sitio publica datos que no coinciden con los de `docs/seo.md` (NAP), apúntalo.
+4. **Visibilidad, pregunta por pregunta** (el ciclo de `docs/aeo.md`):
+   - Busca en la web (WebSearch) cada pregunta de `docs/aeo.md`, sección 1, tal como está escrita. Apunta si sale casavellarural.com o una ficha de La Casa Vella, en qué posición y qué fuentes salen en su lugar.
+   - Diagnostica cada pregunta perdida (Rastreo, Floja, Falta, Terceros) y clasifica cada fuente nueva en propias, reclamar, ganar o corregir (secciones 2 y 3).
+   - Mira si la pregunta del cambio de la semana pasada se ha movido.
+   - Haz **un** cambio propio concreto para la pregunta que más pese (mejorar una página floja antes que crear otra). Si el cambio es una guía nueva, cuenta como la guía del paso 2b.
+   - Añade la columna de hoy al seguimiento (sección 6) y actualiza la tabla de fuentes.
+   Si algún sitio publica datos que no coinciden con los de `docs/seo.md` (NAP), apúntalo como fuente a corregir.
 
 5. **Borradores para el dueño** (no se publican solos):
    - Una publicación de Google Business Profile para la semana (máximo 1.500 caracteres, en catalán y castellano) a partir de algo real: un día que abre el restaurante (de `/api/settings`), un evento de la agenda, una temporada (calçots, vendimia). Con el enlace a la web y, si toca, `?in=&out=` con fechas libres.
@@ -53,7 +52,7 @@ Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne da
 
 6. **Generar y comprobar**: `python3 build.py`, `git checkout origin/main -- dist/maite`. Comprueba con Playwright que la sección de la agenda, el bloque de guías y cada guía nueva o cambiada se ven bien en `/`, `/es/` y `/en/` (escritorio y 390 px) y que no hay errores en la consola.
 
-7. **Informe**: `docs/informes/AAAA-MM-DD.md` en castellano, corto: qué se ha cambiado en la agenda y en las guías (con las fuentes), estado de la web, visibilidad, problemas encontrados y los borradores del paso 5.
+7. **Informe**: `docs/informes/AAAA-MM-DD.md` en castellano, corto: qué se ha cambiado en la agenda y en las guías (con las fuentes), estado de la web, visibilidad (qué preguntas se han movido, el cambio de la semana y las acciones sobre fuentes de terceros para el dueño), problemas encontrados y los borradores del paso 5.
 
 8. **Entrega**: commit claro y push de la rama. Después, si todo lo del paso 6 ha salido bien:
    - `git fetch origin main` y `git merge origin/main` en la rama; vuelve a ejecutar `python3 build.py` y `git checkout origin/main -- dist/maite`, y repite la comprobación del paso 6.

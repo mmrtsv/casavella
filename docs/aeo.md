@@ -1,0 +1,111 @@
+# Preguntas de compra y fuentes (AEO)
+
+Cómo trabaja La Casa Vella su visibilidad en Google y en los asistentes de IA, pregunta por pregunta. Es el método con el que Granola multiplicó por 47 en siete meses los usuarios nuevos que le llegan de búsquedas con IA, según el [hilo de jam del 28 de octubre de 2026](https://x.com/wespreadjam/status/2115568290307469548), adaptado a una casa rural de cuatro alojamientos. Lo ejecuta cada semana la rutina (`docs/seo-rutina.md`, paso 4); `docs/seo.md` tiene el plan general.
+
+La idea en una línea: no se publica más contenido a ciegas. Se mide qué preguntas de compra se pierden, se diagnostica por qué, se hace un cambio concreto y se vuelve a medir.
+
+## 1. Las preguntas
+
+Salen de las decisiones que toma un huésped antes de reservar, no de palabras clave. Cada pregunta tiene la página propia que debería responderla. Se buscan siempre igual, para poder comparar semana a semana.
+
+| Id | Decisión | Pregunta | Página propia que la responde |
+| --- | --- | --- | --- |
+| P1 | Zona | casa rural cerca de Montserrat para dos personas | `/es/` |
+| P2 | Zona | dónde dormir cerca de Sant Sadurní d'Anoia cavas | `/es/guias/cavas-de-sant-sadurni/` |
+| P3 | Zona | allotjament rural Anoia amb restaurant | `/` |
+| P4 | Zona | where to stay near Montserrat and Penedès wineries instead of Barcelona | `/en/`, `/en/guides/cava-cellars-sant-sadurni/` |
+| P5 | Tipo de alojamiento | apartamento rural con cocina cerca de Barcelona fin de semana Penedès | `/es/` (alojamientos) |
+| P6 | Tipo de alojamiento | casa rural Piera | `/es/` |
+| P7 | Plan del viaje | escapada fin de semana Montserrat y cavas dónde alojarse | `/es/guias/cavas-de-sant-sadurni/` |
+| P8 | Plan del viaje | calçotada cerca de Barcelona 2027 | `/es/guias/temporada-de-calcots-2027/` |
+| P9 | Grupo o celebración | restaurante para grupo de 12 personas Anoia Piera celebración | `/es/` (restaurante, `#esdeveniment`) |
+| P10 | Elegir esta casa | La Casa Vella El Bedorc Piera | `/` |
+| P11 | Elegir esta casa | La Casa Vella El Bedorc opiniones | `/` (opiniones), ficha de Google |
+| P12 | Elegir esta casa | La Casa Vella El Bedorc precio | `/`, `/llms.txt` |
+
+Se añade una pregunta cuando aparece una decisión nueva (una temporada, una oferta) y se quita solo si deja de tener sentido. Nunca más de 15: el objetivo es seguirlas, no acumularlas.
+
+## 2. Diagnóstico de cada pregunta perdida
+
+Antes de crear nada, cada pregunta en la que no sale la casa recibe uno o varios de estos diagnósticos:
+
+| Código | Qué pasa | Qué se hace |
+| --- | --- | --- |
+| **Rastreo** | La página existe pero el buscador no la tiene (sin indexar, bloqueada, error). | Search Console y Bing Webmaster Tools; nada de contenido nuevo hasta resolverlo. |
+| **Floja** | La página existe pero no responde bien a esa pregunta. | Mejorar esa página. No se publica otra que compita con ella. |
+| **Falta** | Ninguna página responde la pregunta. | Una página nueva, solo si es una pregunta real y con fuentes (las reglas de guías de `docs/seo-rutina.md`, sin páginas en serie). |
+| **Terceros** | La respuesta sale de sitios ajenos que no nombran la casa o la nombran mal. | Una acción de la sección 3 sobre esa fuente concreta. |
+
+**Floja** va antes que **Falta**: si una página ya trata el tema, se mejora.
+
+Los problemas técnicos se priorizan igual: primero los que afectan a una página ligada a una pregunta de la tabla; los avisos generales del sitio, después.
+
+## 3. Fuentes: propias, reclamar, ganar, corregir
+
+Para cada pregunta perdida se miran las fuentes que salen en su lugar y se decide qué tipo de fuente es. Cada tipo pide una acción distinta.
+
+- **Propias**: lo que controla la casa. Se cambia desde el repositorio o la ficha.
+- **Reclamar**: fichas y directorios donde la casa puede darse de alta o tomar el control.
+- **Ganar**: menciones editoriales, reseñas y conversaciones que hay que merecer.
+- **Corregir**: datos viejos o falsos que hay que pedir que cambien.
+
+Fuentes vistas en la primera medición (29 de octubre de 2026):
+
+| Fuente | Tipo | Sale en | Acción | Quién |
+| --- | --- | --- | --- | --- |
+| casavellarural.com y sus guías | Propias | ninguna todavía | Indexar (Search Console, Bing); luego, la mejora de la sección 5 | Agencia, Claude |
+| Google Business Profile | Propias | P10, P11 | Lo de `docs/seo.md` (categorías, fotos, una publicación por semana) | Dueño |
+| [Escapada Rural](https://www.escapadarural.com/casas-rurales/anoia) | Reclamar | P1, P3, P5 | Ficha con los datos de NAP; en la descripción, Montserrat a 45 minutos y Sant Sadurní a 15 | Dueño |
+| [Clubrural](https://www.clubrural.com/casas-rurales/barcelona/sant-sadurni-d0-anoia) | Reclamar | P2 | Ficha; aparece en «dónde dormir cerca de Sant Sadurní» | Dueño |
+| [casasrurales.net](https://www.casasrurales.net/apartamentos-rurales/anoia) | Reclamar | P1, P3, P5 | Ficha en «apartamentos rurales Anoia» (los dos apartamentos tienen cocina) | Dueño |
+| [tuscasasrurales.com, Piera](https://www.tuscasasrurales.com/casas-rurales-piera-1142.htm) | Reclamar | P6 | Lista dos casas en Piera, una en El Bedorc (Maset de la Costa). Alta de La Casa Vella | Dueño |
+| [Femturisme, dónde dormir en Piera](https://femturisme.cat/pobles/piera/on-dormir) | Reclamar | P1, P2, P3 | La página de Piera no lista ningún alojamiento de Piera. Pedir el alta (también sale en Sant Sadurní y en las rutas del Anoia) | Dueño |
+| [Gastroranking, Piera](https://gastroranking.es/restaurantes/barcelona/piera/) | Reclamar | P9 | Reclamar el restaurante con los días que abre y los grupos de 8 a 16 | Dueño |
+| [Barcelona és molt més](https://www.barcelonaesmoltmes.cat/en/-/alojamientos-encanto-dormir-via-blava) (Diputació) | Ganar | P3 | Proponer la casa para sus listas de alojamientos con encanto del Anoia | Dueño |
+| [Time Out Barcelona](https://www.timeout.es/barcelona/es/viaje/alt-penedes-un-dia-en-sant-sadurni-danoia) | Ganar | P2, P3 | Historia real (la casa de 1898, la familia, el restaurante) a quien escribe las escapadas | Dueño o agencia |
+| [Penedès Turisme](https://www.penedesturisme.cat/en/activity/weekend-wine-getaway-spa) | Ganar | P4 | Ver si una escapada con una cava de Sant Sadurní puede entrar como actividad | Dueño |
+| [elbedorc.com](https://elbedorc.com) | Ganar | P10 | La web del pueblo sale en la búsqueda de la casa: pedir una mención con enlace | Dueño |
+| Foros (Rick Steves, TripAdvisor, Reddit) | Ganar | P4, P7 | Lo de la rutina, paso 5: respuestas útiles en primera persona | Dueño |
+| [gites.fr](https://www.gites.fr/gites_piera_277354.html) y [cybevasion.fr](https://www.cybevasion.fr/tous-les-hebergements-piera-v277354.html) | Corregir | P10 | Sitúan la casa en «Vallbona» y la describen como un gîte de 30 m² para 2. Copian de otro canal (Booking u otro): corregir ahí la ubicación y la descripción | Dueño |
+
+## 4. Google y asistentes, por separado
+
+Una página puede subir en Google y no salir en ChatGPT, y al revés. Se miden aparte:
+
+| Qué | Cómo | Cuándo |
+| --- | --- | --- |
+| Google | Search Console: impresiones, clics y posición de cada página de la tabla y de las consultas que se parecen a las preguntas | Cada semana en el informe, cuando haya datos |
+| Asistentes, aproximación | La rutina busca las preguntas con su buscador (no es Google ni ChatGPT, pero enseña qué fuentes usa una búsqueda con IA) | Cada semana |
+| Asistentes, real | Las mismas preguntas en ChatGPT con búsqueda, Gemini, Perplexity y Google (AI Overview), en una ventana sin sesión, como en `docs/seo.md` | Cada mes |
+| Lo que importa | Visitas que llegan de chatgpt.com, perplexity.ai, gemini.google.com, claude.ai y copilot.microsoft.com, y reservas de esas visitas (GA4 y PostHog) | Cada mes |
+
+## 5. El ciclo
+
+Cada semana:
+
+1. Buscar las preguntas de la sección 1 y apuntar si sale la casa (web o ficha), en qué posición y qué fuentes salen en su lugar.
+2. Diagnosticar cada pregunta perdida (sección 2).
+3. Elegir **un** cambio propio concreto (mejorar una página floja, una pregunta sin página) y hacerlo; las acciones sobre terceros van al informe para el dueño.
+4. Apuntarlo en el seguimiento de abajo con la fecha.
+5. La semana siguiente, volver a buscar y mirar si esa pregunta se ha movido. Lo que mueve visitas o reservas se repite en preguntas parecidas; lo que no, no se repite.
+
+## 6. Seguimiento
+
+«Sale» quiere decir casavellarural.com o una ficha de La Casa Vella entre los resultados del buscador de la rutina.
+
+| Pregunta | 29 oct 2026 | Fuentes en su lugar | Diagnóstico | Cambio |
+| --- | --- | --- | --- | --- |
+| P1 | No | Escapada Rural, casasrurales.net, Airbnb (Monistrol, El Cavall Bernat), Femturisme | Rastreo, Terceros | |
+| P2 | No | Femturisme, Clubrural, Time Out, Hotels.com | Rastreo, Terceros | |
+| P3 | No | Femturisme, Barcelona és molt més, Time Out (Hotel La Pedra), Escapada Rural | Rastreo, Terceros | |
+| P4 | No | Hotels.com, Expedia, intothevineyard.com, Penedès Turisme | Rastreo, Floja: la descripción de `/en/` no dice que las caves están a 15 minutos | Candidato para la próxima semana |
+| P5 | No | Escapada Rural, casasrurales.net, Clubrural, Airbnb | Rastreo, Terceros | |
+| P6 | No (28 oct) | gites.fr, tuscasasrurales.com | Rastreo, Terceros | |
+| P7 | No | ofertitas.es, excursiones de un día (Civitatis, Musement) | Rastreo, Floja: la respuesta dice que no encuentra dónde dormir en el Penedès; las guías de Montserrat y del cava responden cada mitad por separado | 29 oct: la guía del cava gana el apartado «Montserrat y el cava en un fin de semana», enlazado a la de Montserrat |
+| P8 | Sin medir | | | |
+| P9 | No | venuu.com, Gastroranking (Piera, Sant Sadurní) | Rastreo, Floja: los grupos de 8 a 16 solo están en el formulario y en `llms.txt`, no en el texto de la página | |
+| P10 | Ficha de gites.fr (datos mal) | gites.fr, cybevasion.fr, Wikipedia (Piera), patrimonicultural.diba.cat | Rastreo, Terceros (Corregir) | |
+| P11 | Sin medir | | | |
+| P12 | Sin medir | | | |
+
+Lectura de la primera medición: la casa no sale en ninguna pregunta y la causa común es **Rastreo** (Search Console tiene la indexación en cola desde el 27 de octubre). Mientras tanto, lo que más pesa son los directorios: Escapada Rural, casasrurales.net, Clubrural y Femturisme salen en casi todas las preguntas de zona y tipo, y la casa no está en ninguno.

@@ -148,6 +148,8 @@ Preguntas de prueba (siempre las mismas, en una ventana sin sesión):
 
 Las preguntas 8 y 9 sirven para ver si los datos que dan son los correctos (precio, número de alojamientos, teléfono). Si algo sale mal, la fuente suele ser un directorio con datos viejos.
 
+Las preguntas de compra que se siguen cada semana, el diagnóstico de cada una y las acciones sobre cada fuente están en `docs/aeo.md`.
+
 ## 6. Reparto
 
 **El dueño** (necesita ser el titular del negocio): verificar y llevar Google Business Profile, Apple Business Connect y TripAdvisor; fotos; responder reseñas y pedirlas a cada huésped; número de registro turístico; altas en el Registre de Turisme, el Ajuntament, Anoia Turisme y Enoturisme Penedès; respuestas a las preguntas del punto 3.3; textos y fotos del entorno.

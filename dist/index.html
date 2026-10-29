@@ -410,6 +410,8 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 #payment-element { min-height: 120px; }
 .bp-form.paying input:not([type="checkbox"]), .bp-form.paying textarea, .bp-form.paying .pick { color: var(--muted); }
 .bp-secure { display: flex; gap: 10px; align-items: center; font-size: 13.5px; color: var(--muted); margin-top: -8px; }
+.bp-help { font-size: 13.5px; color: var(--muted); margin-top: -8px; }
+.bp-help a { color: var(--ink); }
 .bp-secure svg { width: 18px; height: 18px; flex: none; fill: none; stroke: var(--basil); stroke-width: 1.5; stroke-linecap: round; }
 .bp-form .note { font-size: 14px; color: var(--text); min-height: 1.7em; }
 .bp-sum { display: grid; gap: 16px; padding: 22px; background: var(--paper); border: 1px solid var(--line); position: sticky; top: 92px; }
@@ -853,6 +855,7 @@ footer { padding-bottom: 32px !important; }
           <p class="bp-policy" id="policy"></p>
           <button class="btn solid bp-pay" type="submit">Continuar al pagament</button>
           <p class="bp-secure"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>Pagament segur amb Stripe.</p>
+          <p class="bp-help">Dubtes? <a href="https://wa.me/34667409859" target="_blank" rel="noopener">Escriu-nos per WhatsApp</a></p>
           <p class="note" id="payNote" aria-live="polite"></p>
         </form>
         <div class="bp-done" id="bpDone" hidden>
@@ -1366,6 +1369,8 @@ const I18N = { es: {
 "política de privacitat": "política de privacidad",
 "Continuar al pagament": "Continuar al pago",
 "Pagament segur amb Stripe.": "Pago seguro con Stripe.",
+"Dubtes?": "¿Dudas?",
+"Escriu-nos per WhatsApp": "Escríbenos por WhatsApp",
 "Gràcies! Ja us esperem a casa": "¡Gracias! Ya os esperamos en casa",
 "La reserva està confirmada i t'hem enviat el rebut per correu. Uns dies abans del check-in et escriurem amb tot el que necessites saber per arribar al Bedorc.": "La reserva está confirmada y te hemos enviado el recibo por correo. Unos días antes del check-in te escribiremos con todo lo que necesitas saber para llegar a El Bedorc.",
 "Si vols qualsevol cosa, truca'ns o escriu-nos per WhatsApp al": "Si necesitas cualquier cosa, llámanos o escríbenos por WhatsApp al",
@@ -1583,6 +1588,8 @@ const I18N = { es: {
 "política de privacitat": "privacy policy",
 "Continuar al pagament": "Continue to payment",
 "Pagament segur amb Stripe.": "Secure payment with Stripe.",
+"Dubtes?": "Questions?",
+"Escriu-nos per WhatsApp": "Message us on WhatsApp",
 "Gràcies! Ja us esperem a casa": "Thank you, we look forward to having you",
 "La reserva està confirmada i t'hem enviat el rebut per correu. Uns dies abans del check-in et escriurem amb tot el que necessites saber per arribar al Bedorc.": "Your booking is confirmed and we've emailed you the receipt. A few days before check-in we'll write with everything you need to know to get to El Bedorc.",
 "Si vols qualsevol cosa, truca'ns o escriu-nos per WhatsApp al": "If you need anything, call us or message us on WhatsApp at",
@@ -2313,7 +2320,7 @@ function renderSummary() {
   $('bpIn').textContent = dayLabel(fin.value, true); $('bpOut').textContent = dayLabel(fout.value, true);
   $('bpGuests').textContent = people(fguests.value);
   if (q.error) return;
-  $('bpPrice').innerHTML = `<div><span>${q.nightly != null ? `${euro(q.nightly)} × ${nightsTxt(q.n)}` : `${nightsTxt(q.n)} ${tr('(el preu varia segons el dia)', '(el precio varía según el día)', '(the price varies by day)')}`}</span><span>${euro(q.subtotal)}</span></div>`
+  $('bpPrice').innerHTML = `<div><span>${q.nightly != null ? `${euro(q.nightly)} × ${nightsTxt(q.n)}` : `${nightsTxt(q.n)}, ${tr(`${euro(Math.round(q.subtotal / q.n))} la nit de mitjana`, `${euro(Math.round(q.subtotal / q.n))} la noche de media`, `${euro(Math.round(q.subtotal / q.n))} a night on average`)}`}</span><span>${euro(q.subtotal)}</span></div>`
     + (q.discount ? `<div class="disc"><span>${tr(`Descompte de ${q.discountNights} nits o més (${q.discount} %)`, `Descuento de ${q.discountNights} noches o más (${q.discount} %)`, `${q.discountNights} nights or more (${q.discount}% off)`)}</span><span>− ${euro(q.subtotal - q.total)}</span></div>` : '')
     + `<div class="total"><span>Total</span><span>${euro(q.total)}</span></div><small>${T('Impostos inclosos.')}</small>`;
   if (!payBtn.disabled) payBtn.textContent = payStep ? `${tr('Pagar', 'Pagar', 'Pay')} ${euro(q.total)}` : T('Continuar al pagament');
@@ -2693,7 +2700,8 @@ if (ADS.posthog) {
     // Names, emails and phones never leave the page: every field is masked, and so is text marked data-private
     session_recording: { maskAllInputs: true, maskTextSelector: '[data-private]' },
   });
-  if (consent === 'yes') posthog.opt_in_capturing(); else if (consent === 'no') posthog.opt_out_capturing();
+  // Until the visitor answers, PostHog counts the visit cookieless, as after a reject
+  if (consent === 'yes') posthog.opt_in_capturing(); else posthog.opt_out_capturing();
 }
 function loadTags() {
   if (tagsLoaded) return;
@@ -2716,12 +2724,12 @@ function loadTags() {
     add('https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(ADS.google));
   }
 }
-function track(ev, d) {
+function track(ev, d, queued) {
   if (!adsOn || !(d.value > 0)) return;
-  if (consent !== 'yes' && consent !== 'no') { adQueue.push([ev, d]); return; }
   const value = d.value, currency = 'EUR', items = [{ item_id: d.stay, item_name: (STAY_INFO[d.stay] || {}).name || d.stay, price: value, quantity: 1 }];
-  // PostHog counts both answers (cookieless after a reject); the ad platforms only after accepting
-  if (ADS.posthog) posthog.capture(ev === 'checkout' ? 'begin_checkout' : 'purchase', { value, currency, stay: d.stay, ...(d.id ? { transaction_id: d.id } : {}) });
+  // PostHog counts every visit (cookieless until the visitor accepts); the ad platforms only after accepting
+  if (ADS.posthog && !queued) posthog.capture(ev === 'checkout' ? 'begin_checkout' : 'purchase', { value, currency, stay: d.stay, ...(d.id ? { transaction_id: d.id } : {}) });
+  if (consent !== 'yes' && consent !== 'no') { adQueue.push([ev, d]); return; }
   if (consent !== 'yes') return;
   if (ev === 'checkout') {
     if (window.fbq) fbq('track', 'InitiateCheckout', { value, currency, content_ids: [d.stay], content_type: 'product' });
@@ -2740,7 +2748,7 @@ function decide(v) {
   try { localStorage.setItem('lcv-consent', v); } catch (e) {}
   if (v === 'yes') {
     if (ADS.posthog) { posthog.set_config({ persistence: 'localStorage+cookie' }); posthog.opt_in_capturing(); }
-    loadTags(); adQueue.splice(0).forEach(a => track(...a)); return;
+    loadTags(); adQueue.splice(0).forEach(([ev, d]) => track(ev, d, true)); return;
   }
   // Taking consent back: clear the tags' cookies and storage and reload without them (PostHog then counts cookieless)
   if (was === 'yes') {
@@ -2751,7 +2759,7 @@ function decide(v) {
     location.reload(); return;
   }
   if (ADS.posthog) posthog.opt_out_capturing();
-  adQueue.splice(0).forEach(a => track(...a));
+  adQueue.length = 0;
 }
 if (adsOn) {
   $('ckText').textContent = tr('Fem servir galetes per saber com ens has trobat.', 'Usamos cookies para saber cómo nos has encontrado.', 'We use cookies to see how you found us.');

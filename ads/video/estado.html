@@ -1,0 +1,229 @@
+<!doctype html><meta charset="utf-8">
+<style>
+@font-face { font-family: "Le Monde Livre"; src: url(../../fonts/LeMondeLivre.woff2) format("woff2"); }
+@font-face { font-family: "Halyard Display"; src: url(../../fonts/HalyardDisplay.woff2) format("woff2"); font-weight: 300 700; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #1a3f20; }
+body { font-family: "Halyard Display", sans-serif; color: #f3efe4; }
+.scene { position: absolute; inset: 0; opacity: 0; overflow: hidden; background: #1a3f20; }
+.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.shade { position: absolute; inset: 0; background: rgba(26,63,32,.74); }
+.pad { position: absolute; left: 140px; right: 140px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; gap: 36px; }
+.top { justify-content: center; }
+h1, h2 { font-family: "Le Monde Livre", serif; font-weight: 400; line-height: 1.08; }
+h1 { font-size: 120px; max-width: 1400px; }
+h2 { font-size: 80px; max-width: 1500px; }
+h3 { font-family: "Le Monde Livre", serif; font-weight: 400; font-size: 48px; }
+p { font-size: 38px; line-height: 1.35; color: #e3ddd0; max-width: 1500px; }
+.small { font-size: 28px; color: #c6bfaf; }
+.paper { background: #f7f5f0; color: #1a3f20; }
+.paper p { color: #26302a; }
+.paper .small { color: #5f6a5f; }
+.cols { display: grid; gap: 56px; margin-top: 30px; }
+.col { border-top: 3px solid #79a57a; padding-top: 28px; display: grid; gap: 14px; align-content: start; }
+.col p { font-size: 32px; }
+.when { font-size: 34px; color: #79a57a; }
+table { border-collapse: collapse; font-size: 36px; width: 100%; margin-top: 20px; }
+th { text-align: left; font-weight: 600; color: #79a57a; padding: 0 0 18px; }
+td { padding: 18px 0; border-top: 1px solid rgba(243,239,228,.2); color: #e3ddd0; }
+.paper th { color: #2e6d2e; }
+.paper td { color: #26302a; border-top-color: #d6d0c2; }
+.r { text-align: right; font-variant-numeric: tabular-nums; }
+.thumbs { display: flex; gap: 36px; margin-top: 24px; }
+.thumbs img { width: 380px; height: 475px; object-fit: cover; box-shadow: 0 16px 40px rgba(0,0,0,.25); }
+.logo { width: 280px; }
+</style>
+
+<!-- 1. Title -->
+<div class="scene" data-a="0" data-b="7">
+  <img class="bg kb" src="../../img/hero-vinyes-cel.jpg">
+  <div class="shade"></div>
+  <div class="pad">
+    <img class="logo" data-d="0.3" src="../../img/logo-light.png">
+    <h1 data-d="0.8">Anuncios, SEO y asistentes de IA</h1>
+    <p data-d="1.5">Qué está hecho, qué está en marcha y qué falta</p>
+    <p class="small" data-d="2.0">29 de octubre de 2026</p>
+  </div>
+</div>
+
+<!-- 2. Goal -->
+<div class="scene paper" data-a="6.5" data-b="15">
+  <div class="pad top">
+    <h2 data-d="0.3">Un objetivo: reservas directas en la web</h2>
+    <div class="cols" style="grid-template-columns: repeat(3, 1fr)">
+      <div class="col" data-d="1.2"><h3>Anuncios</h3><p>Google para quien ya busca. Instagram y Facebook para quien aún no nos conoce.</p></div>
+      <div class="col" data-d="2.0"><h3>Google y Maps</h3><p>La web en tres idiomas y la ficha con 23 reseñas de 5,0.</p></div>
+      <div class="col" data-d="2.8"><h3>Asistentes de IA</h3><p>Recomiendan lo que leen en la web, en los mapas y en lo que otros publican.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. Meta numbers -->
+<div class="scene" data-a="14.5" data-b="24">
+  <div class="pad top">
+    <h2 data-d="0.3">Meta: dos campañas activas</h2>
+    <table data-d="1.2">
+      <tr><th>Campaña</th><th class="r">Gastado</th><th class="r">Impresiones</th><th class="r">Clics</th><th class="r">Reservas iniciadas</th></tr>
+      <tr><td>General</td><td class="r">7,14 €</td><td class="r">1.582</td><td class="r">72</td><td class="r">3</td></tr>
+      <tr><td>Castanyada</td><td class="r">14,33 €</td><td class="r">846</td><td class="r">28</td><td class="r">0</td></tr>
+    </table>
+    <p data-d="2.6">La general ya lleva tres personas a la reserva, a 2,38 € cada una. La castanyada acaba el 31.</p>
+    <p class="small" data-d="3.0">Meta Ads, 29 de octubre de 2026</p>
+  </div>
+</div>
+
+<!-- 4. Creatives -->
+<div class="scene" data-a="23.5" data-b="31.5">
+  <div class="pad top">
+    <h2 data-d="0.3">Viñedos, Montserrat y cava</h2>
+    <div class="thumbs">
+      <img data-d="0.9" src="../vinyes-feed-es.png">
+      <img data-d="1.3" src="../montserrat-feed-es.png">
+      <img data-d="1.7" src="../cava-feed-es.png">
+      <img data-d="2.1" src="../castanyada-feed-es.png">
+    </div>
+    <p class="small" data-d="2.6">En castellano, catalán e inglés, en feed, story y carrusel</p>
+  </div>
+</div>
+
+<!-- 5. Google Ads and measurement -->
+<div class="scene paper" data-a="31" data-b="40">
+  <div class="pad top">
+    <h2 data-d="0.3">Google y la medición</h2>
+    <div class="cols" style="grid-template-columns: 1fr 1fr">
+      <div class="col" data-d="1.1"><h3>Búsqueda</h3><p>10 € al día, puja máxima de 0,50 €, castellano y catalán, cada uno con sus palabras.</p></div>
+      <div class="col" data-d="2.0"><h3>Cada reserva, medida</h3><p>GA4, la conversión «Reserva» con el importe de Stripe, el píxel de Meta y PostHog.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- 6. Website -->
+<div class="scene" data-a="39.5" data-b="49">
+  <img class="bg kb" src="../../img/bedorc-capvespre.jpg">
+  <div class="shade"></div>
+  <div class="pad">
+    <h2 data-d="0.3">La web, rehecha para los buscadores</h2>
+    <p data-d="1.0">Una página por idioma: antes los rastreadores de IA solo veían el catalán</p>
+    <p data-d="1.8">Datos estructurados, robots.txt, sitemap y llms.txt con los datos de Maite</p>
+    <p data-d="2.6">Las reseñas de Google en la web, y un correo que las pide después de cada estancia</p>
+  </div>
+</div>
+
+<!-- 7. Guides -->
+<div class="scene paper" data-a="48.5" data-b="57">
+  <div class="pad top">
+    <h2 data-d="0.3">Cinco guías de la zona, con fuentes</h2>
+    <div class="cols" style="grid-template-columns: 1fr 1fr; gap: 24px 56px">
+      <p data-d="1.0">Un fin de semana en el Penedès</p>
+      <p data-d="1.3">Las cavas de Sant Sadurní</p>
+      <p data-d="1.6">Montserrat desde El Bedorc</p>
+      <p data-d="1.9">Qué ver en El Bedorc</p>
+      <p data-d="2.2">La temporada de calçots</p>
+      <p data-d="2.5">Y una agenda de lo que pasa cerca</p>
+    </div>
+  </div>
+</div>
+
+<!-- 8. Indexing -->
+<div class="scene" data-a="56.5" data-b="65">
+  <div class="pad top">
+    <h2 data-d="0.3">Google ya tiene las portadas</h2>
+    <table data-d="1.1">
+      <tr><td>Portadas en Google, en tres idiomas</td><td>Indexadas</td></tr>
+      <tr><td>Rastreadores de IA en Cloudflare</td><td>Permitidos</td></tr>
+      <tr><td>Aviso a Bing en cada cambio</td><td>Activo</td></tr>
+      <tr><td>Sitemap con las 21 páginas</td><td>Por reenviar</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- 9. Assistants -->
+<div class="scene paper" data-a="64.5" data-b="73">
+  <div class="pad top">
+    <h2 data-d="0.3">Los asistentes buscan con Google y con Bing</h2>
+    <div class="cols" style="grid-template-columns: repeat(3, 1fr)">
+      <div class="col" data-d="1.1"><h3>ChatGPT</h3><p>Bing</p></div>
+      <div class="col" data-d="1.6"><h3>Gemini</h3><p>Google</p></div>
+      <div class="col" data-d="2.1"><h3>Perplexity</h3><p>Su rastreador y Bing</p></div>
+    </div>
+    <p data-d="2.8">Dan una lista corta. Entra quien tiene ficha completa, reseñas, datos claros y menciones en las listas que citan.</p>
+  </div>
+</div>
+
+<!-- 10. Method -->
+<div class="scene" data-a="72.5" data-b="82">
+  <img class="bg kb" src="../../img/montserrat-vinyes.jpg">
+  <div class="shade"></div>
+  <div class="pad">
+    <h2 data-d="0.3">15 preguntas de compra, cada semana</h2>
+    <p data-d="1.1">«Escapada romántica cerca de Barcelona», «dónde dormir cerca de Sant Sadurní»…</p>
+    <p data-d="2.0">Primera medición: no salimos en ninguna. La causa era el rastreo, ya resuelto.</p>
+    <p data-d="2.9">Mientras tanto mandan los directorios: Escapada Rural, Clubrural, Femturisme. No estamos en ninguno.</p>
+  </div>
+</div>
+
+<!-- 11. Routines -->
+<div class="scene paper" data-a="81.5" data-b="90">
+  <div class="pad top">
+    <h2 data-d="0.3">Claude trabaja cada día</h2>
+    <div class="cols" style="grid-template-columns: 1fr 1fr">
+      <div class="col" data-d="1.1"><h3>Cada lunes</h3><p>Agenda y guías, comprobación de la web, las 15 preguntas, un cambio, borradores para Google y el informe.</p></div>
+      <div class="col" data-d="2.0"><h3>De martes a domingo</h3><p>La web responde, aviso a Bing, foros nuevos, menciones y eventos urgentes.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- 12. Owner to-do -->
+<div class="scene" data-a="89.5" data-b="99">
+  <div class="pad top">
+    <h2 data-d="0.3">Lo que falta, y solo puede hacer la casa</h2>
+    <table data-d="1.1">
+      <tr><td>Número de registro turístico</td><td>Lo piden casi todos los directorios</td></tr>
+      <tr><td>Ficha de Google</td><td>Fotos y una publicación por semana</td></tr>
+      <tr><td>Fichas en directorios</td><td>Textos listos para pegar</td></tr>
+      <tr><td>Seis respuestas</td><td>Mascotas, desayuno, accesibilidad, cuna</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- 13. Dates -->
+<div class="scene paper" data-a="98.5" data-b="107">
+  <div class="pad top">
+    <h2 data-d="0.3">Próximas fechas</h2>
+    <div class="cols" style="grid-template-columns: repeat(4, 1fr)">
+      <div class="col" data-d="1.0"><span class="when">31 oct</span><p>Fin de la castanyada</p></div>
+      <div class="col" data-d="1.8"><span class="when">2 nov</span><p>Campaña general</p></div>
+      <div class="col" data-d="2.6"><span class="when">Final de nov</span><p>Primera medición en los asistentes</p></div>
+      <div class="col" data-d="3.4"><span class="when">5 al 8 dic</span><p>Oferta del puente</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- 14. Close -->
+<div class="scene" data-a="106.5" data-b="113">
+  <img class="bg kb" src="../../img/hero-vinyes-capvespre.jpg">
+  <div class="shade"></div>
+  <div class="pad" style="align-items: center; text-align: center">
+    <img data-d="0.3" src="../../img/iso-light.png" style="width: 90px">
+    <h2 data-d="0.8">Lo que importa al final: reservas pagadas</h2>
+    <p data-d="1.4">casavellarural.com</p>
+  </div>
+</div>
+
+<script>
+const S = [...document.querySelectorAll('.scene')];
+const ease = x => x <= 0 ? 0 : x >= 1 ? 1 : 1 - Math.pow(1 - x, 3);
+window.render = t => {
+  for (const s of S) {
+    const a = +s.dataset.a, b = +s.dataset.b, local = t - a;
+    s.style.opacity = t < a || t > b ? 0 : Math.min(ease(local / 0.6), ease((b - t) / 0.6), 1);
+    for (const el of s.querySelectorAll('[data-d]')) {
+      const p = ease((local - +el.dataset.d) / 0.8);
+      el.style.opacity = p;
+      el.style.transform = `translateY(${(1 - p) * 30}px)`;
+    }
+    for (const img of s.querySelectorAll('.kb')) img.style.transform = `scale(${1.03 + 0.07 * Math.max(0, Math.min(1, local / (b - a)))})`;
+  }
+};
+render(0);
+</script>

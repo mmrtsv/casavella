@@ -4,3 +4,12 @@ compatibility_date = "2026-10-01"
 
 [triggers]
 crons = ["*/5 * * * *"]
+
+# The cap on Google Places calls (class PlacesBudget in worker.js). The Pages project binds it as PLACES_BUDGET.
+[[durable_objects.bindings]]
+name = "PLACES_BUDGET"
+class_name = "PlacesBudget"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["PlacesBudget"]

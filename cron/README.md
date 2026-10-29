@@ -16,3 +16,7 @@ Mentre no estigui en marxa, els posts programats es publiquen igualment la prime
    ```
 
    i enganxa el mateix valor. Si la web no és a `https://casavellarural.com`, afegeix també la variable `SITE_URL` al Worker.
+
+## Límit de consultes a Google (ressenyes)
+
+El mateix Worker té el Durable Object `PlacesBudget`, que compta les consultes a la Places API de `functions/api/reviews.js` (30 al dia i 900 al mes per defecte) atenent-les d'una en una. `npx wrangler deploy` el crea. Després, al projecte de Pages: Settings → Bindings → Durable Object, amb el nom de variable `PLACES_BUDGET`, el Worker `casavella-cron` i la classe `PlacesBudget`, i tornar a desplegar. Sense aquest lligam, les ressenyes no consulten Google.

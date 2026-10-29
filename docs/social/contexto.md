@@ -56,3 +56,4 @@ Excluir (si una de estas palabras sale en el título o la descripción, el víde
 - en venta
 - Reseña de hotel
 - Hotel Review
+- Reseña del hotel

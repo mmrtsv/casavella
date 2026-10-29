@@ -31,8 +31,10 @@ Nada se publica solo. Los guiones se graban, y los posts se hacen y programan en
 
 ## De dónde salen los datos
 
-Claude no puede mirar TikTok ni Instagram por su cuenta. Por orden:
+Sin servicios de pago. Cada lunes, antes de los agentes, `python3 social.py` deja en `docs/social/datos/AAAA-MM-DD.md` (y `.json`):
 
-1. **Virlo** (opcional, de pago): un conector con una base de vídeos virales de TikTok, YouTube Shorts e Instagram, con visualizaciones, la media de cada cuenta y tendencias. Se conecta en claude.ai, Settings, Connectors, «Add custom connector» (las instrucciones están en virlo.ai/claude), y en Claude Code con `/mcp`. Si sus herramientas están, los agentes las usan primero.
-2. **Sin Virlo**: búsqueda web (`site:tiktok.com`, `site:youtube.com/shorts`, `site:instagram.com/reel` con las frases del contexto) y las páginas públicas de cada vídeo. El buscador casi no indexa TikTok: si `site:` no trae nada, se prueba la frase con «tiktok» o «reels» detrás. YouTube enseña las visualizaciones; TikTok e Instagram a menudo no. Cuando falta el número, el informe pone «sin dato» y el ranking es más flojo.
-3. **Lo propio**: los posts publicados están en Maite, Xarxes socials, Publicats. Las métricas de cada post (alcance, guardados, compartidos) solo las da la app de Instagram; si el dueño las pega en la conversación, `social-lunes` las usa.
+1. **Outliers de YouTube** (Shorts y vídeos de menos de 4 minutos del último mes) para las frases de `contexto.md`: las visualizaciones de cada vídeo contra la mediana de los últimos vídeos de su canal. Sin nada más, lee los listados públicos de YouTube con `yt-dlp` (`pip install yt-dlp`) y solo tiene visualizaciones. Con la variable `YOUTUBE_API_KEY` usa la API oficial y gratuita (10.000 unidades al día; una pasada gasta unas 1.000) y tiene también la fecha, los likes y los comentarios. La clave se crea en Google Cloud, proyecto `casa-vella-booking`, APIs & Services, Library, «YouTube Data API v3», Enable, y Credentials, API key restringida a esa API.
+2. **El Instagram de la casa**: con la variable `INSTAGRAM_TOKEN` (el mismo token que Maite tiene en Cloudflare), los últimos 30 posts con likes y comentarios, y alcance, guardados y compartidos si el token tiene el permiso de estadísticas.
+3. **Enlaces de TikTok e Instagram**: TikTok e Instagram no dejan buscar vídeos de otros sin pasar por sus controles anti-bots, y eso no se hace. Cuando alguien de la casa ve un vídeo del nicho que funciona, pega el enlace en `docs/social/enlaces.md` (o en la conversación). `social.py` pone el autor y el título de los de TikTok y los agentes los estudian como los demás.
+
+Además, los agentes pueden usar la búsqueda web para tendencias y noticias. Cuando falta un número, el informe pone «sin dato». El nicho es pequeño en YouTube: muchas semanas habrá pocos vídeos, y los enlaces de TikTok e Instagram pesan más.

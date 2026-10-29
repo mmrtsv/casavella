@@ -9,7 +9,7 @@ Antes de nada: `docs/social/contexto.md` y `docs/social/reglas.md`.
 
 1. Escribe el nicho en una frase («escapadas rurales entre viñedos cerca de Barcelona, con Montserrat al fondo»). Si no está en el contexto o ha cambiado, propónla.
 2. Repasa público y oferta del contexto. Si falta algo que solo sabe el dueño, pregúntalo, una pregunta cada vez.
-3. Busca cada frase de «Búsquedas y exclusiones» (Virlo o `site:tiktok.com "frase"`, `site:youtube.com/shorts "frase"`, `site:instagram.com/reel "frase"`). Apunta cuántos resultados del nicho trae y qué ruido trae.
+3. Busca cada frase de «Búsquedas y exclusiones» (mira lo que ha traído cada una en `docs/social/datos/`, y búscala en la web con «tiktok» o «reels» detrás). Apunta cuántos resultados del nicho trae y qué ruido trae.
 4. Propón cambios: frases que nadie usa fuera, frases nuevas que la gente sí escribe (la temporada que viene manda: verema, castanyada, calçots, Navidad), exclusiones para el ruido que has visto.
 5. Espera el sí del dueño y actualiza `docs/social/contexto.md` y su fecha.
 

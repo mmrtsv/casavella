@@ -35,7 +35,7 @@ Tranquila, literal y concreta: 1898, el Bedorc, Montserrat al fondo, las vigas p
 
 ## Búsquedas y exclusiones
 
-Frases que la gente escribe en el buscador de TikTok, Instagram y YouTube (las mantiene `social-nicho`):
+Frases que la gente escribe en el buscador de TikTok, Instagram y YouTube. Las mantiene `social-nicho` y `social.py` las busca cada lunes:
 
 - escapada rural cerca de Barcelona
 - casa rural Montserrat
@@ -46,4 +46,13 @@ Frases que la gente escribe en el buscador de TikTok, Instagram y YouTube (las m
 - cap de setmana a l'Anoia
 - verema Penedès
 
-Palabras que excluir porque traen otra cosa: «Montserrat Caballé» y Montserrat como nombre de persona, «Pineda de Mar» y «La Pineda» de Salou, «cava» como verbo o «cava de hielo», «Casa Vella» de otros sitios, maquinaria agrícola.
+Excluir (si una de estas palabras sale en el título o la descripción, el vídeo no cuenta; `social.py` las lee de aquí):
+
+- Caballé
+- Pineda de Mar
+- Salou
+- cava de hielo
+- tractor
+- en venta
+- Reseña de hotel
+- Hotel Review

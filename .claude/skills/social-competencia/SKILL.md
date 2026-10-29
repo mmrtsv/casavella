@@ -8,7 +8,7 @@ Antes de nada: `docs/social/contexto.md` y `docs/social/reglas.md`.
 ## Flujo
 
 1. Lee `docs/social/competencia.md`. Si no existe o tiene menos de 5 cuentas, propón de 5 a 10 (casas rurales y hoteles pequeños del Anoia, el Penedès y el entorno de Montserrat que el público de la casa sigue), cada una con su enlace y por qué, y espera el sí del dueño.
-2. Para cada cuenta, mira sus posts de los últimos 7 días (con Virlo, ponla en seguimiento; sin Virlo, su perfil público y la búsqueda web).
+2. Para cada cuenta, mira sus posts de los últimos 7 días (su canal de YouTube con `yt-dlp --flat-playlist`, los enlaces de `docs/social/enlaces.md` y su perfil público si se deja leer). Lo que no se puede ver se dice.
 3. Marca como ganador el post que hace bastante más que lo normal en esa cuenta (al menos el doble de la media de sus últimos posts). Sin números, no marques nada.
 4. Busca además una vez el nicho sin nombres de marca, para ver cuentas que compiten y no estaban en la lista.
 5. Para cada ganador, plantea el vídeo con el que respondería la casa: la misma apertura y el mismo formato, con lo de la casa.

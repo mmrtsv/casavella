@@ -7,7 +7,7 @@ Antes de nada: `docs/social/contexto.md` y `docs/social/reglas.md`.
 
 ## Flujo
 
-1. Lanza `social-ops` para comprobar las fuentes y las reglas.
+1. Lanza `social-ops`: ejecuta `python3 social.py` y comprueba las fuentes y las reglas.
 2. Lanza en paralelo `social-outliers` y `social-competencia`.
 3. Con sus resultados, lanza en paralelo `social-creadores`, `social-hooks` y `social-tendencias`.
 4. Lanza `social-guiones` con los tres outliers para copiar y la apertura elegida, y `social-multiplicar` con el mejor outlier.
@@ -20,7 +20,7 @@ Antes de nada: `docs/social/contexto.md` y `docs/social/reglas.md`.
 ```markdown
 # Redes, semana del D de mes de AAAA
 
-Fuentes: Virlo / búsqueda web. (Lo que no se pudo ver, en una línea.)
+Fuentes: los datos de social.py, los enlaces pegados y la búsqueda web. (Lo que no se pudo ver, en una línea.)
 
 ## Lo que ganó
 

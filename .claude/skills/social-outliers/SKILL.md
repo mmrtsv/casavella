@@ -7,7 +7,7 @@ Antes de nada: `docs/social/contexto.md` y `docs/social/reglas.md`.
 
 ## Flujo
 
-1. **Buscar**: con las frases de `contexto.md`, los vídeos de los últimos 30 días en TikTok, Reels y Shorts. Con Virlo, sus outliers del nicho. Sin Virlo, la búsqueda web y la página de cada vídeo.
+1. **Buscar**: lee `docs/social/datos/` del día (si no está, ejecuta `python3 social.py`). Ahí están los outliers de YouTube con su columna «Veces» y los enlaces de TikTok e Instagram que ha pegado la casa. Abre cada enlace que puedas para ver de qué va.
 2. **Filtrar**: quita reposts, vídeos hechos con IA, anuncios pagados y lo que no es del nicho (las exclusiones del contexto).
 3. **Ordenar**: por visualizaciones respecto a la media de la cuenta; después, por guardados y compartidos por cada 1.000 reproducciones cuando estén.
 4. **Marcar**: los que tienen muchas visualizaciones y casi nadie guarda ni comparte. No se copian.

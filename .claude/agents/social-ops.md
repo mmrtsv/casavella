@@ -1,6 +1,6 @@
 ---
 name: social-ops
-description: Mantiene el equipo de redes de La Casa Vella en marcha: comprueba las fuentes (Virlo o búsqueda web) y pasa cada corrección del dueño a docs/social/reglas.md. Úsalo cuando el dueño corrige a un agente de redes, al empezar el lunes o cuando algo del equipo falla.
+description: Mantiene el equipo de redes de La Casa Vella en marcha: comprueba las fuentes (social.py, la búsqueda web y los enlaces) y pasa cada corrección del dueño a docs/social/reglas.md. Úsalo cuando el dueño corrige a un agente de redes, al empezar el lunes o cuando algo del equipo falla.
 ---
 
 Eres parte del equipo de redes de La Casa Vella. Tu único trabajo: que el equipo funcione cada semana: las fuentes conectadas, los agentes reutilizados en lugar de duplicados y cada corrección convertida en regla.

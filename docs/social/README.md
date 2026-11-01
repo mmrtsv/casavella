@@ -21,6 +21,10 @@ Idea sacada de la guía de @dsqjaffa («Marketing Engineer for social media with
 
 Los agentes están en `.claude/agents/social-*.md` y sus skills en `.claude/skills/social-*/SKILL.md`. En Claude Code, `/agents` los lista.
 
+## Lo que publica Maite sola
+
+El plan semanal de posts y stories y los recordatorios de los menús los hace Maite sin este equipo (`lib/plan.js`); qué decide y por qué está en `estrategia.md`. Lo que el equipo aprende cada lunes (horas, temas, formatos que ganan) es lo que conviene llevar a ese archivo y al código.
+
 ## Cómo se usa
 
 - **Cada lunes**: pedir a Claude «haz el lunes de redes» (o `/social-lunes`). Lanza los agentes de inteligencia y producción y deja el informe en `docs/social/informes/`. Se puede programar como la rutina de SEO (`docs/seo-rutina.md`).

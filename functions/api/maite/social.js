@@ -20,10 +20,13 @@
 //                          Or { menu: { id, menu } }  The values of a menu on its post, published or not (its days and its image
 //                          for the web can change after it went out).
 //                          Or { template: { id, texts } }  The words changed on a template, for what is made from it next ([] to undo).
+// The posts of Maite's own plan (lib/plan.js, field auto) are ordinary posts here: changing one marks it as the owner's
+// (auto.touched), and a post the owner programs or dates takes its day from the plan's (makeRoom).
 // Opening the grid also publishes programs that are already due (lib/instagram.js), in case the cron hasn't yet.
 // Everything is one KV key, 'social' (lib/social.js).
 import { json } from '../../../lib/booking.js';
-import { SEED, load, store, view } from '../../../lib/social.js';
+import { SEED, follow, load, store, view } from '../../../lib/social.js';
+import { makeRoom } from '../../../lib/plan.js';
 import { imagesOf, runDue } from '../../../lib/instagram.js';
 
 async function body(request) { try { return await request.json(); } catch { return null; } }
@@ -88,20 +91,13 @@ export async function onRequestPost({ request, env, data }) {
   return view(S, env);
 }
 
-// Dated posts come first, by day (and time, when programmed), so the numbers in Perfil follow the calendar; the rest keep
-// their order after them
-function follow(S) {
-  const planned = S.posts.filter(p => !p.published), done = S.posts.filter(p => p.published);
-  const when = p => p.date + (p.schedule ? p.schedule.at.slice(10) : 'T99');
-  const dated = planned.filter(p => p.date).sort((x, y) => when(x).localeCompare(when(y)));
-  S.posts = [...dated, ...planned.filter(p => !p.date), ...done];
-}
-
 export async function onRequestPut({ request, env, data }) {
   if (!env.MAITE) return json({ error: 'not_configured' }, 503);
   const b = await body(request);
   if (!b) return json({ error: 'bad_request' }, 400);
   const S = await load(env);
+  // A post of Maite's own plan the owner changes is theirs from then on: the plan doesn't redo or take it out
+  const touch = id => { const p = S.posts.find(x => x.id === id); if (p?.auto) p.auto = { ...p.auto, touched: true }; };
   const keepCopies = () => { const keep = new Set(S.posts.map(p => p.id)); S.copies = Object.fromEntries(Object.entries(S.copies).filter(([id]) => keep.has(id))); };
   if (Array.isArray(b.order)) {
     const byId = new Map(S.posts.filter(p => !p.story).map(p => [p.id, p]));
@@ -113,6 +109,7 @@ export async function onRequestPut({ request, env, data }) {
   } else if (b.copy && S.posts.some(p => p.id === b.copy.id)) {
     const text = String(b.copy.text || '').trim().slice(0, 4000);
     if (text) S.copies[b.copy.id] = text; else delete S.copies[b.copy.id];
+    touch(b.copy.id);
   } else if (b.date && S.posts.some(p => p.id === b.date.id)) {
     const date = String(b.date.date || '');
     if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: 'bad_request' }, 400);
@@ -120,6 +117,8 @@ export async function onRequestPut({ request, env, data }) {
     if (date) post.date = date; else delete post.date;
     // A program is for one moment: moving the day without a new time cancels it (Maite sends a new program instead)
     if (post.schedule && dayOf(post.schedule.at) !== date) delete post.schedule;
+    touch(post.id);
+    makeRoom(S, post);
     follow(S);
   } else if (b.schedule && S.posts.some(p => p.id === b.schedule.id && !p.published)) {
     const post = S.posts.find(p => p.id === b.schedule.id);
@@ -131,6 +130,9 @@ export async function onRequestPut({ request, env, data }) {
       post.schedule = { at: new Date(at).toISOString(), image: images[0], ...(images.length > 1 ? { images } : {}), by: data.user };
       post.date = dayOf(at);
     }
+    touch(post.id);
+    // The owner's own post takes its day from the plan's (lib/plan.js)
+    makeRoom(S, post);
     follow(S);
   } else if (b.edit && S.posts.some(p => p.id === b.edit.id && !p.published)) {
     const post = S.posts.find(p => p.id === b.edit.id), l = look(b.edit);
@@ -141,7 +143,8 @@ export async function onRequestPut({ request, env, data }) {
     if (l.texts.length) post.texts = l.texts; else delete post.texts;
     if (slides) { if (slides.length) post.slides = slides; else delete post.slides; }
     if (menu !== undefined) { if (menu) post.menu = menu; else delete post.menu; }
-    if (post.schedule) { Object.assign(post.schedule, { image: images[0], by: data.user }); if (images.length > 1) post.schedule.images = images; else delete post.schedule.images; }
+    touch(post.id);
+    if (post.schedule) { Object.assign(post.schedule, { image: images[0], by: data.user }); delete post.schedule.renderError; if (images.length > 1) post.schedule.images = images; else delete post.schedule.images; }
   } else if (b.menu && S.posts.some(p => p.id === b.menu.id && p.menu)) {
     const menu = menuOf(b.menu.menu);
     if (!menu || menu === true) return json({ error: 'bad_request' }, 400);

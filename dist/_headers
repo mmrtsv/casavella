@@ -8,3 +8,7 @@
   Cache-Control: no-store
 /maite/assets/*
   Cache-Control: public, max-age=31536000, immutable
+/render/*
+  X-Robots-Tag: noindex
+/render/render.html
+  Cache-Control: no-store

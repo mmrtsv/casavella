@@ -17,10 +17,20 @@ import { COPIES, PROFILE_HEAD, TEMPLATES, type Kind, type Template } from '../so
 
 // story: a story (never in the grid)
 // menu: the values of a menu made in Nova publicació › Menú (true on older ones); pack: on its story, the id of its post
-type Post = Slide & { id: string; slides?: Slide[]; story?: boolean; menu?: Menu | boolean; pack?: string; at: string; date?: string; published?: { at: string; url: string; media?: string }; schedule?: Schedule };
+// auto: made by Maite's own plan (lib/plan.js): the week, a weekly post or a menu's reminder, why, and whether the owner changed
+// it (touched) or it moved for one of theirs (moved: the day it had). link: the link sticker of a story; hand: it waits for the
+// owner to post it with the sticker, and goes out without it grace minutes later (never, when null). remind: false on a menu
+// that doesn't want reminders
+type Auto = { week: string; kind: 'plan' | 'menu'; key: string; topic: string; why: string; touched?: boolean; moved?: string; menu?: string; service?: string };
+type Post = Slide & { id: string; slides?: Slide[]; story?: boolean; menu?: Menu | boolean; pack?: string; at: string; date?: string; published?: { at: string; url: string; media?: string; hand?: boolean }; schedule?: Schedule;
+  auto?: Auto; link?: string; hand?: { grace: number | null }; remind?: boolean };
 // A program: when the post goes out on its own (the cron in cron/), with its JPEGs already uploaded (images, for a carousel);
 // error, if it failed
-type Schedule = { at: string; image: string; images?: string[]; error?: string; started?: string };
+// auto: a program of the plan, whose images (image, images) may still be on their way; renderError: the server couldn't draw them
+type Schedule = { at: string; image?: string; images?: string[]; error?: string; started?: string; auto?: boolean; renderError?: string };
+// The plan's settings and weeks (/api/maite/plan); render: the server draws the images; ai: Claude writes the words
+type PlanWeek = { made: string; by: string; approved: { at: string; by: string } | null; deadline: string; ai?: boolean };
+type Plan = { on: boolean; posts: number; stories: number; hand: boolean; grace: number | null; menus: boolean; weeks: Record<string, PlanWeek>; render: boolean; ai: boolean };
 type Insta = { connected: boolean; username?: string; detail?: string; media?: Live[] };
 // A post on the Instagram account, published from Maite or from the app
 type Live = { id: string; at: string; url: string; image: string; caption: string };
@@ -30,17 +40,18 @@ type Option = { caption: string; hashtags: string };
 // A post or story Claude made from a description: the template, its photo and words, and the caption
 type Made = Option & { tpl: string; photo: string; texts: string[]; slides?: Slide[] };
 // Destacats (the highlight covers) is out of the tabs for now; its templates stay
-type Tab = 'new' | 'posts' | 'stories' | 'profile' | 'calendar';
+type Tab = 'plan' | 'new' | 'posts' | 'stories' | 'profile' | 'calendar';
 // A post being made or changed: the variation, the photo (an upload, or one just picked and not yet uploaded) and the words
 type Own = { file: File; url: string };
 type Draft = { v: number; photo: string; own: Own | null; texts: Texts };
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'new', label: 'Generador de posts' }, { id: 'posts', label: 'Posts' }, { id: 'stories', label: 'Stories i reels' },
+  { id: 'plan', label: 'Pla' }, { id: 'new', label: 'Generador de posts' }, { id: 'posts', label: 'Posts' }, { id: 'stories', label: 'Stories i reels' },
   { id: 'profile', label: 'Publicar' }, { id: 'calendar', label: 'Calendari' },
 ];
 const KIND_OF: Partial<Record<Tab, Kind>> = { posts: 'post', stories: 'story' };
 const HELP: Partial<Record<Tab, string>> = {
+  plan: "Cada dilluns Maite prepara la setmana següent a partir de les reserves. Tens fins diumenge a les 23:59 per canviar-la; si no, surt tal com és.",
   new: 'Fes-la des d\'una plantilla, un post o un menú, o genera-la amb IA a partir d\'una descripció. Abans d\'afegir-la al perfil en pots canviar el text i la foto.',
   posts: '1080 × 1350 px. Només els colors de la marca. Edita una plantilla per canviar el text de les publicacions que en facis.',
   stories: '1080 × 1920 px. El text queda lluny de les franges de dalt i de baix, on Instagram posa els botons.',
@@ -67,9 +78,13 @@ const nextSlides = (t: Template): Slide[] => (CAROUSELS[t.id] || []).map(tpl => 
 
 export default function Social() {
   const [tab, setTab] = useState<Tab>(() => {
-    try { const t = localStorage.getItem('maite-social-tab'); return TABS.some(x => x.id === t) ? t as Tab : 'new'; } catch { return 'new'; }
+    try { const t = localStorage.getItem('maite-social-tab'); return TABS.some(x => x.id === t) ? t as Tab : 'plan'; } catch { return 'plan'; }
   });
   const [data, setData] = useState<Data | null>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
+  useEffect(() => { api<{ plan: Plan }>('plan').then(r => setPlan(r.plan)).catch(toastError); }, []);
+  // The plan's images, when the server can't draw them: Maite draws the ones due in the next week while it is open
+  const preparing = usePrepare(data, plan, setData);
   // What Crea'n un post on a template card hands to Nova publicació
   const [start, setStart] = useState<{ id: string; v: number; own: Own | null; n: number } | null>(null);
   // The menu post whose pencil was pressed in Publicar: Nova publicació › Menú opens its pack, as Edita does there
@@ -86,6 +101,7 @@ export default function Social() {
         </Tabs.List></Tabs.ListContainer>
       </Tabs>
       {HELP[tab] && <p className="mb-5 max-w-3xl text-sm text-muted">{HELP[tab]}</p>}
+      {tab === 'plan' && (data && plan ? <PlanView data={data} setData={setData} plan={plan} setPlan={setPlan} preparing={preparing} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {tab === 'new' && (data ? <NewPost key={`${start?.n || 0}-${menu?.n || 0}`} data={data} setData={setData} start={start} menu={menu?.id || ''} onMenuOpened={() => setMenu(m => m && { ...m, id: '' })} go={pick} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {kind && (
         <ul className={`grid gap-5 ${kind === 'post' ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-5'}`}>
@@ -336,17 +352,17 @@ function PostEditor({ post, n, setData, onClose }: { post: Post; n: number; setD
       const images: string[] = [];
       if (post.schedule) for (const x of imagesOf({ ...post, v: draft.v, photo, texts })) images.push(await uploadPhoto(new File([await png(byId.get(x.tpl)!, x.v, x.photo, x.texts)], 'post.png', { type: 'image/png' })));
       setData(await api<Data>('social', { method: 'PUT', body: { edit: { id: post.id, v: draft.v, photo, texts, images: post.schedule ? images : undefined } } }));
-      done(`Post ${n} desat`); onClose();
+      done(post.story ? 'Story desada' : `Post ${n} desat`); onClose();
     } catch (e) { toastError(e); }
     setBusy(false);
   }
   return (
-    <Dialog isOpen onClose={onClose} title="Edita el post" subtitle={`Post ${n}: ${t.title}`} size="lg"
+    <Dialog isOpen onClose={onClose} title={post.story ? 'Edita la story' : 'Edita el post'} subtitle={post.story ? t.title : `Post ${n}: ${t.title}`} size="lg"
       footer={<>
         <Button variant="ghost" onPress={onClose} isDisabled={busy}>Cancel·la</Button>
         <Button isPending={busy} onPress={keep}>{busy && <Spinner size="sm" color="current" />}Desa els canvis</Button>
       </>}>
-      {post.schedule && <p className="mb-4 text-sm text-muted">Està programat: es publicarà amb aquests canvis.</p>}
+      {post.schedule && <p className="mb-4 text-sm text-muted">{post.story ? 'Està programada: es publicarà amb aquests canvis.' : 'Està programat: es publicarà amb aquests canvis.'}</p>}
       <Editor t={t} draft={draft} set={setDraft} />
     </Dialog>
   );
@@ -1108,14 +1124,16 @@ function Planner({ data, onEmpty, onPublish }: { data: Data; onEmpty: () => void
     const lead = (month.getDay() + 6) % 7, count = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
     return Array.from({ length: Math.ceil((lead + count) / 7) * 7 }, (_, i) => new Date(month.getFullYear(), month.getMonth(), i - lead + 1));
   }, [month]);
-  const on = (day: string) => all.filter(p => (p.published ? ymd(new Date(p.published.at)) : p.date) === day);
+  // Stories go on their day too (the plan's and the menus'), after the posts
+  const stories = data.posts.filter(p => byId.has(p.tpl) && p.story && (p.date || p.published));
+  const on = (day: string) => [...all, ...stories].filter(p => (p.published ? ymd(new Date(p.published.at)) : p.date) === day);
   // What is on Instagram, whoever published it; posts Maite published are already shown from the grid
   const [insta, setInsta] = useState<Insta | null>(null);
   useEffect(() => { api<Insta>('instagram?media=1').then(setInsta).catch(() => setInsta({ connected: false })); }, []);
   const ours = new Set(all.map(p => p.published?.media).filter(Boolean));
   const liveOn = (day: string) => (insta?.media || []).filter(m => !ours.has(m.id) && ymd(new Date(m.at)) === day);
 
-  if (!all.length) return (
+  if (!all.length && !stories.length) return (
     <div className="card flex flex-wrap items-center gap-3 p-5">
       <p className="mr-auto text-sm">Encara no hi ha cap post confirmat.</p>
       <Button size="sm" variant="secondary" onPress={onEmpty}>Vés a Posts</Button>
@@ -1144,9 +1162,9 @@ function Planner({ data, onEmpty, onPublish }: { data: Data; onEmpty: () => void
                     const t = byId.get(p.tpl)!;
                     const art = <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className="aspect-[3/4] w-full rounded-md" />;
                     if (p.published) return p.published.url
-                      ? <a key={p.id} href={p.published.url} target="_blank" rel="noopener" title={`${t.title}, publicat`} aria-label={`${t.title}, publicat: obre a Instagram`} className="block rounded-md opacity-60 outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-focus">{art}</a>
+                      ? <a key={p.id} href={p.published.url} target="_blank" rel="noopener" title={`${p.story ? 'Story: ' : ''}${t.title}, publicat`} aria-label={`${t.title}, publicat: obre a Instagram`} className="block rounded-md opacity-60 outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-focus">{art}</a>
                       : <div key={p.id} title={t.title} className="opacity-60">{art}<span className="sr-only">{t.title}</span></div>;
-                    const label = p.schedule ? `${t.title}, ${programmed(p.schedule)}` : t.title;
+                    const label = (p.story ? 'Story: ' : '') + (p.schedule ? `${t.title}, ${programmed(p.schedule)}` : t.title);
                     return (
                       <div key={p.id} title={label} className="relative">
                         {art}<span className="sr-only">{label}</span>
@@ -1416,5 +1434,216 @@ function CopyPanel({ post, n, data, setData, posts }: { post: Post; n: number; d
         <Button size="sm" variant="secondary" isDisabled={!text.trim()} onPress={copy}><CopyIcon size={15} />Copia</Button>
       </div>
     </div>
+  );
+}
+
+// ---------- Pla ----------
+// Maite's own plan (lib/plan.js): each week's posts and stories, with why each one is there, what the owner has to do (post a
+// story with its link sticker) and how it plans. Everything in it is an ordinary post of the grid: it is changed, programmed
+// and published like the rest
+
+// The images a post publishes, as the server compares them (lib/plan.js lookOf): the post, then the slides of a carousel
+const lookOf = (p: Post) => JSON.stringify([p, ...(p.slides || [])].map(x => [x.tpl, x.v || 0, x.photo || '', x.texts || []]));
+const plus = (d: string, n: number) => ymd(new Date(new Date(d + 'T12:00').getTime() + n * 864e5));
+const mondayOf = (d: string) => plus(d, -((new Date(d + 'T12:00').getDay() + 6) % 7));
+const dayLong = (d: string) => new Date(d + 'T12:00').toLocaleDateString('ca-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+const dayMonth = (d: string) => new Date(d + 'T12:00').toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' });
+// «Del 2 al 8 de novembre», «Del 30 de novembre al 6 de desembre»
+const weekName = (w: string) => { const z = plus(w, 6); return `Del ${w.slice(5, 7) === z.slice(5, 7) ? +w.slice(8) : dayMonth(w)} al ${dayMonth(z)}`; };
+const momentOf = (p: Post) => p.published?.at || p.schedule?.at || (p.date ? p.date + 'T23:59' : '');
+
+// Draws and uploads the plan's images that are due in the next week and have none, when the server can't (plan.render false).
+// Returns where it is («2 de 5»), or ''
+function usePrepare(data: Data | null, plan: Plan | null, setData: (d: Data) => void) {
+  const [state, setState] = useState('');
+  const started = useRef(false);
+  useEffect(() => {
+    if (!data || !plan || plan.render || started.current) return;
+    const soon = Date.now() + 7 * 864e5;
+    const list = data.posts.filter(p => !p.published && p.schedule && !p.schedule.image && !p.schedule.error && Date.parse(p.schedule.at) <= soon && imagesOf(p).length);
+    if (!list.length) return;
+    started.current = true;
+    (async () => {
+      let last: Data | null = null;
+      for (const [i, p] of list.entries()) {
+        setState(`${i + 1} de ${list.length}`);
+        try {
+          const images: string[] = [];
+          for (const x of imagesOf(p)) images.push(await uploadPhoto(new File([await png(byId.get(x.tpl)!, x.v, x.photo, x.texts)], 'post.png', { type: 'image/png' })));
+          last = (await api<{ social: Data }>('plan', { method: 'PUT', body: { images: { id: p.id, images, look: lookOf(p) } } })).social;
+        } catch { /* it tries again the next time Maite opens */ }
+      }
+      if (last) setData(last);
+      setState('');
+    })();
+  }, [data, plan, setData]);
+  return state;
+}
+
+function PlanView({ data, setData, plan, setPlan, preparing }: { data: Data; setData: (d: Data) => void; plan: Plan; setPlan: (p: Plan) => void; preparing: string }) {
+  const today = ymd(new Date()), thisWeek = mondayOf(today), nextWeek = plus(thisWeek, 7);
+  const weeks = [...new Set([thisWeek, nextWeek, ...Object.keys(plan.weeks).filter(w => w > thisWeek)])].sort();
+  // The next week while it can still be changed, else this one
+  const [week, setWeek] = useState(() => plan.weeks[nextWeek] && !plan.weeks[nextWeek].approved && Date.parse(plan.weeks[nextWeek].deadline) > Date.now() ? nextWeek : thisWeek);
+  const [busy, setBusy] = useState('');
+  const [editing, setEditing] = useState<Post | null>(null);
+  const [caption, setCaption] = useState<Post | null>(null);
+  const W = plan.weeks[week];
+  const items = data.posts.filter(p => byId.has(p.tpl) && (p.auto ? p.auto.week === week : p.date && mondayOf(p.date) === week || p.published && mondayOf(ymd(new Date(p.published.at))) === week))
+    .sort((a, b) => momentOf(a).localeCompare(momentOf(b)));
+  const days = Array.from({ length: 7 }, (_, i) => plus(week, i)).map(d => ({ d, list: items.filter(p => (p.published ? ymd(new Date(p.published.at)) : p.date) === d) })).filter(x => x.list.length);
+  const set = (r: { plan: Plan; social: Data }) => { setPlan(r.plan); setData(r.social); };
+
+  async function call(what: string, body: object, msg: string) {
+    setBusy(what);
+    try { set(await api('plan', { method: 'PUT', body })); done(msg); } catch (e) { toastError(e); }
+    setBusy('');
+  }
+  async function remove(p: Post) {
+    setBusy('remove:' + p.id);
+    try { setData(await api<Data>('social', { method: 'PUT', body: { remove: p.id } })); done(p.story ? 'Story treta del pla' : 'Post tret del pla'); } catch (e) { toastError(e); }
+    setBusy('');
+  }
+  // The story as a PNG and its link on the clipboard, to post it from Instagram with the link sticker
+  async function byHand(p: Post) {
+    setBusy('hand:' + p.id);
+    try {
+      const t = byId.get(p.tpl)!;
+      save(await png(t, p.v, p.photo, p.texts), fileName(t));
+      await navigator.clipboard.writeText(p.link || storyLink(!!p.pack));
+      done("Story baixada i enllaç copiat");
+    } catch (e) { toastError(e); }
+    setBusy('');
+  }
+
+  const status = (p: Post) => {
+    if (p.published) return p.published.url
+      ? <a href={p.published.url} target="_blank" rel="noopener" className="text-xs text-accent underline-offset-2 hover:underline">{p.story ? 'Publicada' : 'Publicat'} a Instagram</a>
+      : <span className="text-xs text-muted">{p.published.hand ? 'Penjada per tu' : p.story ? 'Publicada' : 'Publicat'}</span>;
+    const s = p.schedule;
+    if (!s) return <span className="text-xs text-warning">Sense programar: no sortirà sol</span>;
+    if (s.error) return <span className="text-xs text-danger" title={s.error}>No ha sortit: {s.error}</span>;
+    const at = hour(s.at);
+    if (p.story && p.hand && p.link) {
+      const due = Date.parse(s.at) <= Date.now(), out = p.hand.grace == null ? '' : hour(new Date(Date.parse(s.at) + p.hand.grace * 60e3).toISOString());
+      return <span className={`text-xs ${due ? 'text-warning' : 'text-muted'}`}>{due ? "Per penjar amb l'enllaç" : `Per penjar a les ${at} amb l'enllaç`}{out ? `. Si no, surt sola a les ${out} sense enllaç` : ''}</span>;
+    }
+    if (!s.image) return <span className="text-xs text-muted" title={s.renderError}>{`Surt sol${p.story ? 'a' : ''} a les ${at}. Imatge per preparar`}</span>;
+    return <span className="text-xs text-accent">{`Surt sol${p.story ? 'a' : ''} a les ${at}`}</span>;
+  };
+  const why = (p: Post) => p.auto ? p.auto.why : 'Teu';
+
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="space-y-5">
+        <ToggleButtonGroup aria-label="Setmana" selectionMode="single" disallowEmptySelection selectedKeys={new Set([week])}
+          onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) setWeek(String(v)); }} size="sm">
+          {weeks.map(w => <ToggleButton key={w} id={w}>{w === thisWeek ? 'Aquesta setmana' : w === nextWeek ? 'La setmana que ve' : `Del ${dayMonth(w)}`}</ToggleButton>)}
+        </ToggleButtonGroup>
+        <section className="card" aria-label={`Setmana del ${dayMonth(week)}`}>
+          <div className="flex flex-wrap items-center gap-3 border-b border-separator p-4 sm:px-5">
+            <div className="mr-auto min-w-0">
+              <h2 className="text-base font-semibold">{weekName(week)}</h2>
+              <p className="text-sm text-muted">{!W ? (plan.on ? 'Encara no hi ha pla per a aquesta setmana.' : 'El pla automàtic està aturat.')
+                : W.approved ? (W.approved.by === 'pla' ? 'En marxa.' : 'Aprovat.')
+                : `Pots canviar-lo fins ${dayLong(plus(week, -1))} a les 23:59. Si no, surt tal com és.`}{preparing ? ` Preparant les imatges (${preparing}).` : ''}</p>
+            </div>
+            {W && !W.approved && <Button size="sm" isPending={busy === 'approve'} onPress={() => call('approve', { approve: week }, 'Pla aprovat')}>{busy === 'approve' ? <Spinner size="sm" color="current" /> : <Check size={15} />}Aprova</Button>}
+            {plan.on && week >= thisWeek && <Button size="sm" variant="secondary" isPending={busy === 'make'} isDisabled={!!busy && busy !== 'make'}
+              onPress={() => call('make', { make: week }, W ? 'Pla refet' : 'Pla fet')}>{busy === 'make' ? <Spinner size="sm" color="current" /> : <Sparkles size={15} />}{W ? 'Torna a fer el pla' : 'Fes el pla'}</Button>}
+          </div>
+          {days.length ? days.map(({ d, list }) => (
+            <div key={d}>
+              <h3 className="border-b border-separator bg-default/40 px-4 py-2 text-sm font-medium first-letter:uppercase sm:px-5">{dayLong(d)}</h3>
+              <ol className="divide-y divide-separator">
+                {list.map(p => {
+                  const t = byId.get(p.tpl)!, open = !p.published;
+                  return (
+                    <li key={p.id} className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap sm:px-5">
+                      <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className={`${p.story ? 'aspect-[9/16]' : 'aspect-[3/4]'} w-11 shrink-0 rounded-md`} />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold">{p.story ? 'Story' : 'Post'}<span className="font-normal text-muted">{p.schedule ? `, ${hour(p.schedule.at)}` : ''}</span></div>
+                        <div className="text-xs text-muted">{why(p)}</div>
+                        {p.auto?.moved && <div className="text-xs text-muted">Abans era el {dayLong(p.auto.moved)}: aquell dia hi tens un post teu.</div>}
+                        {!p.story && data.copies[p.id] && <div className="truncate text-xs text-muted">{data.copies[p.id].split('\n')[0]}</div>}
+                        <div>{status(p)}</div>
+                      </div>
+                      {open && (
+                        <div className="flex w-full flex-wrap items-center justify-end gap-1 sm:ml-auto sm:w-auto sm:shrink-0">
+                          {p.story && p.link && <>
+                            <Button size="sm" variant="secondary" isPending={busy === 'hand:' + p.id} onPress={() => byHand(p)}>{busy === 'hand:' + p.id ? <Spinner size="sm" color="current" /> : <Download size={15} />}Penja amb l'enllaç</Button>
+                            <Button size="sm" variant="ghost" isPending={busy === 'done:' + p.id} onPress={() => call('done:' + p.id, { done: p.id }, 'Story marcada com a penjada')}>Ja l'he penjada</Button>
+                          </>}
+                          {!p.story && <Button size="sm" variant="ghost" isIconOnly aria-label="Edita el copy" onPress={() => setCaption(p)}><MessageSquareText size={16} /></Button>}
+                          <Button size="sm" variant="ghost" isIconOnly aria-label={p.story ? 'Edita la story' : 'Edita el post'} onPress={() => setEditing(p)}><Pencil size={16} /></Button>
+                          {p.auto && <Button size="sm" variant="ghost" isIconOnly aria-label="Treu-lo del pla" isPending={busy === 'remove:' + p.id} onPress={() => remove(p)}>{busy === 'remove:' + p.id ? <Spinner size="sm" color="current" /> : <X size={16} />}</Button>}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          )) : <p className="p-5 text-sm">{W ? 'Aquesta setmana no té res al pla.' : 'Res encara.'}</p>}
+        </section>
+      </div>
+      <PlanSettings data={data} plan={plan} set={set} />
+      {editing && <PostEditor post={editing} n={planNumber(data, editing)} setData={setData} onClose={() => setEditing(null)} />}
+      {caption && <CaptionEditor post={caption} text={data.copies[caption.id] || ''} setData={setData} onClose={() => setCaption(null)} />}
+    </div>
+  );
+}
+
+function CaptionEditor({ post, text: was, setData, onClose }: { post: Post; text: string; setData: (d: Data) => void; onClose: () => void }) {
+  const [text, setText] = useState(was);
+  const [busy, setBusy] = useState(false);
+  async function keep() {
+    setBusy(true);
+    try { setData(await api<Data>('social', { method: 'PUT', body: { copy: { id: post.id, text } } })); done('Copy desat'); onClose(); } catch (e) { toastError(e); }
+    setBusy(false);
+  }
+  return (
+    <Dialog isOpen onClose={onClose} title="Edita el copy" subtitle={byId.get(post.tpl)!.title}
+      footer={<><Button variant="ghost" onPress={onClose} isDisabled={busy}>Cancel·la</Button><Button isPending={busy} onPress={keep}>{busy && <Spinner size="sm" color="current" />}Desa</Button></>}>
+      <TextField value={text} onChange={setText} fullWidth aria-label="Copy"><TextArea rows={8} /></TextField>
+    </Dialog>
+  );
+}
+
+const GRACE = [{ id: '60', name: "1 hora després" }, { id: '120', name: '2 hores després' }, { id: '180', name: '3 hores després' }, { id: '240', name: '4 hores després' }, { id: '360', name: '6 hores després' }, { id: 'never', name: 'Mai' }];
+function PlanSettings({ data, plan, set }: { data: Data; plan: Plan; set: (r: { plan: Plan; social: Data }) => void }) {
+  const [busy, setBusy] = useState(false);
+  const today = ymd(new Date());
+  const menus = data.posts.filter(p => p.menu && typeof p.menu === 'object' && !p.story && !p.pack && p.menu.from && (p.menu.until || p.menu.from) >= today);
+  async function put(body: object) {
+    setBusy(true);
+    try { set(await api('plan', { method: 'PUT', body })); done('Desat'); } catch (e) { toastError(e); }
+    setBusy(false);
+  }
+  const change = (s: Partial<Plan>) => put({ settings: s });
+  return (
+    <section className="card space-y-4 p-4 sm:p-5" aria-label="Com planifica" aria-busy={busy}>
+      <h2 className="text-base font-semibold">Com planifica</h2>
+      <CheckField isSelected={plan.on} onChange={on => change({ on })}>Fes el pla cada setmana</CheckField>
+      <div className="grid grid-cols-2 gap-3">
+        <Choice label="Posts per setmana" value={String(plan.posts)} onChange={v => change({ posts: Number(v) })} items={[0, 1, 2, 3, 4, 5].map(n => ({ id: String(n), name: String(n) }))} />
+        <Choice label="Stories per dia" value={String(plan.stories)} onChange={v => change({ stories: Number(v) })} items={[0, 1, 2].map(n => ({ id: String(n), name: String(n) }))} />
+      </div>
+      <p className="text-xs text-muted">Els canvis compten per als plans que faci a partir d'ara.</p>
+      <CheckField isSelected={plan.hand} onChange={hand => change({ hand })}>Les stories esperen que les pengi jo amb l'enllaç</CheckField>
+      {plan.hand && <Choice label="Si no la penjo, surt sola sense enllaç" value={plan.grace == null ? 'never' : String(plan.grace)} onChange={v => change({ grace: v === 'never' ? null : Number(v) })} items={GRACE} />}
+      <CheckField isSelected={plan.menus} onChange={menus => change({ menus })}>Recordatoris dels menús</CheckField>
+      {plan.menus && menus.length > 0 && (
+        <ul className="space-y-2">
+          {menus.map(p => {
+            const m = p.menu as Menu;
+            return <li key={p.id}><CheckField isSelected={p.remind !== false} onChange={on => put({ remind: { id: p.id, on } })}>{m.title || 'Menú'}, {datesText(m.from, m.until).replace(/^./, c => c.toLowerCase())}</CheckField></li>;
+          })}
+        </ul>
+      )}
+      {plan.menus && <p className="text-xs text-muted">Cada menú programat té stories els dies abans, més seguides com més places queden, i cap quan és ple.</p>}
+      {!plan.render && <p className="text-xs text-muted">Les imatges del pla es preparen quan obres Maite. Perquè surtin encara que no l'obris, cal la clau de Cloudflare (vegeu el README).</p>}
+      {!plan.ai && <p className="text-xs text-muted">Sense la clau de Claude, el pla fa servir els textos de les plantilles.</p>}
+    </section>
   );
 }

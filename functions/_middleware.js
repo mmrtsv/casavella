@@ -44,7 +44,8 @@ export async function onRequest({ request, env, next }) {
   const url = new URL(request.url), path = url.pathname;
   const maite = url.hostname.startsWith('maite.');
   const backOffice = path === '/maite' || path.startsWith('/maite/') || path.startsWith('/api/maite/');
-  if (!maite) return backOffice ? new Response('Not found', { status: 404 }) : publicWeb(request, env, next, url);
+  // The Instagram photos and the script font are also the server's, to draw the plan's images (dist/render/, lib/render.js)
+  if (!maite) return backOffice && !path.startsWith('/maite/social/') ? new Response('Not found', { status: 404 }) : publicWeb(request, env, next, url);
   if (path === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   if (path.startsWith('/api/maite/') || path.startsWith('/maite/') || SHARED.test(path)) return next();
   if (path === '/') return env.ASSETS.fetch(new Request(new URL('/maite/', url), request));

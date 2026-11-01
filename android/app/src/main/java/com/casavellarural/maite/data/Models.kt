@@ -117,7 +117,7 @@ data class CancelResponse(val refunded: Long = 0)
 
 // Xarxes socials
 @Serializable
-data class Published(val at: String, val url: String = "", val media: String? = null, val image: String? = null)
+data class Published(val at: String, val url: String = "", val media: String? = null, val image: String? = null, val hand: Boolean = false)
 
 /** One image of a post: the post itself, or a slide after it in a carousel */
 @Serializable
@@ -129,11 +129,32 @@ data class Slide(val tpl: String, val v: Int = 0, val photo: String = "", val te
  *  menu made in Nova publicació › Menú (true on older ones), read with ui.social menuValues; pack: on its stories (the announcement
  *  and the menu), the id of its post */
 @Serializable
-data class SocialPost(val id: String, val tpl: String, val v: Int = 0, val photo: String = "", val texts: List<String?>? = null, val slides: List<Slide>? = null, val story: Boolean = false, val menu: JsonElement? = null, val pack: String? = null, val at: String = "", val date: String? = null, val published: Published? = null, val schedule: Schedule? = null)
+data class SocialPost(val id: String, val tpl: String, val v: Int = 0, val photo: String = "", val texts: List<String?>? = null, val slides: List<Slide>? = null, val story: Boolean = false, val menu: JsonElement? = null, val pack: String? = null, val at: String = "", val date: String? = null, val published: Published? = null, val schedule: Schedule? = null,
+    val auto: Auto? = null, val link: String? = null, val hand: Hand? = null, val remind: Boolean? = null)
+
+/** Made by Maite's own plan (lib/plan.js): its week, a weekly post or a menu's reminder (kind), why it is there, whether the owner
+ *  changed it (touched) and the day it had before it moved for one of the owner's posts (moved) */
+@Serializable
+data class Auto(val week: String, val kind: String = "plan", val key: String = "", val topic: String = "", val why: String = "", val touched: Boolean = false, val moved: String? = null, val menu: String? = null, val service: String? = null)
+
+/** A story that waits for the owner to post it with its link sticker, and goes out without it grace minutes later (never, when null) */
+@Serializable
+data class Hand(val grace: Int? = null)
+
+/** The plan's settings and weeks (/api/maite/plan). render: the server draws the images. ai: Claude writes the words */
+@Serializable
+data class PlanWeek(val made: String = "", val by: String = "", val approved: Approved? = null, val deadline: String = "")
+@Serializable
+data class Approved(val at: String = "", val by: String = "")
+@Serializable
+data class Plan(val on: Boolean = true, val posts: Int = 3, val stories: Int = 1, val hand: Boolean = true, val grace: Int? = 180, val menus: Boolean = true,
+    val weeks: Map<String, PlanWeek> = emptyMap(), val render: Boolean = false, val ai: Boolean = false)
+@Serializable
+data class PlanResponse(val plan: Plan, val social: Social)
 
 /** A post programmed for a moment: its JPEGs are already uploaded (images, for a carousel) and lib/instagram.js publishes it when due */
 @Serializable
-data class Schedule(val at: String, val image: String = "", val images: List<String>? = null, val error: String? = null)
+data class Schedule(val at: String, val image: String = "", val images: List<String>? = null, val error: String? = null, val auto: Boolean = false, val renderError: String? = null)
 
 /** templates: the words changed on each template, which new posts start from (null keeps the template's) */
 @Serializable

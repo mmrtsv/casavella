@@ -71,6 +71,10 @@ import com.casavellarural.maite.data.Insta
 import com.casavellarural.maite.data.Maite
 import com.casavellarural.maite.data.Made
 import com.casavellarural.maite.data.MadeOptions
+import com.casavellarural.maite.data.Plan
+import com.casavellarural.maite.data.PlanResponse
+import com.casavellarural.maite.data.longDay
+import com.casavellarural.maite.data.cap
 import com.casavellarural.maite.data.Slide
 import com.casavellarural.maite.data.Social
 import com.casavellarural.maite.data.SocialPost
@@ -115,9 +119,10 @@ import kotlinx.coroutines.withContext
 // Xarxes socials, as maite-app/src/pages/Social.tsx: a new post (from a description or from a template), the templates and the
 // words changed on them, the profile grid of the posts made, captions, publishing, a calendar
 
-private val TABS = listOf("new" to "Generador de posts", "posts" to "Posts", "stories" to "Stories i reels", "profile" to "Publicar", "calendar" to "Calendari")
+private val TABS = listOf("plan" to "Pla", "new" to "Generador de posts", "posts" to "Posts", "stories" to "Stories i reels", "profile" to "Publicar", "calendar" to "Calendari")
 private val KIND_OF = mapOf("posts" to "post", "stories" to "story")
 private val HELP = mapOf(
+    "plan" to "Cada dilluns Maite prepara la setmana següent a partir de les reserves. Tens fins diumenge a les 23:59 per canviar-la; si no, surt tal com és.",
     "new" to "Fes-la des d'una plantilla, un post o un menú, o genera-la amb IA a partir d'una descripció. Abans d'afegir-la al perfil en pots canviar el text i la foto.",
     "posts" to "1080 × 1350 px. Només els colors de la marca. Edita una plantilla per canviar el text de les publicacions que en facis.",
     "stories" to "1080 × 1920 px. El text queda lluny de les franges de dalt i de baix, on Instagram posa els botons.",
@@ -132,13 +137,36 @@ private fun nextSlides(t: Template) = Renderer.catalog?.carousels?.get(t.id).orE
 /** Every image of a post: the post itself, then the slides of a carousel */
 private fun imagesOf(p: SocialPost) = (listOf(Slide(p.tpl, p.v, p.photo, p.texts)) + p.slides.orEmpty()).filter { Renderer.byId.containsKey(it.tpl) }
 private fun joinCopy(o: CaptionOption) = o.caption.trim() + if (o.hashtags.isNotBlank()) "\n\n" + o.hashtags.trim() else ""
-private var lastTab = "new"
+private var lastTab = "plan"
+/** The plan's images were already drawn here in this run of the app (when the server can't draw them) */
+private var prepared = false
 
 @Composable
 fun SocialScreen() {
     val context = LocalContext.current
     Renderer.loadCatalog(context)
-    var tab by remember { mutableStateOf(lastTab.takeIf { t -> TABS.any { it.first == t } } ?: "new") }
+    var tab by remember { mutableStateOf(lastTab.takeIf { t -> TABS.any { it.first == t } } ?: "plan") }
+    var plan by remember { mutableStateOf<Plan?>(null) }
+    var preparing by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) { runCatching { Api.get<PlanResponse>("plan") }.onSuccess { plan = it.plan; Maite.social = it.social }.onFailure { Toasts.error(it) } }
+    // The plan's images, when the server can't draw them: the app draws the ones due in the next week while it is open
+    LaunchedEffect(plan?.render, Maite.social != null) {
+        val d = Maite.social ?: return@LaunchedEffect
+        val p0 = plan ?: return@LaunchedEffect
+        if (p0.render || prepared) return@LaunchedEffect
+        prepared = true
+        val soon = java.time.Instant.now().plusSeconds(7 * 86400L)
+        val list = d.posts.filter { it.published == null && it.schedule != null && it.schedule.image.isEmpty() && it.schedule.error == null &&
+            runCatching { java.time.Instant.parse(it.schedule.at) <= soon }.getOrDefault(false) && imagesOf(it).isNotEmpty() }
+        list.forEachIndexed { i, p ->
+            preparing = "${i + 1} de ${list.size}"
+            runCatching {
+                val images = imagesOf(p).map { x -> uploadJpeg(withContext(Dispatchers.Default) { jpeg(Renderer.full(x.tpl, x.v, x.photo, x.texts), 1440, 92) }) }
+                Maite.social = Api.put<PlanResponse>("plan", mapOf("images" to mapOf("id" to p.id, "images" to images))).social
+            }
+        }
+        preparing = ""
+    }
     var start by remember { mutableStateOf<Start?>(null) }
     var menu by remember { mutableStateOf<OpenMenu?>(null) }
     LaunchedEffect(Unit) { runCatching { Maite.loadSocial() }.onFailure { Toasts.error(it) } }
@@ -153,6 +181,7 @@ fun SocialScreen() {
                 start = Start(t.id, v, own, (start?.n ?: 0) + 1); menu = null; tab = "new"; lastTab = tab
             }
             data == null -> com.casavellarural.maite.ui.Loading()
+            tab == "plan" -> plan?.let { PlanScreen(data, it, { p -> plan = p }, preparing) } ?: com.casavellarural.maite.ui.Loading()
             tab == "new" -> key(start?.n ?: 0, menu?.n ?: 0) { NewPost(data, start, menu?.id.orEmpty(), { menu = menu?.copy(id = "") }) { tab = it; lastTab = it } }
             tab == "profile" -> Profile(data, { p -> menu = OpenMenu(p.id, (menu?.n ?: 0) + 1); tab = "new"; lastTab = tab }) { tab = "posts"; lastTab = tab }
             else -> Planner(data, { tab = "posts"; lastTab = tab }) { tab = "profile"; lastTab = tab }
@@ -489,8 +518,8 @@ private fun PostEditor(post: SocialPost, n: Int, onClose: () -> Unit) {
     val scope = rememberCoroutineScope()
     Sheet(onClose) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 28.dp).verticalScroll(rememberScrollState())) {
-            Text("Edita el post", style = Type.xl); Muted("Post $n: ${t.title}")
-            if (post.schedule != null) Muted("Està programat: es publicarà amb aquests canvis.", Modifier.padding(top = 10.dp))
+            Text(if (post.story) "Edita la story" else "Edita el post", style = Type.xl); Muted(if (post.story) t.title else "Post $n: ${t.title}")
+            if (post.schedule != null) Muted(if (post.story) "Està programada: es publicarà amb aquests canvis." else "Està programat: es publicarà amb aquests canvis.", Modifier.padding(top = 10.dp))
             Spacer(Modifier.height(12.dp))
             Editor(t, v, photo, texts, { nv, np, nt -> v = nv; photo = np; texts = nt })
             FlowRow(Modifier.fillMaxWidth().padding(top = 18.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -505,7 +534,7 @@ private fun PostEditor(post: SocialPost, n: Int, onClose: () -> Unit) {
                                 uploadJpeg(withContext(Dispatchers.Default) { jpeg(Renderer.full(x.tpl, x.v, x.photo, x.texts), 1440, 92) })
                             } else null
                             Maite.social = Api.put<Social>("social", mapOf("edit" to mapOf("id" to post.id, "v" to v, "photo" to photo, "texts" to tx, "images" to images)))
-                            Toasts.done("Post $n desat"); onClose()
+                            Toasts.done(if (post.story) "Story desada" else "Post $n desat"); onClose()
                         } catch (e: Exception) { Toasts.error(e) }
                         busy = false
                     }
@@ -1012,9 +1041,11 @@ private fun Planner(data: Social, onEmpty: () -> Unit, onPublish: () -> Unit) {
     var month by remember { mutableStateOf(parse(planned.firstNotNullOfOrNull { it.date }?.takeIf { it > today } ?: today).withDayOfMonth(1)) }
     var live by remember { mutableStateOf<List<com.casavellarural.maite.data.LiveMedia>>(emptyList()) }
     LaunchedEffect(Unit) { runCatching { Api.get<Insta>("instagram?media=1") }.onSuccess { live = it.media } }
-    if (all.isEmpty()) return Nothing("Encara no hi ha cap post confirmat.", onEmpty)
+    // Stories go on their day too (the plan's and the menus'), after the posts
+    val stories = data.posts.filter { byId.containsKey(it.tpl) && it.story && (it.date != null || it.published != null) }
+    if (all.isEmpty() && stories.isEmpty()) return Nothing("Encara no hi ha cap post confirmat.", onEmpty)
     val ours = all.mapNotNull { it.published?.media }.toSet()
-    fun on(day: String) = all.filter { (it.published?.let { p -> localDayOf(p.at) } ?: it.date) == day }
+    fun on(day: String) = (all + stories).filter { (it.published?.let { p -> localDayOf(p.at) } ?: it.date) == day }
     fun liveOn(day: String) = live.filter { it.id !in ours && localDayOf(it.at) == day }
     val context = LocalContext.current
     Card(Modifier.fillMaxWidth()) {
@@ -1413,3 +1444,185 @@ private fun Menus(data: Social, toEdit: String = "", onOpened: () -> Unit = {}) 
     }
 }
 private data class Six(val on: Boolean, val was: SocialPost?, val isDone: Boolean, val body: Slide, val w: Out, val name: String)
+
+// ---------- Pla ----------
+// As PlanView in maite-app/src/pages/Social.tsx: Maite's own plan (lib/plan.js), each week's posts and stories with why each one
+// is there, what the owner has to do (post a story with its link sticker) and how it plans. Everything in it is an ordinary
+// post of the grid: it is changed, programmed and published like the rest
+
+private fun mondayOf(d: String) = parse(d).let { it.minusDays((it.dayOfWeek.value - 1).toLong()) }.toString()
+private fun dayOfMonthText(d: String) = parse(d).format(java.time.format.DateTimeFormatter.ofPattern("d MMMM", CA)).replace('’', '\'')
+/** «Del 2 al 8 de novembre», «Del 30 de novembre al 6 de desembre» */
+private fun weekName(w: String): String { val z = addDays(w, 6); return "Del ${if (w.substring(5, 7) == z.substring(5, 7)) parse(w).dayOfMonth.toString() else dayOfMonthText(w)} al ${dayOfMonthText(z)}" }
+private fun dayOfPost(p: SocialPost) = p.published?.let { localDayOf(it.at) } ?: p.date
+private fun momentOf(p: SocialPost) = p.published?.at ?: p.schedule?.at ?: p.date?.let { "${it}T23:59" } ?: ""
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PlanScreen(data: Social, plan: Plan, onPlan: (Plan) -> Unit, preparing: String) {
+    val byId = Renderer.byId
+    val thisWeek = mondayOf(TODAY); val nextWeek = addDays(thisWeek, 7)
+    val weeks = (listOf(thisWeek, nextWeek) + plan.weeks.keys.filter { it > thisWeek }).distinct().sorted()
+    // The next week while it can still be changed, else this one
+    var week by remember { mutableStateOf(plan.weeks[nextWeek]?.takeIf { it.approved == null && runCatching { java.time.Instant.parse(it.deadline).isAfter(java.time.Instant.now()) }.getOrDefault(false) }?.let { nextWeek } ?: thisWeek) }
+    var busy by remember { mutableStateOf("") }
+    var editing by remember { mutableStateOf<SocialPost?>(null) }
+    var caption by remember { mutableStateOf<SocialPost?>(null) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val w = plan.weeks[week]
+    val items = data.posts.filter { p -> byId.containsKey(p.tpl) && (p.auto?.let { it.week == week } ?: (dayOfPost(p)?.let { mondayOf(it) == week } ?: false)) }.sortedBy { momentOf(it) }
+    val days = (0..6).map { addDays(week, it) }.map { d -> d to items.filter { dayOfPost(it) == d } }.filter { it.second.isNotEmpty() }
+
+    fun call(what: String, body: Map<String, Any?>, msg: String) {
+        busy = what
+        scope.launch {
+            try { val r = Api.put<PlanResponse>("plan", body); onPlan(r.plan); Maite.social = r.social; Toasts.done(msg) } catch (e: Exception) { Toasts.error(e) }
+            busy = ""
+        }
+    }
+
+    Segmented(weeks.map { it to when (it) { thisWeek -> "Aquesta setmana"; nextWeek -> "La setmana que ve"; else -> "Del ${dayOfMonthText(it)}" } }, week, { week = it })
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Text(weekName(week), style = Type.base, fontWeight = FontWeight.SemiBold)
+            Muted(when {
+                w == null -> if (plan.on) "Encara no hi ha pla per a aquesta setmana." else "El pla automàtic està aturat."
+                w.approved != null -> if (w.approved.by == "pla") "En marxa." else "Aprovat."
+                else -> "Pots canviar-lo fins ${longDay(addDays(week, -1))} a les 23:59. Si no, surt tal com és."
+            } + if (preparing.isNotEmpty()) " Preparant les imatges ($preparing)." else "")
+            FlowRow(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (w != null && w.approved == null) Btn("Aprova", { call("approve", mapOf("approve" to week), "Pla aprovat") }, icon = R.drawable.ic_check, busy = busy == "approve")
+                if (plan.on) Btn(if (w != null) "Torna a fer el pla" else "Fes el pla", { call("make", mapOf("make" to week), if (w != null) "Pla refet" else "Pla fet") },
+                    look = Look.Secondary, icon = R.drawable.ic_sparkles, busy = busy == "make", enabled = busy.isEmpty() || busy == "make")
+            }
+        }
+        if (days.isEmpty()) Text(if (w != null) "Aquesta setmana no té res al pla." else "Res encara.", style = Type.sm, modifier = Modifier.padding(16.dp))
+        days.forEach { (d, list) ->
+            Divider()
+            Text(cap(longDay(d)), style = Type.sm, fontWeight = FontWeight.Medium, modifier = Modifier.fillMaxWidth().background(T.default.copy(alpha = 0.4f)).padding(horizontal = 16.dp, vertical = 8.dp))
+            list.forEach { p ->
+                val t = byId.getValue(p.tpl)
+                Divider()
+                Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Art(t, p.v, p.photo, p.texts, Modifier.width(40.dp).aspectRatio(if (p.story) 9 / 16f else 3 / 4f).clip(RoundedCornerShape(6.dp)), cover = true)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text((if (p.story) "Story" else "Post") + (p.schedule?.let { ", ${hourOf(it.at)}" } ?: ""), style = Type.sm, fontWeight = FontWeight.SemiBold)
+                            Text(p.auto?.why ?: "Teu", style = Type.xs, color = T.muted)
+                            p.auto?.moved?.let { Text("Abans era el ${longDay(it)}: aquell dia hi tens un post teu.", style = Type.xs, color = T.muted) }
+                            if (!p.story) data.copies[p.id]?.let { Text(it.lineSequence().first(), style = Type.xs, color = T.muted, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                            PlanStatus(p)
+                        }
+                    }
+                    if (p.published == null) FlowRow(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (p.story && p.link != null) {
+                            Btn("Penja amb l'enllaç", {
+                                busy = "hand:" + p.id
+                                scope.launch {
+                                    try { toInstagram(context, t, p, p.link ?: storyLink(p.pack != null)); Toasts.done("Enllaç copiat") } catch (e: Exception) { Toasts.error(e) }
+                                    busy = ""
+                                }
+                            }, look = Look.Secondary, icon = R.drawable.ic_external_link, busy = busy == "hand:" + p.id)
+                            Btn("Ja l'he penjada", { call("done:" + p.id, mapOf("done" to p.id), "Story marcada com a penjada") }, look = Look.Ghost, busy = busy == "done:" + p.id)
+                        }
+                        if (!p.story) IconBtn(R.drawable.ic_message_square_text, "Edita el copy", { caption = p })
+                        IconBtn(R.drawable.ic_pencil, if (p.story) "Edita la story" else "Edita el post", { editing = p })
+                        if (p.auto != null) IconBtn(R.drawable.ic_x, "Treu-lo del pla", {
+                            busy = "remove:" + p.id
+                            scope.launch {
+                                try { Maite.social = Api.put<Social>("social", mapOf("remove" to p.id)); Toasts.done(if (p.story) "Story treta del pla" else "Post tret del pla") } catch (e: Exception) { Toasts.error(e) }
+                                busy = ""
+                            }
+                        }, busy = busy == "remove:" + p.id)
+                    }
+                }
+            }
+        }
+    }
+    PlanSettings(data, plan, onPlan)
+    editing?.let { PostEditor(it, planNumber(data, it)) { editing = null } }
+    caption?.let { CaptionEditor(it, data.copies[it.id].orEmpty()) { caption = null } }
+}
+
+@Composable
+private fun PlanStatus(p: SocialPost) {
+    val pub = p.published
+    if (pub != null) {
+        val context = LocalContext.current
+        val text = if (pub.hand) "Penjada per tu" else if (p.story) "Publicada a Instagram" else "Publicat a Instagram"
+        Text(text, style = Type.xs, color = if (pub.url.isNotEmpty()) T.accent else T.muted, modifier = if (pub.url.isNotEmpty()) Modifier.clickable { open(context, pub.url) } else Modifier)
+        return
+    }
+    val s = p.schedule
+    if (s == null) return Text("Sense programar: no sortirà sol", style = Type.xs, color = T.warningText)
+    if (s.error != null) return Text("No ha sortit: ${s.error}", style = Type.xs, color = T.danger)
+    val at = hourOf(s.at)
+    val hand = p.hand
+    if (p.story && hand != null && p.link != null) {
+        val due = runCatching { !java.time.Instant.parse(s.at).isAfter(java.time.Instant.now()) }.getOrDefault(false)
+        val out = hand.grace?.let { g -> runCatching { hourOf(java.time.Instant.parse(s.at).plusSeconds(g * 60L).toString()) }.getOrNull() }
+        return Text((if (due) "Per penjar amb l'enllaç" else "Per penjar a les $at amb l'enllaç") + (out?.let { ". Si no, surt sola a les $it sense enllaç" } ?: ""),
+            style = Type.xs, color = if (due) T.warningText else T.muted)
+    }
+    val sol = if (p.story) "Surt sola" else "Surt sol"
+    if (s.image.isEmpty()) Text("$sol a les $at. Imatge per preparar", style = Type.xs, color = T.muted)
+    else Text("$sol a les $at", style = Type.xs, color = T.accent)
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CaptionEditor(post: SocialPost, was: String, onClose: () -> Unit) {
+    var text by remember { mutableStateOf(was) }
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    Sheet(onClose) {
+        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 28.dp).verticalScroll(rememberScrollState())) {
+            Text("Edita el copy", style = Type.xl); Muted(Renderer.byId[post.tpl]?.title.orEmpty())
+            Field("Copy", text, { text = it }, Modifier.padding(top = 12.dp), area = true)
+            FlowRow(Modifier.fillMaxWidth().padding(top = 18.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+                Btn("Cancel·la", onClose, look = Look.Ghost, enabled = !busy)
+                Btn("Desa", {
+                    busy = true
+                    scope.launch {
+                        try { Maite.social = Api.put<Social>("social", mapOf("copy" to mapOf("id" to post.id, "text" to text))); Toasts.done("Copy desat"); onClose() } catch (e: Exception) { Toasts.error(e) }
+                        busy = false
+                    }
+                }, busy = busy, small = false)
+            }
+        }
+    }
+}
+
+private val GRACE = listOf("60" to "1 hora després", "120" to "2 hores després", "180" to "3 hores després", "240" to "4 hores després", "360" to "6 hores després", "never" to "Mai")
+@Composable
+private fun PlanSettings(data: Social, plan: Plan, onPlan: (Plan) -> Unit) {
+    val scope = rememberCoroutineScope()
+    val menus = data.posts.filter { p -> !p.story && p.pack == null && menuValues(p)?.let { it.from.isNotEmpty() && it.until.ifEmpty { it.from } >= TODAY } == true }
+    fun put(body: Map<String, Any?>) = scope.launch {
+        try { val r = Api.put<PlanResponse>("plan", body); onPlan(r.plan); Maite.social = r.social; Toasts.done("Desat") } catch (e: Exception) { Toasts.error(e) }
+    }
+    fun change(vararg s: Pair<String, Any?>) = put(mapOf("settings" to mapOf(*s)))
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Com planifica", style = Type.base, fontWeight = FontWeight.SemiBold)
+            CheckRow(plan.on, { change("on" to it) }, "Fes el pla cada setmana")
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Choice("Posts per setmana", plan.posts.toString(), (0..5).map { "$it" to "$it" }, { change("posts" to it.toInt()) }, Modifier.weight(1f))
+                Choice("Stories per dia", plan.stories.toString(), (0..2).map { "$it" to "$it" }, { change("stories" to it.toInt()) }, Modifier.weight(1f))
+            }
+            Text("Els canvis compten per als plans que faci a partir d'ara.", style = Type.xs, color = T.muted)
+            CheckRow(plan.hand, { change("hand" to it) }, "Les stories esperen que les pengi jo amb l'enllaç")
+            if (plan.hand) Choice("Si no la penjo, surt sola sense enllaç", plan.grace?.toString() ?: "never", GRACE, { change("grace" to if (it == "never") null else it.toInt()) })
+            CheckRow(plan.menus, { change("menus" to it) }, "Recordatoris dels menús")
+            if (plan.menus) menus.forEach { p ->
+                val m = menuValues(p)!!
+                CheckRow(p.remind != false, { put(mapOf("remind" to mapOf("id" to p.id, "on" to it))) }, "${m.title.ifEmpty { "Menú" }}, ${datesText(m.from, m.until).replaceFirstChar { it.lowercase() }}")
+            }
+            if (plan.menus) Text("Cada menú programat té stories els dies abans, més seguides com més places queden, i cap quan és ple.", style = Type.xs, color = T.muted)
+            if (!plan.render) Text("Les imatges del pla es preparen quan obres Maite. Perquè surtin encara que no l'obris, cal la clau de Cloudflare (vegeu el README).", style = Type.xs, color = T.muted)
+            if (!plan.ai) Text("Sense la clau de Claude, el pla fa servir els textos de les plantilles.", style = Type.xs, color = T.muted)
+        }
+    }
+}

@@ -295,5 +295,7 @@ links += f'    <xhtml:link rel="alternate" hreflang="x-default" href="{SITE_URL}
     '/maite/*\n  X-Robots-Tag: noindex\n'
     '/maite/\n  Cache-Control: no-store\n'
     '/maite/index.html\n  Cache-Control: no-store\n'
-    '/maite/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n', encoding='utf-8')
+    '/maite/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n'
+    '/render/*\n  X-Robots-Tag: noindex\n'
+    '/render/render.html\n  Cache-Control: no-store\n', encoding='utf-8')
 print(f'Built {DIST}: ' + ', '.join(f'{PATHS[l]} ({len(page(l)) // 1024} KB)' for l in LANGS))

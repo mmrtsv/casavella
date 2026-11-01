@@ -1,8 +1,8 @@
 # Cron
 
-Un Worker de Cloudflare que cada 5 minuts demana a la web que publiqui els posts d'Instagram programats a Maite que ja toquen (`functions/api/social-cron.js`). Les Pages Functions no tenen horari propi; aquest Worker els el dona.
+Un Worker de Cloudflare que cada 5 minuts demana a la web que publiqui els posts d'Instagram programats a Maite que ja toquen i que faci anar el pla d'Instagram (`functions/api/social-cron.js`, `lib/plan.js`: el pla de cada dilluns, els recordatoris dels menús, les imatges i els correus). Les Pages Functions no tenen horari propi; aquest Worker els el dona.
 
-Mentre no estigui en marxa, els posts programats es publiquen igualment la primera vegada que algú obre Xarxes socials a Maite després de l'hora.
+Mentre no estigui en marxa, els posts programats es publiquen igualment la primera vegada que algú obre Xarxes socials a Maite després de l'hora, i el pla avança quan s'obre la pestanya Pla.
 
 ## Posar-lo en marxa
 

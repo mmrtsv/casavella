@@ -1,5 +1,6 @@
 // GET  /api/maite/plan   Maite's own Instagram plan (lib/plan.js): its settings, the weeks it made ({ [monday]: { made,
-//                        approved, deadline } }), whether the server draws the images (render) and whether Claude writes (ai).
+//                        approved, deadline } }), whether the server draws the images (render), whether Claude writes (ai)
+//                        and how the story robot is (bot: { alive, seen, user, error }, or null when it isn't set up).
 //                        The plan's posts themselves are in /api/maite/social (posts with an auto field).
 // PUT  /api/maite/plan   { settings: { on, posts, stories, hand, grace, menus } }  Changes how it plans.
 //                        Or { approve: monday }  Approves that week's plan (it goes out the same either way).
@@ -11,11 +12,17 @@
 //                        Every answer is { plan, social }: the plan as GET, and the grid as /api/maite/social.
 import { json } from '../../../lib/booking.js';
 import { load, store, viewData } from '../../../lib/social.js';
-import { imagesOf } from '../../../lib/instagram.js';
+import { botAlive, botState, imagesOf } from '../../../lib/instagram.js';
 import { canRender } from '../../../lib/render.js';
 import { loadPlan, lookOf, makeWeek, mondayOf, refreshMenus, settingsOf, storePlan, tick } from '../../../lib/plan.js';
 
-const out = async (env, P) => json({ plan: { ...(P || await loadPlan(env)), render: canRender(env), ai: !!env.ANTHROPIC_API_KEY }, social: viewData(await load(env), env) });
+// bot: the story robot (story-bot/), when it is set up: whether it is running (alive), as which account, and its last error
+const botOf = async env => {
+  if (!env.STORY_BOT_SECRET) return null;
+  const b = await botState(env).catch(() => null);
+  return { alive: await botAlive(env), seen: b?.seen || '', user: b?.user || '', error: b?.error || '' };
+};
+const out = async (env, P) => json({ plan: { ...(P || await loadPlan(env)), render: canRender(env), ai: !!env.ANTHROPIC_API_KEY, bot: await botOf(env) }, social: viewData(await load(env), env) });
 const isMonday = w => typeof w === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(w) && mondayOf(w) === w;
 
 // Opening the plan also keeps it going (lib/plan.js tick), in case the cron isn't running

@@ -148,7 +148,10 @@ data class PlanWeek(val made: String = "", val by: String = "", val approved: Ap
 data class Approved(val at: String = "", val by: String = "")
 @Serializable
 data class Plan(val on: Boolean = true, val posts: Int = 3, val stories: Int = 1, val hand: Boolean = true, val grace: Int? = 180, val menus: Boolean = true,
-    val weeks: Map<String, PlanWeek> = emptyMap(), val render: Boolean = false, val ai: Boolean = false)
+    val weeks: Map<String, PlanWeek> = emptyMap(), val render: Boolean = false, val ai: Boolean = false, val bot: Bot? = null)
+/** The story robot (story-bot/), which posts the stories with the link sticker: whether it is running, as which account, its last error */
+@Serializable
+data class Bot(val alive: Boolean = false, val seen: String = "", val user: String = "", val error: String = "")
 @Serializable
 data class PlanResponse(val plan: Plan, val social: Social)
 

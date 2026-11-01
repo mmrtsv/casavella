@@ -30,7 +30,9 @@ type Post = Slide & { id: string; slides?: Slide[]; story?: boolean; menu?: Menu
 type Schedule = { at: string; image?: string; images?: string[]; error?: string; started?: string; auto?: boolean; renderError?: string };
 // The plan's settings and weeks (/api/maite/plan); render: the server draws the images; ai: Claude writes the words
 type PlanWeek = { made: string; by: string; approved: { at: string; by: string } | null; deadline: string; ai?: boolean };
-type Plan = { on: boolean; posts: number; stories: number; hand: boolean; grace: number | null; menus: boolean; weeks: Record<string, PlanWeek>; render: boolean; ai: boolean };
+// bot: the story robot (story-bot/), which posts the stories with the link sticker; null when it isn't set up
+type Bot = { alive: boolean; seen: string; user: string; error: string };
+type Plan = { on: boolean; posts: number; stories: number; hand: boolean; grace: number | null; menus: boolean; weeks: Record<string, PlanWeek>; render: boolean; ai: boolean; bot: Bot | null };
 type Insta = { connected: boolean; username?: string; detail?: string; media?: Live[] };
 // A post on the Instagram account, published from Maite or from the app
 type Live = { id: string; at: string; url: string; image: string; caption: string };
@@ -1524,6 +1526,7 @@ function PlanView({ data, setData, plan, setPlan, preparing }: { data: Data; set
     if (!s) return <span className="text-xs text-warning">Sense programar: no sortirà sol</span>;
     if (s.error) return <span className="text-xs text-danger" title={s.error}>No ha sortit: {s.error}</span>;
     const at = hour(s.at);
+    if (p.story && plan.bot?.alive) return <span className="text-xs text-accent">{`Surt sola a les ${at} amb l'enllaç`}</span>;
     if (p.story && p.hand && p.link) {
       const due = Date.parse(s.at) <= Date.now(), out = p.hand.grace == null ? '' : hour(new Date(Date.parse(s.at) + p.hand.grace * 60e3).toISOString());
       return <span className={`text-xs ${due ? 'text-warning' : 'text-muted'}`}>{due ? "Per penjar amb l'enllaç" : `Per penjar a les ${at} amb l'enllaç`}{out ? `. Si no, surt sola a les ${out} sense enllaç` : ''}</span>;
@@ -1570,7 +1573,7 @@ function PlanView({ data, setData, plan, setPlan, preparing }: { data: Data; set
                       </div>
                       {open && (
                         <div className="flex w-full flex-wrap items-center justify-end gap-1 sm:ml-auto sm:w-auto sm:shrink-0">
-                          {p.story && p.link && <>
+                          {p.story && p.link && !plan.bot?.alive && <>
                             <Button size="sm" variant="secondary" isPending={busy === 'hand:' + p.id} onPress={() => byHand(p)}>{busy === 'hand:' + p.id ? <Spinner size="sm" color="current" /> : <Download size={15} />}Penja amb l'enllaç</Button>
                             <Button size="sm" variant="ghost" isPending={busy === 'done:' + p.id} onPress={() => call('done:' + p.id, { done: p.id }, 'Story marcada com a penjada')}>Ja l'he penjada</Button>
                           </>}
@@ -1610,6 +1613,10 @@ function CaptionEditor({ post, text: was, setData, onClose }: { post: Post; text
   );
 }
 
+// How the story robot is, in a line
+const botLine = (b: Bot) => b.error ? `El robot de stories no pot entrar a Instagram: ${b.error}. Mentrestant, les stories esperen.`
+  : b.alive ? `Les stories surten soles amb l'enllaç (robot connectat${b.user ? ` com a @${b.user}` : ''}).`
+  : b.seen ? `El robot de stories no respon des del ${day(b.seen)} a les ${hour(b.seen)}. Mentrestant, les stories esperen.` : 'El robot de stories encara no s\'ha connectat.';
 const GRACE = [{ id: '60', name: "1 hora després" }, { id: '120', name: '2 hores després' }, { id: '180', name: '3 hores després' }, { id: '240', name: '4 hores després' }, { id: '360', name: '6 hores després' }, { id: 'never', name: 'Mai' }];
 function PlanSettings({ data, plan, set }: { data: Data; plan: Plan; set: (r: { plan: Plan; social: Data }) => void }) {
   const [busy, setBusy] = useState(false);
@@ -1630,8 +1637,9 @@ function PlanSettings({ data, plan, set }: { data: Data; plan: Plan; set: (r: { 
         <Choice label="Stories per dia" value={String(plan.stories)} onChange={v => change({ stories: Number(v) })} items={[0, 1, 2].map(n => ({ id: String(n), name: String(n) }))} />
       </div>
       <p className="text-xs text-muted">Els canvis compten per als plans que faci a partir d'ara.</p>
-      <CheckField isSelected={plan.hand} onChange={hand => change({ hand })}>Les stories esperen que les pengi jo amb l'enllaç</CheckField>
-      {plan.hand && <Choice label="Si no la penjo, surt sola sense enllaç" value={plan.grace == null ? 'never' : String(plan.grace)} onChange={v => change({ grace: v === 'never' ? null : Number(v) })} items={GRACE} />}
+      {plan.bot && <p className={`text-sm ${plan.bot.alive ? '' : 'text-warning'}`}>{botLine(plan.bot)}</p>}
+      {!plan.bot?.alive && <CheckField isSelected={plan.hand} onChange={hand => change({ hand })}>Les stories esperen que les pengi jo amb l'enllaç</CheckField>}
+      {(plan.hand || plan.bot?.alive) && <Choice label={plan.bot?.alive ? "Si el robot no pot, surt sola sense enllaç" : "Si no la penjo, surt sola sense enllaç"} value={plan.grace == null ? 'never' : String(plan.grace)} onChange={v => change({ grace: v === 'never' ? null : Number(v) })} items={GRACE} />}
       <CheckField isSelected={plan.menus} onChange={menus => change({ menus })}>Recordatoris dels menús</CheckField>
       {plan.menus && menus.length > 0 && (
         <ul className="space-y-2">

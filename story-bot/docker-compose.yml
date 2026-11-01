@@ -1,0 +1,8 @@
+# docker compose up -d   (the values go in a file .env next to this one, see .env.example)
+services:
+  story-bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/bot/data

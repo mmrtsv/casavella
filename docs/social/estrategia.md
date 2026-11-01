@@ -50,7 +50,9 @@ Como mucho dos recordatorios al día y un post cada cuatro días. A partir del 7
 
 ## El adhesivo de enlace
 
-La API de Instagram no deja poner el adhesivo de enlace en una story (comprobado en noviembre de 2026). Por eso las stories esperan a que las cuelgues desde el móvil: a las 9:00 llega un correo con las de ese día, y en la app «Penja amb l'enllaç» abre Instagram con la imagen y el enlace ya copiado; solo falta poner el adhesivo y pegar. Si en 3 horas no lo has hecho, Maite la publica sola sin enlace (la imagen ya dice casavellarural.com); si Instagram ya tiene una story tuya de esa hora, solo la marca como colgada.
+La API oficial de Instagram no deja poner el adhesivo de enlace en una story (comprobado en noviembre de 2026). Lo pone el robot de stories (`story-bot/`): entra en la cuenta como la app del móvil y cuelga cada story a su hora con el adhesivo a la página de reserva (las fechas libres, o `#taula` para el restaurante). No es oficial y va contra las normas de Instagram: el dueño lo eligió sabiendo que Instagram puede pedir verificar la entrada o limitar la cuenta.
+
+Si el robot no está o no puede entrar, la story espera a que la cuelgues desde el móvil (correo a las 9:00, «Penja amb l'enllaç» en la app) y, si en 3 horas nadie lo ha hecho, Maite la publica sola sin enlace (la imagen ya dice casavellarural.com).
 
 ## Pendiente de medir
 

@@ -1513,11 +1513,11 @@ private fun PlanScreen(data: Social, plan: Plan, onPlan: (Plan) -> Unit, prepari
                             Text(p.auto?.why ?: "Teu", style = Type.xs, color = T.muted)
                             p.auto?.moved?.let { Text("Abans era el ${longDay(it)}: aquell dia hi tens un post teu.", style = Type.xs, color = T.muted) }
                             if (!p.story) data.copies[p.id]?.let { Text(it.lineSequence().first(), style = Type.xs, color = T.muted, maxLines = 1, overflow = TextOverflow.Ellipsis) }
-                            PlanStatus(p)
+                            PlanStatus(p, plan.bot?.alive == true)
                         }
                     }
                     if (p.published == null) FlowRow(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        if (p.story && p.link != null) {
+                        if (p.story && p.link != null && plan.bot?.alive != true) {
                             Btn("Penja amb l'enllaç", {
                                 busy = "hand:" + p.id
                                 scope.launch {
@@ -1547,7 +1547,7 @@ private fun PlanScreen(data: Social, plan: Plan, onPlan: (Plan) -> Unit, prepari
 }
 
 @Composable
-private fun PlanStatus(p: SocialPost) {
+private fun PlanStatus(p: SocialPost, bot: Boolean) {
     val pub = p.published
     if (pub != null) {
         val context = LocalContext.current
@@ -1559,6 +1559,7 @@ private fun PlanStatus(p: SocialPost) {
     if (s == null) return Text("Sense programar: no sortirà sol", style = Type.xs, color = T.warningText)
     if (s.error != null) return Text("No ha sortit: ${s.error}", style = Type.xs, color = T.danger)
     val at = hourOf(s.at)
+    if (p.story && bot) return Text("Surt sola a les $at amb l'enllaç", style = Type.xs, color = T.accent)
     val hand = p.hand
     if (p.story && hand != null && p.link != null) {
         val due = runCatching { !java.time.Instant.parse(s.at).isAfter(java.time.Instant.now()) }.getOrDefault(false)
@@ -1595,6 +1596,13 @@ private fun CaptionEditor(post: SocialPost, was: String, onClose: () -> Unit) {
     }
 }
 
+/** How the story robot is, in a line */
+private fun botLine(b: com.casavellarural.maite.data.Bot): String = when {
+    b.error.isNotEmpty() -> "El robot de stories no pot entrar a Instagram: ${b.error}. Mentrestant, les stories esperen."
+    b.alive -> "Les stories surten soles amb l'enllaç (robot connectat${if (b.user.isNotEmpty()) " com a @${b.user}" else ""})."
+    b.seen.isNotEmpty() -> "El robot de stories no respon des del ${runCatching { com.casavellarural.maite.data.stamp(b.seen) }.getOrDefault(b.seen)}. Mentrestant, les stories esperen."
+    else -> "El robot de stories encara no s'ha connectat."
+}
 private val GRACE = listOf("60" to "1 hora després", "120" to "2 hores després", "180" to "3 hores després", "240" to "4 hores després", "360" to "6 hores després", "never" to "Mai")
 @Composable
 private fun PlanSettings(data: Social, plan: Plan, onPlan: (Plan) -> Unit) {
@@ -1613,8 +1621,10 @@ private fun PlanSettings(data: Social, plan: Plan, onPlan: (Plan) -> Unit) {
                 Choice("Stories per dia", plan.stories.toString(), (0..2).map { "$it" to "$it" }, { change("stories" to it.toInt()) }, Modifier.weight(1f))
             }
             Text("Els canvis compten per als plans que faci a partir d'ara.", style = Type.xs, color = T.muted)
-            CheckRow(plan.hand, { change("hand" to it) }, "Les stories esperen que les pengi jo amb l'enllaç")
-            if (plan.hand) Choice("Si no la penjo, surt sola sense enllaç", plan.grace?.toString() ?: "never", GRACE, { change("grace" to if (it == "never") null else it.toInt()) })
+            plan.bot?.let { Text(botLine(it), style = Type.sm, color = if (it.alive) T.foreground else T.warningText) }
+            val alive = plan.bot?.alive == true
+            if (!alive) CheckRow(plan.hand, { change("hand" to it) }, "Les stories esperen que les pengi jo amb l'enllaç")
+            if (plan.hand || alive) Choice(if (alive) "Si el robot no pot, surt sola sense enllaç" else "Si no la penjo, surt sola sense enllaç", plan.grace?.toString() ?: "never", GRACE, { change("grace" to if (it == "never") null else it.toInt()) })
             CheckRow(plan.menus, { change("menus" to it) }, "Recordatoris dels menús")
             if (plan.menus) menus.forEach { p ->
                 val m = menuValues(p)!!

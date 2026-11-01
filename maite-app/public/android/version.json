@@ -1,5 +1,5 @@
 {
-  "versionCode": 19,
-  "version": "2.17",
-  "notes": "Nueva pestaña Pla en Xarxes socials: el plan de Instagram que Maite prepara cada semana, con las stories para colgar con el enlace."
+  "versionCode": 20,
+  "version": "2.18",
+  "notes": "La pestaña Pla dice si el robot de stories está conectado: las stories salen solas con el enlace."
 }

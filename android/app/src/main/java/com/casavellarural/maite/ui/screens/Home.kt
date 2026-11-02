@@ -136,6 +136,7 @@ fun Home() {
             }
         }
         item { Rise(500) { Todo(all) } }
+        item { Rise(540) { LastWeek(all) } }
         item { Rise(580) { Week() } }
         item { Rise(660) { RestaurantNext() } }
         item { Rise(740) { Upcoming(all) } }
@@ -218,17 +219,24 @@ private val TODO = listOf(
 
 /** From the day after, each restaurant day of the last 60 with tables that have no amount noted (Restaurant, Cobrat), newest first */
 private const val TABLES_BACK = 60
-private fun owedDays(): List<Pair<String, Int>> = Maite.tables.values
-    .filter { !it.cancelled && it.paid == null && it.date < TODAY && it.date >= addDays(TODAY, -TABLES_BACK) }
-    .groupingBy { it.date }.eachCount().toList().sortedByDescending { it.first }
+private fun served() = Maite.tables.values.filter { !it.cancelled && it.date < TODAY && it.date >= addDays(TODAY, -TABLES_BACK) }
+/** What the big number counts: bookings with something missing, tables to charge, or both */
+private fun todoLabel(bookings: Int, tables: Int) = when {
+    tables == 0 -> if (bookings == 1) "reserva amb coses pendents" else "reserves amb coses pendents"
+    bookings == 0 -> if (tables == 1) "taula per cobrar" else "taules per cobrar"
+    else -> "coses per fer"
+}
 
 @Composable
 private fun Todo(all: List<Booking>) {
     val soon = all.filter { it.until >= TODAY && it.first < addDays(TODAY, 30) }
     val groups = TODO.map { g -> g to soon.filter { b -> missing(b).any { g.has(it.k) } } }.filter { it.second.isNotEmpty() }
     val open = soon.count { missing(it).isNotEmpty() }
-    val owed = owedDays()
-    val pct = if (soon.isEmpty()) 1f else (soon.size - open) / soon.size.toFloat()
+    val served = served()
+    val owed = served.filter { it.paid == null }.groupingBy { it.date }.eachCount().toList().sortedByDescending { it.first }
+    // The count and the ring cover both: bookings with something missing and served tables without an amount
+    val unpaid = owed.sumOf { it.second }; val pending = open + unpaid; val total = soon.size + served.size
+    val pct = if (total == 0) 1f else (total - pending) / total.toFloat()
     @Composable
     fun TodoRow(color: Color, n: Int, title: String, sub: String, onClick: () -> Unit) {
         Divider()
@@ -248,15 +256,16 @@ private fun Todo(all: List<Booking>) {
     Column {
         SectionTitle("Per fer") { Btn("Reserves", { Ui.go(Page.Bookings) }, look = Look.Ghost) }
         Card(Modifier.fillMaxWidth()) {
-            Row(Modifier.fillMaxWidth().clickable(enabled = open > 0) { Ui.openBookings("todo") }.background(if (open > 0) T.accent.copy(alpha = 0.07f) else Color.Transparent).padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().clickable(enabled = pending > 0) { if (open > 0) Ui.openBookings("todo") else Ui.openRestaurant(owed.first().first, "paid") }
+                .background(if (pending > 0) T.accent.copy(alpha = 0.07f) else Color.Transparent).padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                 Ring(pct)
                 Spacer(Modifier.width(16.dp))
-                if (open == 0) Column {
+                if (pending == 0) Column {
                     Text("Tot al dia", style = Type.lg)
-                    Text(if (soon.isNotEmpty()) "No falta res per a les reserves dels propers 30 dies." else "No hi ha reserves els propers 30 dies.", style = Type.sm, color = T.muted)
+                    Text(if (soon.isNotEmpty()) "No falta res per a les reserves dels propers 30 dies, i les taules estan cobrades." else "No hi ha reserves els propers 30 dies, i les taules estan cobrades.", style = Type.sm, color = T.muted)
                 } else Column {
-                    Text("$open", style = Type.xxl)
-                    Text(if (open == 1) "reserva amb coses pendents" else "reserves amb coses pendents", style = Type.sm, color = T.muted)
+                    Text("$pending", style = Type.xxl)
+                    Text(todoLabel(open, unpaid), style = Type.sm, color = T.muted)
                     Text("Veure-les", style = Type.xs, fontWeight = FontWeight.Medium, color = T.accent, modifier = Modifier.padding(top = 2.dp))
                 }
             }
@@ -274,6 +283,39 @@ private fun Ring(pct: Float) {
         val s = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round)
         drawArc(track, 0f, 360f, false, style = s)
         if (pct > 0) drawArc(fill, -90f, 360f * pct, false, style = s)
+    }
+}
+
+/**
+ * Last week, Monday to Sunday: what the stays and the restaurant made, the nights sold and the people who came.
+ * A stay's amount counts by night, so a booking across two weeks is split between them
+ */
+@Composable
+private fun LastWeek(all: List<Booking>) {
+    val end = addDays(TODAY, -(parse(TODAY).dayOfWeek.value - 1)); val start = addDays(end, -7)
+    LaunchedEffect(start) { runCatching { Maite.ensureTables(start, end) } }
+    var nights = 0; var stayCents = 0.0; var guests = 0; var bookings = 0
+    for (b in all) {
+        val n = maxOf(0, nightsBetween(maxOf(b.first, start), minOf(b.until, end)))
+        if (n == 0) continue
+        nights += n; bookings++; guests += b.guests ?: 0
+        stayCents += (b.amount ?: 0L).toDouble() * n / maxOf(1, nightsBetween(b.first, b.until))
+    }
+    val week = Maite.tables.values.filter { !it.cancelled && it.date >= start && it.date < end }
+    val tableCents = week.sumOf { it.paid ?: 0L }; val seats = maxOf(1, Maite.stays.size) * 7
+    fun money(c: Double) = euro(Math.round(c)).ifEmpty { "0 €" }
+    Column {
+        SectionTitle("La setmana passada") { Text(range(start, addDays(end, -1)), style = Type.sm, color = T.muted) }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Kpi("Ingressos", money(stayCents + tableCents), Modifier.weight(1f), hint = "Allotjaments ${money(stayCents)}, restaurant ${money(tableCents.toDouble())}")
+                Kpi("Nits ocupades", "$nights de $seats", Modifier.weight(1f), hint = "${Math.round(nights * 100.0 / seats)} % d'ocupació")
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Kpi("Hostes", "$guests", Modifier.weight(1f), hint = if (bookings == 1) "1 reserva" else "$bookings reserves")
+                Kpi("Comensals", "${seated(week)}", Modifier.weight(1f), hint = if (week.size == 1) "1 taula al restaurant" else "${week.size} taules al restaurant")
+            }
+        }
     }
 }
 

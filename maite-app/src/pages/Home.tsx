@@ -1,4 +1,4 @@
-// Inici: a greeting that says what happens today, four numbers, what is still to do (tables left to note included), this week's calendar, who is here or coming next
+// Inici: a greeting that says what happens today, four numbers, what is still to do (tables left to note included), last week's figures, this week's calendar, who is here or coming next
 // and the restaurant's next open days
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
@@ -95,9 +95,10 @@ export default function Home() {
       </div>
 
       <div {...up(4)}><Todo all={all} /></div>
-      <div {...up(5)}><Week /></div>
-      <div {...up(6)}><Restaurant /></div>
-      <div {...up(7)}><Upcoming all={all} /></div>
+      <div {...up(5)}><LastWeek all={all} /></div>
+      <div {...up(6)}><Week /></div>
+      <div {...up(7)}><Restaurant /></div>
+      <div {...up(8)}><Upcoming all={all} /></div>
     </div>
   );
 }
@@ -135,24 +136,30 @@ const TODO: { title: string; color: string; has: (k: string) => boolean }[] = [
   { title: 'sense el check-out fet', color: 'bg-accent', has: k => k === 'checkout' },
 ];
 const TABLES_BACK = 60;
+// What the big number counts: bookings with something missing, tables to charge, or both
+const todoLabel = (bookings: number, tables: number) => !tables ? (bookings === 1 ? 'reserva amb coses pendents' : 'reserves amb coses pendents')
+  : !bookings ? (tables === 1 ? 'taula per cobrar' : 'taules per cobrar') : 'coses per fer';
 function Todo({ all }: { all: Booking[] }) {
   const soon = all.filter(b => b.until >= TODAY && b.first < addDays(TODAY, 30));
   const groups = TODO.map(g => ({ ...g, list: soon.filter(b => missing(b).some(c => g.has(c.k))) })).filter(g => g.list.length);
   const open = soon.filter(b => missing(b).length).length, done = soon.length - open;
   const { tables } = useTables(addDays(TODAY, -TABLES_BACK), TODAY);
+  const served = useMemo(() => [...tables.values()].filter(t => !t.cancelled && t.date < TODAY && t.date >= addDays(TODAY, -TABLES_BACK)), [tables]);
   const owed = useMemo(() => {
     const by = new Map<string, number>();
-    for (const t of tables.values()) if (!t.cancelled && t.paid == null && t.date < TODAY && t.date >= addDays(TODAY, -TABLES_BACK)) by.set(t.date, (by.get(t.date) || 0) + 1);
+    for (const t of served) if (t.paid == null) by.set(t.date, (by.get(t.date) || 0) + 1);
     return [...by].sort((a, b) => b[0].localeCompare(a[0]));
-  }, [tables]);
-  const R = 34, C = 2 * Math.PI * R, pct = soon.length ? done / soon.length : 1;
+  }, [served]);
+  // The count and the ring cover both: bookings with something missing and served tables without an amount
+  const unpaid = owed.reduce((n, [, k]) => n + k, 0), pending = open + unpaid, all_ = soon.length + served.length;
+  const R = 34, C = 2 * Math.PI * R, pct = all_ ? (done + served.length - unpaid) / all_ : 1;
   const ring = (
     <svg viewBox="0 0 80 80" className="size-20 shrink-0 -rotate-90" aria-hidden="true">
       <circle cx="40" cy="40" r={R} fill="none" stroke="var(--border)" strokeWidth="7" />
       {pct > 0 && <circle cx="40" cy="40" r={R} fill="none" stroke="var(--accent)" strokeWidth="7" strokeLinecap="round" strokeDasharray={`${C * pct} ${C}`} />}
     </svg>
   );
-  const allDone = <div><div className="text-xl font-semibold tracking-tight">Tot al dia</div><div className="text-sm text-muted">{soon.length ? 'No falta res per a les reserves dels propers 30 dies.' : 'No hi ha reserves els propers 30 dies.'}</div></div>;
+  const allDone = <div><div className="text-xl font-semibold tracking-tight">Tot al dia</div><div className="text-sm text-muted">{soon.length ? 'No falta res per a les reserves dels propers 30 dies, i les taules estan cobrades.' : 'No hi ha reserves els propers 30 dies, i les taules estan cobrades.'}</div></div>;
   const row = (key: string, color: string, n: number, title: string, sub: string, onClick: () => void) => (
     <li key={key}>
       <button type="button" onClick={onClick} className="flex w-full items-center gap-4 px-5 py-4 text-left outline-none hover:bg-[var(--row-hover)] focus-visible:bg-[var(--row-hover)]">
@@ -172,20 +179,18 @@ function Todo({ all }: { all: Booking[] }) {
     cap(day(d, { weekday: 'long', day: 'numeric', month: 'long' })), () => openRestaurant(d, 'paid')));
   return (
     <Section title="Per fer" action={<Open to="bookings">Reserves</Open>}>
-      {!open && !owed.length ? (
+      {!pending ? (
         <div className="flex items-center gap-5 card p-6">{ring}{allDone}</div>
       ) : (
         <div className="grid overflow-hidden card md:grid-cols-[260px_minmax(0,1fr)]">
-          {open ? (
-            <button type="button" onClick={() => openBookings('todo')} className="group flex items-center gap-5 bg-accent/8 p-6 text-left outline-none transition-colors hover:bg-accent/14 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus">
-              {ring}
-              <span className="min-w-0 flex-1">
-                <span className="block text-4xl font-semibold tracking-tight tnum">{open}</span>
-                <span className="block text-sm text-muted">{open === 1 ? 'reserva amb coses pendents' : 'reserves amb coses pendents'}</span>
-                <span className="mt-1 flex items-center gap-1 text-xs font-medium text-accent">Veure-les</span>
-              </span>
-            </button>
-          ) : <div className="flex items-center gap-5 p-6">{ring}{allDone}</div>}
+          <button type="button" onClick={() => open ? openBookings('todo') : openRestaurant(owed[0][0], 'paid')} className="group flex items-center gap-5 bg-accent/8 p-6 text-left outline-none transition-colors hover:bg-accent/14 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus">
+            {ring}
+            <span className="min-w-0 flex-1">
+              <span className="block text-4xl font-semibold tracking-tight tnum">{pending}</span>
+              <span className="block text-sm text-muted">{todoLabel(open, unpaid)}</span>
+              <span className="mt-1 flex items-center gap-1 text-xs font-medium text-accent">Veure-les</span>
+            </span>
+          </button>
           <ul className="divide-y divide-separator">
             {groups.filter(g => g.title === 'per cobrar').map(bookingRow)}
             {tableRows}
@@ -193,6 +198,34 @@ function Todo({ all }: { all: Booking[] }) {
           </ul>
         </div>
       )}
+    </Section>
+  );
+}
+
+// Last week, Monday to Sunday: what the stays and the restaurant made, the nights sold and the people who came.
+// A stay's amount counts by night, so a booking across two weeks is split between them
+function LastWeek({ all }: { all: Booking[] }) {
+  const stays = useStore(s => s.stays);
+  const end = addDays(TODAY, -((parse(TODAY).getDay() + 6) % 7)), start = addDays(end, -7);
+  const { tables } = useTables(start, end);
+  let nights = 0, stayCents = 0, guests = 0, bookings = 0;
+  for (const b of all) {
+    const n = Math.max(0, nightsBetween(b.first > start ? b.first : start, b.until < end ? b.until : end));
+    if (!n) continue;
+    nights += n; bookings++; guests += b.guests || 0;
+    stayCents += (b.amount || 0) * n / Math.max(1, nightsBetween(b.first, b.until));
+  }
+  const week = [...tables.values()].filter(t => !t.cancelled && t.date >= start && t.date < end);
+  const tableCents = week.reduce((n, t) => n + (t.paid || 0), 0), seats = Math.max(1, stays.length) * 7;
+  const zero = (c: number) => euro(Math.round(c)) || '0 €';
+  return (
+    <Section title="La setmana passada" action={<span className="text-sm text-muted">{range(start, addDays(end, -1))}</span>}>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Tile label="Ingressos" value={zero(stayCents + tableCents)} hint={`Allotjaments ${zero(stayCents)}, restaurant ${zero(tableCents)}`} />
+        <Tile label="Nits ocupades" value={`${nights} de ${seats}`} hint={`${Math.round(nights / seats * 100)} % d'ocupació`} />
+        <Tile label="Hostes" value={guests} hint={bookings === 1 ? '1 reserva' : `${bookings} reserves`} />
+        <Tile label="Comensals" value={seated(week)} hint={week.length === 1 ? '1 taula al restaurant' : `${week.length} taules al restaurant`} />
+      </div>
     </Section>
   );
 }

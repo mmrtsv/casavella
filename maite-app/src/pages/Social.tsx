@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Calendar, DateField, DatePicker, I18nProvider, Label, ListBox, Select, Skeleton, Spinner, Tabs, TextArea, TextField, TimeField, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
 import { getLocalTimeZone, parseDate, parseTime, today as todayIn, type DateValue, type Time } from '@internationalized/date';
-import { BookOpen, Check, ChevronLeft, ChevronRight, Clock, Copy as CopyIcon, Download, ExternalLink, GalleryHorizontalEnd, ImageUp, MessageSquareText, Pencil, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
+import { BookOpen, Check, MessageCircle, ChevronLeft, ChevronRight, Clock, Copy as CopyIcon, Download, ExternalLink, GalleryHorizontalEnd, ImageUp, MessageSquareText, Pencil, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
 import { api, uploadPhoto } from '../lib/api';
 import { Check as CheckField, Choice, Field } from '../parts/fields';
 import { Dialog } from '../parts/Sheet';
@@ -23,7 +23,7 @@ import { COPIES, PROFILE_HEAD, TEMPLATES, type Template } from '../social/templa
 // that doesn't want reminders
 type Auto = { week: string; kind: 'plan' | 'menu'; key: string; topic: string; why: string; touched?: boolean; moved?: string; menu?: string; service?: string };
 type Post = Slide & { id: string; slides?: Slide[]; story?: boolean; menu?: Menu | boolean; pack?: string; at: string; date?: string; published?: { at: string; url: string; media?: string; hand?: boolean }; schedule?: Schedule;
-  auto?: Auto; link?: string; hand?: { grace: number | null }; remind?: boolean };
+  auto?: Auto; link?: string; hand?: { grace: number | null }; remind?: boolean; whatsapp?: { at: string } };
 // A program: when the post goes out on its own (the cron in cron/), with its JPEGs already uploaded (images, for a carousel);
 // error, if it failed
 // auto: a program of the plan, whose images (image, images) may still be on their way; renderError: the server couldn't draw them
@@ -504,6 +504,27 @@ type Out = 'later' | 'now' | 'save';
 type When2 = { when: Out; date: string; time: string };
 type StoryOut = When2 & { on: boolean };
 const OUT: { id: Out; label: string }[] = [{ id: 'later', label: 'Programa' }, { id: 'now', label: 'Ara' }, { id: 'save', label: 'Més endavant' }];
+// The menu as a WhatsApp message, for the owner's broadcast list: the title in bold, the days, the dishes and the link to book
+function whatsappText(m: Menu) {
+  const price = m.price.trim().replace(/\s*€$/, ''), dates = (m.from ? datesText(m.from, m.until) : m.dates).trim();
+  return [`*${[m.kicker, m.title].map(x => x.trim()).filter(Boolean).join(' ')}*`, [dates, m.subtitle.trim()].filter(Boolean).join('. '),
+    [m.name.trim(), ...m.dishes.map(d => d.trim()).filter(Boolean).map(d => '- ' + d)].filter(Boolean).join('\n'),
+    [m.drinks.trim(), price && `${price} € per persona`].filter(Boolean).join('. '), `Reserva la taula: ${storyLink(true)}`].filter(Boolean).join('\n\n');
+}
+// Opens WhatsApp with the menu's image and its text (the phone's share sheet: the owner picks the broadcast list and sends).
+// Where the browser can't share files (a computer): the image is downloaded and WhatsApp Web opens with the text.
+// Returns whether it went (false when the owner closed the share sheet)
+async function toWhatsApp(p: Post, m: Menu): Promise<boolean> {
+  const t = byId.get(p.tpl)!, blob = await png(t, p.v, p.photo, p.texts), text = whatsappText(m);
+  const file = new File([blob], fileName(t), { type: 'image/png' });
+  if (navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file], text }); } catch (e) { if ((e as Error).name === 'AbortError') return false; throw e; }
+    return true;
+  }
+  save(blob, fileName(t));
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener');
+  return true;
+}
 const menuValues = (p: Post): Menu | null => (p.menu && typeof p.menu === 'object' ? { ...MENU_EXAMPLE, ...p.menu } : null);
 // The two stories of a menu's pack: the announcement (StoryPoster, and older packs' only story) and the menu
 const packOf = (data: Data, p: Post) => ({
@@ -756,7 +777,9 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
                     <div className={`truncate text-xs ${p.schedule?.error ? 'text-danger' : 'text-muted'}`}>{p.story ? 'Story' : 'Post'}, {status(p)}</div>
                     {st && <div className={`truncate text-xs ${st.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story de la portada, {status(st)}</div>}
                     {sm && <div className={`truncate text-xs ${sm.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story del menú, {status(sm)}</div>}
+                    {p.whatsapp && <div className="truncate text-xs text-muted">Enviat per WhatsApp el {day(p.whatsapp.at)}</div>}
                   </div>
+                  {menuValues(p) && <WhatsAppButton run={async () => { if (await toWhatsApp(p, menuValues(p)!)) setData((await api<{ social: Data }>('plan', { method: 'PUT', body: { whatsapp: p.id } })).social); }} />}
                   {open && <Button size="sm" variant="secondary" onPress={() => edit(p)}><Pencil size={15} />Edita</Button>}
                   {p.published?.url && <a href={p.published.url} target="_blank" rel="noopener" aria-label="Obre a Instagram" className="grid size-8 shrink-0 place-items-center rounded-full outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={16} /></a>}
                   <DownloadButton label={`Descarrega ${title}`} run={async () => { await downloadPost(p); if (st) await downloadPost(st); if (sm) await downloadPost(sm); }} />
@@ -1257,6 +1280,15 @@ function HourField({ label, value, onChange }: { label: string; value: string; o
         </TimeField.Group>
       </TimeField>
     </I18nProvider>
+  );
+}
+
+function WhatsAppButton({ run }: { run: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button size="sm" variant="secondary" isPending={busy} onPress={async () => { setBusy(true); try { await run(); } catch (e) { toastError(e); } setBusy(false); }}>
+      {busy ? <Spinner size="sm" color="current" /> : <MessageCircle size={15} />}Envia per WhatsApp
+    </Button>
   );
 }
 

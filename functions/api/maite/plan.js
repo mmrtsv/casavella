@@ -9,6 +9,8 @@
 //                        Or { images: { id, images } }  The JPEGs of a planned post that had none yet, drawn by Maite (web or
 //                        app) when the server can't: '/photos/…', one per slide.
 //                        Or { remind: { id, on } }  Whether a menu (its post) gets reminders.
+//                        Or { whatsapp: id }  A menu sent to the owner's WhatsApp broadcast list (Envia per WhatsApp): the
+//                        app stops reminding her to send it, until its last days.
 //                        Every answer is { plan, social }: the plan as GET, and the grid as /api/maite/social.
 import { json } from '../../../lib/booking.js';
 import { load, store, viewData } from '../../../lib/social.js';
@@ -77,6 +79,10 @@ export async function onRequestPut({ request, env, data }) {
       if (images.length > 1) p.schedule.images = images; else delete p.schedule.images;
       delete p.schedule.renderError; delete p.schedule.stale;
     }
+  } else if (b.whatsapp) {
+    const p = S.posts.find(p => p.id === String(b.whatsapp) && p.menu && !p.story);
+    if (!p) return json({ error: 'bad_request' }, 400);
+    p.whatsapp = { at: new Date().toISOString(), by: data.user };
   } else if (b.remind) {
     const p = S.posts.find(p => p.id === String(b.remind.id) && p.menu && !p.story);
     if (!p || typeof b.remind.on !== 'boolean') return json({ error: 'bad_request' }, 400);

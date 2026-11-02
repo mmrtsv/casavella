@@ -136,6 +136,8 @@ private fun nextSlides(t: Template) = Renderer.catalog?.carousels?.get(t.id).orE
 private fun imagesOf(p: SocialPost) = (listOf(Slide(p.tpl, p.v, p.photo, p.texts)) + p.slides.orEmpty()).filter { Renderer.byId.containsKey(it.tpl) }
 private fun joinCopy(o: CaptionOption) = o.caption.trim() + if (o.hashtags.isNotBlank()) "\n\n" + o.hashtags.trim() else ""
 private var lastTab = "plan"
+/** The tab a notification opens (data/Reminders.kt), taken once */
+var openSocialTab by androidx.compose.runtime.mutableStateOf("")
 /** The plan's images were already drawn here in this run of the app (when the server can't draw them) */
 private var prepared = false
 
@@ -144,8 +146,17 @@ fun SocialScreen() {
     val context = LocalContext.current
     Renderer.loadCatalog(context)
     var tab by remember { mutableStateOf(lastTab.takeIf { t -> TABS.any { it.first == t } } ?: "plan") }
+    LaunchedEffect(openSocialTab) { if (openSocialTab.isNotEmpty()) { tab = openSocialTab; lastTab = tab; openSocialTab = "" } }
     var plan by remember { mutableStateOf<Plan?>(null) }
     var preparing by remember { mutableStateOf("") }
+    // The reminders on the phone (send a menu to WhatsApp, post a story by hand) follow the plan each time it loads
+    val notifyAsk = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    LaunchedEffect(Maite.social, plan?.bot?.alive) {
+        val d = Maite.social ?: return@LaunchedEffect
+        com.casavellarural.maite.data.Reminders.schedule(context, d, plan?.bot?.alive == true)
+        if (android.os.Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+            notifyAsk.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
     LaunchedEffect(Unit) { runCatching { Api.get<PlanResponse>("plan") }.onSuccess { plan = it.plan; Maite.social = it.social }.onFailure { Toasts.error(it) } }
     // The plan's images, when the server can't draw them: the app draws the ones due in the next week while it is open
     LaunchedEffect(plan?.render, Maite.social != null) {
@@ -1127,6 +1138,30 @@ private suspend fun toInstagram(context: Context, t: Template, post: SocialPost,
     val insta = android.content.Intent(send).setPackage("com.instagram.android")
     context.startActivity(if (insta.resolveActivity(context.packageManager) != null) insta else android.content.Intent.createChooser(send, "Comparteix la story"))
 }
+/** The menu as a WhatsApp message, for the owner's broadcast list (as whatsappText in Social.tsx) */
+private fun whatsappText(m: Menu): String {
+    val price = m.price.trim().removeSuffix("€").trim()
+    val dates = (if (m.from.isNotEmpty()) datesText(m.from, m.until) else m.dates).trim()
+    return listOf(
+        "*" + listOf(m.kicker.trim(), m.title.trim()).filter { it.isNotEmpty() }.joinToString(" ") + "*",
+        listOf(dates, m.subtitle.trim()).filter { it.isNotEmpty() }.joinToString(". "),
+        (listOf(m.name.trim()) + m.dishes.map { it.trim() }.filter { it.isNotEmpty() }.map { "- $it" }).filter { it.isNotEmpty() }.joinToString("\n"),
+        listOf(m.drinks.trim(), if (price.isNotEmpty()) "$price € per persona" else "").filter { it.isNotEmpty() }.joinToString(". "),
+        "Reserva la taula: ${storyLink(true)}",
+    ).filter { it.isNotEmpty() && it != "**" }.joinToString("\n\n")
+}
+/** Opens WhatsApp with the menu's cover and its text: the owner picks the broadcast list and sends (the chooser when there are
+ *  two WhatsApps, or none) */
+private suspend fun toWhatsApp(context: Context, t: Template, post: SocialPost, m: Menu) {
+    val big = Renderer.full(t.id, post.v, post.photo, post.texts)
+    val file = java.io.File(context.cacheDir, "social").apply { mkdirs() }.let { java.io.File(it, "menu.jpg") }
+    withContext(Dispatchers.IO) { file.writeBytes(jpeg(big, 1440, 92)) }
+    val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("image/jpeg").putExtra(android.content.Intent.EXTRA_STREAM, uri)
+        .putExtra(android.content.Intent.EXTRA_TEXT, whatsappText(m)).addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    val apps = listOf("com.whatsapp", "com.whatsapp.w4b").filter { android.content.Intent(send).setPackage(it).resolveActivity(context.packageManager) != null }
+    context.startActivity(if (apps.size == 1) android.content.Intent(send).setPackage(apps[0]) else android.content.Intent.createChooser(send, "Envia per WhatsApp"))
+}
 /** The days a menu runs, as the cover writes them (catalog.ts datesText): «Del 18 de gener al 29 de març», «De l'1 d'abril a l'11 de maig» */
 private fun datesText(from: String, until: String): String {
     if (from.isEmpty()) return ""
@@ -1413,6 +1448,18 @@ private fun Menus(data: Social, toEdit: String = "", onOpened: () -> Unit = {}) 
                     Text("${if (p.story) "Story" else "Post"}, ${status(p)}", style = Type.xs, color = if (p.schedule?.error != null) T.danger else T.muted, maxLines = 1)
                     st?.let { Text("Story de la portada, ${status(it)}", style = Type.xs, color = if (it.schedule?.error != null) T.danger else T.muted, maxLines = 1) }
                     sm?.let { Text("Story del menú, ${status(it)}", style = Type.xs, color = if (it.schedule?.error != null) T.danger else T.muted, maxLines = 1) }
+                    p.whatsapp?.let { Text("Enviat per WhatsApp el ${dayMonth(localDayOf(it.at))}", style = Type.xs, color = T.muted, maxLines = 1) }
+                }
+                menuValues(p)?.let { m ->
+                    var wa by remember { mutableStateOf(false) }
+                    IconBtn(R.drawable.ic_message_circle, "Envia per WhatsApp", {
+                        wa = true
+                        scope.launch {
+                            try { toWhatsApp(context, t, p, m); Maite.social = Api.put<PlanResponse>("plan", mapOf("whatsapp" to p.id)).social }
+                            catch (e: Exception) { Toasts.error(e) }
+                            wa = false
+                        }
+                    }, busy = wa)
                 }
                 if (canEdit) IconBtn(R.drawable.ic_pencil, "Edita $title", { edit(p) })
                 if (p.published?.url?.isNotEmpty() == true) IconBtn(R.drawable.ic_external_link, "Obre a Instagram", { open(context, p.published.url) })

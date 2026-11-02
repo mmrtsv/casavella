@@ -130,7 +130,11 @@ data class Slide(val tpl: String, val v: Int = 0, val photo: String = "", val te
  *  and the menu), the id of its post */
 @Serializable
 data class SocialPost(val id: String, val tpl: String, val v: Int = 0, val photo: String = "", val texts: List<String?>? = null, val slides: List<Slide>? = null, val story: Boolean = false, val menu: JsonElement? = null, val pack: String? = null, val at: String = "", val date: String? = null, val published: Published? = null, val schedule: Schedule? = null,
-    val auto: Auto? = null, val link: String? = null, val hand: Hand? = null, val remind: Boolean? = null)
+    val auto: Auto? = null, val link: String? = null, val hand: Hand? = null, val remind: Boolean? = null, val whatsapp: Sent? = null)
+
+/** When a menu was sent to the WhatsApp broadcast list (Envia per WhatsApp) */
+@Serializable
+data class Sent(val at: String = "")
 
 /** Made by Maite's own plan (lib/plan.js): its week, a weekly post or a menu's reminder (kind), why it is there, whether the owner
  *  changed it (touched) and the day it had before it moved for one of the owner's posts (moved) */

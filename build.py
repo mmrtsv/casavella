@@ -245,9 +245,13 @@ def page(lang):
     return re.sub(r'(src="|href="|url\()(img|fonts)/', r'\1/\2/', doc)
 
 
-if DIST.exists():
-    shutil.rmtree(DIST)
-DIST.mkdir()
+# dist/ starts again from nothing, except what other builds put there: Maite (npm run build, dist/maite/) and the page that
+# draws Instagram images on the server (vite.render.config.ts, dist/render/)
+KEEP = {'maite', 'render'}
+DIST.mkdir(exist_ok=True)
+for item in DIST.iterdir():
+    if item.name not in KEEP:
+        shutil.rmtree(item) if item.is_dir() else item.unlink()
 GUIDE_PAGES, GUIDE_BLOCKS = guides.build(ROOT, DIST, SITE_URL)
 for lang in LANGS:
     folder = DIST / PATHS[lang].strip('/')

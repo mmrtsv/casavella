@@ -1,5 +1,5 @@
 {
-  "versionCode": 24,
-  "version": "2.22",
-  "notes": "Envia els menús a la llista de WhatsApp, i avisos al mòbil quan toca enviar-los o penjar una story."
+  "versionCode": 26,
+  "version": "2.24",
+  "notes": "Taules per cobrar a Per fer, i un avís l'endemà al matí si alguna taula no té l'import apuntat"
 }

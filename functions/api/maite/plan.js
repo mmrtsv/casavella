@@ -14,10 +14,13 @@ import { json } from '../../../lib/booking.js';
 import { load, store, viewData } from '../../../lib/social.js';
 import { botAlive, botState, imagesOf } from '../../../lib/instagram.js';
 import { canRender } from '../../../lib/render.js';
+import { appState, canApp } from '../../../lib/igapp.js';
 import { loadPlan, lookOf, makeWeek, mondayOf, refreshMenus, settingsOf, storePlan, tick } from '../../../lib/plan.js';
 
 // bot: the story robot (story-bot/), when it is set up: whether it is running (alive), as which account, and its last error
 const botOf = async env => {
+  // The stories go out from Cloudflare itself with the Instagram session (lib/igapp.js)
+  if (canApp(env)) { const a = await appState(env).catch(() => null); return { alive: !a?.error, seen: a?.checked || '', user: a?.user || '', error: a?.error || '' }; }
   if (!env.STORY_BOT_SECRET) return null;
   const b = await botState(env).catch(() => null);
   return { alive: await botAlive(env), seen: b?.seen || '', user: b?.user || '', error: b?.error || '' };

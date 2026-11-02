@@ -1,5 +1,7 @@
 # Robot de stories
 
+Alternativa: el mateix Cloudflare ja penja les stories amb l'enllaç amb la sessió del compte (`IG_SESSIONID`, pas 10 del README principal), sense cap ordinador. Aquest robot és per si algun dia convé fer-ho des de casa.
+
 Penja les stories programades a Maite (el pla setmanal i els recordatoris dels menús) **amb l'adhesiu d'enllaç** a la pàgina de reserva, que l'API oficial d'Instagram no deixa posar. Cada minut pregunta a la web quines stories toquen (`/api/story-bot`), en baixa la imatge (o la dibuixa a `/render/render.html` si Maite encara no la té), la penja amb l'enllaç i ho diu a Maite. A *Xarxes socials › Pla* surt si el robot està connectat.
 
 Si el robot no pot (està aturat, Instagram demana verificar l'entrada…), Maite publica la story sense enllaç unes hores després (per defecte 3; es canvia a *Com planifica*), de manera que el pla no s'atura mai.

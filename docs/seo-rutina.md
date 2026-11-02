@@ -73,7 +73,7 @@ Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne da
 
 ## Jueves: revisión corta
 
-El jueves la misma sesión hace solo esto, en la rama `seo/jueves-AAAA-MM-DD`:
+El jueves, la rutina diaria (`docs/seo-diaria.md`) añade esto a sus pasos, en la rama `seo/jueves-AAAA-MM-DD`:
 
 1. Agenda: quita lo pasado y añade lo que se haya publicado desde el lunes, con las mismas reglas.
 2. Guías: comprueba los datos que caducan (horarios, precios, cierres, fechas de ferias) en sus fuentes. Si algo ha cambiado, corrígelo y pon `updated` a hoy. Si no ha cambiado nada, no se toca: cambiar la fecha sin cambiar el contenido no sirve y Google lo detecta.

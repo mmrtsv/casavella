@@ -42,7 +42,11 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    override fun onResume() { super.onResume(); Auth.attach(this) }
+    override fun onResume() {
+        super.onResume(); Auth.attach(this)
+        // Back to the app: a version published meanwhile is asked for at once (data/Update.kt)
+        lifecycleScope.launch { com.casavellarural.maite.data.Update.check() }
+    }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); opened(intent) }
 
     /** A tapped notification says which screen to open: a reminder set on the phone (data/Reminders.kt, extra open: a tab of

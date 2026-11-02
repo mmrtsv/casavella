@@ -14,7 +14,8 @@ import okhttp3.Request
 import java.io.File
 
 /** New versions of the app: android/tools/release.mjs puts the APK and version.json in maite-app/public/android/, so they
- *  are published with Maite (behind Cloudflare Access, which lets the app through). Home offers the update. */
+ *  are published with Maite (behind Cloudflare Access, which lets the app through). When there is a newer one, the app
+ *  shows nothing else until it is installed (ui/Shell.kt MustUpdate); it checks on opening and each time it comes back. */
 object Update {
     @Serializable data class Info(val versionCode: Int, val version: String, val notes: String = "")
 

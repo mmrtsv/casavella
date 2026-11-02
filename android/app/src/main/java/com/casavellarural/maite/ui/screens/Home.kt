@@ -30,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
-import com.casavellarural.maite.data.Update
 import com.casavellarural.maite.ui.Btn
 import com.casavellarural.maite.ui.Toasts
 import kotlinx.coroutines.launch
@@ -105,7 +104,6 @@ fun Home() {
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = pagePadding(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item { Errors() }
-        Update.available?.let { u -> item { NewVersion(u) } }
         item {
             Card(Modifier.fillMaxWidth()) {
                 Box {
@@ -365,18 +363,3 @@ private fun Upcoming(all: List<Booking>) {
 }
 
 
-/** A new version of the app is published with Maite: one tap downloads it and Android asks to install it */
-@Composable
-private fun NewVersion(u: Update.Info) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    var busy by remember { mutableStateOf(false) }
-    Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
-        Text("Hi ha una versió nova de l'app (${u.version})", style = Type.base, fontWeight = FontWeight.SemiBold)
-        if (u.notes.isNotEmpty()) Text(u.notes, style = Type.sm, color = T.muted, modifier = Modifier.padding(top = 6.dp))
-        Btn("Actualitza", {
-            busy = true
-            scope.launch { try { Update.install(context) } catch (e: Exception) { Toasts.error(e) }; busy = false }
-        }, Modifier.padding(top = 12.dp), icon = R.drawable.ic_download, busy = busy)
-    }
-}

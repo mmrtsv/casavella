@@ -198,6 +198,8 @@ fun App() {
         Ui.opening = null
     }
     BackHandler { if (!Ui.back()) activity?.finish() }
+    // A newer version is published: nothing else until it is installed (data/Update.kt)
+    com.casavellarural.maite.data.Update.available?.let { return MustUpdate(it) }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     BoxWithConstraints(Modifier.fillMaxSize().focusRequester(focus).focusable().onPreviewKeyEvent { e ->
@@ -220,6 +222,24 @@ fun App() {
             ToastHost(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().imePadding().padding(bottom = if (rail) 12.dp else 92.dp))
         }
         Windows()
+    }
+}
+
+/** The whole screen while a newer version waits: one button downloads it and Android asks to install it */
+@Composable
+private fun MustUpdate(u: com.casavellarural.maite.data.Update.Info) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(28.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Cal actualitzar Maite", style = Type.xl, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+        Text("Hi ha la versió ${u.version}. Instal·la-la per continuar.", style = Type.base, color = T.muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 10.dp))
+        if (u.notes.isNotEmpty()) Text(u.notes, style = Type.sm, color = T.muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 10.dp))
+        Btn("Actualitza", {
+            busy = true
+            scope.launch { try { com.casavellarural.maite.data.Update.install(context) } catch (e: Exception) { Toasts.error(e) }; busy = false }
+        }, Modifier.padding(top = 22.dp), icon = R.drawable.ic_download, busy = busy, small = false)
+        ToastHost(Modifier.padding(top = 16.dp))
     }
 }
 

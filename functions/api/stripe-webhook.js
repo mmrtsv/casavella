@@ -5,6 +5,7 @@
 import { STAYS, calendar, stripe, verifyStripe, json, euros, settings, policyText } from '../../lib/booking.js';
 import { send, bookingConfirmation, bookingNotice } from '../../lib/email.js';
 import { pushLater, nights, stayName, guests, phrase } from '../../lib/push.js';
+import { purchase } from '../../lib/analytics.js';
 
 export async function onRequestPost({ request, env, waitUntil }) {
   const body = await request.text();
@@ -61,6 +62,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // Once it is paid, the phones with the Maite app hear of it too (id: the booking's calendar event)
   const notify = id => {
     mail();
+    // The purchase in PostHog, once per booking: here, when it is paid (lib/analytics.js)
+    if (paidNow) waitUntil(purchase(env, s).catch(e => console.log('posthog purchase', String(e.message || e))));
     if (paidNow) pushLater(waitUntil, env, { title: 'Reserva nova', body: phrase(c.name, stayName(m.stay), nights(m.checkin, m.checkout), guests(m.guests)), type: 'booking', stay: m.stay, id });
   };
 

@@ -2426,7 +2426,7 @@ function lockDetails(on) {
 }
 async function startPayment(d) {
   const r = await fetch('/api/checkout', { method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ stay: fstay.value, in: fin.value, out: fout.value, guests: fguests.value, lang: LANG, ...d }) });
+    body: JSON.stringify({ stay: fstay.value, in: fin.value, out: fout.value, guests: fguests.value, lang: LANG, ...d, visit: visitor() }) });
   const res = await r.json().catch(() => ({}));
   if (r.status === 409) return 'taken';
   if (!r.ok || !res.clientSecret || !res.publishableKey) return 'fail';
@@ -2486,6 +2486,7 @@ guestForm.addEventListener('submit', async e => {
   try { save(); outcome = await startPayment(d); } catch (err) {}
   payBtn.disabled = false; payBtn.classList.remove('loading');
   if (outcome === 'ok') {
+    track('payment', { stay: fstay.value, value: q.total });
     lockDetails(true); payNote.textContent = ''; renderSummary();
     $('payStep').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } else {
@@ -2665,7 +2666,8 @@ eventForm.addEventListener('submit', async e => {
 // PostHog loads on every visit but captures nothing until the guest chooses: accepting turns on full tracking
 // (cookies, session recordings with every field masked, heatmaps), rejecting leaves a cookieless count.
 // Meta and Google load only after accepting.
-// Events: begin_checkout / InitiateCheckout when the booking page opens, purchase / Purchase when a booking is paid.
+// Events: begin_checkout / InitiateCheckout when the booking page opens, add_payment_info / AddPaymentInfo when the guest's
+// details are in and the payment form shows, purchase / Purchase when a booking is paid (PostHog's from the server).
 const ADS = window.ADS || {}, adsOn = !!(ADS.meta || ADS.google || ADS.posthog), ck = $('cookies'), adQueue = [];
 let consent = null, tagsLoaded = false;
 try { consent = localStorage.getItem('lcv-consent'); } catch (e) {}
@@ -2687,6 +2689,27 @@ if (ADS.posthog) {
   });
   // Until the visitor answers, PostHog counts the visit cookieless, as after a reject
   if (consent === 'yes') posthog.opt_in_capturing(); else posthog.opt_out_capturing();
+}
+// Where the visit came from, kept from the first page (the booking page drops the query): sent with the checkout, so the
+// purchase the server records once Stripe confirms the payment (lib/analytics.js) carries the campaign and the visitor
+let landing = null;
+try {
+  const q = new URLSearchParams(location.search), keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'fbclid'];
+  const got = Object.fromEntries(keys.filter(k => q.get(k)).map(k => [k, q.get(k).slice(0, 200)]));
+  const ref = document.referrer && !document.referrer.includes(location.hostname) ? document.referrer.slice(0, 200) : '';
+  if (Object.keys(got).length || ref) sessionStorage.setItem('lcv-landing', JSON.stringify({ ...got, ...(ref ? { referrer: ref } : {}) }));
+  landing = JSON.parse(sessionStorage.getItem('lcv-landing') || 'null');
+} catch (e) {}
+function visitor() {
+  const out = { ...(landing || {}) };
+  try {
+    if (ADS.posthog && window.posthog && posthog.get_distinct_id) {
+      const id = posthog.get_distinct_id(), sid = posthog.get_session_id && posthog.get_session_id();
+      if (id && !String(id).startsWith('$')) out.ph = String(id).slice(0, 200);
+      if (sid && !String(sid).startsWith('$')) out.phs = String(sid).slice(0, 200);
+    }
+  } catch (e) {}
+  return out;
 }
 function loadTags() {
   if (tagsLoaded) return;
@@ -2713,12 +2736,18 @@ function track(ev, d, queued) {
   if (!adsOn || !(d.value > 0)) return;
   const value = d.value, currency = 'EUR', items = [{ item_id: d.stay, item_name: (STAY_INFO[d.stay] || {}).name || d.stay, price: value, quantity: 1 }];
   // PostHog counts every visit (cookieless until the visitor accepts); the ad platforms only after accepting
-  if (ADS.posthog && !queued) posthog.capture(ev === 'checkout' ? 'begin_checkout' : 'purchase', { value, currency, stay: d.stay, ...(d.id ? { transaction_id: d.id } : {}) });
+  // The purchase reaches PostHog from the server when Stripe confirms the payment (lib/analytics.js), so it isn't lost when
+  // the guest never comes back to this page; here only the steps before it
+  if (ADS.posthog && !queued && ev !== 'purchase') posthog.capture(ev === 'checkout' ? 'begin_checkout' : 'add_payment_info', { value, currency, stay: d.stay });
   if (consent !== 'yes' && consent !== 'no') { adQueue.push([ev, d]); return; }
   if (consent !== 'yes') return;
   if (ev === 'checkout') {
     if (window.fbq) fbq('track', 'InitiateCheckout', { value, currency, content_ids: [d.stay], content_type: 'product' });
     if (window.gtag) gtag('event', 'begin_checkout', { value, currency, items });
+  }
+  if (ev === 'payment') {
+    if (window.fbq) fbq('track', 'AddPaymentInfo', { value, currency, content_ids: [d.stay], content_type: 'product' });
+    if (window.gtag) gtag('event', 'add_payment_info', { value, currency, items });
   }
   if (ev === 'purchase') {
     // The Stripe session id is the order id: a reload or a second report of the same booking counts once

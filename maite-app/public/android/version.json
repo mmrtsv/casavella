@@ -1,5 +1,5 @@
 {
-  "versionCode": 20,
-  "version": "2.18",
-  "notes": "La pestaña Pla dice si el robot de stories está conectado: las stories salen solas con el enlace."
+  "versionCode": 21,
+  "version": "2.19",
+  "notes": "Las stories llevan el sticker de enlace dibujado, con un texto que va cambiando."
 }

@@ -27,7 +27,8 @@ let bookingsFilter = '';
 export function openBookings(filter: string) { bookingsFilter = filter; go('bookings'); }
 export function takeBookingsFilter() { const f = bookingsFilter; bookingsFilter = ''; return f; }
 
-// Calendari opens Restaurant on a day; the page takes it once, when it opens
-let restaurantDay = '';
-export function openRestaurant(date: string) { restaurantDay = date; go('restaurant'); }
+// Calendari opens Restaurant on a day, and Inici on Cobrat on a day with tables to note; the page takes them once, when it opens
+let restaurantDay = '', restaurantTab = '';
+export function openRestaurant(date: string, tab: 'tables' | 'paid' = 'tables') { restaurantDay = date; restaurantTab = tab; go('restaurant'); }
 export function takeRestaurantDay() { const d = restaurantDay; restaurantDay = ''; return d; }
+export function takeRestaurantTab() { const t = restaurantTab; restaurantTab = ''; return t; }

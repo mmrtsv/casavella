@@ -30,13 +30,21 @@ class MainActivity : ComponentActivity() {
                 com.casavellarural.maite.data.Maite.social = r.social
                 com.casavellarural.maite.data.Reminders.schedule(applicationContext, r.social, r.plan.bot?.alive == true)
             }
+            // Tables to note, the morning after each restaurant day (from yesterday to two months out)
+            runCatching {
+                val from = com.casavellarural.maite.data.addDays(com.casavellarural.maite.data.TODAY, -1)
+                val to = com.casavellarural.maite.data.addDays(com.casavellarural.maite.data.TODAY, 60)
+                val t = com.casavellarural.maite.data.Api.get<com.casavellarural.maite.data.TablesResponse>("restaurant?from=$from&to=$to")
+                com.casavellarural.maite.data.Reminders.scheduleTables(applicationContext, t.tables, from, to)
+            }
         }
     }
     override fun onNewIntent(intent: android.content.Intent) { super.onNewIntent(intent); opened(intent) }
-    /** A reminder's notification (data/Reminders.kt) opens Xarxes socials on its tab */
+    /** A reminder's notification (data/Reminders.kt) opens Xarxes socials on its tab, or Restaurant on Cobrat on its day */
     private fun opened(intent: android.content.Intent?) {
         val tab = intent?.getStringExtra("open") ?: return
         intent.removeExtra("open")
+        if (tab.startsWith("cobrat:")) return com.casavellarural.maite.ui.Ui.openRestaurant(tab.removePrefix("cobrat:"), "paid")
         com.casavellarural.maite.ui.social.openSocialTab = tab
         com.casavellarural.maite.ui.Ui.go(com.casavellarural.maite.ui.Page.Social)
     }

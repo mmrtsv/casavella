@@ -9,7 +9,7 @@ import { setSettings, useStore } from '../lib/store';
 import { atOf, putTable, seated, useTables } from '../lib/tables';
 import { useGuard } from '../lib/guard';
 import { ERRORS, SOURCE } from '../lib/words';
-import { takeRestaurantDay } from '../lib/ui';
+import { takeRestaurantDay, takeRestaurantTab } from '../lib/ui';
 import { Dialog } from '../parts/Sheet';
 import { Check, Choice, Field } from '../parts/fields';
 import { done, toastError } from '../parts/toast';
@@ -22,7 +22,7 @@ const persones = (n: number) => `${n} ${n === 1 ? 'persona' : 'persones'}`;
 const atLabel = (at: string) => `${cap(longDay(at.slice(0, 10)))}, ${at.slice(11)}`;
 
 export default function Restaurant() {
-  const [tab, setTab] = useState<Tab>('tables');
+  const [tab, setTab] = useState<Tab>(() => (takeRestaurantTab() as Tab) || 'tables');
   return (
     <div className="fade-in">
       <Tabs selectedKey={tab} onSelectionChange={k => setTab(k as Tab)} className="mb-5">
@@ -205,13 +205,13 @@ const total = (list: Table[]) => list.reduce((n, t) => n + (t.paid || 0), 0);
 
 function Paid() {
   const R = useStore(s => s.settings)!.restaurant;
-  const [month, setMonth] = useState(TODAY.slice(0, 8) + '01');
+  const [sel, setSel] = useState<string>(() => takeRestaurantDay() || TODAY);
+  const [month, setMonth] = useState(sel.slice(0, 8) + '01');
   const m = parse(month), end = iso(new Date(m.getFullYear(), m.getMonth() + 1, 1));
   const { tables } = useTables(month, end);
   const live = useMemo(() => [...tables.values()].filter(t => !t.cancelled && t.date >= month && t.date < end), [tables, month, end]);
   const byDay = (d: string) => live.filter(t => t.date === d).sort((a, b) => atOf(a).localeCompare(atOf(b)));
   const firstWithTables = live.map(t => t.date).sort()[0];
-  const [sel, setSel] = useState<string>(TODAY);
   useEffect(() => { if (sel < month || sel >= end) setSel(month <= TODAY && TODAY < end ? TODAY : firstWithTables || month); }, [month, firstWithTables]);
   const days = Array.from({ length: Math.round((parse(end).getTime() - m.getTime()) / 864e5) }, (_, i) => addDays(month, i));
   const lead = (m.getDay() + 6) % 7;

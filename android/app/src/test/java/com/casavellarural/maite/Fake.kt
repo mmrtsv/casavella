@@ -35,6 +35,9 @@ object Fake {
         t("t2", 0, "14:00", 2, "Xavier Soler", ""","phone":"+34 677 81 30 02","source":"phone""""),
         t("t3", 0, "21:00", 6, "Família Roca", ""","phone":"+34 619 55 41 90","notes":"Aniversari, porten pastís.","source":"whatsapp""""),
         t("t4", 2, "13:00", 3, "Gemma Puig", ""","source":"web""""),
+        // Served two days ago, still without the amount: Inici's Per fer and the morning-after reminder
+        t("t5", -2, "14:00", 2, "Ca la Maria", ""","source":"phone""""),
+        t("t6", -2, "14:00", 8, "Villegas", ""","phone":"+34 661 72 05 38","source":"whatsapp""""),
     )
 
     private val stays = """[{"id":"montserrat","name":"Apartament Montserrat","short":"Montserrat","max":4},{"id":"la-pineda","name":"Apartament La Pineda","short":"La Pineda","max":5},

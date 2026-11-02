@@ -156,7 +156,7 @@ fun SocialScreen() {
         if (p0.render || prepared) return@LaunchedEffect
         prepared = true
         val soon = java.time.Instant.now().plusSeconds(7 * 86400L)
-        val list = d.posts.filter { it.published == null && it.schedule != null && it.schedule.image.isEmpty() && it.schedule.error == null &&
+        val list = d.posts.filter { it.published == null && it.schedule != null && (it.schedule.image.isEmpty() || it.schedule.stale) && it.schedule.error == null &&
             runCatching { java.time.Instant.parse(it.schedule.at) <= soon }.getOrDefault(false) && imagesOf(it).isNotEmpty() }
         list.forEachIndexed { i, p ->
             preparing = "${i + 1} de ${list.size}"

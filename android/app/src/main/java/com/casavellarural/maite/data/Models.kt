@@ -157,7 +157,7 @@ data class PlanResponse(val plan: Plan, val social: Social)
 
 /** A post programmed for a moment: its JPEGs are already uploaded (images, for a carousel) and lib/instagram.js publishes it when due */
 @Serializable
-data class Schedule(val at: String, val image: String = "", val images: List<String>? = null, val error: String? = null, val auto: Boolean = false, val renderError: String? = null)
+data class Schedule(val at: String, val image: String = "", val images: List<String>? = null, val error: String? = null, val auto: Boolean = false, val renderError: String? = null, val stale: Boolean = false)
 
 /** templates: the words changed on each template, which new posts start from (null keeps the template's) */
 @Serializable

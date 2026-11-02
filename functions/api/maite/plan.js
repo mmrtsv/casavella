@@ -72,9 +72,10 @@ export async function onRequestPut({ request, env, data }) {
     const images = imagesOf(b.images);
     if (!p || !images) return json({ error: 'bad_request' }, 400);
     // Only when it still has none (the server may have drawn them meanwhile) and it has the images it was drawn for
-    if (!p.schedule.image && (b.images.look == null || b.images.look === lookOf(p))) {
-      Object.assign(p.schedule, { image: images[0], ...(images.length > 1 ? { images } : {}) });
-      delete p.schedule.renderError;
+    if ((!p.schedule.image || p.schedule.stale) && (b.images.look == null || b.images.look === lookOf(p))) {
+      Object.assign(p.schedule, { image: images[0] });
+      if (images.length > 1) p.schedule.images = images; else delete p.schedule.images;
+      delete p.schedule.renderError; delete p.schedule.stale;
     }
   } else if (b.remind) {
     const p = S.posts.find(p => p.id === String(b.remind.id) && p.menu && !p.story);

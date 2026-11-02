@@ -27,7 +27,8 @@ type Post = Slide & { id: string; slides?: Slide[]; story?: boolean; menu?: Menu
 // A program: when the post goes out on its own (the cron in cron/), with its JPEGs already uploaded (images, for a carousel);
 // error, if it failed
 // auto: a program of the plan, whose images (image, images) may still be on their way; renderError: the server couldn't draw them
-type Schedule = { at: string; image?: string; images?: string[]; error?: string; started?: string; auto?: boolean; renderError?: string };
+// stale: its image is from before the story changed; it still goes out with it until the new one is drawn
+type Schedule = { at: string; image?: string; images?: string[]; error?: string; started?: string; auto?: boolean; renderError?: string; stale?: boolean };
 // The plan's settings and weeks (/api/maite/plan); render: the server draws the images; ai: Claude writes the words
 type PlanWeek = { made: string; by: string; approved: { at: string; by: string } | null; deadline: string; ai?: boolean };
 // bot: the story robot (story-bot/), which posts the stories with the link sticker; null when it isn't set up
@@ -1462,7 +1463,7 @@ function usePrepare(data: Data | null, plan: Plan | null, setData: (d: Data) => 
   useEffect(() => {
     if (!data || !plan || plan.render || started.current) return;
     const soon = Date.now() + 7 * 864e5;
-    const list = data.posts.filter(p => !p.published && p.schedule && !p.schedule.image && !p.schedule.error && Date.parse(p.schedule.at) <= soon && imagesOf(p).length);
+    const list = data.posts.filter(p => !p.published && p.schedule && (!p.schedule.image || p.schedule.stale) && !p.schedule.error && Date.parse(p.schedule.at) <= soon && imagesOf(p).length);
     if (!list.length) return;
     started.current = true;
     (async () => {

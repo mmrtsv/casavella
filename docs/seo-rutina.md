@@ -56,8 +56,9 @@ Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne da
    - Añade la columna de hoy al seguimiento (sección 6) y actualiza la tabla de fuentes.
    Si algún sitio publica datos que no coinciden con los de `docs/seo.md` (NAP), apúntalo como fuente a corregir.
 
-5. **Borradores para el dueño** (no se publican solos):
-   - Una publicación de Google Business Profile para la semana (máximo 1.500 caracteres, en catalán y castellano) a partir de algo real: un día que abre el restaurante (de `/api/settings`), un evento de la agenda, una temporada (calçots, vendimia). Con el enlace a la web y, si toca, `?in=&out=` con fechas libres.
+5. **Publicación de la ficha de Google**: se publica sola. Escribe `content/gbp/AAAA-MM-DD-tema.json` con `id` (el mismo nombre), `date` (el día que debe salir, normalmente el martes), `lang` (`ca`), `text` (hasta 1.500 caracteres, a partir de algo real: un día que abre el restaurante según `/api/settings`, un evento de la agenda, una temporada; sin teléfonos, que Google rechaza, ni almohadillas), `image` (una de `/img/`) y `link` (la web, o `#reservar` / `?in=&out=` con fechas libres). El cron la publica ese día desde las 9 h (`lib/gbp.js`). Los posts de Instagram que se publican desde Maite también van solos a la ficha.
+
+5b. **Borradores para el dueño** (no se publican solos):
    - Respuestas a las reseñas nuevas que salgan en `/api/reviews`, en el idioma de cada reseña, concretas y cortas.
    - **Foros**: busca preguntas recientes (últimos 30 días) con pocas respuestas en TripAdvisor (foros de Barcelona y Cataluña), Reddit (r/Barcelona, r/askspain, r/travel), Quora y similares sobre dónde dormir o qué hacer cerca de Montserrat, el Penedès, Sant Sadurní o el Anoia. Hasta 5, cada una con su enlace y un borrador de respuesta en su idioma: útil aunque no se reserve (responde lo que pregunta, con datos de las guías), y al final, si encaja, una línea que diga que la escribe alguien de La Casa Vella, con el enlace. Las publica una persona de la casa con su cuenta: Claude no publica en foros. Antes, mira las normas de cada foro: Rick Steves, TripAdvisor, Fodor's y la mayoría de subreddits prohíben que un negocio conteste promocionándose, aunque lo diga; ahí no se proponen borradores (como mucho, apuntar la pregunta para que el dueño decida).
 

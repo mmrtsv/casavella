@@ -22,7 +22,7 @@ import { COPIES, PROFILE_HEAD, TEMPLATES, type Template } from '../social/templa
 // owner to post it with the sticker, and goes out without it grace minutes later (never, when null). remind: false on a menu
 // that doesn't want reminders
 type Auto = { week: string; kind: 'plan' | 'menu'; key: string; topic: string; why: string; touched?: boolean; moved?: string; menu?: string; service?: string };
-type Post = Slide & { id: string; slides?: Slide[]; story?: boolean; menu?: Menu | boolean; pack?: string; at: string; date?: string; published?: { at: string; url: string; media?: string; hand?: boolean }; schedule?: Schedule;
+type Post = Slide & { id: string; slides?: Slide[]; story?: boolean; menu?: Menu | boolean; pack?: string; at: string; date?: string; published?: { at: string; url: string; media?: string; hand?: boolean; google?: { at: string; url?: string; error?: string } }; schedule?: Schedule;
   auto?: Auto; link?: string; hand?: { grace: number | null }; remind?: boolean; whatsapp?: { at: string } };
 // A program: when the post goes out on its own (the cron in cron/), with its JPEGs already uploaded (images, for a carousel);
 // error, if it failed
@@ -490,6 +490,8 @@ function Next({ post, then, onPublish }: { post: Post; then: Then; onPublish: ()
         </Button>
       )}
       {post.published?.url && <a href={post.published.url} target="_blank" rel="noopener" className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={15} />Obre a Instagram</a>}
+      {post.published?.google?.url && <a href={post.published.google.url} target="_blank" rel="noopener" className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={15} />Obre a Google</a>}
+      {post.published?.google?.error && <p className="w-full text-xs text-muted">No s'ha publicat a la fitxa de Google: {post.published.google.error}</p>}
       <Button size="sm" variant="ghost" onPress={() => then.go(post.schedule ? 'calendar' : 'profile')}>{post.schedule ? 'Vés al calendari' : 'Vés a Publicar'}</Button>
     </div>
   );

@@ -266,6 +266,12 @@ not_found = guides.page(
 not_found = re.sub(r'<link rel="(canonical|alternate)"[^>]*>\n', '', not_found).replace('<head>\n', '<head>\n<meta name="robots" content="noindex">\n', 1)
 (DIST / '404.html').write_text(not_found, encoding='utf-8')
 
+# Posts for the Google listing written by the weekly SEO routine (content/gbp/*.json: id, date, text, image, link, lang).
+# The cron publishes each on its day (lib/gbp.js); the ones more than a week old are left out
+cutoff = (datetime.date.today() - datetime.timedelta(days=7)).isoformat()
+gbp = [json.loads(f.read_text(encoding='utf-8')) for f in sorted((ROOT / 'content' / 'gbp').glob('*.json'))] if (ROOT / 'content' / 'gbp').exists() else []
+(DIST / 'gbp-queue.json').write_text(json.dumps([g for g in gbp if g['date'] >= cutoff], ensure_ascii=False), encoding='utf-8')
+
 # Crawlers: everyone may read the web, AI assistants included (named so a later default can't block them); not the API.
 AI_BOTS = ('GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'PerplexityBot', 'Perplexity-User', 'ClaudeBot', 'Claude-User',
            'Claude-SearchBot', 'Google-Extended', 'Applebot-Extended', 'Bingbot', 'Googlebot', 'CCBot', 'Meta-ExternalAgent')

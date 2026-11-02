@@ -394,8 +394,10 @@ private fun Next(post: SocialPost, then: Then, onPublish: () -> Unit) {
         if (then.live && post.published == null) Btn(if (post.schedule != null) "Canvia la programació" else "Publica o programa", onPublish,
             look = if (post.schedule != null) Look.Secondary else Look.Primary, icon = if (post.schedule != null) R.drawable.ic_clock else R.drawable.ic_send)
         if (post.published?.url?.isNotEmpty() == true) Btn("Obre a Instagram", { open(context, post.published.url) }, look = Look.Ghost, icon = R.drawable.ic_external_link)
+        if (post.published?.google?.url?.isNotEmpty() == true) Btn("Obre a Google", { open(context, post.published.google.url) }, look = Look.Ghost, icon = R.drawable.ic_external_link)
         Btn(if (post.schedule != null) "Vés al calendari" else "Vés a Publicar", { then.go(if (post.schedule != null) "calendar" else "profile") }, look = Look.Ghost)
     }
+    if (post.published?.google?.error?.isNotEmpty() == true) Muted("No s'ha publicat a la fitxa de Google: ${post.published.google.error}")
 }
 
 @OptIn(ExperimentalLayoutApi::class)

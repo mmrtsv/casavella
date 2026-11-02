@@ -13,7 +13,7 @@ import { done, toastError } from '../parts/toast';
 import { Art, Wide } from '../social/Art';
 import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, STORY_LINES, STYLES, datesText, inLibrary, menuCaption, menuSlides, storyLink, type Menu, type Slide } from '../social/catalog';
 import { byId, changed, fields, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants, type Texts } from '../social/paint';
-import { COPIES, PROFILE_HEAD, TEMPLATES, type Kind, type Template } from '../social/templates';
+import { COPIES, PROFILE_HEAD, TEMPLATES, type Template } from '../social/templates';
 
 // story: a story (never in the grid)
 // menu: the values of a menu made in Nova publicació › Menú (true on older ones); pack: on its story, the id of its post
@@ -43,21 +43,20 @@ type Option = { caption: string; hashtags: string };
 // A post or story Claude made from a description: the template, its photo and words, and the caption
 type Made = Option & { tpl: string; photo: string; texts: string[]; slides?: Slide[] };
 // Destacats (the highlight covers) is out of the tabs for now; its templates stay
-type Tab = 'plan' | 'new' | 'posts' | 'stories' | 'profile' | 'calendar';
+type Tab = 'plan' | 'new' | 'menus' | 'profile' | 'calendar';
 // A post being made or changed: the variation, the photo (an upload, or one just picked and not yet uploaded) and the words
 type Own = { file: File; url: string };
 type Draft = { v: number; photo: string; own: Own | null; texts: Texts };
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'plan', label: 'Pla' }, { id: 'new', label: 'Generador de posts' }, { id: 'posts', label: 'Posts' }, { id: 'stories', label: 'Stories i reels' },
+  { id: 'plan', label: 'Pla' }, { id: 'new', label: 'Generador de posts' }, { id: 'menus', label: 'Menús i esdeveniments' },
   { id: 'profile', label: 'Publicar' }, { id: 'calendar', label: 'Calendari' },
 ];
-const KIND_OF: Partial<Record<Tab, Kind>> = { posts: 'post', stories: 'story' };
 const HELP: Partial<Record<Tab, string>> = {
   plan: "Cada dilluns Maite prepara la setmana següent a partir de les reserves. Tens fins diumenge a les 23:59 per canviar-la; si no, surt tal com és.",
-  new: 'Fes-la des d\'una plantilla, un post o un menú, o genera-la amb IA a partir d\'una descripció. Abans d\'afegir-la al perfil en pots canviar el text i la foto.',
-  posts: '1080 × 1350 px. Només els colors de la marca. Edita una plantilla per canviar el text de les publicacions que en facis.',
-  stories: '1080 × 1920 px. El text queda lluny de les franges de dalt i de baix, on Instagram posa els botons.',
+  new: 'Fes-la des d\'una plantilla o genera-la amb IA a partir d\'una descripció. Abans d\'afegir-la al perfil en pots canviar el text i la foto.',
+  menus: "Un menú o un esdeveniment amb els seus dies: Maite en fa el post i les stories, i en publica recordatoris fins que s'omple.",
+
 };
 // Templates that can go in the grid: every post, and the reel cover
 const inGrid = (t: Template) => t.kind === 'post' || t.id === 'StoryReel';
@@ -89,12 +88,11 @@ export default function Social() {
   // The plan's images, when the server can't draw them: Maite draws the ones due in the next week while it is open
   const preparing = usePrepare(data, plan, setData);
   // What Crea'n un post on a template card hands to Nova publicació
-  const [start, setStart] = useState<{ id: string; v: number; own: Own | null; n: number } | null>(null);
+  const [start] = useState<{ id: string; v: number; own: Own | null; n: number } | null>(null);
   // The menu post whose pencil was pressed in Publicar: Nova publicació › Menú opens its pack, as Edita does there
   const [menu, setMenu] = useState<{ id: string; n: number } | null>(null);
   useEffect(() => { loadBrandFonts(); api<Data>('social').then(setData).catch(toastError); }, []);
   const pick = (t: Tab) => { setTab(t); try { localStorage.setItem('maite-social-tab', t); } catch { /* private window */ } };
-  const kind = KIND_OF[tab];
 
   return (
     <div className="fade-in">
@@ -105,69 +103,11 @@ export default function Social() {
       </Tabs>
       {HELP[tab] && <p className="mb-5 max-w-3xl text-sm text-muted">{HELP[tab]}</p>}
       {tab === 'plan' && (data && plan ? <PlanView data={data} setData={setData} plan={plan} setPlan={setPlan} preparing={preparing} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
-      {tab === 'new' && (data ? <NewPost key={`${start?.n || 0}-${menu?.n || 0}`} data={data} setData={setData} start={start} menu={menu?.id || ''} onMenuOpened={() => setMenu(m => m && { ...m, id: '' })} go={pick} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
-      {kind && (
-        <ul className={`grid gap-5 ${kind === 'post' ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-5'}`}>
-          {TEMPLATES.filter(t => t.kind === kind).map(t => <li key={t.id}><TemplateCard t={t} data={data} setData={setData} onCreate={(v, own) => { setStart({ id: t.id, v, own, n: (start?.n || 0) + 1 }); setMenu(null); pick('new'); }} /></li>)}
-        </ul>
-      )}
-      {tab === 'calendar' && (data ? <Planner data={data} onEmpty={() => pick('posts')} onPublish={() => pick('profile')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
-      {tab === 'profile' && (data ? <Profile data={data} setData={setData} onEmpty={() => pick('posts')} onEditMenu={p => { setMenu({ id: p.id, n: (menu?.n || 0) + 1 }); pick('new'); }} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
+      {tab === 'new' && (data ? <NewPost key={start?.n || 0} data={data} setData={setData} start={start} go={pick} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
+      {tab === 'menus' && (data ? <Menus key={menu?.n || 0} data={data} setData={setData} toEdit={menu?.id || ''} onOpened={() => setMenu(m => m && { ...m, id: '' })} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
+      {tab === 'calendar' && (data ? <Planner data={data} onEmpty={() => pick('new')} onPublish={() => pick('profile')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
+      {tab === 'profile' && (data ? <Profile data={data} setData={setData} onEmpty={() => pick('new')} onEditMenu={p => { setMenu({ id: p.id, n: (menu?.n || 0) + 1 }); pick('menus'); }} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
     </div>
-  );
-}
-
-// A template with its words as changed: its variations and a photo to try, a PNG, and Crea'n un post, which takes them to
-// Nova publicació
-function TemplateCard({ t, data, setData, onCreate }: { t: Template; data: Data | null; setData: (d: Data) => void; onCreate: (v: number, own: Own | null) => void }) {
-  const n = variants(t);
-  const [v, setV] = useState(0);
-  const [own, setOwn] = useState<Own | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const file = useRef<HTMLInputElement>(null);
-  const texts = data?.templates[t.id];
-  const at = (data?.posts || []).filter(p => !p.published).map((p, i) => (p.tpl === t.id ? i + 1 : 0)).filter(Boolean);
-  const choose = (f?: File) => { if (f) { if (own) URL.revokeObjectURL(own.url); setOwn({ file: f, url: URL.createObjectURL(f) }); } };
-
-  async function exportPng() {
-    setBusy(true);
-    try { await download(t, v, own?.url || '', texts); } catch (e) { toastError(e); }
-    setBusy(false);
-  }
-
-  return (
-    <article className="card overflow-hidden">
-      <Art t={t} v={v} photo={own?.url} texts={texts} className="rounded-t-[var(--card-radius)]" />
-      <div className="space-y-3 p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="mr-auto text-base font-semibold tracking-tight">{t.title}</h2>
-          {at.length > 0 && <Tag tone="paid">{at.length === 1 ? `Post ${at[0]} del perfil` : `Posts ${at.join(', ')} del perfil`}</Tag>}
-        </div>
-        <p className="text-sm text-muted">{t.desc}</p>
-        <div className="flex flex-wrap items-center gap-2">
-          {n > 0 && (
-            <Button size="sm" variant="secondary" onPress={() => { setV((v + 1) % n); if (own) URL.revokeObjectURL(own.url); setOwn(null); }} aria-label={`Una altra opció (${v + 1} de ${n})`}>
-              <Shuffle size={15} />Una altra opció<span className="tnum text-muted">{v + 1}/{n}</span>
-            </Button>
-          )}
-          {t.photo && (
-            <>
-              <Button size="sm" variant="secondary" onPress={() => file.current?.click()}><ImageUp size={15} />{own ? 'Una altra foto' : 'La teva foto'}</Button>
-              <input ref={file} type="file" accept="image/*" hidden onChange={e => { choose(e.target.files?.[0]); e.target.value = ''; }} />
-            </>
-          )}
-          <Button size="sm" variant="ghost" isIconOnly aria-label={`Descarrega ${t.title} en PNG`} isPending={busy} onPress={exportPng}>
-            {busy ? <Spinner size="sm" color="current" /> : <Download size={16} />}
-          </Button>
-          {data && <Button size="sm" variant="ghost" isIconOnly aria-label={`Edita la plantilla ${t.title}`} onPress={() => setEditing(true)}><Pencil size={16} /></Button>}
-          {inGrid(t) && data && (
-            <Button size="sm" className="ml-auto" onPress={() => { onCreate(v, own); setOwn(null); }}><Plus size={15} />Crea'n un post</Button>
-          )}
-        </div>
-      </div>
-      {editing && data && <TemplateEditor t={t} data={data} setData={setData} onClose={() => setEditing(false)} />}
-    </article>
   );
 }
 
@@ -215,10 +155,8 @@ function Editor({ t, draft, set, look = true }: { t: Template; draft: Draft; set
 // to the profile.
 // Once a post is added it can go out from here (now or programmed), and Publicar or the calendar is one step away
 type Then = { live: boolean; go: (t: Tab) => void };
-function NewPost({ data, setData, start, menu, onMenuOpened, go }: { data: Data; setData: (d: Data) => void; start: { id: string; v: number; own: Own | null } | null; menu: string; onMenuOpened: () => void; go: (t: Tab) => void }) {
+function NewPost({ data, setData, start, go }: { data: Data; setData: (d: Data) => void; start: { id: string; v: number; own: Own | null } | null; go: (t: Tab) => void }) {
   const [how, setHow] = useState<'template' | 'prompt'>('template');
-  // From a template: a post, or a menu (Menus); menu: a menu post to open there
-  const [what, setWhat] = useState<'post' | 'menu'>(menu ? 'menu' : 'post');
   const [insta, setInsta] = useState<Insta | null>(null);
   useEffect(() => { api<Insta>('instagram').then(setInsta).catch(() => setInsta({ connected: false })); }, []);
   const then: Then = { live: !!insta?.connected, go };
@@ -232,16 +170,7 @@ function NewPost({ data, setData, start, menu, onMenuOpened, go }: { data: Data;
           <ToggleButton id="prompt">Genera amb IA</ToggleButton>
         </ToggleButtonGroup>
       )}
-      {!ai && (
-        <Tabs selectedKey={what} onSelectionChange={k => setWhat(k as typeof what)} className="mb-5 w-fit">
-          <Tabs.ListContainer><Tabs.List aria-label="Què vols fer" className="w-fit">
-            <Tabs.Tab id="post">Posts<Tabs.Indicator /></Tabs.Tab>
-            <Tabs.Tab id="menu">Menú<Tabs.Indicator /></Tabs.Tab>
-          </Tabs.List></Tabs.ListContainer>
-        </Tabs>
-      )}
-      {ai ? <Maker start="post" data={data} setData={setData} then={then} />
-        : what === 'menu' ? <Menus data={data} setData={setData} toEdit={menu} onOpened={onMenuOpened} /> : <Composer data={data} setData={setData} start={start} then={then} />}
+      {ai ? <Maker start="post" data={data} setData={setData} then={then} /> : <Composer data={data} setData={setData} start={start} then={then} />}
     </>
   );
 }
@@ -313,32 +242,6 @@ function Composer({ data, setData, start, then }: { data: Data; setData: (d: Dat
       </section>
       {publishing && last && <Publish post={last} n={lastN} caption={data.copies[last.id] || ''} onClose={() => setPublishing(false)} setData={setData} first />}
     </div>
-  );
-}
-
-// The words of a template, for the posts made from it from now on; the ones already made keep theirs
-function TemplateEditor({ t, data, setData, onClose }: { t: Template; data: Data; setData: (d: Data) => void; onClose: () => void }) {
-  const saved = data.templates[t.id] || [];
-  const [draft, setDraft] = useState<Draft>({ v: 0, photo: '', own: null, texts: [...saved] });
-  const [busy, setBusy] = useState<'' | 'save' | 'reset'>('');
-  async function keep(texts: Texts, b: 'save' | 'reset') {
-    setBusy(b);
-    try {
-      setData(await api<Data>('social', { method: 'PUT', body: { template: { id: t.id, texts } } }));
-      done(b === 'save' ? `Plantilla ${t.title} desada` : `${t.title} torna a tenir el text original`); onClose();
-    } catch (e) { toastError(e); }
-    setBusy('');
-  }
-  return (
-    <Dialog isOpen onClose={onClose} title="Edita la plantilla" subtitle={t.title} size="lg"
-      footer={<>
-        <Button variant="ghost" onPress={onClose} isDisabled={!!busy}>Cancel·la</Button>
-        {saved.length > 0 && <Button variant="secondary" isPending={busy === 'reset'} isDisabled={busy === 'save'} onPress={() => keep([], 'reset')}>Torna a l'original</Button>}
-        <Button isPending={busy === 'save'} isDisabled={busy === 'reset'} onPress={() => keep(changed(t, 0, draft.texts), 'save')}>{busy === 'save' && <Spinner size="sm" color="current" />}Desa la plantilla</Button>
-      </>}>
-      <p className="mb-4 text-sm text-muted">Les publicacions noves en surten amb aquest text. Les que ja has fet no canvien.</p>
-      <Editor t={t} draft={draft} set={setDraft} look={false} />
-    </Dialog>
   );
 }
 
@@ -964,7 +867,7 @@ function Profile({ data, setData, onEmpty, onEditMenu }: { data: Data; setData: 
   const nothing = (text: string) => (
     <div className="card flex flex-wrap items-center gap-3 p-5">
       <p className="mr-auto text-sm">{text}</p>
-      <Button size="sm" variant="secondary" onPress={onEmpty}>Vés a Posts</Button>
+      <Button size="sm" variant="secondary" onPress={onEmpty}>Vés al generador</Button>
     </div>
   );
   if (!all.length) return nothing('Encara no hi ha cap post confirmat.');
@@ -1139,7 +1042,7 @@ function Planner({ data, onEmpty, onPublish }: { data: Data; onEmpty: () => void
   if (!all.length && !stories.length) return (
     <div className="card flex flex-wrap items-center gap-3 p-5">
       <p className="mr-auto text-sm">Encara no hi ha cap post confirmat.</p>
-      <Button size="sm" variant="secondary" onPress={onEmpty}>Vés a Posts</Button>
+      <Button size="sm" variant="secondary" onPress={onEmpty}>Vés al generador</Button>
     </div>
   );
   const label = month.toLocaleDateString('ca-ES', { month: 'long', year: 'numeric' });

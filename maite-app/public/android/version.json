@@ -1,5 +1,5 @@
 {
-  "versionCode": 29,
-  "version": "2.27",
-  "notes": "Inici: «Per fer» compta també les taules per cobrar, i la setmana passada (ingressos, nits, hostes i comensals)"
+  "versionCode": 30,
+  "version": "2.28",
+  "notes": "L'avís de taules per cobrar ara arriba del servidor, l'endemà a les 10:00"
 }

@@ -14,7 +14,7 @@ Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne da
    - Quita lo que ya ha pasado.
    - Busca qué hay en las próximas 6 semanas a menos de 45 minutos de El Bedorc: Piera, Sant Sadurní d'Anoia, Capellades, Vilafranca del Penedès, Igualada, Martorell, Montserrat, Sant Llorenç d'Hortons, Masquefa. Fuentes válidas: webs de ayuntamientos, Anoia Turisme, Enoturisme Penedès y DO Penedès, abadía de Montserrat, Catalunya Turisme, la prensa comarcal (La Veu de l'Anoia, Anoia Diari, El 3 de Vuit). Ferias, fiestas mayores, mercados, conciertos, rutas guiadas, catas abiertas al público.
    - Solo entra un evento si una fuente de este año da el día exacto. Si la fecha es de otro año o dudosa, no entra.
-   - Máximo 6 elementos. Cada uno:
+   - La web enseña los 6 próximos; el archivo puede guardar más, que entran solos a medida que pasan los anteriores. Cada uno:
 
      ```json
      { "from": "2026-11-28", "to": "2026-11-29", "place": "Sant Sadurní d'Anoia", "minutes": 15,
@@ -50,7 +50,7 @@ Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne da
 5. **Borradores para el dueño** (no se publican solos):
    - Una publicación de Google Business Profile para la semana (máximo 1.500 caracteres, en catalán y castellano) a partir de algo real: un día que abre el restaurante (de `/api/settings`), un evento de la agenda, una temporada (calçots, vendimia). Con el enlace a la web y, si toca, `?in=&out=` con fechas libres.
    - Respuestas a las reseñas nuevas que salgan en `/api/reviews`, en el idioma de cada reseña, concretas y cortas.
-   - **Foros**: busca preguntas recientes (últimos 30 días) con pocas respuestas en TripAdvisor (foros de Barcelona y Cataluña), Reddit (r/Barcelona, r/askspain, r/travel), Quora y similares sobre dónde dormir o qué hacer cerca de Montserrat, el Penedès, Sant Sadurní o el Anoia. Hasta 5, cada una con su enlace y un borrador de respuesta en su idioma: útil aunque no se reserve (responde lo que pregunta, con datos de las guías), y al final, si encaja, una línea que diga que la escribe alguien de La Casa Vella, con el enlace. Las publica una persona de la casa con su cuenta: Claude no publica en foros.
+   - **Foros**: busca preguntas recientes (últimos 30 días) con pocas respuestas en TripAdvisor (foros de Barcelona y Cataluña), Reddit (r/Barcelona, r/askspain, r/travel), Quora y similares sobre dónde dormir o qué hacer cerca de Montserrat, el Penedès, Sant Sadurní o el Anoia. Hasta 5, cada una con su enlace y un borrador de respuesta en su idioma: útil aunque no se reserve (responde lo que pregunta, con datos de las guías), y al final, si encaja, una línea que diga que la escribe alguien de La Casa Vella, con el enlace. Las publica una persona de la casa con su cuenta: Claude no publica en foros. Antes, mira las normas de cada foro: Rick Steves, TripAdvisor, Fodor's y la mayoría de subreddits prohíben que un negocio conteste promocionándose, aunque lo diga; ahí no se proponen borradores (como mucho, apuntar la pregunta para que el dueño decida).
 
 6. **Generar y comprobar**: `python3 build.py`, `git checkout origin/main -- dist/maite`. Comprueba con Playwright que la sección de la agenda, el bloque de guías y cada guía nueva o cambiada se ven bien en `/`, `/es/` y `/en/` (escritorio y 390 px) y que no hay errores en la consola.
 

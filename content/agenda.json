@@ -1,9 +1,15 @@
 {
-  "updated": "2026-10-28",
+  "updated": "2026-11-02",
   "items": [
     {
-      "from": "2026-11-04", "to": "2026-11-07", "place": "Igualada",
-      "title": {"ca": "Rec.0", "es": "Rec.0", "en": "Rec.0"},
+      "from": "2026-11-04",
+      "to": "2026-11-07",
+      "place": "Igualada",
+      "title": {
+        "ca": "Rec.0",
+        "es": "Rec.0",
+        "en": "Rec.0"
+      },
       "text": {
         "ca": "Festival de moda efímer a les antigues adoberies del barri del Rec: estocs de dissenyadors, food trucks i concerts, de 10 a 21 h. Entrada lliure.",
         "es": "Festival de moda efímero en las antiguas curtidurías del barrio del Rec: estocs de diseñadores, food trucks y conciertos, de 10 a 21 h. Entrada libre.",
@@ -12,8 +18,15 @@
       "url": "https://surtdecasa.cat/centre/agenda/2026/rec0/270490"
     },
     {
-      "from": "2026-11-05", "to": "2026-11-15", "place": "Vilafranca del Penedès", "minutes": 25,
-      "title": {"ca": "Most, Festival Internacional de Cinema del Vi", "es": "Most, Festival Internacional de Cine del Vino", "en": "Most, International Wine Film Festival"},
+      "from": "2026-11-05",
+      "to": "2026-11-15",
+      "place": "Vilafranca del Penedès",
+      "minutes": 25,
+      "title": {
+        "ca": "Most, Festival Internacional de Cinema del Vi",
+        "es": "Most, Festival Internacional de Cine del Vino",
+        "en": "Most, International Wine Film Festival"
+      },
       "text": {
         "ca": "La 15a edició del festival del Vinseum: 37 pel·lícules de 15 països sobre el vi i la vinya, en diversos espais de la vila.",
         "es": "La 15.ª edición del festival del Vinseum: 37 películas de 15 países sobre el vino y la viña, en varios espacios de la villa.",
@@ -22,8 +35,14 @@
       "url": "https://surtdecasa.cat/penedes/agenda/2026/15e-most-festival-internacional-de-cinema-del-vi/270041"
     },
     {
-      "from": "2026-11-07", "place": "Vilafranca del Penedès", "minutes": 25,
-      "title": {"ca": "Visita teatralitzada nocturna al cementiri", "es": "Visita teatralizada nocturna al cementerio", "en": "Night theatre tour of the cemetery"},
+      "from": "2026-11-07",
+      "place": "Vilafranca del Penedès",
+      "minutes": 25,
+      "title": {
+        "ca": "Visita teatralitzada nocturna al cementiri",
+        "es": "Visita teatralizada nocturna al cementerio",
+        "en": "Night theatre tour of the cemetery"
+      },
       "text": {
         "ca": "Visita guiada amb actors al cementiri municipal, a les 20 h. Entrades a entrades.vilafranca.cat (14 €, reduïda 7 €).",
         "es": "Visita guiada con actores al cementerio municipal, a las 20 h. Entradas en entrades.vilafranca.cat (14 €, reducida 7 €).",
@@ -32,8 +51,13 @@
       "url": "https://surtdecasa.cat/penedes/agenda/2026/visita-teatralitzada-nocturna-al-cementiri-de-vilafranca/260333"
     },
     {
-      "from": "2026-11-08", "place": "Pontons (Alt Penedès)",
-      "title": {"ca": "Fira de la Poma de Pontons", "es": "Feria de la Manzana de Pontons", "en": "Pontons Apple Fair"},
+      "from": "2026-11-08",
+      "place": "Pontons (Alt Penedès)",
+      "title": {
+        "ca": "Fira de la Poma de Pontons",
+        "es": "Feria de la Manzana de Pontons",
+        "en": "Pontons Apple Fair"
+      },
       "text": {
         "ca": "Quarta fira de la poma de muntanya, amb mercat de productors i artesans i tast de cava, vi i cervesa de la zona, de 10 a 18.30 h.",
         "es": "Cuarta feria de la manzana de montaña, con mercado de productores y artesanos y cata de cava, vino y cerveza de la zona, de 10 a 18.30 h.",
@@ -42,8 +66,13 @@
       "url": "https://surtdecasa.cat/penedes/agenda/2026/4a-fira-de-la-poma-de-pontons/270447"
     },
     {
-      "from": "2026-11-21", "place": "Igualada",
-      "title": {"ca": "Festa de la Ratafia de l'Anoia", "es": "Fiesta de la Ratafía de l'Anoia", "en": "Anoia Ratafia Festival"},
+      "from": "2026-11-21",
+      "place": "Igualada",
+      "title": {
+        "ca": "Festa de la Ratafia de l'Anoia",
+        "es": "Fiesta de la Ratafía de l'Anoia",
+        "en": "Anoia Ratafia Festival"
+      },
       "text": {
         "ca": "La 21a festa de la ratafia a la plaça Catarineu: tast, concurs de ratafia casolana, concerts i dinar amb tiquet (18 €).",
         "es": "La 21.ª fiesta de la ratafía en la plaza Catarineu: cata, concurso de ratafía casera, conciertos y comida con tique (18 €).",
@@ -52,14 +81,97 @@
       "url": "https://surtdecasa.cat/centre/agenda/2026/xxi-festa-de-la-ratafia-de-lanoia/270479"
     },
     {
-      "from": "2026-10-03", "to": "2026-11-28", "place": "Piera",
-      "title": {"ca": "Concurs de Teatre Amateur Vila de Piera", "es": "Concurso de Teatro Amateur Vila de Piera", "en": "Vila de Piera Amateur Theatre Competition"},
+      "from": "2026-10-03",
+      "to": "2026-11-28",
+      "place": "Piera",
+      "title": {
+        "ca": "Concurs de Teatre Amateur Vila de Piera",
+        "es": "Concurso de Teatro Amateur Vila de Piera",
+        "en": "Vila de Piera Amateur Theatre Competition"
+      },
       "text": {
         "ca": "La 50a edició al Teatre Foment: nou companyies de tot Catalunya, els dissabtes a les 19 h.",
         "es": "La 50.ª edición en el Teatre Foment: nueve compañías de toda Cataluña, los sábados a las 19 h.",
         "en": "The 50th edition at Teatre Foment: nine companies from across Catalonia, on Saturdays at 7 pm."
       },
       "url": "https://surtdecasa.cat/centre/agenda/2026/50e-concurs-de-teatre-amateur/270481"
+    },
+    {
+      "from": "2026-11-13",
+      "to": "2026-11-15",
+      "place": "Gelida",
+      "title": {
+        "ca": "Funifira de Gelida",
+        "es": "Funifira de Gelida",
+        "en": "Funifira, Gelida"
+      },
+      "text": {
+        "ca": "Fira de maquetes de tren i de gastronomia, vins i escumosos del Penedès al Pavelló Municipal: dissabte de 10 a 14 h i de 16 a 20 h, diumenge de 10 a 14 h; parades de menjar des del divendres a les 19 h.",
+        "es": "Feria de maquetas de tren y de gastronomía, vinos y espumosos del Penedès en el Pabellón Municipal: sábado de 10 a 14 h y de 16 a 20 h, domingo de 10 a 14 h; puestos de comida desde el viernes a las 19 h.",
+        "en": "A model railway fair with Penedès food, wine and sparkling wine at the town sports hall: Saturday 10 am to 2 pm and 4 to 8 pm, Sunday 10 am to 2 pm; food stalls from Friday at 7 pm."
+      },
+      "url": "https://www.penedesturisme.cat/ca/activitat/funifira-de-gelida-maquetisme-modelisme-i-lleure-ferroviari-gastronomiam-vins-i-escumosos-del"
+    },
+    {
+      "from": "2026-11-22",
+      "place": "Sant Pau d'Ordal (Subirats)",
+      "title": {
+        "ca": "Subirats Tasta'l",
+        "es": "Subirats Tasta'l",
+        "en": "Subirats Tasta'l"
+      },
+      "text": {
+        "ca": "Tast de vins, caves i productes de Subirats a la plaça Subirats i el carrer Ponent, d'11 a 15 h.",
+        "es": "Cata de vinos, cavas y productos de Subirats en la plaza Subirats y la calle Ponent, de 11 a 15 h.",
+        "en": "A tasting of Subirats wines, cavas and local produce in Plaça Subirats and Carrer Ponent, 11 am to 3 pm."
+      },
+      "url": "https://www.penedesturisme.cat/en/activity/subirats-tastal"
+    },
+    {
+      "from": "2026-11-29",
+      "place": "Gelida",
+      "title": {
+        "ca": "Ruta modernista de Gelida",
+        "es": "Ruta modernista de Gelida",
+        "en": "Gelida Modernist walk"
+      },
+      "text": {
+        "ca": "Visita guiada per nou cases modernistes del nucli antic, de 12.30 a 14 h des de la plaça de l'Església. 3 € (reduïda 2,50 €, gratis fins a 9 anys), cal reservar. Es pot combinar amb la visita al castell de les 10.30 h.",
+        "es": "Visita guiada por nueve casas modernistas del casco antiguo, de 12.30 a 14 h desde la plaza de l'Església. 3 € (reducida 2,50 €, gratis hasta 9 años), hay que reservar. Se puede combinar con la visita al castillo de las 10.30 h.",
+        "en": "A guided walk past nine Modernist houses in the old town, 12.30 to 2 pm from Plaça de l'Església. €3 (reduced €2.50, free under 9), booking required. It can be combined with the 10.30 am castle visit."
+      },
+      "url": "https://www.penedesturisme.cat/ca/activitat/ruta-modernista-de-gelida"
+    },
+    {
+      "from": "2026-12-12",
+      "place": "Sant Sadurní d'Anoia",
+      "minutes": 15,
+      "title": {
+        "ca": "Redescobrim el torró: tradició, innovació i cava",
+        "es": "Redescubrimos el turrón: tradición, innovación y cava",
+        "en": "Rediscovering torró: tradition, innovation and cava"
+      },
+      "text": {
+        "ca": "Tast de 90 minuts al Cava Centre, a les 12 h: plats dolços i salats de torró del cuiner Cintet amb diferents caves. 20 €, amb reserva.",
+        "es": "Cata de 90 minutos en el Cava Centre, a las 12 h: platos dulces y salados de turrón del cocinero Cintet con distintos cavas. 20 €, con reserva.",
+        "en": "A 90-minute tasting at the Cava Centre at noon: sweet and savoury torró dishes by local chef Cintet paired with different cavas. €20, booking required."
+      },
+      "url": "https://santsadurni.cat/document.php?id=23110"
+    },
+    {
+      "from": "2026-12-13",
+      "place": "Gelida",
+      "title": {
+        "ca": "Fira de Santa Llúcia de Gelida",
+        "es": "Feria de Santa Llúcia de Gelida",
+        "en": "Santa Llúcia fair, Gelida"
+      },
+      "text": {
+        "ca": "Escudella popular a la plaça de l'Església (els focs s'encenen a les 5 h), fira d'artesans i entitats, sardanes i activitats tot el dia.",
+        "es": "Escudella popular en la plaza de l'Església (los fuegos se encienden a las 5 h), feria de artesanos y entidades, sardanas y actividades todo el día.",
+        "en": "A communal escudella stew in the church square (the fires are lit at 5 am), a crafts and local groups fair, sardanes and activities all day."
+      },
+      "url": "https://www.penedesturisme.cat/ca/activitat/fira-de-santa-llucia-de-gelida"
     }
   ]
 }

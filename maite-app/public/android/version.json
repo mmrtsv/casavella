@@ -1,5 +1,5 @@
 {
-  "versionCode": 27,
-  "version": "2.25",
-  "notes": "Els posts publicats també surten a la fitxa de Google, amb l'enllaç per obrir-los"
+  "versionCode": 28,
+  "version": "2.26",
+  "notes": "Avisos al mòbil (reserves, taules, el pla d'Instagram) i, a partir d'ara, les versions noves s'instal·len abans d'entrar."
 }

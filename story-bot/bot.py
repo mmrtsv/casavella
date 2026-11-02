@@ -35,8 +35,8 @@ ONCE = os.environ.get("ONCE") == "1"
 EVERY = 60
 
 # Instagram only keeps the area that can be tapped (its app draws the sticker into the image), so it goes over the button the
-# design already has (lib/igapp.js STICKER): (x, y, width, height)
-STICKER = {"StoryPoster": (0.2834, 0.7908, 0.42, 0.05), "StoryMenu": (0.5, 0.828, 0.6, 0.045), "StoryPhoto": (0.5, 0.40, 0.5, 0.06), "StoryReel": (0.5, 0.68, 0.5, 0.06)}
+# design draws as a sticker (lib/igapp.js STICKER): (x, y, width, height)
+STICKER = {"StoryPoster": (0.3315, 0.7871, 0.5, 0.0508), "StoryMenu": (0.5, 0.8191, 0.6111, 0.0492), "StoryPhoto": (0.5, 0.40, 0.5, 0.06), "StoryReel": (0.5, 0.68, 0.5, 0.06)}
 
 
 def log(*a):

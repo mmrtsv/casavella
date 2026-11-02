@@ -1,5 +1,5 @@
 {
-  "versionCode": 26,
-  "version": "2.24",
-  "notes": "Taules per cobrar a Per fer, i un avís l'endemà al matí si alguna taula no té l'import apuntat"
+  "versionCode": 27,
+  "version": "2.25",
+  "notes": "Els posts publicats també surten a la fitxa de Google, amb l'enllaç per obrir-los"
 }

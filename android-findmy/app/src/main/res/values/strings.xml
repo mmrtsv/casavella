@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Buscar</string>
+    <string name="offline">No hay conexión con iCloud.</string>
+    <string name="retry">Reintentar</string>
+</resources>

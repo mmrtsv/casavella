@@ -11,6 +11,7 @@ Web de La Casa Vella, casa de poble familiar al Bedorc (1898): allotjaments, res
 | `dist/` | Versió per publicar: una pàgina per idioma (`index.html`, `es/`, `en/`) amb les etiquetes per a Google i xarxes i sense les eines de revisió, `robots.txt` i `sitemap.xml`. |
 | `maite-app/` | Maite, el back office (React, Vite, HeroUI). Es construeix a `dist/maite/` (vegeu més avall). Com està fet i quines llibreries fa servir: `maite-app/README.md`. |
 | `android/` | Maite per a Android: app nativa (Compose) amb tot el que fa la web, per instal·lar a mà (vegeu `android/README.md`). |
+| `android-findmy/` | Buscar: Find My d'Apple (iCloud.com/find) en una app d'Android a part, sense relació amb Maite (vegeu `android-findmy/README.md`). |
 | `lib/` | Lògica compartida de les funcions: reserves i preus (`booking.js`), Maite (`maite.js`), contingut dels allotjaments (`stays.js`), taules del restaurant (`restaurant.js`) avisos a l'app d'Android (`push.js`), el pla d'Instagram (`plan.js`) i les stories amb l'enllaç (`igapp.js`). |
 | `docs/social/` | L'equip de xarxes de Claude Code: el context de la casa, les regles i els informes de cada dilluns. Els agents són a `.claude/agents/social-*.md`, les skills a `.claude/skills/social-*/` i les dades de cada setmana les recull `social.py` (vegeu `docs/social/README.md`). |
 | `cron/` | Un Worker de Cloudflare que cada 5 minuts publica els posts d'Instagram programats (vegeu `cron/README.md`). |

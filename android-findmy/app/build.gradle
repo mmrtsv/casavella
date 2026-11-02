@@ -1,0 +1,44 @@
+// Buscar: Apple Find My (iCloud.com/find) on Android, in a WebView that keeps the session. No libraries beyond the platform.
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.casavellarural.buscar'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.casavellarural.buscar'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+
+    // Optional release key: without BUSCAR_KEYSTORE the release build is signed with the debug key
+    signingConfigs {
+        release {
+            def ks = System.getenv('BUSCAR_KEYSTORE')
+            if (ks) {
+                storeFile file(ks)
+                storePassword System.getenv('BUSCAR_KEYSTORE_PASSWORD')
+                keyAlias 'buscar'
+                keyPassword System.getenv('BUSCAR_KEYSTORE_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            signingConfig System.getenv('BUSCAR_KEYSTORE') ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = '17' }
+}

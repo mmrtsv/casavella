@@ -1,5 +1,5 @@
 {
-  "versionCode": 23,
-  "version": "2.21",
-  "notes": "Menús i esdeveniments tiene su propia pestaña en Xarxes socials."
+  "versionCode": 24,
+  "version": "2.22",
+  "notes": "Envia els menús a la llista de WhatsApp, i avisos al mòbil quan toca enviar-los o penjar una story."
 }

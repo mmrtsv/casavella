@@ -99,7 +99,7 @@ fun Home() {
     val hello = if (h < 6 || h >= 21) "Bona nit" else if (h < 14) "Bon dia" else "Bona tarda"
     val l = LocalLayout.current
     // The restaurant opens today: when, and how many are coming
-    LaunchedEffect(Unit) { runCatching { Maite.ensureTables(TODAY, addDays(TODAY, 120)) } }
+    LaunchedEffect(Unit) { runCatching { Maite.ensureTables(TODAY, addDays(TODAY, 120)) }; runCatching { Maite.ensureTables(addDays(TODAY, -TABLES_BACK), TODAY) } }
     val opensToday = Maite.settings?.restaurant?.open.orEmpty().filter { it.take(10) == TODAY }
     val comingToday = seated(Maite.tables.values.filter { !it.cancelled && atOf(it) in opensToday })
 
@@ -218,12 +218,35 @@ private val TODO = listOf(
     Group("sense el check-out fet", { T.accent }) { it == "checkout" },
 )
 
+/** From the day after, each restaurant day of the last 60 with tables that have no amount noted (Restaurant, Cobrat), newest first */
+private const val TABLES_BACK = 60
+private fun owedDays(): List<Pair<String, Int>> = Maite.tables.values
+    .filter { !it.cancelled && it.paid == null && it.date < TODAY && it.date >= addDays(TODAY, -TABLES_BACK) }
+    .groupingBy { it.date }.eachCount().toList().sortedByDescending { it.first }
+
 @Composable
 private fun Todo(all: List<Booking>) {
     val soon = all.filter { it.until >= TODAY && it.first < addDays(TODAY, 30) }
     val groups = TODO.map { g -> g to soon.filter { b -> missing(b).any { g.has(it.k) } } }.filter { it.second.isNotEmpty() }
     val open = soon.count { missing(it).isNotEmpty() }
+    val owed = owedDays()
     val pct = if (soon.isEmpty()) 1f else (soon.size - open) / soon.size.toFloat()
+    @Composable
+    fun TodoRow(color: Color, n: Int, title: String, sub: String, onClick: () -> Unit) {
+        Divider()
+        Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(4.dp).height(34.dp).clip(CircleShape).background(color))
+            Text("$n", style = Type.lg, modifier = Modifier.padding(horizontal = 14.dp).width(28.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = Type.sm, fontWeight = FontWeight.Medium)
+                Text(sub, style = Type.xs, color = T.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Ico(R.drawable.ic_chevron_right, tint = T.muted, size = 16.dp)
+        }
+    }
+    @Composable
+    fun BookingRow(g: Group, list: List<Booking>) = TodoRow(g.color(), list.size, "${if (list.size == 1) "Reserva" else "Reserves"} ${g.title}",
+        "${if (list.size == 1) "" else "La més propera: "}${who(list.first())}, ${day(list.first().first)}") { Ui.detail = list.first().key }
     Column {
         SectionTitle("Per fer") { Btn("Reserves", { Ui.go(Page.Bookings) }, look = Look.Ghost) }
         Card(Modifier.fillMaxWidth()) {
@@ -239,18 +262,9 @@ private fun Todo(all: List<Booking>) {
                     Text("Veure-les", style = Type.xs, fontWeight = FontWeight.Medium, color = T.accent, modifier = Modifier.padding(top = 2.dp))
                 }
             }
-            groups.forEach { (g, list) ->
-                Divider()
-                Row(Modifier.fillMaxWidth().clickable { Ui.detail = list.first().key }.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.width(4.dp).height(34.dp).clip(CircleShape).background(g.color()))
-                    Text("${list.size}", style = Type.lg, modifier = Modifier.padding(horizontal = 14.dp).width(28.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("${if (list.size == 1) "Reserva" else "Reserves"} ${g.title}", style = Type.sm, fontWeight = FontWeight.Medium)
-                        Text("${if (list.size == 1) "" else "La més propera: "}${who(list.first())}, ${day(list.first().first)}", style = Type.xs, color = T.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                    Ico(R.drawable.ic_chevron_right, tint = T.muted, size = 16.dp)
-                }
-            }
+            groups.filter { it.first.title == "per cobrar" }.forEach { (g, list) -> BookingRow(g, list) }
+            owed.forEach { (d, n) -> TodoRow(T.danger, n, if (n == 1) "Taula per cobrar" else "Taules per cobrar", cap(longDay(d))) { Ui.openRestaurant(d, "paid") } }
+            groups.filter { it.first.title != "per cobrar" }.forEach { (g, list) -> BookingRow(g, list) }
         }
     }
 }

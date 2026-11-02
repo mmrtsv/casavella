@@ -38,6 +38,7 @@ import com.casavellarural.maite.data.Api
 import com.casavellarural.maite.data.ERRORS
 import com.casavellarural.maite.data.ApiError
 import com.casavellarural.maite.data.Maite
+import com.casavellarural.maite.data.Reminders
 import com.casavellarural.maite.data.RestaurantSettings
 import com.casavellarural.maite.data.SOURCE
 import com.casavellarural.maite.data.SOURCES
@@ -84,7 +85,7 @@ private fun atLabel(at: String) = "${cap(longDay(at.take(10)))}, ${at.drop(11)}"
 @Composable
 fun Restaurant() {
     val S = Maite.settings ?: return LoadingPage()
-    var tab by remember { mutableStateOf("tables") }
+    var tab by remember { mutableStateOf(Ui.restaurantTab.ifEmpty { "tables" }.also { Ui.restaurantTab = "" }) }
     Page {
         Tabs(listOf("tables" to "Taules", "paid" to "Cobrat", "open" to "Dies oberts"), tab, { tab = it })
         when (tab) { "tables" -> Tables(S.restaurant); "paid" -> Paid(S.restaurant); else -> Openings(S.restaurant) }
@@ -258,13 +259,13 @@ private fun total(list: List<Table>) = list.sumOf { it.paid ?: 0L }
 
 @Composable
 private fun Paid(cfg: RestaurantSettings) {
-    var month by remember { mutableStateOf(TODAY.take(8) + "01") }
+    var sel by remember { mutableStateOf(Ui.restaurantDay.ifEmpty { TODAY }.also { Ui.restaurantDay = "" }) }
+    var month by remember { mutableStateOf(sel.take(8) + "01") }
     val m = parse(month); val end = m.plusMonths(1).toString()
     var error by remember { mutableStateOf("") }
     LaunchedEffect(month) { try { Maite.ensureTables(month, end); error = "" } catch (e: ApiError) { error = e.message.orEmpty() } }
     val live = Maite.tables.values.filter { !it.cancelled && it.date >= month && it.date < end }
     fun byDay(d: String) = live.filter { it.date == d }.sortedBy { atOf(it) }
-    var sel by remember { mutableStateOf(TODAY) }
     LaunchedEffect(month, live.size) { if (sel < month || sel >= end) sel = if (TODAY >= month && TODAY < end) TODAY else live.minOfOrNull { it.date } ?: month }
     val missing = live.count { it.paid == null && it.date <= TODAY }
     val days = (0 until m.lengthOfMonth()).map { addDays(month, it) }
@@ -315,6 +316,7 @@ private fun PaidDay(cfg: RestaurantSettings, date: String, list: List<Table>, ta
     var editing by remember { mutableStateOf<Table?>(null) }
     var busy by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current.applicationContext
     fun shown(t: Table) = t.paid?.let { (it / 100.0).let { v -> if (v == Math.floor(v)) v.toLong().toString() else v.toString() }.replace('.', ',') } ?: ""
     Card(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -340,6 +342,8 @@ private fun PaidDay(cfg: RestaurantSettings, date: String, list: List<Table>, ta
                         try {
                             val d = json.decodeFromString(TableResponse.serializer(), Api.raw("PATCH", "restaurant", Api.encode(mapOf("id" to t.id, "paid" to (if (v.isEmpty()) null else Math.round(v.toDouble() * 100))))))
                             Maite.setTable(d.table); edit = edit - t.id; Toasts.done("Import desat")
+                            // The morning-after reminder for this day follows (data/Reminders.kt)
+                            Reminders.scheduleTables(context, Maite.tables.values, date, addDays(date, 1))
                         } catch (e: ApiError) { Toasts.error(e) }
                         busy = ""
                     }

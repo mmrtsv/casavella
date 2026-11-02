@@ -1,5 +1,5 @@
 {
-  "versionCode": 24,
-  "version": "2.22",
-  "notes": "Envia els menús a la llista de WhatsApp, i avisos al mòbil quan toca enviar-los o penjar una story."
+  "versionCode": 27,
+  "version": "2.25",
+  "notes": "Els posts publicats també surten a la fitxa de Google, amb l'enllaç per obrir-los"
 }

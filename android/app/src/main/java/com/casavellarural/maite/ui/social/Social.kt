@@ -394,8 +394,10 @@ private fun Next(post: SocialPost, then: Then, onPublish: () -> Unit) {
         if (then.live && post.published == null) Btn(if (post.schedule != null) "Canvia la programació" else "Publica o programa", onPublish,
             look = if (post.schedule != null) Look.Secondary else Look.Primary, icon = if (post.schedule != null) R.drawable.ic_clock else R.drawable.ic_send)
         if (post.published?.url?.isNotEmpty() == true) Btn("Obre a Instagram", { open(context, post.published.url) }, look = Look.Ghost, icon = R.drawable.ic_external_link)
+        if (post.published?.google?.url?.isNotEmpty() == true) Btn("Obre a Google", { open(context, post.published.google.url) }, look = Look.Ghost, icon = R.drawable.ic_external_link)
         Btn(if (post.schedule != null) "Vés al calendari" else "Vés a Publicar", { then.go(if (post.schedule != null) "calendar" else "profile") }, look = Look.Ghost)
     }
+    if (post.published?.google?.error?.isNotEmpty() == true) Muted("No s'ha publicat a la fitxa de Google: ${post.published.google.error}")
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -1666,18 +1668,6 @@ private fun PlanSettings(data: Social, plan: Plan, onPlan: (Plan) -> Unit) {
                 CheckRow(p.remind != false, { put(mapOf("remind" to mapOf("id" to p.id, "on" to it))) }, "${m.title.ifEmpty { "Menú" }}, ${datesText(m.from, m.until).replaceFirstChar { it.lowercase() }}")
             }
             if (plan.menus) Text("Cada menú programat té stories els dies abans, més seguides com més places queden, i cap quan és ple.", style = Type.xs, color = T.muted)
-            // The phone's reminders (data/Reminders.kt): one in a minute, asking for the permission first when it is missing
-            val context = LocalContext.current
-            val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-                if (ok) { com.casavellarural.maite.data.Reminders.test(context); Toasts.done("D'aquí a un minut arribarà un avís") }
-                else Toasts.done("Sense permís no arriben els avisos: activa'ls a Ajustes › Aplicacions › Maite › Notificacions")
-            }
-            Btn("Prova un avís", {
-                if (android.os.Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
-                    ask.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                else { com.casavellarural.maite.data.Reminders.test(context); Toasts.done("D'aquí a un minut arribarà un avís") }
-            }, look = Look.Secondary, icon = R.drawable.ic_send)
-            Text("Els avisos d'aquest mòbil: menús per enviar per WhatsApp i stories per penjar. Si no arriba, mira que Maite tingui les notificacions activades i la bateria sense restriccions.", style = Type.xs, color = T.muted)
             if (!plan.render) Text("Les imatges del pla es preparen quan obres Maite. Perquè surtin encara que no l'obris, cal la clau de Cloudflare (vegeu el README).", style = Type.xs, color = T.muted)
             if (!plan.ai) Text("Sense la clau de Claude, el pla fa servir els textos de les plantilles.", style = Type.xs, color = T.muted)
         }

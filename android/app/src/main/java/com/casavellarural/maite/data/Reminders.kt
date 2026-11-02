@@ -13,6 +13,10 @@ import com.casavellarural.maite.MainActivity
 import com.casavellarural.maite.R
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -22,6 +26,8 @@ import java.time.ZoneId
  * and again two days before its last day), and post a story with its link sticker by hand when nothing posts it on its own.
  * They are worked out from the plan each time Xarxes socials loads (ui/social/Social.kt) and set as alarms here; the phone shows
  * them even with the app closed. Tapping one opens Maite on the right tab. Nothing leaves the phone.
+ * And the morning after a restaurant day, if any of its tables has no amount noted (Restaurant, Cobrat): set each time the app
+ * opens and each time an amount is saved; when it goes off it asks Maite again if the phone's sign-in still holds.
  */
 object Reminders {
     private const val CHANNEL = "recordatoris"
@@ -65,10 +71,34 @@ object Reminders {
         prefs.edit().putStringSet("keys", list.map { it.key }.toSet()).apply()
     }
 
-    /** A test reminder in a minute, to see that they reach this phone (Com planifica, Prova un avís) */
-    fun test(context: Context) {
-        val r = One("test", System.currentTimeMillis() + 60_000L, "Prova de Maite", "Així t'arribaran els avisos: menús per enviar per WhatsApp i stories per penjar.", "plan")
-        context.getSystemService(AlarmManager::class.java).set(AlarmManager.RTC_WAKEUP, r.at, pending(context, r.key, r))
+    /** Tables to note: the alarms for the days in [from, to) follow these tables; the rest stay as they were */
+    private const val TABLES_AT = 10
+    fun scheduleTables(context: Context, tables: Collection<Table>, from: String, to: String) {
+        val now = System.currentTimeMillis()
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val shown = prefs.getStringSet("tablesShown", emptySet()).orEmpty()
+        val yesterday = LocalDate.now(BCN).minusDays(1).toString()
+        val owed = tables.filter { !it.cancelled && it.paid == null && it.date >= from && it.date < to && it.date >= yesterday }.groupingBy { it.date }.eachCount()
+        val list = owed.mapNotNull { (d, n) ->
+            val key = "tb:$d"
+            val at = LocalDate.parse(d).plusDays(1).atTime(TABLES_AT, 0).atZone(BCN).toInstant().toEpochMilli()
+            // The morning after; opened later that day, once
+            if (at <= now && key in shown) null
+            else One(key, maxOf(at, now + 60_000L), if (n == 1) "Taula per cobrar" else "Taules per cobrar", tablesText(d, n), "cobrat:$d")
+        }
+        val alarms = context.getSystemService(AlarmManager::class.java)
+        val before = prefs.getStringSet("tables", emptySet()).orEmpty()
+        val inWindow = { k: String -> k.removePrefix("tb:").let { it >= from && it < to } }
+        for (gone in before.filter(inWindow) - list.map { it.key }.toSet()) alarms.cancel(pending(context, gone, null))
+        for (r in list) alarms.set(AlarmManager.RTC_WAKEUP, r.at, pending(context, r.key, r))
+        val keep = before.filter { !inWindow(it) && it.removePrefix("tb:") >= yesterday }
+        prefs.edit().putStringSet("tables", (keep + list.map { it.key }).toSet())
+            .putStringSet("tablesShown", shown.filter { it.removePrefix("tb:") >= yesterday }.toSet()).apply()
+    }
+    fun tablesText(date: String, n: Int) = "${if (n == 1) "Una taula" else "$n taules"} de ${longDay(date)} sense l'import apuntat. Toca per apuntar-lo."
+    fun tableShown(context: Context, key: String) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        prefs.edit().putStringSet("tablesShown", prefs.getStringSet("tablesShown", emptySet()).orEmpty() + key).apply()
     }
 
     private fun pending(context: Context, key: String, r: One?): PendingIntent {
@@ -79,7 +109,7 @@ object Reminders {
 
     fun show(context: Context, key: String, title: String, text: String, tab: String) {
         val nm = context.getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(NotificationChannel(CHANNEL, "Recordatoris", NotificationManager.IMPORTANCE_HIGH).apply { description = "Menús per enviar per WhatsApp i stories per penjar" })
+        nm.createNotificationChannel(NotificationChannel(CHANNEL, "Recordatoris", NotificationManager.IMPORTANCE_HIGH).apply { description = "Menús per enviar per WhatsApp, stories per penjar i taules per cobrar" })
         val open = PendingIntent.getActivity(context, key.hashCode(), Intent(context, MainActivity::class.java).putExtra("open", tab).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val n = NotificationCompat.Builder(context, CHANNEL).setSmallIcon(R.drawable.ic_message_circle).setContentTitle(title).setContentText(text)
@@ -88,9 +118,26 @@ object Reminders {
     }
 }
 
-/** An alarm set by Reminders: shows its notification */
+/** An alarm set by Reminders: shows its notification. Tables to note are checked again first, when the sign-in allows it */
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Reminders.show(context, intent.getStringExtra("key") ?: return, intent.getStringExtra("title").orEmpty(), intent.getStringExtra("text").orEmpty(), intent.getStringExtra("tab") ?: "plan")
+        val key = intent.getStringExtra("key") ?: return
+        val title = intent.getStringExtra("title").orEmpty(); val text = intent.getStringExtra("text").orEmpty(); val tab = intent.getStringExtra("tab") ?: "plan"
+        if (!key.startsWith("tb:")) return Reminders.show(context, key, title, text, tab)
+        val date = key.removePrefix("tb:")
+        val done = goAsync()
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                Auth.init(context.applicationContext)
+                // Without a fresh sign-in the phone can't ask (it would need the app open): it goes by what it knew
+                val n = if (!Auth.usable) null else runCatching {
+                    withTimeout(20_000) { Api.get<TablesResponse>("restaurant?from=$date&to=${addDays(date, 1)}") }.tables.count { !it.cancelled && it.paid == null && it.date == date }
+                }.getOrNull()
+                if (n != 0) {
+                    Reminders.show(context, key, when (n) { null -> title; 1 -> "Taula per cobrar"; else -> "Taules per cobrar" }, if (n == null) text else Reminders.tablesText(date, n), tab)
+                    Reminders.tableShown(context, key)
+                }
+            } finally { done.finish() }
+        }
     }
 }

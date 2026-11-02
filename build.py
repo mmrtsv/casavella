@@ -245,9 +245,13 @@ def page(lang):
     return re.sub(r'(src="|href="|url\()(img|fonts)/', r'\1/\2/', doc)
 
 
-if DIST.exists():
-    shutil.rmtree(DIST)
-DIST.mkdir()
+# dist/ starts again from nothing, except what other builds put there: Maite (npm run build, dist/maite/) and the page that
+# draws Instagram images on the server (vite.render.config.ts, dist/render/)
+KEEP = {'maite', 'render'}
+DIST.mkdir(exist_ok=True)
+for item in DIST.iterdir():
+    if item.name not in KEEP:
+        shutil.rmtree(item) if item.is_dir() else item.unlink()
 GUIDE_PAGES, GUIDE_BLOCKS = guides.build(ROOT, DIST, SITE_URL)
 for lang in LANGS:
     folder = DIST / PATHS[lang].strip('/')
@@ -265,6 +269,12 @@ not_found = guides.page(
     '<a href="/">La Casa Vella</a>, <a href="/es/">en castellano</a>, <a href="/en/">in English</a>.</p>')
 not_found = re.sub(r'<link rel="(canonical|alternate)"[^>]*>\n', '', not_found).replace('<head>\n', '<head>\n<meta name="robots" content="noindex">\n', 1)
 (DIST / '404.html').write_text(not_found, encoding='utf-8')
+
+# Posts for the Google listing written by the weekly SEO routine (content/gbp/*.json: id, date, text, image, link, lang).
+# The cron publishes each on its day (lib/gbp.js); the ones more than a week old are left out
+cutoff = (datetime.date.today() - datetime.timedelta(days=7)).isoformat()
+gbp = [json.loads(f.read_text(encoding='utf-8')) for f in sorted((ROOT / 'content' / 'gbp').glob('*.json'))] if (ROOT / 'content' / 'gbp').exists() else []
+(DIST / 'gbp-queue.json').write_text(json.dumps([g for g in gbp if g['date'] >= cutoff], ensure_ascii=False), encoding='utf-8')
 
 # Crawlers: everyone may read the web, AI assistants included (named so a later default can't block them); not the API.
 AI_BOTS = ('GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'PerplexityBot', 'Perplexity-User', 'ClaudeBot', 'Claude-User',

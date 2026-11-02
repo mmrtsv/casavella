@@ -117,7 +117,11 @@ data class CancelResponse(val refunded: Long = 0)
 
 // Xarxes socials
 @Serializable
-data class Published(val at: String, val url: String = "", val media: String? = null, val image: String? = null, val hand: Boolean = false)
+data class Published(val at: String, val url: String = "", val media: String? = null, val image: String? = null, val hand: Boolean = false, val google: GooglePost? = null)
+
+/** The same post on the Google listing (lib/gbp.js): its link, or why Google turned it down */
+@Serializable
+data class GooglePost(val at: String = "", val url: String = "", val error: String = "")
 
 /** One image of a post: the post itself, or a slide after it in a carousel */
 @Serializable

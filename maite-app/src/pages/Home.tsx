@@ -1,4 +1,4 @@
-// Inici: a greeting that says what happens today, four numbers, what is still to do, this week's calendar, who is here or coming next
+// Inici: a greeting that says what happens today, four numbers, what is still to do (tables left to note included), this week's calendar, who is here or coming next
 // and the restaurant's next open days
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
@@ -7,7 +7,7 @@ import { addDays, cap, day, euro, nightsBetween, parse, range, TODAY } from '../
 import { go } from '../lib/route';
 import { keyOf, shortName, useStore } from '../lib/store';
 import { atOf, seated, useTables } from '../lib/tables';
-import { openBookings, openDetail } from '../lib/ui';
+import { openBookings, openDetail, openRestaurant } from '../lib/ui';
 import { atHome, dueList, isBooking, missing, who } from '../lib/words';
 import { Status } from '../parts/Status';
 import { bar, tone } from './Calendar';
@@ -125,7 +125,8 @@ const Open = ({ to, children }: { to: Parameters<typeof go>[0]; children: ReactN
   <button type="button" onClick={() => go(to)} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-accent outline-none hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-focus">{children}</button>
 );
 
-// What is still to do for stays from now to 30 days out, grouped by kind; the groups cover everything the count does
+// What is still to do for stays from now to 30 days out, grouped by kind; the groups cover everything the count does.
+// Under them, from the day after, each restaurant day of the last 60 with tables that have no amount noted (Restaurant, Cobrat)
 const TODO: { title: string; color: string; has: (k: string) => boolean }[] = [
   { title: 'per cobrar', color: 'bg-danger', has: k => k === 'pay' },
   { title: 'sense documents', color: 'bg-warning', has: k => k === 'docs' },
@@ -133,10 +134,17 @@ const TODO: { title: string; color: string; has: (k: string) => boolean }[] = [
   { title: 'sense el check-in fet', color: 'bg-accent', has: k => k === 'checkin' },
   { title: 'sense el check-out fet', color: 'bg-accent', has: k => k === 'checkout' },
 ];
+const TABLES_BACK = 60;
 function Todo({ all }: { all: Booking[] }) {
   const soon = all.filter(b => b.until >= TODAY && b.first < addDays(TODAY, 30));
   const groups = TODO.map(g => ({ ...g, list: soon.filter(b => missing(b).some(c => g.has(c.k))) })).filter(g => g.list.length);
   const open = soon.filter(b => missing(b).length).length, done = soon.length - open;
+  const { tables } = useTables(addDays(TODAY, -TABLES_BACK), TODAY);
+  const owed = useMemo(() => {
+    const by = new Map<string, number>();
+    for (const t of tables.values()) if (!t.cancelled && t.paid == null && t.date < TODAY && t.date >= addDays(TODAY, -TABLES_BACK)) by.set(t.date, (by.get(t.date) || 0) + 1);
+    return [...by].sort((a, b) => b[0].localeCompare(a[0]));
+  }, [tables]);
   const R = 34, C = 2 * Math.PI * R, pct = soon.length ? done / soon.length : 1;
   const ring = (
     <svg viewBox="0 0 80 80" className="size-20 shrink-0 -rotate-90" aria-hidden="true">
@@ -144,37 +152,44 @@ function Todo({ all }: { all: Booking[] }) {
       {pct > 0 && <circle cx="40" cy="40" r={R} fill="none" stroke="var(--accent)" strokeWidth="7" strokeLinecap="round" strokeDasharray={`${C * pct} ${C}`} />}
     </svg>
   );
+  const allDone = <div><div className="text-xl font-semibold tracking-tight">Tot al dia</div><div className="text-sm text-muted">{soon.length ? 'No falta res per a les reserves dels propers 30 dies.' : 'No hi ha reserves els propers 30 dies.'}</div></div>;
+  const row = (key: string, color: string, n: number, title: string, sub: string, onClick: () => void) => (
+    <li key={key}>
+      <button type="button" onClick={onClick} className="flex w-full items-center gap-4 px-5 py-4 text-left outline-none hover:bg-[var(--row-hover)] focus-visible:bg-[var(--row-hover)]">
+        <span className={`h-9 w-1 shrink-0 rounded-full ${color}`} aria-hidden="true" />
+        <span className="w-8 text-xl font-semibold tnum">{n}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium">{title}</span>
+          <span className="block truncate text-xs text-muted">{sub}</span>
+        </span>
+        <ChevronRight size={16} className="shrink-0 text-muted" aria-hidden="true" />
+      </button>
+    </li>
+  );
+  const bookingRow = (g: typeof groups[number]) => row(g.title, g.color, g.list.length, `${g.list.length === 1 ? 'Reserva' : 'Reserves'} ${g.title}`,
+    `${g.list.length === 1 ? '' : 'La més propera: '}${who(g.list[0])}, ${day(g.list[0].first)}`, () => openDetail(keyOf(g.list[0])));
+  const tableRows = owed.map(([d, n]) => row('t' + d, 'bg-danger', n, n === 1 ? 'Taula per cobrar' : 'Taules per cobrar',
+    cap(day(d, { weekday: 'long', day: 'numeric', month: 'long' })), () => openRestaurant(d, 'paid')));
   return (
     <Section title="Per fer" action={<Open to="bookings">Reserves</Open>}>
-      {!open ? (
-        <div className="flex items-center gap-5 card p-6">
-          {ring}
-          <div><div className="text-xl font-semibold tracking-tight">Tot al dia</div><div className="text-sm text-muted">{soon.length ? 'No falta res per a les reserves dels propers 30 dies.' : 'No hi ha reserves els propers 30 dies.'}</div></div>
-        </div>
+      {!open && !owed.length ? (
+        <div className="flex items-center gap-5 card p-6">{ring}{allDone}</div>
       ) : (
         <div className="grid overflow-hidden card md:grid-cols-[260px_minmax(0,1fr)]">
-          <button type="button" onClick={() => openBookings('todo')} className="group flex items-center gap-5 bg-accent/8 p-6 text-left outline-none transition-colors hover:bg-accent/14 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus">
-            {ring}
-            <span className="min-w-0 flex-1">
-              <span className="block text-4xl font-semibold tracking-tight tnum">{open}</span>
-              <span className="block text-sm text-muted">{open === 1 ? 'reserva amb coses pendents' : 'reserves amb coses pendents'}</span>
-              <span className="mt-1 flex items-center gap-1 text-xs font-medium text-accent">Veure-les</span>
-            </span>
-          </button>
+          {open ? (
+            <button type="button" onClick={() => openBookings('todo')} className="group flex items-center gap-5 bg-accent/8 p-6 text-left outline-none transition-colors hover:bg-accent/14 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus">
+              {ring}
+              <span className="min-w-0 flex-1">
+                <span className="block text-4xl font-semibold tracking-tight tnum">{open}</span>
+                <span className="block text-sm text-muted">{open === 1 ? 'reserva amb coses pendents' : 'reserves amb coses pendents'}</span>
+                <span className="mt-1 flex items-center gap-1 text-xs font-medium text-accent">Veure-les</span>
+              </span>
+            </button>
+          ) : <div className="flex items-center gap-5 p-6">{ring}{allDone}</div>}
           <ul className="divide-y divide-separator">
-            {groups.map(g => (
-              <li key={g.title}>
-                <button type="button" onClick={() => openDetail(keyOf(g.list[0]))} className="flex w-full items-center gap-4 px-5 py-4 text-left outline-none hover:bg-[var(--row-hover)] focus-visible:bg-[var(--row-hover)]">
-                  <span className={`h-9 w-1 shrink-0 rounded-full ${g.color}`} aria-hidden="true" />
-                  <span className="w-8 text-xl font-semibold tnum">{g.list.length}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium">{g.list.length === 1 ? 'Reserva' : 'Reserves'} {g.title}</span>
-                    <span className="block truncate text-xs text-muted">{g.list.length === 1 ? '' : 'La més propera: '}{who(g.list[0])}, {day(g.list[0].first)}</span>
-                  </span>
-                  <ChevronRight size={16} className="shrink-0 text-muted" aria-hidden="true" />
-                </button>
-              </li>
-            ))}
+            {groups.filter(g => g.title === 'per cobrar').map(bookingRow)}
+            {tableRows}
+            {groups.filter(g => g.title !== 'per cobrar').map(bookingRow)}
           </ul>
         </div>
       )}

@@ -96,6 +96,9 @@ object Auth {
         if (request(silent = false)) { state = State.SignedIn; null } else "No s'ha pogut entrar amb Google"
     } catch (e: Exception) { e.message ?: "No s'ha pogut entrar amb Google" }
 
+    /** Signed in with a token that still holds for a few minutes, so a call can go without the app open (data/Reminders.kt) */
+    val usable: Boolean get() = Api.fake == null && config.ready && state == State.SignedIn && idToken != null && System.currentTimeMillis() < expires - 5 * 60_000
+
     /** Before a call: a token that ends in less than five minutes is renewed without asking */
     suspend fun fresh() {
         if (Api.fake != null || !config.ready || state != State.SignedIn) return

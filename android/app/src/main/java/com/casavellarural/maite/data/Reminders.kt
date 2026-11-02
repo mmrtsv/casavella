@@ -65,6 +65,12 @@ object Reminders {
         prefs.edit().putStringSet("keys", list.map { it.key }.toSet()).apply()
     }
 
+    /** A test reminder in a minute, to see that they reach this phone (Com planifica, Prova un avís) */
+    fun test(context: Context) {
+        val r = One("test", System.currentTimeMillis() + 60_000L, "Prova de Maite", "Així t'arribaran els avisos: menús per enviar per WhatsApp i stories per penjar.", "plan")
+        context.getSystemService(AlarmManager::class.java).set(AlarmManager.RTC_WAKEUP, r.at, pending(context, r.key, r))
+    }
+
     private fun pending(context: Context, key: String, r: One?): PendingIntent {
         val i = Intent(context, ReminderReceiver::class.java).setAction("maite.reminder.$key")
         if (r != null) i.putExtra("key", r.key).putExtra("title", r.title).putExtra("text", r.text).putExtra("tab", r.tab)

@@ -32,9 +32,8 @@ Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne da
    - Formato que citan los asistentes: la respuesta en la primera frase (`description`), datos concretos (fechas, distancias, precios), cada dato con su fuente en `sources`, entre 250 y 450 palabras por idioma, en catalán, castellano e inglés. Título en minúsculas salvo nombres propios, sin exclamaciones ni frases de folleto. Enlaza a la casa solo donde aporte (el restaurante, un evento). Una imagen de `img/` que tenga que ver.
    - Nunca páginas en serie del tipo «casa rural en [pueblo]»: cada guía responde una pregunta distinta.
    - Temas pendientes, de más a menos útil (quita el que escribas y añade los que salgan de las búsquedas):
-     - Capellades: el Museu Molí Paperer, la Bassa y el Abric Romaní.
-     - Cómo llegar al Bedorc sin coche desde Barcelona (tren y bus, con los horarios del operador).
-     - El castell de la Ventosa y paseos desde el Bedorc.
+     - Cómo llegar al Bedorc sin coche desde Barcelona: Piera tiene estación de FGC (R6 y R60 desde Plaça Espanya); falta confirmar el tiempo de viaje en el buscador de horarios de FGC y si algún bus llega al Bedorc.
+     - El castell de la Ventosa y paseos desde el Bedorc (Anoia Turisme lo documenta: castell-del-bedorc; falta una fuente oficial de rutas a pie).
      - Navidad y Cap d'Any 2026 en el Penedès y el Anoia (ferias con fecha publicada).
      - El castell de Claramunt.
      - Vilafranca del Penedès: el Vinseum y el mercado.

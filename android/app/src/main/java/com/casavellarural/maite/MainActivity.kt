@@ -33,13 +33,8 @@ class MainActivity : ComponentActivity() {
                 com.casavellarural.maite.data.Maite.social = r.social
                 com.casavellarural.maite.data.Reminders.schedule(applicationContext, r.social, r.plan.bot?.alive == true)
             }
-            // Tables to note, the morning after each restaurant day (from yesterday to two months out)
-            runCatching {
-                val from = com.casavellarural.maite.data.addDays(com.casavellarural.maite.data.TODAY, -1)
-                val to = com.casavellarural.maite.data.addDays(com.casavellarural.maite.data.TODAY, 60)
-                val t = com.casavellarural.maite.data.Api.get<com.casavellarural.maite.data.TablesResponse>("restaurant?from=$from&to=$to")
-                com.casavellarural.maite.data.Reminders.scheduleTables(applicationContext, t.tables, from, to)
-            }
+            // Tables to charge are told by the server now (lib/weekly.js): the alarms the app set from 2.24 to 2.27 go
+            com.casavellarural.maite.data.Reminders.clearTables(applicationContext)
         }
     }
     override fun onResume() {

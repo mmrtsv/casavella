@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 import guides
+import seo_report
 
 ROOT = Path(__file__).resolve().parent
 DIST = ROOT / 'dist'
@@ -308,4 +309,6 @@ links += f'    <xhtml:link rel="alternate" hreflang="x-default" href="{SITE_URL}
     '/maite/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n'
     '/render/*\n  X-Robots-Tag: noindex\n'
     '/render/render.html\n  Cache-Control: no-store\n', encoding='utf-8')
+# The latest SEO report, for the weekly summary email (lib/weekly.js)
+seo_report.write()
 print(f'Built {DIST}: ' + ', '.join(f'{PATHS[l]} ({len(page(l)) // 1024} KB)' for l in LANGS))

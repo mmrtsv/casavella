@@ -1,6 +1,7 @@
 // GET /api/maite/emails  Every email the house sends, rendered from the real templates with example data, to read in Maite.
 // Times and the cancellation policy are today's, so the preview matches what a guest would get now.
 import { settings, policyText, addDays, json } from '../../../lib/booking.js';
+import { weeklySummary } from '../../../lib/weekly.js';
 import { bookingConfirmation, bookingNotice, contactNotice, contactReply, tableConfirmation, tableNotice, reviewRequest } from '../../../lib/email.js';
 
 export async function onRequestGet({ env }) {
@@ -23,5 +24,7 @@ export async function onRequestGet({ env }) {
     { id: 'contact-reply', name: 'Resposta al formulari de contacte', for: 'guest', when: 'A qui escriu des del formulari de contacte de la web.', ...contactReply(env, msg) },
     { id: 'contact-notice', name: 'Missatge del formulari de contacte', for: 'house', when: 'A la Casa Vella, amb el missatge i el correu de qui escriu per respondre directament.', ...contactNotice(env, msg) },
   ];
+  // The weekly summary with this week's real figures, as it would go out next Monday
+  try { list.push({ id: 'weekly', name: 'Resum de la setmana', for: 'house', when: 'Cada dilluns a les 10:00, als correus de WEEKLY_TO: els ingressos de la setmana passada, el que queda per fer, Instagram, la web, els anuncis i el SEO.', ...await weeklySummary(env) }); } catch (e) { /* without the calendars, no preview */ }
   return json({ emails: list.map(e => ({ id: e.id, name: e.name, for: e.for, when: e.when, subject: e.subject, html: e.html, text: e.text })) });
 }

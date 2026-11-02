@@ -1,6 +1,6 @@
 // Which window is open (client file, new booking, close dates, cancel, command palette) and the toasts
 import { useSyncExternalStore } from 'react';
-import { go } from './route';
+import { go, startParams } from './route';
 
 export interface BookDraft { stay?: string; first?: string; until?: string }
 export interface BlockDraft { stays?: string[]; first?: string; until?: string }
@@ -32,3 +32,13 @@ let restaurantDay = '', restaurantTab = '';
 export function openRestaurant(date: string, tab: 'tables' | 'paid' = 'tables') { restaurantDay = date; restaurantTab = tab; go('restaurant'); }
 export function takeRestaurantDay() { const d = restaurantDay; restaurantDay = ''; return d; }
 export function takeRestaurantTab() { const t = restaurantTab; restaurantTab = ''; return t; }
+
+// Links from the weekly summary email (lib/weekly.js) open the thing to do: #/restaurant?paid=2026-10-31 (Cobrat on that day),
+// #/bookings?open=<stay|id> (that booking), #/bookings?filter=todo and #/social?tab=plan
+{
+  const q = startParams, paid = q.get('paid'), open = q.get('open'), filter = q.get('filter'), tab = q.get('tab');
+  if (paid) openRestaurant(paid, 'paid');
+  if (open) openDetail(open);
+  if (filter) openBookings(filter);
+  if (tab) try { localStorage.setItem('maite-social-tab', tab); } catch { /* private window */ }
+}

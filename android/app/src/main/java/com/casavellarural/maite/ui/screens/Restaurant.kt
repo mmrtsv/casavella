@@ -38,7 +38,6 @@ import com.casavellarural.maite.data.Api
 import com.casavellarural.maite.data.ERRORS
 import com.casavellarural.maite.data.ApiError
 import com.casavellarural.maite.data.Maite
-import com.casavellarural.maite.data.Reminders
 import com.casavellarural.maite.data.RestaurantSettings
 import com.casavellarural.maite.data.SOURCE
 import com.casavellarural.maite.data.SOURCES
@@ -316,7 +315,6 @@ private fun PaidDay(cfg: RestaurantSettings, date: String, list: List<Table>, ta
     var editing by remember { mutableStateOf<Table?>(null) }
     var busy by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current.applicationContext
     fun shown(t: Table) = t.paid?.let { (it / 100.0).let { v -> if (v == Math.floor(v)) v.toLong().toString() else v.toString() }.replace('.', ',') } ?: ""
     Card(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -342,8 +340,6 @@ private fun PaidDay(cfg: RestaurantSettings, date: String, list: List<Table>, ta
                         try {
                             val d = json.decodeFromString(TableResponse.serializer(), Api.raw("PATCH", "restaurant", Api.encode(mapOf("id" to t.id, "paid" to (if (v.isEmpty()) null else Math.round(v.toDouble() * 100))))))
                             Maite.setTable(d.table); edit = edit - t.id; Toasts.done("Import desat")
-                            // The morning-after reminder for this day follows (data/Reminders.kt)
-                            Reminders.scheduleTables(context, Maite.tables.values, date, addDays(date, 1))
                         } catch (e: ApiError) { Toasts.error(e) }
                         busy = ""
                     }

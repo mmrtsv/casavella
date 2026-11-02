@@ -67,7 +67,7 @@ def image_of(job, folder):
     from playwright.sync_api import sync_playwright
     from PIL import Image
     png = Path(folder) / f"{job['id']}.png"
-    url = SITE + "/render/render.html#" + urllib.parse.quote(json.dumps(job["post"], ensure_ascii=False))
+    url = SITE + "/render/render#" + urllib.parse.quote(json.dumps(job["post"], ensure_ascii=False))
     with sync_playwright() as p:
         b = p.chromium.launch(args=["--no-sandbox"], executable_path=os.environ.get("CHROMIUM_PATH") or None)
         page = b.new_page(viewport={"width": 1080, "height": 1920})

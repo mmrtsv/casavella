@@ -2712,7 +2712,7 @@ if (ADS.posthog) {
 // purchase the server records once Stripe confirms the payment (lib/analytics.js) carries the campaign and the visitor
 let landing = null;
 try {
-  const q = new URLSearchParams(location.search), keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'fbclid'];
+  const q = new URLSearchParams(location.search), keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'gbraid', 'wbraid', 'fbclid'];
   const got = Object.fromEntries(keys.filter(k => q.get(k)).map(k => [k, q.get(k).slice(0, 200)]));
   const ref = document.referrer && !document.referrer.includes(location.hostname) ? document.referrer.slice(0, 200) : '';
   if (Object.keys(got).length || ref) sessionStorage.setItem('lcv-landing', JSON.stringify({ ...got, ...(ref ? { referrer: ref } : {}) }));
@@ -2720,6 +2720,8 @@ try {
 } catch (e) {}
 function visitor() {
   const out = { ...(landing || {}) };
+  // The cookie choice, for the Google Ads conversion the server sends (lib/ads.js)
+  if (consent === 'yes' || consent === 'no') out.consent = consent;
   try {
     if (ADS.posthog && window.posthog && posthog.get_distinct_id) {
       const id = posthog.get_distinct_id(), sid = posthog.get_session_id && posthog.get_session_id();

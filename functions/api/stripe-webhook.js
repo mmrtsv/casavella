@@ -6,6 +6,7 @@ import { STAYS, calendar, stripe, verifyStripe, json, euros, settings, policyTex
 import { send, bookingConfirmation, bookingNotice } from '../../lib/email.js';
 import { pushLater, nights, stayName, guests, phrase } from '../../lib/push.js';
 import { purchase } from '../../lib/analytics.js';
+import { adsConversion } from '../../lib/ads.js';
 
 export async function onRequestPost({ request, env, waitUntil }) {
   const body = await request.text();
@@ -64,6 +65,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
     mail();
     // The purchase in PostHog, once per booking: here, when it is paid (lib/analytics.js)
     if (paidNow) waitUntil(purchase(env, s).catch(e => console.log('posthog purchase', String(e.message || e))));
+    // And in Google Ads, when it came from an ad click (lib/ads.js)
+    if (paidNow) waitUntil(adsConversion(env, s).then(r => console.log('google ads conversion', r)).catch(e => console.log('google ads conversion', String(e.message || e))));
     if (paidNow) pushLater(waitUntil, env, { title: 'Reserva nova', body: phrase(c.name, stayName(m.stay), nights(m.checkin, m.checkout), guests(m.guests)), type: 'booking', stay: m.stay, id });
   };
 

@@ -34,8 +34,9 @@ DRY = os.environ.get("DRY_RUN") == "1"
 ONCE = os.environ.get("ONCE") == "1"
 EVERY = 60
 
-# Where the sticker goes on each story template (centre, as a share of the image), on a quiet part of the design
-STICKER = {"StoryPoster": (0.5, 0.35), "StoryPhoto": (0.5, 0.40), "StoryReel": (0.5, 0.68), "StoryMenu": (0.5, 0.60)}
+# Instagram only keeps the area that can be tapped (its app draws the sticker into the image), so it goes over the button the
+# design already has (lib/igapp.js STICKER): (x, y, width, height)
+STICKER = {"StoryPoster": (0.2834, 0.7908, 0.42, 0.05), "StoryMenu": (0.5, 0.828, 0.6, 0.045), "StoryPhoto": (0.5, 0.40, 0.5, 0.06), "StoryReel": (0.5, 0.68, 0.5, 0.06)}
 
 
 def log(*a):
@@ -112,8 +113,8 @@ class Insta:
 
     def post(self, jpg, link, tpl):
         from instagrapi.types import StoryLink
-        x, y = STICKER.get(tpl, (0.5, 0.5))
-        sticker = StoryLink(webUri=link, x=x, y=y, width=0.5, height=0.06)
+        x, y, w, h = STICKER.get(tpl, (0.5, 0.5, 0.5, 0.06))
+        sticker = StoryLink(webUri=link, x=x, y=y, width=w, height=h)
         media = self.cl.photo_upload_to_story(Path(jpg), links=[sticker])
         self.cl.dump_settings(SESSION)
         return str(media.pk), f"https://www.instagram.com/stories/{USER}/{media.pk}/"

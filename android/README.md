@@ -57,7 +57,7 @@ gradle recordRoborazziDebug     # captures a app/screenshots/{titan,xiaomi}
 cd .. && node android/tools/release.mjs "Què hi ha de nou" && npm run build
 ```
 
-`release.mjs` posa l'APK i `version.json` a `maite-app/public/android/`, que es publica amb Maite (darrere de Cloudflare Access). Quan es publica, l'app ho avisa a Inici i amb un toc es baixa i Android demana instal·lar-la. Si es perd la clau, cal desinstal·lar l'app, fer-ne una de nova i posar la nova empremta SHA-1 al client d'Android de Google.
+`release.mjs` posa l'APK i `version.json` a `maite-app/public/android/`, que es publica amb Maite (darrere de Cloudflare Access). Quan es publica, l'app no deixa fer res més fins que s'instal·la (des de la 2.26): mostra «Cal actualitzar Maite» i, amb un toc, es baixa i Android demana instal·lar-la. Ho mira en obrir-se i cada vegada que torna a primer pla (`data/Update.kt`, `ui/Shell.kt` MustUpdate). Les versions anteriors a la 2.26 només ho avisen a Inici. Els valors de Firebase (`MAITE_FCM_*`) són els del projecte `casa-vella-booking` (README principal, pas 11). Si es perd la clau, cal desinstal·lar l'app, fer-ne una de nova i posar la nova empremta SHA-1 al client d'Android de Google.
 
 ## Logo
 

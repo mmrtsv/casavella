@@ -24,7 +24,8 @@ export async function onRequestGet({ request, env }) {
       await env.MAITE?.put('instagram-media', JSON.stringify(cached));
     }
     return json({ connected: true, username: me.username, media: cached.media });
-  } catch (e) { return json({ connected: false, media: [], detail: e.message }); }
+  // Which token it is (its last characters), to compare with the one generated at developers.facebook.com
+  } catch (e) { return json({ connected: false, media: [], detail: `${e.message} Testimoni de Cloudflare acabat en …${env.INSTAGRAM_TOKEN.slice(-6)}` }); }
 }
 
 export async function onRequestPost({ request, env, data }) {

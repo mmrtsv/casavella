@@ -17,6 +17,14 @@ const DETAIL_LINES = ['Una copa de cava per començar', 'El vi del Penedès, a t
 const BIG_WORDS = ['Silenci', 'Calma', 'Pausa', 'Llum', 'Arrels'];
 const ROOM_LINES = ['Per despertar-se sense presses', 'Llum de matí i bigues de fusta', 'On el dia comença a poc a poc'];
 
+// The shade over the photo, softer than the templates draw it: the photo stays clear at the top and the green only rises
+// behind the words, so the warm light of the rooms shows. Only the templates the weekly plan fills with photos
+const g = (stops: [number, number][]) => `linear-gradient(180deg, ${stops.map(([a, at]) => `rgba(26,63,32,${a}) ${at}%`).join(', ')})`;
+const SHADE: Record<string, string> = {
+  StoryPoster: g([[0.3, 0], [0, 16], [0, 36], [0.6, 54], [0.86, 74], [0.92, 100]]),
+  PostRoom: g([[0.25, 0], [0, 14], [0, 52], [0.55, 76], [0.85, 100]]),
+};
+
 const photoFor = (t: Template, v: number) => {
   if (!v) return t.photo;
   const list = PHOTOS.filter(p => p !== t.photo);
@@ -46,6 +54,8 @@ export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?:
   if (!root) return;
   const img = root.querySelector<HTMLImageElement>('img[data-photo]');
   if (img) img.src = photo || photoFor(t, v);
+  const shade = img?.nextElementSibling as HTMLElement | null;
+  if (SHADE[t.id] && shade && /linear-gradient/.test(shade.style.background)) shade.style.background = SHADE[t.id];
   if (t.id === 'Main') text(find(root, 'font-size: 26px'), TAGLINES[v % TAGLINES.length]);
   if (t.id === 'PostDetail') text(find(root, 'font-size: 64px'), DETAIL_LINES[v % DETAIL_LINES.length]);
   if (t.id === 'PostWord') text(find(root, 'font-size: 200px'), BIG_WORDS[v % BIG_WORDS.length]);

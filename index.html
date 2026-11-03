@@ -505,6 +505,7 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .g3 { grid-column: span 3; grid-row: span 1; } .g4 { grid-column: span 2; grid-row: span 2; }
 .g5 { grid-column: span 2; grid-row: span 2; } .g6 { grid-column: span 2; grid-row: span 2; }
 .g7 { grid-column: span 3; grid-row: span 2; } .g8 { grid-column: span 3; grid-row: span 2; }
+.g9, .g10, .g11 { grid-column: span 2; grid-row: span 2; }
 @media (max-width: 720px) { .gallery { grid-template-columns: 1fr 1fr; grid-auto-rows: 160px; } .gallery button { grid-column: span 1 !important; grid-row: span 1 !important; } .gallery .g1 { grid-column: span 2 !important; grid-row: span 2 !important; } }
 .lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(10, 22, 12, .94); display: grid; grid-template-rows: minmax(0, 1fr) auto; padding: calc(env(safe-area-inset-top, 0px) + 56px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 20px) max(16px, env(safe-area-inset-left, 0px)); }
 .lightbox img { width: 100%; height: 100%; object-fit: contain; max-width: 1200px; margin-inline: auto; }
@@ -1158,10 +1159,13 @@ footer { padding-bottom: 32px !important; }
       <button class="g2" data-i="1" aria-label="Ampliar foto"><div class="photo"><img src="img/montserrat-vinyes.jpg" alt="Vinyes amb Montserrat al fons" loading="lazy"></div></button>
       <button class="g3" data-i="2" aria-label="Ampliar foto"><div class="photo"><img src="img/rotul.jpg" alt="Rètol de fusta de La Casa Vella sobre la porta" loading="lazy"></div></button>
       <button class="g4" data-i="3" aria-label="Ampliar foto"><div class="photo"><img src="img/escala-llibres.jpg" alt="Llibres antics a l'escala, amb el de La Casa Vella" loading="lazy"></div></button>
-      <button class="g5" data-i="4" aria-label="Ampliar foto"><div class="photo"><img src="img/terrassa.jpg" alt="Terrassa amb taula i cadires blanques al costat de la casa" loading="lazy"></div></button>
-      <button class="g6" data-i="5" aria-label="Ampliar foto"><div class="photo"><img src="img/escala-barometre.jpg" alt="Baròmetre antic de fusta a l'escala" loading="lazy"></div></button>
+      <button class="g5" data-i="4" aria-label="Ampliar foto"><div class="photo"><img src="img/terrassa-taula.jpg" alt="Taula blanca amb una planta a la terrassa, davant la tanca de fusta" loading="lazy"></div></button>
+      <button class="g6" data-i="5" aria-label="Ampliar foto"><div class="photo"><img src="img/escala-barometre-2.jpg" alt="El baròmetre antic a la paret, vist des de l'escala" loading="lazy"></div></button>
       <button class="g7" data-i="6" aria-label="Ampliar foto"><div class="photo"><img src="img/rebedor.jpg" alt="Rebedor amb terra de toves i porta al carrer" loading="lazy"></div></button>
       <button class="g8" data-i="7" aria-label="Ampliar foto"><div class="photo"><img src="img/rajola-flor.jpg" alt="Flor sobre el terra hidràulic" loading="lazy"></div></button>
+      <button class="g9" data-i="8" aria-label="Ampliar foto"><div class="photo"><img src="img/escala-diploma.jpg" alt="Un diploma antic emmarcat a l'escala" loading="lazy"></div></button>
+      <button class="g10" data-i="9" aria-label="Ampliar foto"><div class="photo"><img src="img/escala-fotos.jpg" alt="Fotos antigues del poble a la paret de l'escala" loading="lazy"></div></button>
+      <button class="g11" data-i="10" aria-label="Ampliar foto"><div class="photo"><img src="img/escala-llibres-2.jpg" alt="Els llibres antics de l'escala, il·luminats per sota" loading="lazy"></div></button>
     </div>
   </div>
 </section>
@@ -1475,6 +1479,11 @@ const I18N = { es: {
 "Cuina de l'apartament, amb bigues verdes i terra hidràulic": "Cocina del apartamento, con vigas verdes y suelo hidráulico",
 "Terrassa amb taula i cadires blanques al costat de la casa": "Terraza con mesa y sillas blancas junto a la casa",
 "Baròmetre antic de fusta a l'escala": "Barómetro antiguo de madera en la escalera",
+"Taula blanca amb una planta a la terrassa, davant la tanca de fusta": "Mesa blanca con una planta en la terraza, delante de la valla de madera",
+"El baròmetre antic a la paret, vist des de l'escala": "El barómetro antiguo en la pared, visto desde la escalera",
+"Un diploma antic emmarcat a l'escala": "Un diploma antiguo enmarcado en la escalera",
+"Fotos antigues del poble a la paret de l'escala": "Fotos antiguas del pueblo en la pared de la escalera",
+"Els llibres antics de l'escala, il·luminats per sota": "Los libros antiguos de la escalera, iluminados desde abajo",
 "La història de Casa Parellada": "La historia de Casa Parellada",
 "Una casa de pagès que torna a tenir vida": "Una casa de campo que vuelve a tener vida",
 "La construcció": "La construcción",
@@ -1722,6 +1731,11 @@ const I18N = { es: {
 "Cuina de l'apartament, amb bigues verdes i terra hidràulic": "The apartment kitchen, with green beams and hydraulic tiles",
 "Terrassa amb taula i cadires blanques al costat de la casa": "The terrace, with a table and white chairs by the house",
 "Baròmetre antic de fusta a l'escala": "An old wooden barometer on the staircase",
+"Taula blanca amb una planta a la terrassa, davant la tanca de fusta": "A white table with a plant on the terrace, by the wooden fence",
+"El baròmetre antic a la paret, vist des de l'escala": "The old barometer on the wall, seen from the stairs",
+"Un diploma antic emmarcat a l'escala": "An old framed diploma on the staircase",
+"Fotos antigues del poble a la paret de l'escala": "Old photos of the village on the staircase wall",
+"Els llibres antics de l'escala, il·luminats per sota": "The old books on the staircase, lit from below",
 "La història de Casa Parellada": "The story of Casa Parellada",
 "Una casa de pagès que torna a tenir vida": "A farmhouse brought back to life",
 "La construcció": "Building the house",
@@ -2952,8 +2966,8 @@ const APT = ['apt-sala-2', 'apt-cuina', 'apt-cuina-2', 'apt-dormitori-3', 'apt-b
 const STAY_SETS = {
   'montserrat': APT,
   'la-pineda': ['apt-dormitori-3', 'apt-dormitori-2', 'apt-sala', 'apt-cuina-detall', 'apt-cuina-3', 'apt-bany', 'apt-passadis', 'apt-sala-2', 'apt-cuina', 'apt-cuina-2', 'apt-dormitori-4', 'apt-dormitori-1', 'apt-cuina-4', 'apt-tovalloles', 'apt-detall-rosa', 'apt-passadis-2', 'apt-rajola'],
-  'les-vinyes': ['vinyes-balco', 'vinyes-llit-balco', 'vinyes-habitacio', 'vinyes-teulades', 'vinyes-llit', 'vinyes-bany-obert', 'vinyes-finestra', 'vinyes-entrada', 'vinyes-bany', 'vinyes-llum', 'vinyes-habitacio-2', 'vinyes-calaixera', 'vinyes-cobrellit', 'vinyes-mirall', 'vinyes-llit-finestra', 'vinyes-rosa'],
-  'figarot': ['figarot-llit', 'figarot-sol', 'figarot-capcal', 'figarot-balco', 'figarot-rajola', 'figarot-escriptori', 'figarot-tauleta', 'figarot-bigues', 'figarot-arbre', 'figarot-placa'],
+  'les-vinyes': ['vinyes-balco', 'vinyes-tauleta', 'vinyes-habitacio', 'vinyes-escriptori', 'vinyes-entrada', 'vinyes-mirall', 'vinyes-llit-balco', 'vinyes-teulades', 'vinyes-llit', 'vinyes-bany-obert', 'vinyes-finestra', 'vinyes-bany', 'vinyes-llum', 'vinyes-habitacio-2', 'vinyes-calaixera', 'vinyes-cobrellit', 'vinyes-llit-finestra', 'vinyes-rosa'],
+  'figarot': ['figarot-llit', 'figarot-sol', 'figarot-capcal', 'figarot-tauleta', 'figarot-placa', 'figarot-balco', 'figarot-rajola', 'figarot-escriptori', 'figarot-bigues', 'figarot-arbre'],
 };
 const STAY_NAMES = { 'montserrat': T('Apartament Montserrat'), 'la-pineda': T('Apartament La Pineda'), 'les-vinyes': T('Habitació Les Vinyes'), 'figarot': T('Habitació Figarot') };
 for (const k in STAY_SETS) SETS['stay-' + k] = STAY_SETS[k].map(n => [n, STAY_NAMES[k]]);

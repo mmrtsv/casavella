@@ -1,5 +1,5 @@
 {
-  "versionCode": 40,
-  "version": "2.38",
-  "notes": "El missatge de WhatsApp del menú diu sempre l'hora"
+  "versionCode": 41,
+  "version": "2.39",
+  "notes": "Menús: els menús nous ja no surten tots amb la mateixa foto i estil. Les fotos de portada són del restaurant, els plats, la terrassa i l'entorn, i el menú i la seva story tenen quatre estils per triar (Estil del menú)."
 }

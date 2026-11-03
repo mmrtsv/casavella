@@ -33,6 +33,11 @@ Lee los calendarios de los cuatro alojamientos (las tres semanas siguientes) y l
 
 No repite el mismo alojamiento seguido si hay otro libre. Las stories de alojamiento llevan el enlace a la página de reserva con esas fechas (`?in=…&out=…&stay=…`); las del restaurante, a `#taula`; las demás, a la web.
 
+## Fotos
+
+- **Las elige Maite, no Claude**: cada pieza toma de su lista (la propia habitación si empuja un alojamiento; si no, las del restaurante, la casa o el entorno) la que hace más tiempo que no sale en la cuadrícula, publicada o planificada. Las de la sesión de noviembre de 2026 que aún no han salido van primero, y nunca la misma que el día anterior. Claude escribe el texto sabiendo qué muestra la foto.
+- Las semanas planificadas antes (hasta el 3 de noviembre de 2026) cambiaron una vez sus fotos por la misma regla, salvo lo que el dueño ya había tocado.
+
 ## Menús y eventos
 
 Todo empieza en *Restaurante › Menús*: el menú con sus servicios (cada uno un día y una hora). Al guardarlo, esos días se abren en Restaurante, la web enseña el menú en la reserva de mesa y se pregunta cuándo empieza la promo: el post y sus dos stories salen entonces. Desde ahí el menú tiene recordatorios propios, rehechos cada día a las 7:00 y a las 15:00 con las mesas reservadas de cada servicio. Todas las stories llevan el adhesivo de enlace a la reserva de mesa con ese día ya elegido (`?dia=` en la web). Cuanto más vacía la sala, más seguido:

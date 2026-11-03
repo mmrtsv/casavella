@@ -1,5 +1,5 @@
 {
-  "versionCode": 37,
-  "version": "2.35",
-  "notes": "Més fotos noves del restaurant i de les habitacions a les plantilles d'Instagram"
+  "versionCode": 38,
+  "version": "2.36",
+  "notes": "Si un menú no es pot desar, diu què falta, i les stories segueixen la data d'inici de la promo."
 }

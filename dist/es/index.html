@@ -2526,6 +2526,8 @@ const capFirst = t => t.charAt(0).toUpperCase() + t.slice(1);
 const atLabel = at => `${capFirst(dayLabel(at.slice(0, 10), true))}, ${clock(at.slice(11, 16))}`;
 // Which openings have room for the party, from the server; until it answers (or in the review preview), all of them
 let full = new Set(), openSeq = 0;
+// ?dia=2026-12-31T21:00: the opening a menu's story links to, picked when the page opens if it still has room
+const WANT_AT = new URLSearchParams(location.search).get('dia') || '';
 const openings = () => TABLES.open.filter(at => at.slice(0, 10) >= iso(new Date()) && !full.has(at));
 const topenPick = makeSelect(TF.open, () => openings().map(at => ({ value: at, text: atLabel(at) })));
 $('topenList').classList.add('long');
@@ -2543,7 +2545,7 @@ function tableError(d) {
   return tr('Ara mateix no la podem reservar en línia.', 'Ahora mismo no la podemos reservar en línea.', "We can't book it online right now.") + ' ' + TABLE_CONTACT;
 }
 async function loadOpenings() {
-  const n = TF.people.value, keep = TF.open.value, seq = ++openSeq;
+  const n = TF.people.value, keep = TF.open.value || WANT_AT, seq = ++openSeq;
   tnote.textContent = '';
   if (n === 'more') { tnote.textContent = tr(`Per a grups de més de ${diners(TABLES.maxParty)}, parlem-ne.`, `Para grupos de más de ${diners(TABLES.maxParty)}, hablemos.`, `For groups of more than ${diners(TABLES.maxParty)}, let's talk.`) + ' ' + TABLE_CONTACT; return; }
   let res = null;

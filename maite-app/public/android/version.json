@@ -1,5 +1,5 @@
 {
-  "versionCode": 39,
-  "version": "2.37",
-  "notes": "Els menús a mig fer queden com a esborrany: en sortir, Maite pregunta si el vols desar, i surten a Menús per continuar-los."
+  "versionCode": 40,
+  "version": "2.38",
+  "notes": "El missatge de WhatsApp del menú diu sempre l'hora"
 }

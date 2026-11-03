@@ -91,7 +91,7 @@ El botó «Reservar taula» del restaurant obre `#taula`: l'hoste tria un dels d
 - `GET /api/table?people=…`: els dies oberts que vénen i si n'hi ha lloc per a aquell grup.
 - `POST /api/table`: torna a comprovar les places, escriu la taula al calendari del restaurant i envia la confirmació a l'hoste i un avís a la casa.
 
-El restaurant és tancat si no s'obre. A Maite (Restaurant, Dies oberts) s'hi afegeixen els dies que obre, cada un amb la seva hora (per exemple, el 31 de desembre a les 21:00). També hi ha les places de cada dia obert (per defecte, 15), el grup més gran que es pot reservar a la web (els més grans truquen) i les hores d'antelació. Es desa a KV amb la resta de normes. Sense cap dia obert, la pàgina ho diu i dona el telèfon.
+A la portada, sota el restaurant, surten els quatre pròxims dies oberts; tocant-ne un s'obre la reserva de taula amb aquell dia triat. El restaurant és tancat si no s'obre. A Maite (Restaurant, Dies oberts) s'hi afegeixen els dies que obre, cada un amb la seva hora (per exemple, el 31 de desembre a les 21:00). També hi ha les places de cada dia obert (per defecte, 15), el grup més gran que es pot reservar a la web (els més grans truquen) i les hores d'antelació. Es desa a KV amb la resta de normes. Sense cap dia obert, la pàgina ho diu i dona el telèfon.
 
 El botó «Organitzar un esdeveniment» obre `#esdeveniment`, per a qui vol un dia que no és a la llista: l'hoste diu quantes persones (de 8 a 16) i què li agradaria, amb el nom, el correu i el telèfon. No porta dia. `functions/api/event.js` ho envia a info@casavellarural.com (respondre-hi li arriba a l'hoste) i l'hoste rep una còpia. No s'escriu al calendari: la casa li proposa dia, hora i menú. Sense la clau de Resend, la pàgina dona el telèfon.
 

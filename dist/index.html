@@ -451,6 +451,7 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .rest-days { display: grid; gap: 10px; }
 .rest-days a { color: inherit; text-decoration-color: var(--line); text-underline-offset: 4px; }
 .rest-days a:hover { color: var(--basil); }
+.rest-gallery { margin-top: clamp(48px, 7vw, 88px); }
 .ev-intro { color: var(--muted); max-width: 60ch; margin: 0 0 28px; }
 .tablepage .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 @media (max-width: 900px) { .bp-grid { grid-template-columns: 1fr; } .bp-sum { position: static; order: -1; } }
@@ -1032,7 +1033,7 @@ footer { padding-bottom: 32px !important; }
       </article>
       <article class="stay" id="les-vinyes">
         <button class="stay-cover" type="button" data-stay="les-vinyes" aria-label="Veure les fotos de Les Vinyes">
-          <span class="photo"><img src="/img/vinyes-habitacio.jpg" alt="" loading="lazy"></span>
+          <span class="photo"><img src="/img/vinyes-balco.jpg" alt="" loading="lazy"></span>
           <img class="plaque" src="/img/nom-les-vinyes.png" alt="Habitació Les Vinyes" loading="lazy">
           <span class="count">Veure fotos</span>
         </button>
@@ -1105,7 +1106,7 @@ footer { padding-bottom: 32px !important; }
         <h3>Dies oberts, cada un amb el seu menú</h3>
         <p>El restaurant obre dies concrets, cada un amb la seva hora i el seu menú. Els anunciem aquí i a Instagram, i la taula es reserva des d'aquesta pàgina.</p>
         <ul class="amen">
-          <li>Sala de pedra i bigues de fusta</li>
+          <li>Sala de pedra, bigues de fusta i llar de foc</li>
           <li>Terrassa per als dies de bon temps</li>
           <li>Vins i caves del Penedès</li>
           <li>Dinars i celebracions per a grups de 8 a 16</li>
@@ -1114,13 +1115,22 @@ footer { padding-bottom: 32px !important; }
           <span class="label">Pròxims dies oberts</span>
           <ul class="amen" id="restDaysList"></ul>
         </div>
-        <button class="btn" id="restPhotos" type="button">Veure les fotos del restaurant</button>
       </div>
       <div class="inside-photos" data-set="rest">
         <button class="a" data-i="0" aria-label="Ampliar foto"><div class="photo"><img src="/img/restaurant-sala.jpg" alt="Sala del restaurant amb una columna de pedra, bigues de fusta i taules per a dos" loading="lazy"></div></button>
         <button class="b" data-i="1" aria-label="Ampliar foto"><div class="photo"><img src="/img/restaurant-plat.jpg" alt="Peix blau amb olives, cogombrets i oli d'herbes" loading="lazy"></div></button>
         <button class="c" data-i="2" aria-label="Ampliar foto"><div class="photo"><img src="/img/restaurant-targeta.jpg" alt="La targeta de La Casa Vella sobre un tros d'escorça" loading="lazy"></div></button>
       </div>
+    </div>
+    <div class="gallery rest-gallery" data-set="rest">
+      <button class="g1" data-i="0" aria-label="Ampliar foto"><div class="photo"><img src="/img/restaurant-barra-2.jpg" alt="La barra del restaurant i la sala, amb les cadires de pell i les làmpades de vímet" loading="lazy"></div></button>
+      <button class="g2" data-i="1" aria-label="Ampliar foto"><div class="photo"><img src="/img/restaurant-sala-2.jpg" alt="Taules de fusta de la sala davant de la barra" loading="lazy"></div></button>
+      <button class="g3" data-i="2" aria-label="Ampliar foto"><div class="photo"><img src="/img/restaurant-plat-3.jpg" alt="Plat de peix blau sobre la barra de fusta" loading="lazy"></div></button>
+      <button class="g4" data-i="3" aria-label="Ampliar foto"><div class="photo"><img src="/img/restaurant-llar.jpg" alt="La llar de foc de pedra de la sala" loading="lazy"></div></button>
+      <button class="g5" data-i="4" aria-label="Ampliar foto"><div class="photo"><img src="/img/restaurant-postres.jpg" alt="Crema de xocolata amb fruits secs en una copa de vidre tallat" loading="lazy"></div></button>
+      <button class="g6" data-i="5" aria-label="Ampliar foto"><div class="photo"><img src="/img/restaurant-guitarra.jpg" alt="Una guitarra penjada a la paret i un gerro amb buguenvíl·lia" loading="lazy"></div></button>
+      <button class="g7" data-i="6" aria-label="Ampliar foto"><div class="photo"><img src="/img/restaurant-vins.jpg" alt="Ampolles de vi al prestatge del restaurant" loading="lazy"></div></button>
+      <button class="g8" data-i="7" aria-label="Ampliar foto"><div class="photo"><img src="/img/restaurant-segell.jpg" alt="El segell de La Casa Vella a la barra" loading="lazy"></div></button>
     </div>
   </div>
 </section>
@@ -1171,7 +1181,7 @@ footer { padding-bottom: 32px !important; }
       <button class="g1" data-i="0" aria-label="Ampliar foto"><div class="photo"><img src="/img/escala-entrada.jpg" alt="Escala de rajola i entrada de la casa" loading="lazy"></div></button>
       <button class="g2" data-i="1" aria-label="Ampliar foto"><div class="photo"><img src="/img/montserrat-vinyes.jpg" alt="Vinyes amb Montserrat al fons" loading="lazy"></div></button>
       <button class="g3" data-i="2" aria-label="Ampliar foto"><div class="photo"><img src="/img/rotul.jpg" alt="Rètol de fusta de La Casa Vella sobre la porta" loading="lazy"></div></button>
-      <button class="g4" data-i="3" aria-label="Ampliar foto"><div class="photo"><img src="/img/llibre.jpg" alt="Llibre de La Casa Vella sobre una màquina de cosir antiga" loading="lazy"></div></button>
+      <button class="g4" data-i="3" aria-label="Ampliar foto"><div class="photo"><img src="/img/escala-llibres.jpg" alt="Llibres antics a l'escala, amb el de La Casa Vella" loading="lazy"></div></button>
       <button class="g5" data-i="4" aria-label="Ampliar foto"><div class="photo"><img src="/img/terrassa.jpg" alt="Terrassa amb taula i cadires blanques al costat de la casa" loading="lazy"></div></button>
       <button class="g6" data-i="5" aria-label="Ampliar foto"><div class="photo"><img src="/img/escala-barometre.jpg" alt="Baròmetre antic de fusta a l'escala" loading="lazy"></div></button>
       <button class="g7" data-i="6" aria-label="Ampliar foto"><div class="photo"><img src="/img/rebedor.jpg" alt="Rebedor amb terra de toves i porta al carrer" loading="lazy"></div></button>
@@ -1456,15 +1466,23 @@ const I18N = { es: {
 "A la planta baixa us espera el nostre restaurant: un espai de llum càlida, pedra i fusta on començar el dia amb un bon cafè i acabar-lo amb una copa de vi del Penedès.": "En la planta baja os espera nuestro restaurante: un espacio de luz cálida, piedra y madera donde empezar el día con un buen café y acabarlo con una copa de vino del Penedès.",
 "Quan arriba la temporada, la terrassa s'omple amb l'olor dels calçots a la brasa. És el racó on sempre hi ha algú de la família, a punt de recomanar-vos rutes i racons de la zona.": "Cuando llega la temporada, la terraza se llena con el olor de los calçots a la brasa. Es el rincón donde siempre hay alguien de la familia, a punto para recomendaros rutas y rincones de la zona.",
 "Reservar taula": "Reservar mesa",
+"Llibres antics a l'escala, amb el de La Casa Vella": "Libros antiguos en la escalera, con el de La Casa Vella",
+"El segell de La Casa Vella a la barra": "El sello de La Casa Vella en la barra",
+"Ampolles de vi al prestatge del restaurant": "Botellas de vino en el estante del restaurante",
+"Crema de xocolata amb fruits secs en una copa de vidre tallat": "Crema de chocolate con frutos secos en una copa de cristal tallado",
+"Plat de peix blau sobre la barra de fusta": "Plato de pescado azul sobre la barra de madera",
+"Una guitarra penjada a la paret i un gerro amb buguenvíl·lia": "Una guitarra colgada en la pared y un jarrón con buganvilla",
+"La llar de foc de pedra de la sala": "La chimenea de piedra de la sala",
+"Taules de fusta de la sala davant de la barra": "Mesas de madera de la sala frente a la barra",
+"La barra del restaurant i la sala, amb les cadires de pell i les làmpades de vímet": "La barra del restaurante y la sala, con los taburetes de piel y las lámparas de mimbre",
+"Sala de pedra, bigues de fusta i llar de foc": "Sala de piedra, vigas de madera y chimenea",
 "La cuina": "La cocina",
 "Dies oberts, cada un amb el seu menú": "Días abiertos, cada uno con su menú",
 "El restaurant obre dies concrets, cada un amb la seva hora i el seu menú. Els anunciem aquí i a Instagram, i la taula es reserva des d'aquesta pàgina.": "El restaurante abre días concretos, cada uno con su hora y su menú. Los anunciamos aquí y en Instagram, y la mesa se reserva desde esta página.",
-"Sala de pedra i bigues de fusta": "Sala de piedra y vigas de madera",
 "Terrassa per als dies de bon temps": "Terraza para los días de buen tiempo",
 "Vins i caves del Penedès": "Vinos y cavas del Penedès",
 "Dinars i celebracions per a grups de 8 a 16": "Comidas y celebraciones para grupos de 8 a 16",
 "Pròxims dies oberts": "Próximos días abiertos",
-"Veure les fotos del restaurant": "Ver las fotos del restaurante",
 "Restaurant de La Casa Vella": "Restaurante de La Casa Vella",
 "Sala del restaurant amb una columna de pedra, bigues de fusta i taules per a dos": "Sala del restaurante con una columna de piedra, vigas de madera y mesas para dos",
 "Peix blau amb olives, cogombrets i oli d'herbes": "Pescado azul con aceitunas, pepinillos y aceite de hierbas",
@@ -1695,15 +1713,23 @@ const I18N = { es: {
 "A la planta baixa us espera el nostre restaurant: un espai de llum càlida, pedra i fusta on començar el dia amb un bon cafè i acabar-lo amb una copa de vi del Penedès.": "Our restaurant is on the ground floor: a space of warm light, stone and wood to start the day with a good coffee and end it with a glass of Penedès wine.",
 "Quan arriba la temporada, la terrassa s'omple amb l'olor dels calçots a la brasa. És el racó on sempre hi ha algú de la família, a punt de recomanar-vos rutes i racons de la zona.": "In season, the terrace fills with the smell of calçots on the grill. It's the corner where there's always someone from the family, ready to suggest routes and places nearby.",
 "Reservar taula": "Book a table",
+"Llibres antics a l'escala, amb el de La Casa Vella": "Old books on the staircase, with La Casa Vella's own",
+"El segell de La Casa Vella a la barra": "La Casa Vella's seal on the bar",
+"Ampolles de vi al prestatge del restaurant": "Wine bottles on the restaurant shelf",
+"Crema de xocolata amb fruits secs en una copa de vidre tallat": "Chocolate cream with nuts in a cut-glass coupe",
+"Plat de peix blau sobre la barra de fusta": "A fish dish on the wooden bar",
+"Una guitarra penjada a la paret i un gerro amb buguenvíl·lia": "A guitar on the wall and a vase of bougainvillea",
+"La llar de foc de pedra de la sala": "The stone fireplace in the dining room",
+"Taules de fusta de la sala davant de la barra": "Wooden tables in the dining room, facing the bar",
+"La barra del restaurant i la sala, amb les cadires de pell i les làmpades de vímet": "The bar and the dining room, with leather stools and wicker lamps",
+"Sala de pedra, bigues de fusta i llar de foc": "A dining room of stone and wooden beams, with a fireplace",
 "La cuina": "The kitchen",
 "Dies oberts, cada un amb el seu menú": "Set days, each with its own menu",
 "El restaurant obre dies concrets, cada un amb la seva hora i el seu menú. Els anunciem aquí i a Instagram, i la taula es reserva des d'aquesta pàgina.": "The restaurant opens on set days, each with its own time and menu. We announce them here and on Instagram, and you book your table from this page.",
-"Sala de pedra i bigues de fusta": "A dining room of stone and wooden beams",
 "Terrassa per als dies de bon temps": "A terrace for the good-weather days",
 "Vins i caves del Penedès": "Wines and cavas from the Penedès",
 "Dinars i celebracions per a grups de 8 a 16": "Lunches and celebrations for groups of 8 to 16",
 "Pròxims dies oberts": "Next open days",
-"Veure les fotos del restaurant": "See the restaurant photos",
 "Restaurant de La Casa Vella": "La Casa Vella restaurant",
 "Sala del restaurant amb una columna de pedra, bigues de fusta i taules per a dos": "The dining room with a stone column, wooden beams and tables for two",
 "Peix blau amb olives, cogombrets i oli d'herbes": "Oily fish with olives, gherkins and herb oil",
@@ -2935,21 +2961,23 @@ document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click'
 
 // Lightbox: each photo group opens its full set
 const ALL = ['figarot-llit', 'vinyes-habitacio', 'apt-cuina-2', 'escala-entrada', 'restaurant-sala', 'restaurant-plat', 'restaurant-barra', 'terrassa', 'rebedor', 'rotul', 'llibre', 'gerro', 'mirall', 'escala-barometre', 'tirador', 'escala', 'rajola', 'rajola-flor',
-  'vinyes-llit', 'vinyes-bany', 'vinyes-llum', 'figarot-balco', 'figarot-escriptori', 'figarot-placa',
+  'vinyes-llit', 'vinyes-bany', 'vinyes-llum', 'figarot-balco', 'figarot-escriptori', 'figarot-placa', 'vinyes-balco', 'figarot-rajola', 'escala-llibres', 'escala-mural', 'restaurant-barra-2', 'restaurant-llar',
   'apt-sala-2', 'apt-cuina', 'apt-dormitori-3', 'apt-bany', 'apt-sala', 'apt-cuina-detall', 'apt-dormitori-2', 'apt-passadis', 'apt-dormitori-4', 'apt-detall-rosa', 'apt-dormitori-1', 'apt-tovalloles'];
 const SETS = { all: ALL.map(n => [n, 'La Casa Vella']) };
-const REST = ['restaurant-sala', 'restaurant-plat', 'restaurant-targeta', 'restaurant-oli', 'restaurant-barra', 'restaurant-plat-2', 'restaurant-barra-bn', 'terrassa', 'terrassa-taula'];
+const REST = ['restaurant-barra-2', 'restaurant-sala-2', 'restaurant-plat-3', 'restaurant-llar', 'restaurant-postres', 'restaurant-guitarra', 'restaurant-vins', 'restaurant-segell', 'restaurant-sala', 'restaurant-plat', 'restaurant-targeta', 'restaurant-xocolata', 'restaurant-oli', 'restaurant-taula', 'restaurant-barra', 'restaurant-plat-dalt', 'restaurant-radio', 'restaurant-plat-2', 'restaurant-barra-bn', 'terrassa', 'terrassa-taula'];
 SETS.rest = REST.map(n => [n, T('Restaurant de La Casa Vella')]);
 const APT = ['apt-sala-2', 'apt-cuina', 'apt-cuina-2', 'apt-dormitori-3', 'apt-bany', 'apt-sala', 'apt-cuina-detall', 'apt-cuina-3', 'apt-dormitori-2', 'apt-passadis', 'apt-dormitori-4', 'apt-detall-rosa', 'apt-dormitori-1', 'apt-cuina-4', 'apt-tovalloles', 'apt-passadis-2', 'apt-rajola'];
 const STAY_SETS = {
   'montserrat': APT,
   'la-pineda': ['apt-dormitori-3', 'apt-dormitori-2', 'apt-sala', 'apt-cuina-detall', 'apt-cuina-3', 'apt-bany', 'apt-passadis', 'apt-sala-2', 'apt-cuina', 'apt-cuina-2', 'apt-dormitori-4', 'apt-dormitori-1', 'apt-cuina-4', 'apt-tovalloles', 'apt-detall-rosa', 'apt-passadis-2', 'apt-rajola'],
-  'les-vinyes': ['vinyes-habitacio', 'vinyes-llit', 'vinyes-finestra', 'vinyes-entrada', 'vinyes-bany', 'vinyes-llum', 'vinyes-calaixera', 'vinyes-cobrellit', 'vinyes-mirall', 'vinyes-llit-finestra', 'vinyes-rosa'],
-  'figarot': ['figarot-llit', 'figarot-capcal', 'figarot-balco', 'figarot-escriptori', 'figarot-tauleta', 'figarot-bigues', 'figarot-arbre', 'figarot-placa'],
+  'les-vinyes': ['vinyes-balco', 'vinyes-llit-balco', 'vinyes-habitacio', 'vinyes-teulades', 'vinyes-llit', 'vinyes-bany-obert', 'vinyes-finestra', 'vinyes-entrada', 'vinyes-bany', 'vinyes-llum', 'vinyes-habitacio-2', 'vinyes-calaixera', 'vinyes-cobrellit', 'vinyes-mirall', 'vinyes-llit-finestra', 'vinyes-rosa'],
+  'figarot': ['figarot-llit', 'figarot-sol', 'figarot-capcal', 'figarot-balco', 'figarot-rajola', 'figarot-escriptori', 'figarot-tauleta', 'figarot-bigues', 'figarot-arbre', 'figarot-placa'],
 };
 const STAY_NAMES = { 'montserrat': T('Apartament Montserrat'), 'la-pineda': T('Apartament La Pineda'), 'les-vinyes': T('Habitació Les Vinyes'), 'figarot': T('Habitació Figarot') };
 for (const k in STAY_SETS) SETS['stay-' + k] = STAY_SETS[k].map(n => [n, STAY_NAMES[k]]);
-SETS.gal = [...document.querySelectorAll('#gallery img')].map(i => [i.getAttribute('src').slice(4, -4), i.alt]);
+// A photo's name from its src: img/rotul.jpg here, /img/rotul.jpg in the built pages
+const photoName = src => src.replace(/^.*\//, '').replace(/\.jpg$/, '');
+SETS.gal = [...document.querySelectorAll('#gallery img')].map(i => [photoName(i.getAttribute('src')), i.alt]);
 const lb = document.getElementById('lightbox'), lbImg = document.getElementById('lbImg'), lbCount = document.getElementById('lbCount');
 let set = [], cur = 0, opener = null;
 function show(i) {
@@ -2959,16 +2987,13 @@ function show(i) {
 }
 document.querySelectorAll('[data-set]').forEach(group => group.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
   set = SETS[group.dataset.set]; opener = b;
-  const n = b.querySelector('img').getAttribute('src').slice(4, -4), i = set.findIndex(x => x[0] === n); show(i < 0 ? 0 : i); lb.hidden = false; document.getElementById('lbClose').focus();
+  const n = photoName(b.querySelector('img').getAttribute('src')), i = set.findIndex(x => x[0] === n); show(i < 0 ? 0 : i); lb.hidden = false; document.getElementById('lbClose').focus();
 })));
 document.querySelectorAll('[data-stay]').forEach(b => b.addEventListener('click', () => {
   set = SETS['stay-' + b.dataset.stay]; opener = b; show(0); lb.hidden = false; document.getElementById('lbClose').focus();
 }));
 document.getElementById('allPhotos').addEventListener('click', e => {
   set = SETS.all; opener = e.currentTarget; show(0); lb.hidden = false; document.getElementById('lbClose').focus();
-});
-document.getElementById('restPhotos').addEventListener('click', e => {
-  set = SETS.rest; opener = e.currentTarget; show(0); lb.hidden = false; document.getElementById('lbClose').focus();
 });
 document.getElementById('lbClose').onclick = () => { lb.hidden = true; opener && opener.focus(); };
 document.getElementById('lbPrev').onclick = () => show(cur - 1);

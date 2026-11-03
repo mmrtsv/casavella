@@ -1355,7 +1355,8 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
         val r = rowsOf(values, open)
         editing = pack; m = withRows(values, r); rows = r; own = null; copy = data.copies[p.id]; step = "menu"
         // The post without a program: the promo's start it was saved with
-        post = if (p.schedule == null && values.promo.length >= 16) Out("later", values.promo.take(10), values.promo.drop(11).take(5)) else was(p, newPost); story = was(pack.story, newStory); storyMenu = was(pack.storyMenu, newStoryMenu)
+        // The promo always has a start: a post saved without one starts tomorrow, to change
+        post = (if (p.schedule == null && values.promo.length >= 16) Out("later", values.promo.take(10), values.promo.drop(11).take(5)) else was(p, newPost)).let { if (it.mode == "save") newPost else it }; story = was(pack.story, newStory); storyMenu = was(pack.storyMenu, newStoryMenu)
         withStory = pack.story != null; withStoryMenu = pack.storyMenu != null
     }
     // A menu post opened from Publicar or Dies oberts, or a new menu on the day picked in Dies oberts
@@ -1366,8 +1367,8 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
     }
 
     @Composable
-    fun OutFields(x: Out, change: (Out) -> Unit) {
-        Segmented(listOf("later" to "Programa", "now" to "Ara", "save" to "Més endavant"), x.mode, { change(x.copy(mode = it)) }, Modifier.padding(top = 8.dp))
+    fun OutFields(x: Out, change: (Out) -> Unit, withSave: Boolean = true) {
+        Segmented(listOf("later" to "Programa", "now" to "Ara") + if (withSave) listOf("save" to "Més endavant") else emptyList(), x.mode, { change(x.copy(mode = it)) }, Modifier.padding(top = 8.dp))
         if (x.mode == "later") Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Bottom) {
             DateField("Dia", x.date, { change(x.copy(date = it)) }, Modifier.weight(1f), min = TODAY)
             Field("Hora", x.time, { v -> change(x.copy(time = v.filter { it.isDigit() || it == ':' }.take(5))) }, Modifier.width(110.dp), type = KeyboardType.Number, error = x.at == null)
@@ -1447,14 +1448,12 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
         else -> "per publicar"
     }
 
-    if (!making) {
-        Card(Modifier.fillMaxWidth()) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Menús", style = Type.base, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                Btn("Nou menú", { reset(); making = true }, icon = R.drawable.ic_plus)
-            }
-            if (list.isEmpty()) { Divider(); Muted("Encara no hi ha cap menú.", Modifier.padding(16.dp)) }
-            list.forEach { p ->
+    // In marxa: the menus whose last day hasn't gone by (and older ones without days); the rest, under Menús passats
+    fun endOf(p: SocialPost) = menuValues(p)?.let { it.until.ifEmpty { it.from } }.orEmpty()
+    val running = list.filter { endOf(it).isEmpty() || endOf(it) >= TODAY }
+    val past = list.filter { it !in running }.sortedByDescending { endOf(it) }
+    @Composable
+    fun MenuRow(p: SocialPost, past: Boolean) {
                 val t = byId.getValue(p.tpl); val pack = packOf(p); val st = pack.story; val sm = pack.storyMenu; val mv = menuValues(p)
                 val title = mv?.title?.takeIf { it.isNotBlank() } ?: listOfNotNull(p.texts?.getOrNull(1), p.texts?.getOrNull(2)).filter { it.isNotBlank() }.joinToString(" ").ifEmpty { t.title }
                 Divider()
@@ -1469,7 +1468,7 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                         sm?.let { Text("Story del menú, ${status(it)}", style = Type.xs, color = if (it.schedule?.error != null) T.danger else T.muted, maxLines = 1) }
                         p.whatsapp?.let { Text("Enviat per WhatsApp el ${dayMonth(localDayOf(it.at))}", style = Type.xs, color = T.muted, maxLines = 1) }
                     }
-                    mv?.let { m ->
+                    if (!past) mv?.let { m ->
                         var wa by remember { mutableStateOf(false) }
                         IconBtn(R.drawable.ic_message_circle, "Envia per WhatsApp", {
                             wa = true
@@ -1494,7 +1493,20 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                         }
                     })
                 }
+    }
+
+    if (!making) {
+        Card(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Menús", style = Type.base, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Btn("Nou menú", { reset(); making = true }, icon = R.drawable.ic_plus)
             }
+            if (running.isEmpty()) { Divider(); Muted("Cap menú en marxa.", Modifier.padding(16.dp)) }
+            running.forEach { MenuRow(it, false) }
+        }
+        if (past.isNotEmpty()) Card(Modifier.fillMaxWidth()) {
+            Text("Menús passats", style = Type.base, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(16.dp))
+            past.forEach { MenuRow(it, true) }
         }
         return
     }
@@ -1571,11 +1583,11 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                     // The promo starts with the post, and its two stories go out with it (the menu's a few minutes after)
                     if (!postDone) Column {
                         Text("Quan comença la promo", style = Type.sm, fontWeight = FontWeight.SemiBold)
-                        OutFields(post) { x ->
+                        OutFields(post, { x ->
                             post = x
                             if (!storyDone) story = x
                             if (!storyMenuDone) storyMenu = x.copy(time = later(x.time, 5))
-                        }
+                        }, withSave = false)
                     }
                     if (live && postDone) StoryWhen("Story de la portada", withStory, story, { story = it }, storyDone)
                     if (live && postDone) StoryWhen("Story del menú", withStoryMenu, storyMenu, { storyMenu = it }, storyMenuDone)

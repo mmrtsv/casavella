@@ -606,7 +606,9 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
     const start = !p.schedule && values.promo ? { when: 'later' as const, date: values.promo.slice(0, 10), time: values.promo.slice(11, 16) } : null;
     const r = rowsOf(values, open);
     setEditing({ post: p, story: st, storyMenu: sm }); setM(withRows(values, r)); setRowsOnly(r); setOwn(null); setCopy(data.copies[p.id] ?? null); setStep('menu');
-    setPost(start || was(p, post)); setStory({ on: !!st, ...was(st, story) }); setStoryMenu({ on: !!sm, ...was(sm, storyMenu) });
+    // The promo always has a start: a post saved without one starts tomorrow, to change
+    const before = start || was(p, post);
+    setPost(before.when === 'save' ? { when: 'later', date: tomorrow, time: '19:00' } : before); setStory({ on: !!st, ...was(st, story) }); setStoryMenu({ on: !!sm, ...was(sm, storyMenu) });
     top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   // A menu post opened from Publicar or Dies oberts, or a new menu on the day picked in Dies oberts
@@ -670,11 +672,11 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
     if (!storyDone) setStory(s => ({ ...s, ...x }));
     if (!storyMenuDone) setStoryMenu(s => ({ ...s, ...x, time: later(x.time, 5) }));
   };
-  const whenFields = (label: string, x: When2, change: (x: When2) => void) => (
+  const whenFields = (label: string, x: When2, change: (x: When2) => void, choices = OUT) => (
     <div className="space-y-2">
       <ToggleButtonGroup aria-label={label} selectionMode="single" disallowEmptySelection selectedKeys={new Set([x.when])}
         onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) change({ ...x, when: v as Out }); }} size="sm">
-        {OUT.map(w => <ToggleButton key={w.id} id={w.id}>{w.label}</ToggleButton>)}
+        {choices.map(w => <ToggleButton key={w.id} id={w.id}>{w.label}</ToggleButton>)}
       </ToggleButtonGroup>
       {x.when === 'later' && (
         <div className="flex flex-wrap items-end gap-3">
@@ -731,6 +733,31 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
 
   // The menus made here, newest first, one row per pack (its post, and its stories)
   const list = data.posts.filter(p => p.menu && !p.pack && byId.has(p.tpl)).sort((a, b) => b.at.localeCompare(a.at));
+  // In marxa: the menus whose last day hasn't gone by (and older ones without days); the rest, under Menús passats
+  const endOf = (p: Post) => { const v = menuValues(p); return v ? v.until || v.from : ''; };
+  const running = list.filter(p => !endOf(p) || endOf(p) >= today), past = list.filter(p => !running.includes(p)).sort((a, b) => endOf(b).localeCompare(endOf(a)));
+  const menuRow = (p: Post, past: boolean) => {
+              const t = byId.get(p.tpl)!, { story: st, storyMenu: sm } = packOf(data, p), mv = menuValues(p);
+              const title = mv?.title || [p.texts?.[1], p.texts?.[2]].filter(Boolean).join(' ') || t.title;
+              return (
+                <li key={p.id} className="flex items-center gap-3 p-3 sm:px-5">
+                  <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className={`${p.story ? 'aspect-[9/16]' : 'aspect-[3/4]'} w-11 shrink-0 rounded-md`} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold">{title}</div>
+                    {mv?.from && <div className="truncate text-xs text-muted">{datesText(mv.from, mv.until)}{mv.services?.length ? `, ${mv.services.length} ${mv.services.length === 1 ? 'dia' : 'dies'}` : ''}</div>}
+                    <div className={`truncate text-xs ${p.schedule?.error ? 'text-danger' : 'text-muted'}`}>{p.story ? 'Story' : 'Post'}, {status(p)}</div>
+                    {st && <div className={`truncate text-xs ${st.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story de la portada, {status(st)}</div>}
+                    {sm && <div className={`truncate text-xs ${sm.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story del menú, {status(sm)}</div>}
+                    {p.whatsapp && <div className="truncate text-xs text-muted">Enviat per WhatsApp el {day(p.whatsapp.at)}</div>}
+                  </div>
+                  {!past && menuValues(p) && <WhatsAppButton run={async () => { if (await toWhatsApp(p, menuValues(p)!)) setData((await api<{ social: Data }>('plan', { method: 'PUT', body: { whatsapp: p.id } })).social); }} />}
+                  {mv && <Button size="sm" variant="secondary" onPress={() => { edit(p); setMaking(true); }}><Pencil size={15} />Edita</Button>}
+                  {p.published?.url && <a href={p.published.url} target="_blank" rel="noopener" aria-label="Obre a Instagram" className="grid size-8 shrink-0 place-items-center rounded-full outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={16} /></a>}
+                  <DownloadButton label={`Descarrega ${title}`} run={async () => { await downloadPost(p); if (st) await downloadPost(st); if (sm) await downloadPost(sm); }} />
+                  {!p.published && <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${title}`} onPress={() => remove(p)}><X size={16} /></Button>}
+                </li>
+              );
+  };
   const status = (x: Post) => x.published ? `publicat el ${day(x.published.at)}` : x.schedule ? (x.schedule.error ? "no s'ha pogut publicar" : `programat: ${short(x.schedule.at)}`) : 'per publicar';
   async function remove(p: Post) {
     try {
@@ -827,7 +854,7 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
             </> : (
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold">Quan comença la promo</h3>
-                {whenFields('Quan comença la promo', post, promo)}
+                {whenFields('Quan comença la promo', post, promo, OUT.filter(o => o.id !== 'save'))}
               </div>
             )}
             {summary}
@@ -849,37 +876,22 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
         </section>
       </div>
       ) : (
+        <>
         <section className="card" aria-label="Menús">
           <div className="flex items-center gap-3 border-b border-separator p-4 sm:px-5">
             <h2 className="mr-auto text-base font-semibold">Menús</h2>
             <Button size="sm" onPress={startNew}><Plus size={15} />Nou menú</Button>
           </div>
-          {!list.length && <p className="p-4 text-sm text-muted sm:px-5">Encara no hi ha cap menú.</p>}
-          <ol className="divide-y divide-separator">
-            {list.map(p => {
-              const t = byId.get(p.tpl)!, { story: st, storyMenu: sm } = packOf(data, p), mv = menuValues(p);
-              const title = mv?.title || [p.texts?.[1], p.texts?.[2]].filter(Boolean).join(' ') || t.title;
-              return (
-                <li key={p.id} className="flex items-center gap-3 p-3 sm:px-5">
-                  <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className={`${p.story ? 'aspect-[9/16]' : 'aspect-[3/4]'} w-11 shrink-0 rounded-md`} />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold">{title}</div>
-                    {mv?.from && <div className="truncate text-xs text-muted">{datesText(mv.from, mv.until)}{mv.services?.length ? `, ${mv.services.length} ${mv.services.length === 1 ? 'dia' : 'dies'}` : ''}</div>}
-                    <div className={`truncate text-xs ${p.schedule?.error ? 'text-danger' : 'text-muted'}`}>{p.story ? 'Story' : 'Post'}, {status(p)}</div>
-                    {st && <div className={`truncate text-xs ${st.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story de la portada, {status(st)}</div>}
-                    {sm && <div className={`truncate text-xs ${sm.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story del menú, {status(sm)}</div>}
-                    {p.whatsapp && <div className="truncate text-xs text-muted">Enviat per WhatsApp el {day(p.whatsapp.at)}</div>}
-                  </div>
-                  {menuValues(p) && <WhatsAppButton run={async () => { if (await toWhatsApp(p, menuValues(p)!)) setData((await api<{ social: Data }>('plan', { method: 'PUT', body: { whatsapp: p.id } })).social); }} />}
-                  {mv && <Button size="sm" variant="secondary" onPress={() => { edit(p); setMaking(true); }}><Pencil size={15} />Edita</Button>}
-                  {p.published?.url && <a href={p.published.url} target="_blank" rel="noopener" aria-label="Obre a Instagram" className="grid size-8 shrink-0 place-items-center rounded-full outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={16} /></a>}
-                  <DownloadButton label={`Descarrega ${title}`} run={async () => { await downloadPost(p); if (st) await downloadPost(st); if (sm) await downloadPost(sm); }} />
-                  {!p.published && <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${title}`} onPress={() => remove(p)}><X size={16} /></Button>}
-                </li>
-              );
-            })}
-          </ol>
+          {!running.length && <p className="p-4 text-sm text-muted sm:px-5">Cap menú en marxa.</p>}
+          <ol className="divide-y divide-separator">{running.map(p => menuRow(p, false))}</ol>
         </section>
+        {past.length > 0 && (
+          <section className="card" aria-label="Menús passats">
+            <h2 className="border-b border-separator p-4 text-base font-semibold sm:px-5">Menús passats</h2>
+            <ol className="divide-y divide-separator">{past.map(p => menuRow(p, true))}</ol>
+          </section>
+        )}
+        </>
       )}
     </div>
   );

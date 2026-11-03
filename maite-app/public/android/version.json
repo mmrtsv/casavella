@@ -1,5 +1,5 @@
 {
-  "versionCode": 32,
-  "version": "2.30",
-  "notes": "La data d'inici de la promo d'un menú surt sempre, encara que Instagram no estigui connectat."
+  "versionCode": 35,
+  "version": "2.33",
+  "notes": "Els menús es fan com un esdeveniment, els passats van a part, i a Dies oberts cada dia diu de quin menú és o en pots fer un."
 }

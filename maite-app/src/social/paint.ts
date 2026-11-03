@@ -5,7 +5,7 @@ import { TEMPLATES, type Template } from './templates';
 export const byId = new Map(TEMPLATES.map(t => [t.id, t]));
 
 const S = '/maite/social/';
-const PHOTOS = ['apt-cuina-detall', 'bedorc-capvespre', 'montserrat-vinyes', 'figarot-llit', 'vinyes-llit-finestra', 'restaurant-sala', 'restaurant-oli', 'hab-armari', 'mirall', 'gerro', 'llibre', 'rotul', 'rebedor', 'escala-entrada', 'restaurant-barra', 'terrassa', 'rajola-flor', 'figarot-balco', 'restaurant-plat-2', 'historia-carrer', 'apt-cuina-2', 'bedorc', 'restaurant-targeta', 'restaurant-postres', 'figarot-sol', 'restaurant-llar', 'vinyes-habitacio-2', 'restaurant-guitarra', 'restaurant-xocolata'].map(p => `${S}${p}.jpg`);
+const PHOTOS = ['apt-cuina-detall', 'bedorc-capvespre', 'montserrat-vinyes', 'figarot-llit', 'vinyes-llit-finestra', 'restaurant-sala', 'restaurant-oli', 'hab-armari', 'mirall', 'gerro', 'llibre', 'rotul', 'rebedor', 'escala-entrada', 'restaurant-barra', 'terrassa', 'rajola-flor', 'figarot-balco', 'restaurant-plat-2', 'historia-carrer', 'apt-cuina-2', 'bedorc', 'restaurant-targeta', 'restaurant-postres', 'figarot-sol', 'restaurant-llar', 'vinyes-habitacio-2', 'restaurant-guitarra', 'restaurant-xocolata', 'restaurant-taules', 'escala-finestreta', 'restaurant-llum', 'rajola-parquet', 'restaurant-sala-barra', 'restaurant-fulla', 'restaurant-tamboret'].map(p => `${S}${p}.jpg`);
 const QUOTES = [
   ['Murs de pedra originals, un jardí i tranquil·litat en cada racó.', 'viure-la a poc a poc'],
   ['Una casa de poble de 1898, entre vinyes i oliveres.', 'a poc a poc'],

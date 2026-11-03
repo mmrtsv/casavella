@@ -58,13 +58,26 @@ export const LIBRARY: { src: string; alt: string }[] = [
   ['rajola-flor', 'Detall de la rajola hidràulica'],
   ['historia-carrer', 'Foto antiga del carrer del Bedorc'],
   ['bedorc', 'El Bedorc entre vinyes'],
+  ['escala-barometre-bn', "El baròmetre de fusta tallada de l'escala, en blanc i negre"],
+  ['escala-finestreta', "La finestreta de l'escala, amb una pedra daurada i un salt d'aigua al fons"],
+  ['rajola-parquet', 'Rajola hidràulica gris i blanca tocant al parquet'],
+  ['restaurant-fulla', 'La planta de ferro verd a la paret del restaurant'],
+  ['restaurant-passadis', 'El passadís que porta a la sala del restaurant'],
+  ['restaurant-barra-bn', 'El frontal de la barra, de rajola en relleu, en blanc i negre'],
+  ['restaurant-sala-3', 'La sala del restaurant amb el ventilador de fusta i els llums de vímet'],
+  ['restaurant-llum', 'Un llum de vímet encès sobre les taules del restaurant'],
+  ['restaurant-sala-barra', 'La sala del restaurant des de la barra, amb els llums de vímet'],
+  ['restaurant-taules', 'Taules de fusta sota els llums negres, amb les ampolles de vi al prestatge'],
+  ['restaurant-test', 'Un test amb La Casa Vella escrit a mà i una planta, sobre una taula'],
+  ['restaurant-tamboret', 'Un tamboret de pell a la barra de rajola en relleu'],
 ].map(([p, alt]) => ({ src: `${S}${p}.jpg`, alt }));
 
 export const inLibrary = (photo: string) => LIBRARY.some(p => p.src === photo);
 
 // The photos a menu's cover can use: the restaurant, its dishes, the terrace and the land around. No rooms or apartments
 export const MENU_PHOTOS: string[] = ['restaurant-sala', 'restaurant-barra', 'restaurant-llar', 'restaurant-oli', 'restaurant-plat-2', 'restaurant-postres',
-  'restaurant-xocolata', 'restaurant-guitarra', 'restaurant-vins', 'restaurant-targeta', 'terrassa', 'rotul', 'bedorc-capvespre', 'montserrat-vinyes', 'bedorc'].map(p => `${S}${p}.jpg`);
+  'restaurant-xocolata', 'restaurant-guitarra', 'restaurant-vins', 'restaurant-targeta',
+  'restaurant-fulla', 'restaurant-passadis', 'restaurant-barra-bn', 'restaurant-sala-3', 'restaurant-llum', 'restaurant-sala-barra', 'restaurant-taules', 'restaurant-test', 'restaurant-tamboret', 'terrassa', 'rotul', 'bedorc-capvespre', 'montserrat-vinyes', 'bedorc'].map(p => `${S}${p}.jpg`);
 // The menu's styles (Menu.look): the variation of the menu slide and the menu story, as paint() draws them
 export const MENU_LOOKS = ['Fons cava', 'Fons verd fosc', 'Fons paper', 'Fons verd'];
 

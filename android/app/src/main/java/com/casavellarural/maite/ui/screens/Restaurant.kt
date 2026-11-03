@@ -390,9 +390,12 @@ private fun Openings(cfg: RestaurantSettings, onMenu: (String) -> Unit) {
                     val menu = com.casavellarural.maite.ui.social.openingMenu(a)
                     Column(Modifier.weight(1f)) {
                         Text(atLabel(a), style = Type.sm)
-                        menu?.let { Text(it.second, style = Type.xs, color = T.muted, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) }
+                        // Without a menu (once the menus are loaded): it says so, and one can be made for that day
+                        if (menu != null) Text(menu.second, style = Type.xs, color = T.muted, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        else if (Maite.social != null) Text("Sense menú", style = Type.xs, color = T.muted)
                     }
-                    menu?.let { Btn("Obre el menú", { onMenu(it.first) }, look = Look.Ghost) }
+                    if (menu != null) Btn("Obre el menú", { onMenu(menu.first) }, look = Look.Ghost)
+                    else if (Maite.social != null) Btn("Fes-hi un menú", { onMenu("new:$a") }, look = Look.Ghost, icon = R.drawable.ic_plus)
                     IconBtn(R.drawable.ic_trash_2, "Tanca ${atLabel(a)}", { open = open - a })
                 }
             }

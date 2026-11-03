@@ -336,9 +336,9 @@ function menuState(p: MenuPost) {
 function Openings({ onMenu }: { onMenu: (id: string) => void }) {
   const R = useStore(s => s.settings)!.restaurant;
   // The menu of each opening: its own services, or (older menus) the days between its first and last
-  const [menus, setMenus] = useState<MenuPost[]>([]);
+  const [menus, setMenus] = useState<MenuPost[] | null>(null);
   useEffect(() => { api<{ posts: MenuPost[] }>('social').then(d => setMenus(d.posts.filter(p => p.menu && typeof p.menu === 'object' && !p.pack && !p.story))).catch(() => {}); }, []);
-  const menuOn = (at: string) => menus.find(p => {
+  const menuOn = (at: string) => menus?.find(p => {
     const m = p.menu as Exclude<MenuPost['menu'], boolean | undefined>;
     return m.services?.length ? m.services.includes(at) : !!m.from && m.from <= at.slice(0, 10) && at.slice(0, 10) <= (m.until || m.from);
   });
@@ -378,9 +378,11 @@ function Openings({ onMenu }: { onMenu: (id: string) => void }) {
                   return <>
                     <div className="min-w-0 flex-1">
                       <div>{atLabel(a)}</div>
-                      {p && <div className="truncate text-xs text-muted">{m?.title || 'Menú'}, {menuState(p)}</div>}
+                      {p ? <div className="truncate text-xs text-muted">{m?.title || 'Menú'}, {menuState(p)}</div>
+                        : menus && <div className="text-xs text-muted">Sense menú</div>}
                     </div>
-                    {p && <Button size="sm" variant="ghost" onPress={() => onMenu(p.id)}>Obre el menú</Button>}
+                    {p ? <Button size="sm" variant="ghost" onPress={() => onMenu(p.id)}>Obre el menú</Button>
+                      : menus && <Button size="sm" variant="ghost" onPress={() => onMenu(`new:${a}`)}><Plus size={15} />Fes-hi un menú</Button>}
                   </>;
                 })()}
                 <Button isIconOnly variant="ghost" size="sm" aria-label={`Tanca ${atLabel(a)}`} onPress={() => setF(x => ({ ...x, open: x.open.filter(o => o !== a) }))}><Trash2 size={15} /></Button>

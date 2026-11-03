@@ -63,10 +63,11 @@ export type Slide = { tpl: string; v: number; photo: string; texts?: (string | n
 // story: the announcement story's own words, one per line after the first (null follows the menu). image: the menu as a JPEG, for the restaurant's booking page on the web while the menu runs.
 // link: the web address on the menu and on the stories (Instagram's API can't add a link sticker: see storyLink)
 // services: the moments it is served, each a day and a time ('2026-12-31T21:00'); saving opens the restaurant then, and from and
-// until follow them (older menus have no services)
+// until follow them (older menus have no services). promo: when its promo starts ('2026-11-20T19:00', Barcelona), which the
+// stories after it count from even when the post isn't programmed ('' for later)
 export type Menu = {
   photo: string; kicker: string; title: string; subtitle: string; dates: string; from: string; until: string; name: string; dishes: string[];
-  drinks: string; price: string; link: string; story: (string | null)[]; image: string; services?: string[];
+  drinks: string; price: string; link: string; story: (string | null)[]; image: string; services?: string[]; promo?: string;
 };
 export const MENU_DISHES = 4;
 export const MENU_EXAMPLE: Menu = {

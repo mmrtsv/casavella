@@ -57,13 +57,14 @@ const slim = x => ({ tpl: x.tpl, v: x.v, photo: x.photo, ...(x.texts.length ? { 
 // The values of a menu (catalog.ts Menu): short strings and up to six dishes. null if they don't look like it; false if none
 // from, until: its first and last day; story: the announcement story's own lines (null follows the menu); image: the menu as a
 // JPEG, which the restaurant's booking page shows while it runs (/api/settings); services: the moments it is served, each a day
-// and a time ('2026-12-31T21:00'), which open the restaurant then (Restaurant, Dies oberts) and set its first and last day
+// and a time ('2026-12-31T21:00'), which open the restaurant then (Restaurant, Dies oberts) and set its first and last day;
+// promo: when its promo starts, in Barcelona ('2026-11-20T19:00'), for the stories of lib/plan.js even when the post isn't programmed
 function menuOf(m) {
   if (m == null || m === false) return false;
   if (m === true) return true;
-  const keys = ['photo', 'kicker', 'title', 'subtitle', 'dates', 'name', 'drinks', 'price', 'link', 'from', 'until', 'image'];
+  const keys = ['photo', 'kicker', 'title', 'subtitle', 'dates', 'name', 'drinks', 'price', 'link', 'from', 'until', 'image', 'promo'];
   if (typeof m !== 'object' || keys.some(k => m[k] != null && (typeof m[k] !== 'string' || m[k].length > 300))) return null;
-  if (['from', 'until'].some(k => m[k] && !/^\d{4}-\d{2}-\d{2}$/.test(m[k])) || m.image && !PHOTO.test(m.image)) return null;
+  if (['from', 'until'].some(k => m[k] && !/^\d{4}-\d{2}-\d{2}$/.test(m[k])) || m.image && !PHOTO.test(m.image) || m.promo && !isAt(m.promo)) return null;
   const dishes = [].concat(m.dishes || []), story = [].concat(m.story || []);
   if (dishes.length > 6 || dishes.some(d => typeof d !== 'string' || d.length > 300)) return null;
   if (story.length > 6 || story.some(d => d !== null && (typeof d !== 'string' || d.length > 300))) return null;

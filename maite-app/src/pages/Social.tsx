@@ -598,9 +598,11 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
     const values = menuValues(p);
     if (!values) return;
     const { story: st, storyMenu: sm } = packOf(data, p), was = (x: Post | null, d: When2): When2 => (x?.schedule ? { when: 'later', date: ymd(new Date(x.schedule.at)), time: hour(x.schedule.at) } : { ...d, when: 'save' });
+    // The post without a program: the promo's start it was saved with
+    const start = !p.schedule && values.promo ? { when: 'later' as const, date: values.promo.slice(0, 10), time: values.promo.slice(11, 16) } : null;
     const r = rowsOf(values, open);
     setEditing({ post: p, story: st, storyMenu: sm }); setM(withRows(values, r)); setRowsOnly(r); setOwn(null); setCopy(data.copies[p.id] ?? null); setStep('cover');
-    setPost(was(p, post)); setStory({ on: !!st, ...was(st, story) }); setStoryMenu({ on: !!sm, ...was(sm, storyMenu) });
+    setPost(start || was(p, post)); setStory({ on: !!st, ...was(st, story) }); setStoryMenu({ on: !!sm, ...was(sm, storyMenu) });
     top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   // A menu post opened from Publicar
@@ -618,7 +620,9 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
       // The menu as an image for the restaurant's booking page on the web (without photo storage, the menu still saves)
       const menuSlide = p.slides[0];
       const image = await uploadPhoto(new File([await png(byId.get(menuSlide.tpl)!, menuSlide.v, menuSlide.photo, menuSlide.texts)], 'menu.png', { type: 'image/png' })).catch(() => m.image);
-      const values = { ...shown, image };
+      // When the promo starts, for the stories that follow it (also when Instagram can't program the post)
+      const now = new Date(), promo = post.when === 'later' ? `${post.date}T${post.time}` : post.when === 'now' ? `${ymd(now)}T${hour(now.toISOString())}` : '';
+      const values = { ...shown, image, promo: postDone ? m.promo || '' : promo };
       let d = data;
       const out: string[] = [];
       // One piece of the pack: made or changed (a programmed one loses its program first, as the images change), then sent out
@@ -771,25 +775,25 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
             <div className="flex justify-between"><Button size="sm" variant="ghost" onPress={() => setStep('menu')}>Enrere</Button><Button size="sm" onPress={() => setStep('out')}>Següent</Button></div>
           </>}
           {step === 'out' && <>
-            {!live && insta && <p className="text-sm text-muted">Per publicar o programar des d'aquí cal connectar el compte d'Instagram. El menú es desa i el pots descarregar.</p>}
+            {!live && insta && <p className="text-sm text-muted">Instagram no està connectat{insta.detail ? ` (${insta.detail})` : ''}: el post i les stories es desen sense programar, i els pots descarregar. La promo compta igualment des del dia que posis.</p>}
             <TextField value={caption} onChange={setCopy} fullWidth isDisabled={postDone}>
               <Label>Copy del post</Label>
-              <TextArea rows={6} />
+              <TextArea rows={14} />
             </TextField>
-            {live && (postDone ? <>
+            {postDone ? <>
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold">Post, carrusel amb el menú</h3>
                 <p className="text-sm text-muted">Ja és publicat: no es pot canviar.</p>
               </div>
-              {storyWhen('Story de la portada', story, setStory, storyDone)}
-              {storyWhen('Story del menú', storyMenu, setStoryMenu, storyMenuDone)}
+              {live && storyWhen('Story de la portada', story, setStory, storyDone)}
+              {live && storyWhen('Story del menú', storyMenu, setStoryMenu, storyMenuDone)}
             </> : (
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold">Quan comença la promo</h3>
                 {whenFields('Quan comença la promo', post, promo)}
-                <p className="text-xs text-muted">El post i les stories surten llavors. Després Maite en penja stories fins a cada dia, més sovint l'última setmana i cap quan és ple. Totes porten l'enllaç per reservar aquell dia.</p>
+                <p className="text-xs text-muted">{live ? 'El post i les stories surten llavors. ' : ''}Després Maite en penja stories fins a cada dia, més sovint l'última setmana i cap quan és ple. Totes porten l'enllaç per reservar aquell dia.</p>
               </div>
-            ))}
+            )}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <Button size="sm" variant="ghost" onPress={() => setStep('stories')}>Enrere</Button>
               <Button size="sm" isPending={busy} isDisabled={!ready || busy} onPress={save}>{busy ? <Spinner size="sm" color="current" /> : <Check size={15} />}{editing ? 'Desa els canvis' : 'Desa el menú'}</Button>

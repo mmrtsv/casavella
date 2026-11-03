@@ -1204,7 +1204,7 @@ private val menuJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = tru
 /** The values of a menu kept on its post, or null (an older one, made before they were kept) */
 private fun menuValues(p: SocialPost): Menu? = (p.menu as? kotlinx.serialization.json.JsonObject)?.let { runCatching { menuJson.decodeFromJsonElement(Menu.serializer(), it) }.getOrNull() }
 private fun Menu.body() = mapOf("photo" to photo, "kicker" to kicker, "title" to title, "subtitle" to subtitle, "dates" to dates, "from" to from, "until" to until,
-    "name" to name, "dishes" to dishes, "drinks" to drinks, "price" to price, "link" to link, "story" to story, "image" to image, "services" to services)
+    "name" to name, "dishes" to dishes, "drinks" to drinks, "price" to price, "link" to link, "story" to story, "image" to image, "services" to services, "promo" to promo)
 private fun SocialPost.isMenu() = menu != null && menu != kotlinx.serialization.json.JsonNull && menu.toString() != "false"
 
 private data class Out(val mode: String, val date: String, val time: String) {
@@ -1294,7 +1294,8 @@ private fun Menus(data: Social, toEdit: String = "", onOpened: () -> Unit = {}) 
         fun was(x: SocialPost?, d: Out) = x?.schedule?.let { Out("later", dayOfIso(it.at), hourOf(it.at)) } ?: d.copy(mode = "save")
         val r = rowsOf(values, open)
         editing = pack; m = withRows(values, r); rows = r; own = null; copy = data.copies[p.id]; step = "cover"
-        post = was(p, newPost); story = was(pack.story, newStory); storyMenu = was(pack.storyMenu, newStoryMenu)
+        // The post without a program: the promo's start it was saved with
+        post = if (p.schedule == null && values.promo.length >= 16) Out("later", values.promo.take(10), values.promo.drop(11).take(5)) else was(p, newPost); story = was(pack.story, newStory); storyMenu = was(pack.storyMenu, newStoryMenu)
         withStory = pack.story != null; withStoryMenu = pack.storyMenu != null
     }
     // A menu post opened from Publicar
@@ -1319,7 +1320,10 @@ private fun Menus(data: Social, toEdit: String = "", onOpened: () -> Unit = {}) 
             try {
                 // The menu as an image for the restaurant's booking page on the web (without photo storage, the menu still saves)
                 val image = runCatching { made.slides[0].let { s -> uploadJpeg(withContext(Dispatchers.Default) { jpeg(Renderer.full(s.tpl, s.v, s.photo, s.texts), 1440, 92) }) } }.getOrDefault(m.image)
-                val values = shown.copy(dates = datesText(m.from, m.until), image = image)
+                // When the promo starts, for the stories that follow it (also when Instagram can't program the post)
+                val now = java.time.LocalDateTime.now(BCN).withSecond(0).withNano(0)
+                val promo = when (post.mode) { "later" -> "${post.date}T${post.time}"; "now" -> now.toString().take(16); else -> "" }
+                val values = shown.copy(dates = datesText(m.from, m.until), image = image, promo = if (postDone) m.promo else promo)
                 val all = menuSlides(values, defaults.dishes)
                 val out = mutableListOf<String>()
                 var d = data
@@ -1434,17 +1438,17 @@ private fun Menus(data: Social, toEdit: String = "", onOpened: () -> Unit = {}) 
                     }
                 }
                 else -> {
-                    if (insta != null && !live) Muted("Per publicar o programar des d'aquí cal connectar el compte d'Instagram. El menú es desa i el pots descarregar.")
+                    if (insta != null && !live) Muted("Instagram no està connectat${insta?.detail?.takeIf { it.isNotEmpty() }?.let { " ($it)" } ?: ""}: el post i les stories es desen sense programar, i els pots descarregar. La promo compta igualment des del dia que posis.")
                     if (postDone) Muted("El post ja és publicat: no es pot canviar.") else Field("Copy del post", caption, { copy = it }, area = true)
                     // The promo starts with the post, and its two stories go out with it (the menu's a few minutes after)
-                    if (live && !postDone) Column {
+                    if (!postDone) Column {
                         Text("Quan comença la promo", style = Type.sm, fontWeight = FontWeight.SemiBold)
                         OutFields(post) { x ->
                             post = x
                             if (!storyDone) story = x
                             if (!storyMenuDone) storyMenu = x.copy(time = later(x.time, 5))
                         }
-                        Text("El post i les stories surten llavors. Després Maite en penja stories fins a cada dia, més sovint l'última setmana i cap quan és ple. Totes porten l'enllaç per reservar aquell dia.", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 6.dp))
+                        Text((if (live) "El post i les stories surten llavors. " else "") + "Després Maite en penja stories fins a cada dia, més sovint l'última setmana i cap quan és ple. Totes porten l'enllaç per reservar aquell dia.", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 6.dp))
                     }
                     if (live && postDone) StoryWhen("Story de la portada", withStory, story, { story = it }, storyDone)
                     if (live && postDone) StoryWhen("Story del menú", withStoryMenu, storyMenu, { storyMenu = it }, storyMenuDone)

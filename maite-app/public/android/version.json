@@ -1,5 +1,5 @@
 {
-  "versionCode": 31,
-  "version": "2.29",
-  "notes": "Els menús es fan a Restaurant > Menús: els seus dies s'obren sols i la promo comença quan dius."
+  "versionCode": 32,
+  "version": "2.30",
+  "notes": "La data d'inici de la promo d'un menú surt sempre, encara que Instagram no estigui connectat."
 }

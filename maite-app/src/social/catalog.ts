@@ -117,3 +117,61 @@ export function menuCaption(m: Menu) {
     `Reserva a ${www(m.link)}.`]
     .filter(x => x && x !== '.').join('\n\n');
 }
+
+// ---------- A menu's reminders ----------
+// One set of rules for the stories and posts that follow a menu: lib/plan.js plans them, and Restaurant › Menús › Publica
+// shows them before the menu is saved, so what the owner reads is what Maite does.
+// A service: a day and a time ('2026-12-31T21:00'), with its seats and the ones taken when known
+export type MenuService = { at: string; seats?: number; taken?: number };
+export type MenuReminder = { day: string; time: string; kind: 'story' | 'post'; variant: 'poster' | 'menu' | 'announce'; k: number; svc: MenuService };
+const dayPlus = (d: string, n: number) => new Date(Date.parse(d + 'T12:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+const fillOf = (s: MenuService) => s.seats ? (s.taken || 0) / s.seats : 0;
+// The last week before a service, from the share of seats taken: [days before, time, kind, variant]. Not at the weekly
+// plan's own times (20:30, 13:00…), so a day can have both
+export function lastWeek(fill: number, serviceTime: string): [number, string, 'story' | 'post', 'poster' | 'menu' | 'announce'][] {
+  const out: [number, string, 'story' | 'post', 'poster' | 'menu' | 'announce'][] = [];
+  if (fill >= 1) return out;
+  if (fill < 0.8) out.push([7, '21:15', 'story', 'poster'], [5, '21:15', 'story', 'menu'], [3, '21:15', 'story', 'poster']);
+  if (fill < 0.5) out.push([4, '19:45', 'post', 'announce']);
+  if (fill < 0.9) out.push([2, '21:15', 'story', 'menu'], [1, '21:15', 'story', 'poster']);
+  if (fill < 0.6) out.push([1, '13:45', 'story', 'menu']);
+  if (fill < 0.9 && serviceTime >= '17:00') out.push([0, '12:30', 'story', 'poster']);
+  return out;
+}
+// The reminders of one menu on the days [from, to), before the limits (capReminders). start: when its promo starts
+// ('2026-11-20T19:00', Barcelona; '' for none yet, and then there are none). From the day after it until the last week before
+// a service: a story every three days at 21:15, the poster and the menu in turn, for the next service while it is less than
+// 80% full. Then the last week's (lastWeek), from 12 hours after the start.
+export function menuReminders(services: MenuService[], start: string, from: string, to: string): MenuReminder[] {
+  const out: MenuReminder[] = [];
+  if (!start) return out;
+  const svcs = [...services].sort((a, b) => a.at.localeCompare(b.at));
+  for (let day = dayPlus(start.slice(0, 10), 1), i = 0; day < to; day = dayPlus(day, 3), i++) {
+    const svc = svcs.find(o => o.at.slice(0, 10) >= day);
+    if (!svc) break;
+    const k = Math.round((Date.parse(svc.at.slice(0, 10)) - Date.parse(day)) / 864e5);
+    if (day < from || k <= 7 || fillOf(svc) >= 0.8) continue;
+    out.push({ day, time: '21:15', kind: 'story', variant: i % 2 ? 'menu' : 'poster', k, svc });
+  }
+  const after = Date.parse(start.slice(0, 16) + ':00Z') + 12 * 3600e3;
+  for (const svc of svcs) {
+    for (const [k, time, kind, variant] of lastWeek(fillOf(svc), svc.at.slice(11, 16))) {
+      const day = dayPlus(svc.at.slice(0, 10), -k);
+      if (day < from || day >= to || Date.parse(`${day}T${time}:00Z`) < after) continue;
+      out.push({ day, time, kind, variant, k, svc });
+    }
+  }
+  return out;
+}
+// At most two stories a day, one feed post every four days and one reminder at a time, the nearest service first
+export function capReminders<T extends MenuReminder>(list: T[]): T[] {
+  const sorted = [...list].sort((a, b) => a.k - b.k || a.svc.at.localeCompare(b.svc.at));
+  const perDay: Record<string, number> = {}, posts: string[] = [], keep: T[] = [];
+  for (const w of sorted) {
+    if (keep.some(x => x.day === w.day && x.time === w.time)) continue;
+    if (w.kind === 'post') { if (posts.some(d => Math.abs(Date.parse(d) - Date.parse(w.day)) < 4 * 864e5)) continue; posts.push(w.day); }
+    else if ((perDay[w.day] = (perDay[w.day] || 0) + 1) > 2) continue;
+    keep.push(w);
+  }
+  return keep.sort((a, b) => (a.day + a.time).localeCompare(b.day + b.time));
+}

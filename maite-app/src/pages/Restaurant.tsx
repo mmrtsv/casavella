@@ -10,7 +10,7 @@ import { setSettings, useStore } from '../lib/store';
 import { atOf, putTable, seated, useTables } from '../lib/tables';
 import { useGuard } from '../lib/guard';
 import { ERRORS, SOURCE } from '../lib/words';
-import { takeRestaurantDay, takeRestaurantTab } from '../lib/ui';
+import { openRestaurantMenu, takeRestaurantDay, takeRestaurantTab } from '../lib/ui';
 import { Dialog } from '../parts/Sheet';
 import { Check, Choice, Field } from '../parts/fields';
 import { done, toastError } from '../parts/toast';
@@ -34,7 +34,7 @@ export default function Restaurant() {
           <Tabs.Tab id="open">Dies oberts<Tabs.Indicator /></Tabs.Tab>
         </Tabs.List></Tabs.ListContainer>
       </Tabs>
-      {tab === 'tables' ? <Tables /> : tab === 'menus' ? <MenusTab /> : tab === 'paid' ? <Paid /> : <Openings />}
+      {tab === 'tables' ? <Tables /> : tab === 'menus' ? <MenusTab /> : tab === 'paid' ? <Paid /> : <Openings onMenu={id => { openRestaurantMenu(id); setTab('menus'); }} />}
     </div>
   );
 }
@@ -320,12 +320,33 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
   );
 }
 
-function Openings() {
+// The menus made in Restaurant › Menús, as Dies oberts needs them: which days each one is on, and how its post is going
+type MenuPost = { id: string; pack?: string; story?: boolean; texts?: (string | null)[]; menu?: { title?: string; services?: string[]; from?: string; until?: string; promo?: string } | boolean;
+  published?: { at: string }; schedule?: { at: string; error?: string } };
+const clock = (iso: string) => new Date(iso).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' });
+function menuState(p: MenuPost) {
+  const m = typeof p.menu === 'object' ? p.menu : null;
+  if (p.published) return `publicat el ${day(p.published.at)}`;
+  if (p.schedule) return p.schedule.error ? "no s'ha pogut publicar" : `programat per al ${day(p.schedule.at)}, ${clock(p.schedule.at)}`;
+  if (m?.promo) return `la promo comença el ${day(m.promo.slice(0, 10))}, ${m.promo.slice(11, 16)}`;
+  return 'sense data per publicar';
+}
+
+// onMenu: opens a menu in Menús by its post's id, or a new one on a day and time ('new:2026-12-31T21:00')
+function Openings({ onMenu }: { onMenu: (id: string) => void }) {
   const R = useStore(s => s.settings)!.restaurant;
+  // The menu of each opening: its own services, or (older menus) the days between its first and last
+  const [menus, setMenus] = useState<MenuPost[]>([]);
+  useEffect(() => { api<{ posts: MenuPost[] }>('social').then(d => setMenus(d.posts.filter(p => p.menu && typeof p.menu === 'object' && !p.pack && !p.story))).catch(() => {}); }, []);
+  const menuOn = (at: string) => menus.find(p => {
+    const m = p.menu as Exclude<MenuPost['menu'], boolean | undefined>;
+    return m.services?.length ? m.services.includes(at) : !!m.from && m.from <= at.slice(0, 10) && at.slice(0, 10) <= (m.until || m.from);
+  });
   const [f, setF] = useState<Form>(() => toForm(R));
   const [day0, setDay0] = useState(TODAY); const [time, setTime] = useState('21:00');
   const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
-  const add = () => { const at = `${day0}T${time}`; if (day0 >= TODAY && /^\d\d:\d\d$/.test(time) && !f.open.includes(at)) setF(x => ({ ...x, open: [...x.open, at].sort() })); };
+  const okAt = day0 >= TODAY && /^\d\d:\d\d$/.test(time);
+  const add = () => { const at = `${day0}T${time}`; if (okAt && !f.open.includes(at)) setF(x => ({ ...x, open: [...x.open, at].sort() })); };
   const dirty = JSON.stringify(f) !== JSON.stringify(toForm(R));
   const save = async () => {
     if (Number(f.maxParty) > Number(f.seats)) { setErr(ERRORS.max_party); return false; }
@@ -344,13 +365,24 @@ function Openings() {
         <div className="flex flex-wrap items-end gap-3">
           <Field label="Dia" type="date" value={day0} onChange={setDay0} className="w-44" />
           <Field label="Hora" type="time" value={time} onChange={setTime} className="w-32" />
-          <Button variant="secondary" onPress={add}><Plus size={16} />Obre</Button>
+          <Button onPress={() => okAt && onMenu(`new:${day0}T${time}`)} isDisabled={!okAt}><Plus size={16} />Obre amb un menú</Button>
+          <Button variant="ghost" onPress={add} isDisabled={!okAt}>Només obre el dia</Button>
         </div>
+        <p className="mt-2 text-xs text-muted">Amb un menú, el dia s'obre en desar-lo, i el menú surt a la web i a Instagram.</p>
         {ahead.length ? (
           <ul className="mt-4">
             {ahead.map(a => (
               <li key={a} className="flex items-center gap-3 border-b border-separator py-1.5 text-sm">
-                <span className="flex-1">{atLabel(a)}</span>
+                {(() => {
+                  const p = menuOn(a), m = p && typeof p.menu === 'object' ? p.menu : null;
+                  return <>
+                    <div className="min-w-0 flex-1">
+                      <div>{atLabel(a)}</div>
+                      {p && <div className="truncate text-xs text-muted">{m?.title || 'Menú'}, {menuState(p)}</div>}
+                    </div>
+                    {p && <Button size="sm" variant="ghost" onPress={() => onMenu(p.id)}>Obre el menú</Button>}
+                  </>;
+                })()}
                 <Button isIconOnly variant="ghost" size="sm" aria-label={`Tanca ${atLabel(a)}`} onPress={() => setF(x => ({ ...x, open: x.open.filter(o => o !== a) }))}><Trash2 size={15} /></Button>
               </li>
             ))}

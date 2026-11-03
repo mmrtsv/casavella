@@ -92,7 +92,8 @@ fun Restaurant() {
             // Where a menu starts everything: its days open here, its image goes on the web and its promo runs (ui/social/Social.kt)
             "menus" -> com.casavellarural.maite.ui.social.RestaurantMenus()
             "paid" -> Paid(S.restaurant)
-            else -> Openings(S.restaurant)
+            // Obre amb un menú, or a day's menu: Menús, on a new menu for that day ("new:…") or on that menu
+            else -> Openings(S.restaurant) { id -> Ui.restaurantMenu = id; tab = "menus" }
         }
     }
 }
@@ -358,7 +359,7 @@ private fun PaidDay(cfg: RestaurantSettings, date: String, list: List<Table>, ta
 
 // ---------- Openings, seats and limits ----------
 @Composable
-private fun Openings(cfg: RestaurantSettings) {
+private fun Openings(cfg: RestaurantSettings, onMenu: (String) -> Unit) {
     var online by remember(cfg) { mutableStateOf(cfg.online) }
     var seats by remember(cfg) { mutableStateOf("${cfg.seats}") }
     var maxParty by remember(cfg) { mutableStateOf("${cfg.maxParty}") }; var minHours by remember(cfg) { mutableStateOf("${cfg.minHours}") }
@@ -366,6 +367,9 @@ private fun Openings(cfg: RestaurantSettings) {
     var day0 by remember { mutableStateOf(TODAY) }; var time by remember { mutableStateOf("21:00") }
     var busy by remember { mutableStateOf(false) }; var err by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    // The menus, to say which one each day is for
+    LaunchedEffect(Unit) { runCatching { Maite.loadSocial() } }
+    val okAt = day0 >= TODAY && Regex("^([01]\\d|2[0-3]):[0-5]\\d$").matches(time)
 
     Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
         Block("Dies oberts", "El restaurant només obre aquests dies, a aquesta hora. La web no ofereix res més.") {
@@ -373,16 +377,22 @@ private fun Openings(cfg: RestaurantSettings) {
                 DateField("Dia", day0, { day0 = it }, Modifier.weight(1.4f), min = TODAY)
                 Field("Hora", time, { time = it }, Modifier.weight(1f), placeholder = "21:00")
             }
-            Btn("Obre", {
-                val at = "${day0}T$time"
-                if (day0 >= TODAY && Regex("^([01]\\d|2[0-3]):[0-5]\\d$").matches(time) && at !in open) open = (open + at).sorted()
-            }, Modifier.padding(top = 10.dp), look = Look.Secondary, icon = R.drawable.ic_plus)
+            Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Btn("Obre amb un menú", { if (okAt) onMenu("new:${day0}T$time") }, icon = R.drawable.ic_plus, enabled = okAt)
+                Btn("Només obre el dia", { val at = "${day0}T$time"; if (okAt && at !in open) open = (open + at).sorted() }, look = Look.Ghost, enabled = okAt)
+            }
+            Text("Amb un menú, el dia s'obre en desar-lo, i el menú surt a la web i a Instagram.", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 6.dp))
             val ahead = open.filter { it.take(10) >= TODAY }
             if (ahead.isEmpty()) Muted("Cap dia obert. La web diu que el restaurant obre en dates concretes i dona el telèfon.", Modifier.padding(top = 12.dp))
             ahead.forEach { a ->
                 Divider()
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(atLabel(a), style = Type.sm, modifier = Modifier.weight(1f))
+                    val menu = com.casavellarural.maite.ui.social.openingMenu(a)
+                    Column(Modifier.weight(1f)) {
+                        Text(atLabel(a), style = Type.sm)
+                        menu?.let { Text(it.second, style = Type.xs, color = T.muted, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) }
+                    }
+                    menu?.let { Btn("Obre el menú", { onMenu(it.first) }, look = Look.Ghost) }
                     IconBtn(R.drawable.ic_trash_2, "Tanca ${atLabel(a)}", { open = open - a })
                 }
             }

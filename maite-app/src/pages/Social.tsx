@@ -6,7 +6,7 @@ import { Button, Calendar, DateField, DatePicker, I18nProvider, Label, ListBox, 
 import { getLocalTimeZone, parseDate, parseTime, today as todayIn, type DateValue, type Time } from '@internationalized/date';
 import { BookOpen, Check, MessageCircle, ChevronLeft, ChevronRight, Clock, Copy as CopyIcon, Download, ExternalLink, GalleryHorizontalEnd, ImageUp, MessageSquareText, Pencil, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
 import { api, uploadPhoto } from '../lib/api';
-import { addDays } from '../lib/dates';
+import { addDays, cap, longDay } from '../lib/dates';
 import { setSettings, useStore } from '../lib/store';
 import { openRestaurantMenu, takeRestaurantMenu } from '../lib/ui';
 import type { Settings } from '../lib/types';
@@ -15,7 +15,7 @@ import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
 import { done, toastError } from '../parts/toast';
 import { Art, Wide } from '../social/Art';
-import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, STORY_LINES, STYLES, datesText, inLibrary, menuCaption, menuSlides, storyLink, type Menu, type Slide } from '../social/catalog';
+import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, STORY_LINES, STYLES, datesText, inLibrary, menuCaption, menuSlides, menuReminders, capReminders, storyLink, type Menu, type Slide } from '../social/catalog';
 import { byId, changed, fields, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants, type Texts } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Template } from '../social/templates';
 
@@ -531,11 +531,13 @@ async function toWhatsApp(p: Post, m: Menu): Promise<boolean> {
 const menuValues = (p: Post): Menu | null => (p.menu && typeof p.menu === 'object' ? { ...MENU_EXAMPLE, ...p.menu } : null);
 // The two stories of a menu's pack: the announcement (StoryPoster, and older packs' only story) and the menu
 // Restaurant › Menús: the menus, with the posts they live on (loaded here, as Xarxes socials does)
+// start: a menu to open (its post's id), or a new one on a day and time ('new:2026-12-31T21:00', from Dies oberts › Obre)
 export function RestaurantMenus() {
   const [data, setData] = useState<Data | null>(null);
-  const [toEdit, setToEdit] = useState(takeRestaurantMenu);
+  const [start, setStart] = useState(takeRestaurantMenu);
   useEffect(() => { loadBrandFonts(); api<Data>('social').then(setData).catch(toastError); }, []);
-  return data ? <Menus data={data} setData={setData} toEdit={toEdit} onOpened={() => setToEdit('')} /> : <Skeleton className="h-[640px] rounded-2xl" />;
+  if (!data) return <Skeleton className="h-[640px] rounded-2xl" />;
+  return <Menus data={data} setData={setData} toEdit={start.startsWith('new:') ? '' : start} startAt={start.startsWith('new:') ? start.slice(4) : ''} onOpened={() => setStart('')} />;
 }
 // The services of a menu as rows of the form, each a day and a time. Older menus have none: the openings in Restaurant between
 // their first and last day, or those days at 21:00
@@ -557,9 +559,11 @@ const packOf = (data: Data, p: Post) => ({
   storyMenu: data.posts.find(x => x.pack === p.id && x.tpl === 'StoryMenu') || null,
 });
 
-function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: (d: Data) => void; toEdit?: string; onOpened?: () => void }) {
+function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: Data; setData: (d: Data) => void; toEdit?: string; startAt?: string; onOpened?: () => void }) {
+  // The list of menus, or one being made or changed (a new menu is the flow, step by step)
+  const [making, setMaking] = useState(!!toEdit || !!startAt);
   const tomorrow = ymd(new Date(Date.now() + 864e5));
-  const [step, setStep] = useState<'cover' | 'menu' | 'stories' | 'out'>('cover');
+  const [step, setStep] = useState<'menu' | 'look' | 'out'>('menu');
   const [m, setM] = useState<Menu>(MENU_EXAMPLE);
   const open = useStore(s => s.settings)?.restaurant.open || [];
   const [rows, setRowsOnly] = useState<Row[]>([{ day: '', time: '21:00' }]);
@@ -591,7 +595,7 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
     && !(story.on && !storyDone && late(story)) && !(storyMenu.on && !storyMenuDone && late(storyMenu));
 
   function reset() {
-    setEditing(null); setM(MENU_EXAMPLE); setRowsOnly([{ day: '', time: '21:00' }]); setOwn(null); setCopy(null); setStep('cover'); setPost({ when: 'later', date: tomorrow, time: '19:00' });
+    setEditing(null); setM(MENU_EXAMPLE); setRowsOnly([{ day: '', time: '21:00' }]); setOwn(null); setCopy(null); setStep('menu'); setPost({ when: 'later', date: tomorrow, time: '19:00' });
     setStory({ on: true, when: 'later', date: tomorrow, time: '19:00' }); setStoryMenu({ on: true, when: 'later', date: tomorrow, time: '19:05' });
   }
   function edit(p: Post) {
@@ -601,16 +605,18 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
     // The post without a program: the promo's start it was saved with
     const start = !p.schedule && values.promo ? { when: 'later' as const, date: values.promo.slice(0, 10), time: values.promo.slice(11, 16) } : null;
     const r = rowsOf(values, open);
-    setEditing({ post: p, story: st, storyMenu: sm }); setM(withRows(values, r)); setRowsOnly(r); setOwn(null); setCopy(data.copies[p.id] ?? null); setStep('cover');
+    setEditing({ post: p, story: st, storyMenu: sm }); setM(withRows(values, r)); setRowsOnly(r); setOwn(null); setCopy(data.copies[p.id] ?? null); setStep('menu');
     setPost(start || was(p, post)); setStory({ on: !!st, ...was(st, story) }); setStoryMenu({ on: !!sm, ...was(sm, storyMenu) });
     top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-  // A menu post opened from Publicar
+  // A menu post opened from Publicar or Dies oberts, or a new menu on the day picked in Dies oberts
   useEffect(() => {
     const p = toEdit && data.posts.find(x => x.id === toEdit);
     if (p) edit(p);
-    if (toEdit) onOpened?.();
+    if (startAt) setRows([{ day: startAt.slice(0, 10), time: startAt.slice(11, 16) }]);
+    if (toEdit || startAt) onOpened?.();
   }, []);
+  const startNew = () => { reset(); setMaking(true); top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 
   async function save() {
     setBusy(true);
@@ -653,7 +659,7 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
       // Its services are open in Restaurant now
       api<Settings>('settings').then(setSettings).catch(() => {});
       done((editing ? 'Menú desat' : 'Menú fet') + (out.length ? `: ${out.join(', ')}` : ''));
-      reset();
+      reset(); setMaking(false);
     } catch (e) { toastError(e); }
     setBusy(false);
   }
@@ -687,6 +693,42 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
     </div>
   );
 
+  // What saving does, in Publica: the days it opens on the web, when it starts going out and the reminders that follow (the
+  // same rules lib/plan.js plans them with, counted as if the room stayed empty)
+  const today = ymd(new Date()), services = m.services || [];
+  const atLabel = (at: string) => `${cap(longDay(at.slice(0, 10)))}, ${at.slice(11, 16)}`;
+  const localOf = (iso: string) => `${ymd(new Date(iso))}T${hour(iso)}`;
+  const start = editing?.post.published ? localOf(editing.post.published.at) : post.when === 'later' ? `${post.date}T${post.time}` : post.when === 'now' ? localOf(new Date().toISOString()) : '';
+  const last = services[services.length - 1]?.slice(0, 10) || '';
+  const coming = last ? capReminders(menuReminders(services.map(at => ({ at })), start, today, addDays(last, 1))) : [];
+  const nStories = coming.filter(r => r.kind === 'story').length, nPosts = coming.length - nStories;
+  const withStories = story.on || storyMenu.on;
+  const summary = (
+    <div className="space-y-4 rounded-xl bg-default/40 p-4">
+      <div className="space-y-1">
+        <h3 className="text-sm font-semibold">A la web</h3>
+        {services.length ? <>
+          <p className="text-sm text-muted">S'obren aquests dies a Dies oberts, i la reserva de taula hi mostra la imatge del menú:</p>
+          <ul className="text-sm tnum">{services.map(a => <li key={a}>{atLabel(a)}</li>)}</ul>
+        </> : <p className="text-sm text-muted">Encara no hi ha cap dia. Es posen al pas Menú.</p>}
+      </div>
+      <div className="space-y-1">
+        <h3 className="text-sm font-semibold">Publicació</h3>
+        <p className="text-sm text-muted">{editing?.post.published ? `El post ja va sortir el ${day(editing.post.published.at)}.`
+          : !start ? 'Sense data d\'inici no surt res ni hi ha recordatoris. Pots tornar-lo a obrir i posar-la quan vulguis.'
+          : `${withStories ? 'El post i les stories' : 'El post'} ${live ? (post.when === 'now' ? 'surten ara' : `surten el ${atLabel(start).replace(/^./, c => c.toLowerCase())}`) : `es desen sense programar (Instagram no està connectat). La promo compta des del ${atLabel(start).replace(/^./, c => c.toLowerCase())}`}.`}</p>
+      </div>
+      {start && last && (
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold">Recordatoris</h3>
+          <p className="text-sm text-muted">{coming.length
+            ? `${nStories} ${nStories === 1 ? 'story' : 'stories'}${nPosts ? ` i ${nPosts} ${nPosts === 1 ? 'post' : 'posts'}` : ''}, ${datesText(coming[0].day, coming[coming.length - 1].day).replace(/^./, c => c.toLowerCase())}, si la sala no s'omple: una story cada tres dies fins a la setmana abans de cada dia, i gairebé cada dia l'última setmana. Com més plena, menys; quan és plena, cap. Totes porten l'enllaç per reservar aquell dia.`
+            : 'Cap: no queda temps entre l\'inici i els dies del menú.'}</p>
+        </div>
+      )}
+    </div>
+  );
+
   // The menus made here, newest first, one row per pack (its post, and its stories)
   const list = data.posts.filter(p => p.menu && !p.pack && byId.has(p.tpl)).sort((a, b) => b.at.localeCompare(a.at));
   const status = (x: Post) => x.published ? `publicat el ${day(x.published.at)}` : x.schedule ? (x.schedule.error ? "no s'ha pogut publicar" : `programat: ${short(x.schedule.at)}`) : 'per publicar';
@@ -695,28 +737,50 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
       let d = data;
       const { story: st, storyMenu: sm } = packOf(data, p);
       for (const x of [p, st, sm]) if (x && !x.published) d = await api<Data>('social', { method: 'PUT', body: { remove: x.id } });
-      setData(d); done('Menú tret'); if (editing?.post.id === p.id) reset();
+      setData(d); done('Menú tret'); if (editing?.post.id === p.id) { reset(); setMaking(false); }
     } catch (e) { toastError(e); }
   }
 
   return (
     <div className="space-y-8" ref={top}>
+      {making ? (
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
         <section className="card space-y-4 p-4 sm:p-5" aria-label={editing ? 'Edita el menú' : 'Nou menú'}>
-          {editing && (
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="mr-auto text-base font-semibold">Edita el menú</h2>
-              <Button size="sm" variant="ghost" onPress={reset}>Fes-ne un de nou</Button>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="ghost" isIconOnly aria-label="Tots els menús" onPress={() => { reset(); setMaking(false); }}><ChevronLeft size={18} /></Button>
+            <h2 className="mr-auto text-base font-semibold">{editing ? `Edita ${menuValues(editing.post)?.title || 'el menú'}` : 'Nou menú'}</h2>
+          </div>
           <ToggleButtonGroup aria-label="Pas" selectionMode="single" disallowEmptySelection selectedKeys={new Set([step])}
             onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) setStep(v as typeof step); }} size="sm" className="max-w-full overflow-x-auto">
-            <ToggleButton id="cover">Portada</ToggleButton>
-            <ToggleButton id="menu">Menú</ToggleButton>
-            <ToggleButton id="stories">Stories</ToggleButton>
+            <ToggleButton id="menu">Menú i dies</ToggleButton>
+            <ToggleButton id="look">Post i stories</ToggleButton>
             <ToggleButton id="out">Publica</ToggleButton>
           </ToggleButtonGroup>
-          {step === 'cover' && <>
+          {step === 'menu' && <>
+            <Field label="Nom del menú" value={m.name} onChange={set('name')} placeholder="Menú de calçotada" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              {Array.from({ length: MENU_DISHES }, (_, i) => <Field key={i} label={`Plat ${i + 1}`} value={m.dishes[i] || ''} onChange={dish(i)} />)}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+              <Field label="Begudes" value={m.drinks} onChange={set('drinks')} placeholder="Vi del Penedès, aigua, cafè" />
+              <Field label="Preu per persona (€)" value={m.price} onChange={v => set('price')(v.replace(/[^\d,.]/g, ''))} inputMode="decimal" />
+            </div>
+            <Field label="Web per reservar" value={m.link} onChange={set('link')} help="Surt al menú. Les stories porten l'enllaç per reservar taula el dia del menú." />
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold">Dies i hores</h3>
+              {rows.map((r, i) => (
+                <div key={i} className="flex flex-wrap items-end gap-3">
+                  <DayPicker label="Dia" past={!!editing} value={r.day} onChange={day => setRows(rows.map((x, j) => j === i ? { ...x, day } : x))} />
+                  <HourField label="Hora" value={r.time} onChange={time => setRows(rows.map((x, j) => j === i ? { ...x, time } : x))} />
+                  {rows.length > 1 && <Button size="sm" variant="ghost" isIconOnly aria-label="Treu aquest dia" onPress={() => setRows(rows.filter((_, j) => j !== i))}><X size={16} /></Button>}
+                </div>
+              ))}
+              <Button size="sm" variant="secondary" onPress={() => { const l = rows[rows.length - 1]; setRows([...rows, { day: l?.day ? addDays(l.day, 7) : '', time: l?.time || '21:00' }]); }}><Plus size={15} />Afegeix un dia</Button>
+              <p className="text-xs text-muted">{m.from ? `A la portada: ${datesText(m.from, m.until)}. ` : ''}En desar-lo, s'obren a Dies oberts.</p>
+            </div>
+            <div className="flex justify-end"><Button size="sm" onPress={() => setStep('look')}>Següent</Button></div>
+          </>}
+          {step === 'look' && <>
             <div className="flex flex-wrap items-end gap-3">
               {own ? <img src={own.url} alt="La teva foto" className="h-16 w-16 rounded-lg object-cover" />
                 : inLibrary(m.photo) || !m.photo ? <Choice label="Foto de la portada" value={m.photo} onChange={set('photo')} items={LIBRARY.map(p => ({ id: p.src, name: p.alt }))} className="sm:max-w-sm" />
@@ -729,34 +793,7 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
               <Field label="Damunt del títol" value={m.kicker} onChange={set('kicker')} placeholder="Torna la" />
               <Field label="Títol" value={m.title} onChange={set('title')} placeholder="Calçotada" />
             </div>
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold">Dies i hores</h3>
-              {rows.map((r, i) => (
-                <div key={i} className="flex flex-wrap items-end gap-3">
-                  <DayPicker label="Dia" past={!!editing} value={r.day} onChange={day => setRows(rows.map((x, j) => j === i ? { ...x, day } : x))} />
-                  <HourField label="Hora" value={r.time} onChange={time => setRows(rows.map((x, j) => j === i ? { ...x, time } : x))} />
-                  {rows.length > 1 && <Button size="sm" variant="ghost" isIconOnly aria-label="Treu aquest dia" onPress={() => setRows(rows.filter((_, j) => j !== i))}><X size={16} /></Button>}
-                </div>
-              ))}
-              <Button size="sm" variant="secondary" onPress={() => { const l = rows[rows.length - 1]; setRows([...rows, { day: l?.day ? addDays(l.day, 7) : '', time: l?.time || '21:00' }]); }}><Plus size={15} />Afegeix un dia</Button>
-              <p className="text-xs text-muted">{m.from ? `A la portada: ${datesText(m.from, m.until)}. ` : ''}En desar-lo, aquests dies s'obren a Dies oberts i la web mostra el menú a la reserva de taula.</p>
-            </div>
             <Field label="Sota les dates" value={m.subtitle} onChange={set('subtitle')} placeholder="A la terrassa, cada diumenge" />
-            <div className="flex justify-end"><Button size="sm" onPress={() => setStep('menu')}>Següent</Button></div>
-          </>}
-          {step === 'menu' && <>
-            <Field label="Nom del menú" value={m.name} onChange={set('name')} placeholder="Menú de calçotada" />
-            <div className="grid gap-4 sm:grid-cols-2">
-              {Array.from({ length: MENU_DISHES }, (_, i) => <Field key={i} label={`Plat ${i + 1}`} value={m.dishes[i] || ''} onChange={dish(i)} />)}
-            </div>
-            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
-              <Field label="Begudes" value={m.drinks} onChange={set('drinks')} placeholder="Vi del Penedès, aigua, cafè" />
-              <Field label="Preu per persona (€)" value={m.price} onChange={v => set('price')(v.replace(/[^\d,.]/g, ''))} inputMode="decimal" />
-            </div>
-            <Field label="Web per reservar" value={m.link} onChange={set('link')} help="Surt al menú. Les stories porten l'enllaç per reservar taula el dia del menú." />
-            <div className="flex justify-between"><Button size="sm" variant="ghost" onPress={() => setStep('cover')}>Enrere</Button><Button size="sm" onPress={() => setStep('stories')}>Següent</Button></div>
-          </>}
-          {step === 'stories' && <>
             <div className="space-y-3">
               {storyDone ? <><h3 className="text-sm font-semibold">Story de la portada</h3><p className="text-sm text-muted">Ja és publicada: no es pot canviar.</p></>
                 : <CheckField isSelected={story.on} onChange={on => setStory({ ...story, on })}>Story de la portada</CheckField>}
@@ -791,11 +828,11 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold">Quan comença la promo</h3>
                 {whenFields('Quan comença la promo', post, promo)}
-                <p className="text-xs text-muted">{live ? 'El post i les stories surten llavors. ' : ''}Després Maite en penja stories fins a cada dia, més sovint l'última setmana i cap quan és ple. Totes porten l'enllaç per reservar aquell dia.</p>
               </div>
             )}
+            {summary}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Button size="sm" variant="ghost" onPress={() => setStep('stories')}>Enrere</Button>
+              <Button size="sm" variant="ghost" onPress={() => setStep('look')}>Enrere</Button>
               <Button size="sm" isPending={busy} isDisabled={!ready || busy} onPress={save}>{busy ? <Spinner size="sm" color="current" /> : <Check size={15} />}{editing ? 'Desa els canvis' : 'Desa el menú'}</Button>
             </div>
             {!ready && <p className="text-xs text-muted">Cal el títol, cada dia amb la seva hora, el nom del menú, un plat i el preu, i una hora que no hagi passat.</p>}
@@ -811,26 +848,30 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
           )}
         </section>
       </div>
-
-      {list.length > 0 && (
-        <section className="card" aria-label="Menús fets">
-          <h2 className="border-b border-separator p-4 text-base font-semibold sm:px-5">Menús fets</h2>
+      ) : (
+        <section className="card" aria-label="Menús">
+          <div className="flex items-center gap-3 border-b border-separator p-4 sm:px-5">
+            <h2 className="mr-auto text-base font-semibold">Menús</h2>
+            <Button size="sm" onPress={startNew}><Plus size={15} />Nou menú</Button>
+          </div>
+          {!list.length && <p className="p-4 text-sm text-muted sm:px-5">Encara no hi ha cap menú.</p>}
           <ol className="divide-y divide-separator">
             {list.map(p => {
-              const t = byId.get(p.tpl)!, { story: st, storyMenu: sm } = packOf(data, p), title = [p.texts?.[1], p.texts?.[2]].filter(Boolean).join(' ') || t.title;
-              const open = !!menuValues(p) && [p, st, sm].some(x => x && !x.published);
+              const t = byId.get(p.tpl)!, { story: st, storyMenu: sm } = packOf(data, p), mv = menuValues(p);
+              const title = mv?.title || [p.texts?.[1], p.texts?.[2]].filter(Boolean).join(' ') || t.title;
               return (
-                <li key={p.id} className={`flex items-center gap-3 p-3 sm:px-5 ${editing?.post.id === p.id ? 'bg-default/50' : ''}`}>
+                <li key={p.id} className="flex items-center gap-3 p-3 sm:px-5">
                   <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className={`${p.story ? 'aspect-[9/16]' : 'aspect-[3/4]'} w-11 shrink-0 rounded-md`} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold">{title}</div>
+                    {mv?.from && <div className="truncate text-xs text-muted">{datesText(mv.from, mv.until)}{mv.services?.length ? `, ${mv.services.length} ${mv.services.length === 1 ? 'dia' : 'dies'}` : ''}</div>}
                     <div className={`truncate text-xs ${p.schedule?.error ? 'text-danger' : 'text-muted'}`}>{p.story ? 'Story' : 'Post'}, {status(p)}</div>
                     {st && <div className={`truncate text-xs ${st.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story de la portada, {status(st)}</div>}
                     {sm && <div className={`truncate text-xs ${sm.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story del menú, {status(sm)}</div>}
                     {p.whatsapp && <div className="truncate text-xs text-muted">Enviat per WhatsApp el {day(p.whatsapp.at)}</div>}
                   </div>
                   {menuValues(p) && <WhatsAppButton run={async () => { if (await toWhatsApp(p, menuValues(p)!)) setData((await api<{ social: Data }>('plan', { method: 'PUT', body: { whatsapp: p.id } })).social); }} />}
-                  {open && <Button size="sm" variant="secondary" onPress={() => edit(p)}><Pencil size={15} />Edita</Button>}
+                  {mv && <Button size="sm" variant="secondary" onPress={() => { edit(p); setMaking(true); }}><Pencil size={15} />Edita</Button>}
                   {p.published?.url && <a href={p.published.url} target="_blank" rel="noopener" aria-label="Obre a Instagram" className="grid size-8 shrink-0 place-items-center rounded-full outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={16} /></a>}
                   <DownloadButton label={`Descarrega ${title}`} run={async () => { await downloadPost(p); if (st) await downloadPost(st); if (sm) await downloadPost(sm); }} />
                   {!p.published && <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${title}`} onPress={() => remove(p)}><X size={16} /></Button>}

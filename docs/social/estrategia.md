@@ -35,7 +35,7 @@ No repite el mismo alojamiento seguido si hay otro libre. Las stories de alojami
 
 ## Fotos
 
-- **Las elige Maite, no Claude**: cada pieza toma de su lista (la propia habitación si empuja un alojamiento; si no, las del restaurante, la casa o el entorno) la que hace más tiempo que no sale en la cuadrícula, publicada o planificada. Las de la sesión de noviembre de 2026 que aún no han salido van primero, y nunca la misma que el día anterior. Claude escribe el texto sabiendo qué muestra la foto.
+- **Las elige Maite, no Claude**: cada pieza toma de su lista (la propia habitación si empuja un alojamiento; si no, las del restaurante, la casa o el entorno) la que hace más tiempo que no sale en la cuadrícula, publicada o planificada. Solo entran en esas listas las fotos con buena luz (cálida, de cerca, sin tele ni electrodomésticos delante); las demás de la biblioteca quedan para los posts hechos a mano. Las de la sesión de noviembre de 2026 que aún no han salido van primero, y nunca la misma que el día anterior. Claude escribe el texto sabiendo qué muestra la foto.
 - Las semanas planificadas antes (hasta el 3 de noviembre de 2026) cambiaron una vez sus fotos por la misma regla, salvo lo que el dueño ya había tocado.
 
 ## Menús y eventos

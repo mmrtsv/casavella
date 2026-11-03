@@ -1,5 +1,5 @@
 {
-  "versionCode": 30,
-  "version": "2.28",
-  "notes": "L'avís de taules per cobrar ara arriba del servidor, l'endemà a les 10:00"
+  "versionCode": 31,
+  "version": "2.29",
+  "notes": "Els menús es fan a Restaurant > Menús: els seus dies s'obren sols i la promo comença quan dius."
 }

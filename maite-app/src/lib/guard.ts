@@ -1,18 +1,21 @@
 // Unsaved changes: the page being edited registers here, and leaving it (another page, another stay, reload) asks first
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 
-type Guard = { dirty: boolean; save: () => Promise<boolean> };
+// words: what the window says, when the page has its own (a menu not made yet: «Vols desar l'esborrany?»)
+export type GuardWords = { title: string; text: string; save: string };
+type Guard = { dirty: boolean; save: () => Promise<boolean>; words?: GuardWords };
 let active: { current: Guard } | null = null;
 let pending: (() => void) | null = null;
 const subs = new Set<() => void>();
 const emit = () => subs.forEach(f => f());
 
 export const isDirty = () => !!active?.current.dirty;
+export const guardWords = () => active?.current.words;
 
 // Pages call this with whether they have changes and how to save them (resolves true when saved)
-export function useGuard(dirty: boolean, save: () => Promise<boolean>) {
-  const ref = useRef<Guard>({ dirty, save });
-  ref.current = { dirty, save };
+export function useGuard(dirty: boolean, save: () => Promise<boolean>, words?: GuardWords) {
+  const ref = useRef<Guard>({ dirty, save, words });
+  ref.current = { dirty, save, words };
   useEffect(() => {
     active = ref;
     return () => { if (active === ref) active = null; };

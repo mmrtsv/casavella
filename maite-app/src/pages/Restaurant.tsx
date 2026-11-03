@@ -8,7 +8,7 @@ import { api } from '../lib/api';
 import { addDays, cap, day, euro, iso, longDay, parse, TODAY } from '../lib/dates';
 import { setSettings, useStore } from '../lib/store';
 import { atOf, putTable, seated, useTables } from '../lib/tables';
-import { useGuard } from '../lib/guard';
+import { leave, useGuard } from '../lib/guard';
 import { ERRORS, SOURCE } from '../lib/words';
 import { openRestaurantMenu, takeRestaurantDay, takeRestaurantTab } from '../lib/ui';
 import { Dialog } from '../parts/Sheet';
@@ -26,7 +26,7 @@ export default function Restaurant() {
   const [tab, setTab] = useState<Tab>(() => (takeRestaurantTab() as Tab) || 'tables');
   return (
     <div className="fade-in">
-      <Tabs selectedKey={tab} onSelectionChange={k => setTab(k as Tab)} className="mb-5">
+      <Tabs selectedKey={tab} onSelectionChange={k => leave(() => setTab(k as Tab))} className="mb-5">
         <Tabs.ListContainer><Tabs.List aria-label="Restaurant" className="w-fit">
           <Tabs.Tab id="tables">Taules<Tabs.Indicator /></Tabs.Tab>
           <Tabs.Tab id="menus">Menús<Tabs.Indicator /></Tabs.Tab>

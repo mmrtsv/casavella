@@ -1318,6 +1318,9 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
     var step by remember { mutableStateOf("menu") }
     // The list of menus, or one being made or changed (a new menu is the flow, step by step)
     var making by remember { mutableStateOf(toEdit.isNotEmpty() || startAt0.isNotEmpty()) }
+    // The draft being continued, if it is one (Esborranys), and whether leaving with changes is being asked about
+    var draftId by remember { mutableStateOf("") }
+    var asking by remember { mutableStateOf(false) }
     var m by remember { mutableStateOf(defaults.example) }
     var rows by remember { mutableStateOf(listOf(Service("", "21:00"))) }
     fun setRows(r: List<Service>) { rows = r; m = withRows(m, r) }
@@ -1358,8 +1361,20 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
     )
     val ready = missing.isEmpty()
     fun packOf(p: SocialPost) = Pack(p, data.posts.find { it.pack == p.id && it.tpl != "StoryMenu" }, data.posts.find { it.pack == p.id && it.tpl == "StoryMenu" })
+    // Unsaved changes: what the form had when it was opened, to tell when it has changed. Leaving a new menu with changes asks
+    // whether to keep it as a draft (the arrow) or keeps it (another tab or page); a menu already made asks to save it
+    fun snapNow() = listOf(m, rows, copy, post, withStory, withStoryMenu, own?.second).toString()
+    var base by remember { mutableStateOf("") }
+    fun mark() { base = snapNow() }
+    val dirty = making && base.isNotEmpty() && snapNow() != base && busy.isEmpty()
+    suspend fun saveDraft(): Boolean = try {
+        val promoAt = if (post.mode == "later") "${post.date}T${post.time}" else ""
+        val d = Api.put<Social>("social", mapOf("draft" to mapOf("id" to draftId, "menu" to m.copy(photo = own?.second ?: m.photo, promo = promoAt).body(),
+            "copy" to (copy ?: ""), "stories" to mapOf("story" to withStory, "storyMenu" to withStoryMenu))))
+        Maite.social = d; draftId = d.drafts.firstOrNull()?.id.orEmpty(); mark(); Toasts.done("Esborrany desat"); true
+    } catch (e: Exception) { Toasts.error(e); false }
     fun reset() {
-        editing = null; m = defaults.example; rows = listOf(Service("", "21:00")); own = null; copy = null; step = "menu"; post = newPost; story = newStory; storyMenu = newStoryMenu
+        draftId = ""; editing = null; m = defaults.example; rows = listOf(Service("", "21:00")); own = null; copy = null; step = "menu"; post = newPost; story = newStory; storyMenu = newStoryMenu
         withStory = true; withStoryMenu = true
     }
     fun edit(p: SocialPost) {
@@ -1372,13 +1387,27 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
         // The promo always has a start: a post saved without one starts tomorrow, to change
         post = (if (p.schedule == null && values.promo.length >= 16) Out("later", values.promo.take(10), values.promo.drop(11).take(5)) else was(p, newPost)).let { if (it.mode == "save") newPost else it }; story = was(pack.story, newStory); storyMenu = was(pack.storyMenu, newStoryMenu)
         withStory = pack.story != null; withStoryMenu = pack.storyMenu != null
+        mark()
+    }
+    /** A draft opened again, as it was left */
+    fun openDraft(x: com.casavellarural.maite.data.MenuDraft) {
+        reset()
+        val values = (x.menu as? kotlinx.serialization.json.JsonObject)?.let { runCatching { menuJson.decodeFromJsonElement(Menu.serializer(), it) }.getOrNull() } ?: defaults.example
+        val r = rowsOf(values, open)
+        draftId = x.id; m = withRows(values, r); rows = r; copy = x.copy.ifEmpty { null }
+        if (values.promo.length >= 16) post = Out("later", values.promo.take(10), values.promo.drop(11).take(5))
+        withStory = x.stories.story; withStoryMenu = x.stories.storyMenu
+        making = true; mark()
     }
     // A menu post opened from Publicar or Dies oberts, or a new menu on the day picked in Dies oberts
     LaunchedEffect(Unit) {
         if (toEdit.isNotEmpty()) data.posts.find { it.id == toEdit }?.let { edit(it) }
         if (startAt0.length >= 16) setRows(listOf(Service(startAt0.take(10), startAt0.drop(11).take(5))))
-        if (toEdit.isNotEmpty() || startAt0.isNotEmpty()) onOpened()
+        if (toEdit.isNotEmpty() || startAt0.isNotEmpty()) { onOpened(); mark() }
     }
+    // Leaving a new menu with changes by another tab or page keeps it as a draft, with the values it had then
+    val leaving = androidx.compose.runtime.rememberUpdatedState(if (dirty && editing == null) ({ kotlinx.coroutines.CoroutineScope(Dispatchers.Main).launch { saveDraft() } }) else null)
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { leaving.value?.invoke() } }
 
     @Composable
     fun OutFields(x: Out, change: (Out) -> Unit, withSave: Boolean = true) {
@@ -1437,8 +1466,10 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                 }
                 // Its services are open in Restaurant now
                 runCatching { Maite.settings = Api.get<Settings>("settings") }
+                // A draft made into a menu is no longer a draft
+                if (draftId.isNotEmpty()) { d = Api.put<Social>("social", mapOf("dropDraft" to draftId)); Maite.social = d }
                 Toasts.done((if (e != null) "Menú desat" else "Menú fet") + if (out.isEmpty()) "" else ": ${out.joinToString(", ")}")
-                reset(); making = false
+                base = ""; reset(); making = false
             } catch (e: Exception) { Toasts.error(e) }
             busy = ""
         }
@@ -1513,10 +1544,28 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
         Card(Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("Menús", style = Type.base, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                Btn("Nou menú", { reset(); making = true }, icon = R.drawable.ic_plus)
+                Btn("Nou menú", { reset(); making = true; mark() }, icon = R.drawable.ic_plus)
             }
             if (running.isEmpty()) { Divider(); Muted("Cap menú en marxa.", Modifier.padding(16.dp)) }
             running.forEach { MenuRow(it, false) }
+        }
+        if (data.drafts.isNotEmpty()) Card(Modifier.fillMaxWidth()) {
+            Text("Esborranys", style = Type.base, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(16.dp))
+            data.drafts.forEach { x ->
+                val dm = (x.menu as? kotlinx.serialization.json.JsonObject)?.let { runCatching { menuJson.decodeFromJsonElement(Menu.serializer(), it) }.getOrNull() }
+                Divider()
+                Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(dm?.title?.ifBlank { null } ?: dm?.name?.ifBlank { null } ?: "Menú sense títol", style = Type.sm, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        if (dm != null && dm.from.isNotEmpty()) Text(datesText(dm.from, dm.until), style = Type.xs, color = T.muted, maxLines = 1)
+                        Text("Desat el ${dayMonth(localDayOf(x.at))}", style = Type.xs, color = T.muted, maxLines = 1)
+                    }
+                    Btn("Continua", { openDraft(x) }, look = Look.Secondary, icon = R.drawable.ic_pencil)
+                    IconBtn(R.drawable.ic_x, "Treu l'esborrany", {
+                        scope.launch { try { Maite.social = Api.put<Social>("social", mapOf("dropDraft" to x.id)); Toasts.done("Esborrany tret") } catch (e: Exception) { Toasts.error(e) } }
+                    })
+                }
+            }
         }
         if (past.isNotEmpty()) Card(Modifier.fillMaxWidth()) {
             Text("Menús passats", style = Type.base, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(16.dp))
@@ -1535,10 +1584,26 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
     val nStories = coming.count { it.kind == "story" }; val nPosts = coming.size - nStories
     fun atLabel(at: String) = "${cap(longDay(at.take(10)))}, ${at.drop(11).take(5)}"
 
+    // Leaving with changes by the arrow: a new menu can be kept as a draft, a menu already made saved
+    if (asking) com.casavellarural.maite.ui.Sheet({ asking = false }) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(if (editing == null) "Vols desar l'esborrany?" else "Tens canvis sense desar", style = Type.base, fontWeight = FontWeight.SemiBold)
+            Muted(if (editing == null) "El menú encara no està fet. L'esborrany queda a Menús per continuar-lo quan vulguis." else "Desa'ls per continuar, o descarta'ls per tornar a com estava.")
+            Btn(if (editing == null) "Desa l'esborrany" else "Desa", {
+                asking = false
+                if (editing == null) scope.launch { if (saveDraft()) { base = ""; reset(); making = false } }
+                else if (ready) save() else Toasts.error(Exception("Per desar-lo falta: " + missing.joinToString(", ")))
+            }, full = true, small = false)
+            Btn("Descarta", { asking = false; base = ""; reset(); making = false }, look = Look.DangerSoft, full = true, small = false)
+            Btn("Continua editant", { asking = false }, look = Look.Ghost, full = true, small = false)
+        }
+    }
+
     Card(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
         Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconBtn(R.drawable.ic_chevron_left, "Tots els menús", { reset(); making = false })
-            Text(if (editing != null) "Edita ${menuValues(editing!!.post)?.title?.ifBlank { null } ?: "el menú"}" else "Nou menú", style = Type.base, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            IconBtn(R.drawable.ic_chevron_left, "Tots els menús", { if (dirty) asking = true else { reset(); making = false } })
+            Text(if (editing != null) "Edita ${menuValues(editing!!.post)?.title?.ifBlank { null } ?: "el menú"}" else if (draftId.isNotEmpty()) "Esborrany" else "Nou menú", style = Type.base, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            if (editing == null) Btn("Desa l'esborrany", { scope.launch { saveDraft() } }, look = Look.Ghost, enabled = dirty)
         }
         Segmented(listOf("menu" to "Menú i dies", "look" to "Post i stories", "out" to "Publica"), step, { step = it })
         Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

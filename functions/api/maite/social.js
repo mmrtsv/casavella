@@ -22,6 +22,9 @@
 //                          A menu's new services open the restaurant at those moments (Restaurant, Dies oberts), and the
 //                          stories of a menu that haven't gone out link to its next service (lib/plan.js menuLink).
 //                          Or { template: { id, texts } }  The words changed on a template, for what is made from it next ([] to undo).
+//                          Or { draft: { id, menu, copy, stories } }  A menu left half made in Restaurant › Menús, kept as it is
+//                          (id '' for a new one; nothing opens or goes out). stories: { story, storyMenu } whether each is on.
+//                          Or { dropDraft: id }  Removes a draft (saved as a menu, or thrown away).
 // The posts of Maite's own plan (lib/plan.js, field auto) are ordinary posts here: changing one marks it as the owner's
 // (auto.touched), and a post the owner programs or dates takes its day from the plan's (makeRoom).
 // Opening the grid also publishes programs that are already due (lib/instagram.js), in case the cron hasn't yet.
@@ -175,6 +178,14 @@ export async function onRequestPut({ request, env, data }) {
     if (!menu || menu === true) return json({ error: 'bad_request' }, 400);
     const post = S.posts.find(p => p.id === b.menu.id);
     gained(post.menu, menu); post.menu = menu;
+  } else if (b.draft && typeof b.draft === 'object') {
+    const menu = menuOf(b.draft.menu);
+    if (!menu || menu === true) return json({ error: 'bad_request' }, 400);
+    const id = /^[\w-]{1,40}$/.test(String(b.draft.id || '')) ? String(b.draft.id) : 'd' + crypto.randomUUID().slice(0, 7);
+    const d = { id, menu, copy: String(b.draft.copy ?? '').slice(0, 4000), stories: { story: b.draft.stories?.story !== false, storyMenu: b.draft.stories?.storyMenu !== false }, at: new Date().toISOString(), by: data.user };
+    S.drafts = [d, ...(S.drafts || []).filter(x => x.id !== id)].slice(0, 30);
+  } else if (b.dropDraft) {
+    S.drafts = (S.drafts || []).filter(x => x.id !== String(b.dropDraft));
   } else if (b.template && TPL.test(b.template.id || '')) {
     const texts = words(b.template.texts);
     if (!texts) return json({ error: 'bad_request' }, 400);

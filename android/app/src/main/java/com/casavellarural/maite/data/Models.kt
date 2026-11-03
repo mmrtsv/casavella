@@ -169,7 +169,14 @@ data class Schedule(val at: String, val image: String = "", val images: List<Str
 
 /** templates: the words changed on each template, which new posts start from (null keeps the template's) */
 @Serializable
-data class Social(val posts: List<SocialPost> = emptyList(), val copies: Map<String, String> = emptyMap(), val templates: Map<String, List<String?>> = emptyMap(), val ai: Boolean = false)
+data class Social(val posts: List<SocialPost> = emptyList(), val copies: Map<String, String> = emptyMap(), val templates: Map<String, List<String?>> = emptyMap(), val ai: Boolean = false,
+    val drafts: List<MenuDraft> = emptyList())
+
+/** A menu being made in Restaurant › Menús and not saved yet: nothing opens or goes out from it. menu: its values (ui/social Menu) */
+@Serializable
+data class MenuDraft(val id: String, val menu: JsonElement? = null, val copy: String = "", val stories: DraftStories = DraftStories(), val at: String = "", val by: String = "")
+@Serializable
+data class DraftStories(val story: Boolean = true, val storyMenu: Boolean = true)
 
 @Serializable
 data class CaptionOption(val caption: String, val hashtags: String = "")

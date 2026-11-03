@@ -9,6 +9,7 @@ import { api, uploadPhoto } from '../lib/api';
 import { addDays, cap, longDay } from '../lib/dates';
 import { setSettings, useStore } from '../lib/store';
 import { openRestaurantMenu, takeRestaurantMenu } from '../lib/ui';
+import { leave, useGuard } from '../lib/guard';
 import type { Settings } from '../lib/types';
 import { Check as CheckField, Choice, Field } from '../parts/fields';
 import { Dialog } from '../parts/Sheet';
@@ -42,7 +43,9 @@ type Insta = { connected: boolean; username?: string; detail?: string; media?: L
 // A post on the Instagram account, published from Maite or from the app
 type Live = { id: string; at: string; url: string; image: string; caption: string };
 // templates: the words changed on each template, which new posts start from
-type Data = { posts: Post[]; copies: Record<string, string>; templates: Record<string, Texts>; ai: boolean };
+// drafts: menus being made in Restaurant › Menús and not saved yet (nothing opens or goes out from them)
+type MenuDraft = { id: string; menu: Menu; copy: string; stories: { story: boolean; storyMenu: boolean }; at: string; by: string };
+type Data = { posts: Post[]; copies: Record<string, string>; templates: Record<string, Texts>; ai: boolean; drafts?: MenuDraft[] };
 type Option = { caption: string; hashtags: string };
 // A post or story Claude made from a description: the template, its photo and words, and the caption
 type Made = Option & { tpl: string; photo: string; texts: string[]; slides?: Slide[] };
@@ -562,6 +565,8 @@ const packOf = (data: Data, p: Post) => ({
 function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: Data; setData: (d: Data) => void; toEdit?: string; startAt?: string; onOpened?: () => void }) {
   // The list of menus, or one being made or changed (a new menu is the flow, step by step)
   const [making, setMaking] = useState(!!toEdit || !!startAt);
+  // The draft being continued, if it is one (Esborranys)
+  const [draftId, setDraftId] = useState('');
   const tomorrow = ymd(new Date(Date.now() + 864e5));
   const [step, setStep] = useState<'menu' | 'look' | 'out'>('menu');
   const [m, setM] = useState<Menu>(MENU_EXAMPLE);
@@ -609,7 +614,7 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
   const ready = !missing.length;
 
   function reset() {
-    setEditing(null); setM(MENU_EXAMPLE); setRowsOnly([{ day: '', time: '21:00' }]); setOwn(null); setCopy(null); setStep('menu'); setPost({ when: 'later', date: tomorrow, time: '19:00' });
+    setDraftId(''); setEditing(null); setM(MENU_EXAMPLE); setRowsOnly([{ day: '', time: '21:00' }]); setOwn(null); setCopy(null); setStep('menu'); setPost({ when: 'later', date: tomorrow, time: '19:00' });
     setStory({ on: true, when: 'later', date: tomorrow, time: '19:00' }); setStoryMenu({ on: true, when: 'later', date: tomorrow, time: '19:05' });
   }
   function edit(p: Post) {
@@ -623,6 +628,7 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
     // The promo always has a start: a post saved without one starts tomorrow, to change
     const before = start || was(p, post);
     setPost(before.when === 'save' ? { when: 'later', date: tomorrow, time: '19:00' } : before); setStory({ on: !!st, ...was(st, story) }); setStoryMenu({ on: !!sm, ...was(sm, storyMenu) });
+    mark();
     top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   // A menu post opened from Publicar or Dies oberts, or a new menu on the day picked in Dies oberts
@@ -630,9 +636,39 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
     const p = toEdit && data.posts.find(x => x.id === toEdit);
     if (p) edit(p);
     if (startAt) setRows([{ day: startAt.slice(0, 10), time: startAt.slice(11, 16) }]);
-    if (toEdit || startAt) onOpened?.();
+    if (toEdit || startAt) { onOpened?.(); mark(); }
   }, []);
-  const startNew = () => { reset(); setMaking(true); top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  const startNew = () => { reset(); setMaking(true); mark(); top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  // A draft opened again, as it was left
+  function openDraft(x: MenuDraft) {
+    reset();
+    const values = { ...MENU_EXAMPLE, ...x.menu }, r = rowsOf(values, open);
+    setDraftId(x.id); setM(withRows(values, r)); setRowsOnly(r); setCopy(x.copy || null);
+    if (values.promo) setPost({ when: 'later', date: values.promo.slice(0, 10), time: values.promo.slice(11, 16) });
+    setStory(v => ({ ...v, on: x.stories.story })); setStoryMenu(v => ({ ...v, on: x.stories.storyMenu }));
+    setMaking(true); mark();
+  }
+
+  // Unsaved changes: what the form had when it was opened, to tell when it has changed. Leaving with changes (the arrow, another
+  // tab of Restaurant, another page) asks first: a new menu offers to keep it as a draft, a menu already made to save it
+  const snap = JSON.stringify({ m, rows, copy, post, s: story.on, sm: storyMenu.on, own: own?.url || '' });
+  const [marked, setMarked] = useState(0), [base, setBase] = useState('');
+  const mark = () => setMarked(n => n + 1);
+  useEffect(() => { setBase(snap); }, [marked]); // eslint-disable-line react-hooks/exhaustive-deps
+  const dirty = making && !!base && snap !== base && !busy;
+  async function saveDraft(): Promise<boolean> {
+    try {
+      const photo = own ? await uploadPhoto(own.file) : m.photo;
+      const promoAt = post.when === 'later' ? `${post.date}T${post.time}` : '';
+      const d = await api<Data>('social', { method: 'PUT', body: { draft: { id: draftId, menu: { ...m, photo, promo: promoAt }, copy: copy ?? '', stories: { story: story.on, storyMenu: storyMenu.on } } } });
+      setData(d); setDraftId(d.drafts?.[0]?.id || ''); setOwn(null); setM(x => ({ ...x, photo })); mark();
+      done('Esborrany desat');
+      return true;
+    } catch (e) { toastError(e); return false; }
+  }
+  useGuard(dirty, editing ? async () => { if (!ready) { toastError(new Error('Per desar-lo falta: ' + missing.join(', '))); return false; } await save(); return true; } : saveDraft,
+    editing ? undefined : { title: "Vols desar l'esborrany?", text: "El menú encara no està fet. L'esborrany queda a Menús per continuar-lo quan vulguis.", save: "Desa l'esborrany" });
+  const back = () => leave(() => { reset(); setMaking(false); });
 
   async function save() {
     setBusy(true);
@@ -674,8 +710,10 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
       }
       // Its services are open in Restaurant now
       api<Settings>('settings').then(setSettings).catch(() => {});
+      // A draft made into a menu is no longer a draft
+      if (draftId) { d = await api<Data>('social', { method: 'PUT', body: { dropDraft: draftId } }); setData(d); }
       done((editing ? 'Menú desat' : 'Menú fet') + (out.length ? `: ${out.join(', ')}` : ''));
-      reset(); setMaking(false);
+      setBase(''); reset(); setMaking(false);
     } catch (e) { toastError(e); }
     setBusy(false);
   }
@@ -788,8 +826,9 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
         <section className="card space-y-4 p-4 sm:p-5" aria-label={editing ? 'Edita el menú' : 'Nou menú'}>
           <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" variant="ghost" isIconOnly aria-label="Tots els menús" onPress={() => { reset(); setMaking(false); }}><ChevronLeft size={18} /></Button>
-            <h2 className="mr-auto text-base font-semibold">{editing ? `Edita ${menuValues(editing.post)?.title || 'el menú'}` : 'Nou menú'}</h2>
+            <Button size="sm" variant="ghost" isIconOnly aria-label="Tots els menús" onPress={back}><ChevronLeft size={18} /></Button>
+            <h2 className="mr-auto text-base font-semibold">{editing ? `Edita ${menuValues(editing.post)?.title || 'el menú'}` : draftId ? 'Esborrany' : 'Nou menú'}</h2>
+            {!editing && <Button size="sm" variant="ghost" onPress={() => { saveDraft(); }} isDisabled={!dirty}>Desa l'esborrany</Button>}
           </div>
           <ToggleButtonGroup aria-label="Pas" selectionMode="single" disallowEmptySelection selectedKeys={new Set([step])}
             onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) setStep(v as typeof step); }} size="sm" className="max-w-full overflow-x-auto">
@@ -904,6 +943,26 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
           {!running.length && <p className="p-4 text-sm text-muted sm:px-5">Cap menú en marxa.</p>}
           <ol className="divide-y divide-separator">{running.map(p => menuRow(p, false))}</ol>
         </section>
+        {!!data.drafts?.length && (
+          <section className="card" aria-label="Esborranys">
+            <h2 className="border-b border-separator p-4 text-base font-semibold sm:px-5">Esborranys</h2>
+            <ol className="divide-y divide-separator">
+              {data.drafts.map(x => (
+                <li key={x.id} className="flex items-center gap-3 p-3 sm:px-5">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold">{x.menu.title || x.menu.name || 'Menú sense títol'}</div>
+                    {x.menu.from && <div className="truncate text-xs text-muted">{datesText(x.menu.from, x.menu.until)}</div>}
+                    <div className="truncate text-xs text-muted">Desat el {day(x.at)}</div>
+                  </div>
+                  <Button size="sm" variant="secondary" onPress={() => openDraft(x)}><Pencil size={15} />Continua</Button>
+                  <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu l'esborrany ${x.menu.title || ''}`} onPress={async () => {
+                    try { setData(await api<Data>('social', { method: 'PUT', body: { dropDraft: x.id } })); done('Esborrany tret'); } catch (e) { toastError(e); }
+                  }}><X size={16} /></Button>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
         {past.length > 0 && (
           <section className="card" aria-label="Menús passats">
             <h2 className="border-b border-separator p-4 text-base font-semibold sm:px-5">Menús passats</h2>

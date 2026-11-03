@@ -48,7 +48,12 @@ export async function onRequest({ request, env, next }) {
   if (!maite) return backOffice && !path.startsWith('/maite/social/') ? new Response('Not found', { status: 404 }) : publicWeb(request, env, next, url);
   if (path === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
   if (path.startsWith('/api/maite/') || path.startsWith('/maite/') || SHARED.test(path)) return next();
-  if (path === '/') return env.ASSETS.fetch(new Request(new URL('/maite/', url), request));
+  // Never cached: it names the script files of the current version, which change with each one
+  if (path === '/') {
+    const r = await env.ASSETS.fetch(new Request(new URL('/maite/', url), request)), out = new Response(r.body, r);
+    out.headers.set('cache-control', 'no-store');
+    return out;
+  }
   // The Android app (android/) checks this file to open Maite full screen; it lives in dist/maite/.well-known/
   if (path === '/.well-known/assetlinks.json') return env.ASSETS.fetch(new Request(new URL('/maite/.well-known/assetlinks.json', url), request));
   return Response.redirect(url.origin + '/', 302);

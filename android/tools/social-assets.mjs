@@ -10,7 +10,7 @@ const ROOT = path.resolve(import.meta.dirname, '../..');
 const OUT = path.join(ROOT, 'android/app/src/main/assets/social');
 fs.mkdirSync(OUT, { recursive: true });
 const entry = path.join(OUT, '.entry.ts');
-fs.writeFileSync(entry, `export { paint, variants, fields, onImage, photoAlt, loadBrandFonts, byId } from '${ROOT}/maite-app/src/social/paint';\nexport { TEMPLATES, PROFILE_HEAD, COPIES } from '${ROOT}/maite-app/src/social/templates';\nexport { STYLES, CAROUSELS, LIBRARY, MENU_EXAMPLE, MENU_DISHES } from '${ROOT}/maite-app/src/social/catalog';\n`);
+fs.writeFileSync(entry, `export { paint, variants, fields, onImage, photoAlt, loadBrandFonts, byId } from '${ROOT}/maite-app/src/social/paint';\nexport { TEMPLATES, PROFILE_HEAD, COPIES } from '${ROOT}/maite-app/src/social/templates';\nexport { STYLES, CAROUSELS, LIBRARY, MENU_EXAMPLE, MENU_DISHES, MENU_PHOTOS, MENU_LOOKS } from '${ROOT}/maite-app/src/social/catalog';\n`);
 
 // For the web view: one script that sets window.MaiteSocial
 await build({ input: entry, external: ['html-to-image'], output: { file: path.join(OUT, 'social.js'), format: 'iife', name: 'MaiteSocial', minify: true }, logLevel: 'silent' });
@@ -29,7 +29,7 @@ const meta = {
   carousels: S.CAROUSELS,
   // The photos to choose from, and the menu Menús starts from (the app writes the menu's words as catalog.ts menuSlides does)
   library: S.LIBRARY,
-  menu: { example: S.MENU_EXAMPLE, dishes: S.MENU_DISHES },
+  menu: { example: S.MENU_EXAMPLE, dishes: S.MENU_DISHES, photos: S.MENU_PHOTOS, looks: S.MENU_LOOKS },
   // What this copy was made from: android/tools/parity.mjs compares it with the web's templates
   source: socialSource(),
 };

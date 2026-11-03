@@ -1,5 +1,5 @@
 // Templates at full size: the markup, its variations ("Una altra opció") and a PNG of it at 1080 px wide
-import { LIBRARY, inLibrary, www } from './catalog';
+import { LIBRARY, MENU_LOOKS, inLibrary, www } from './catalog';
 import { TEMPLATES, type Template } from './templates';
 
 export const byId = new Map(TEMPLATES.map(t => [t.id, t]));
@@ -26,7 +26,7 @@ const photoFor = (t: Template, v: number) => {
 // How many variations a template has (0: none)
 export function variants(t: Template) {
   if (t.id === 'PostQuote') return 6;
-  if (t.id === 'PostMenu' || t.id === 'StoryMenu') return 2;
+  if (t.id === 'PostMenu' || t.id === 'StoryMenu') return MENU_LOOKS.length;
   if (t.id === 'PostWord') return BIG_WORDS.length;
   return t.photo ? PHOTOS.length : 0;
 }
@@ -66,9 +66,11 @@ export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?:
     const iso = root.querySelector('img');
     if (iso) iso.src = cava ? '/img/iso-dark.png' : '/img/iso-light.png';
   }
-  if ((t.id === 'PostMenu' || t.id === 'StoryMenu') && v % 2 === 1) {
-    root.setAttribute('data-v', 'dark');
-    root.querySelectorAll('img').forEach(i => { i.src = '/img/iso-light.png'; });
+  // The menu's styles (MENU_LOOKS): Cava as drawn, dark green, paper and basil green
+  const menuLook = t.id === 'PostMenu' || t.id === 'StoryMenu' ? ['', 'dark', 'paper', 'basil'][v % MENU_LOOKS.length] : '';
+  if (menuLook) {
+    root.setAttribute('data-v', menuLook);
+    if (menuLook === 'dark' || menuLook === 'basil') root.querySelectorAll('img').forEach(i => { i.src = '/img/iso-light.png'; });
   }
   if (img && inLibrary(photo)) img.alt = LIBRARY.find(p => p.src === photo)!.alt;
   // Menus saved before the web went in bold had «Reserva a casavellarural.com» in one line, and the WhatsApp after it
@@ -137,7 +139,14 @@ export function loadBrandFonts() {
 .social-art img { display: revert; max-width: none; height: revert; }
 .social-art [data-v="dark"] { background: #1a3f20 !important; color: #f3efe4 !important; }
 .social-art [data-v="dark"] p, .social-art [data-v="dark"] span { color: #f3efe4 !important; }
-.social-art [data-v="dark"] div[style*="height: 1px"] { background: #c6bfaf !important; }`;
+.social-art [data-v="dark"] div[style*="height: 1px"] { background: #c6bfaf !important; }
+.social-art [data-v="basil"] { background: #2e6d2e !important; color: #f3efe4 !important; }
+.social-art [data-v="basil"] p, .social-art [data-v="basil"] span { color: #f3efe4 !important; }
+.social-art [data-v="basil"] div[style*="height: 1px"] { background: #f3efe4 !important; }
+.social-art [data-v="basil"] div[style*="border-radius: 50%"] { background: #1a3f20 !important; }
+.social-art [data-v="paper"] { background: #f3efe4 !important; }
+.social-art [data-v="paper"] p[style*="background: #ffffff"] { background: #c6bfaf !important; }
+.social-art [data-v] p[style*="background: #ffffff"] { color: #1a3f20 !important; }`;
   document.head.appendChild(s);
 }
 

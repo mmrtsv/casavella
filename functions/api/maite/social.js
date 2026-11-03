@@ -34,6 +34,7 @@ import { SEED, follow, load, store, view } from '../../../lib/social.js';
 import { makeRoom, menuLink } from '../../../lib/plan.js';
 import { isAt } from '../../../lib/restaurant.js';
 import { imagesOf, runDue } from '../../../lib/instagram.js';
+import { MENU_LOOKS } from '../../../maite-app/src/social/catalog.ts';
 
 async function body(request) { try { return await request.json(); } catch { return null; } }
 
@@ -73,7 +74,9 @@ function menuOf(m) {
   if (story.length > 6 || story.some(d => d !== null && (typeof d !== 'string' || d.length > 300))) return null;
   const services = [...new Set([].concat(m.services || []))].sort();
   if (services.length > 60 || services.some(a => !isAt(a))) return null;
-  const out = { ...Object.fromEntries(keys.map(k => [k, m[k] || ''])), dishes, ...(story.some(x => x != null) ? { story } : {}) };
+  // look: the menu's style (catalog.ts MENU_LOOKS)
+  const look = Number.isInteger(m.look) && m.look > 0 && m.look < MENU_LOOKS.length ? m.look : 0;
+  const out = { ...Object.fromEntries(keys.map(k => [k, m[k] || ''])), dishes, ...(story.some(x => x != null) ? { story } : {}), ...(look ? { look } : {}) };
   if (services.length) Object.assign(out, { services, from: services[0].slice(0, 10), until: services[services.length - 1].slice(0, 10) });
   return out;
 }

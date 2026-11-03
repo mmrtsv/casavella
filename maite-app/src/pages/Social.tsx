@@ -16,7 +16,7 @@ import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
 import { done, toastError } from '../parts/toast';
 import { Art, Wide } from '../social/Art';
-import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, STORY_LINES, STYLES, datesText, inLibrary, menuCaption, menuSlides, menuReminders, capReminders, storyLink, type Menu, type Slide } from '../social/catalog';
+import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, MENU_LOOKS, MENU_PHOTOS, STORY_LINES, STYLES, datesText, freshMenu, inLibrary, menuCaption, menuSlides, menuReminders, capReminders, storyLink, type Menu, type Slide } from '../social/catalog';
 import { byId, changed, fields, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants, type Texts } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Template } from '../social/templates';
 
@@ -577,7 +577,9 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
   const [draftId, setDraftId] = useState('');
   const tomorrow = ymd(new Date(Date.now() + 864e5));
   const [step, setStep] = useState<'menu' | 'look' | 'out'>('menu');
-  const [m, setM] = useState<Menu>(MENU_EXAMPLE);
+  // A new menu starts from the cover photo and the style the menus already made have used least
+  const fresh = () => freshMenu([...data.posts.filter(p => !p.pack).map(menuValues), ...(data.drafts || []).map(x => x.menu)].filter((x): x is Menu => !!x));
+  const [m, setM] = useState<Menu>(fresh);
   const open = useStore(s => s.settings)?.restaurant.open || [];
   const [rows, setRowsOnly] = useState<Row[]>([{ day: '', time: '21:00' }]);
   const setRows = (r: Row[]) => { setRowsOnly(r); setM(x => withRows(x, r)); };
@@ -622,7 +624,7 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
   const ready = !missing.length;
 
   function reset() {
-    setDraftId(''); setEditing(null); setM(MENU_EXAMPLE); setRowsOnly([{ day: '', time: '21:00' }]); setOwn(null); setCopy(null); setStep('menu'); setPost({ when: 'later', date: tomorrow, time: '19:00' });
+    setDraftId(''); setEditing(null); setM(fresh()); setRowsOnly([{ day: '', time: '21:00' }]); setOwn(null); setCopy(null); setStep('menu'); setPost({ when: 'later', date: tomorrow, time: '19:00' });
     setStory({ on: true, when: 'later', date: tomorrow, time: '19:00' }); setStoryMenu({ on: true, when: 'later', date: tomorrow, time: '19:05' });
   }
   function edit(p: Post) {
@@ -871,12 +873,13 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
           {step === 'look' && <>
             <div className="flex flex-wrap items-end gap-3">
               {own ? <img src={own.url} alt="La teva foto" className="h-16 w-16 rounded-lg object-cover" />
-                : inLibrary(m.photo) || !m.photo ? <Choice label="Foto de la portada" value={m.photo} onChange={set('photo')} items={LIBRARY.map(p => ({ id: p.src, name: p.alt }))} className="sm:max-w-sm" />
+                : inLibrary(m.photo) || !m.photo ? <Choice label="Foto de la portada" value={m.photo} onChange={set('photo')} items={LIBRARY.filter(p => MENU_PHOTOS.includes(p.src) || p.src === m.photo).map(p => ({ id: p.src, name: p.alt }))} className="sm:max-w-sm" />
                 : <img src={m.photo} alt="La teva foto" className="h-16 w-16 rounded-lg object-cover" />}
               <Button size="sm" variant="secondary" onPress={() => file.current?.click()}><ImageUp size={15} />{own || !inLibrary(m.photo) ? 'Una altra foto' : 'La teva foto'}</Button>
-              {(own || !inLibrary(m.photo)) && <Button size="sm" variant="ghost" onPress={() => { setOwn(null); setM({ ...m, photo: MENU_EXAMPLE.photo }); }}><X size={15} />Treu la foto</Button>}
+              {(own || !inLibrary(m.photo)) && <Button size="sm" variant="ghost" onPress={() => { setOwn(null); setM({ ...m, photo: fresh().photo }); }}><X size={15} />Treu la foto</Button>}
               <input ref={file} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) setOwn({ file: f, url: URL.createObjectURL(f) }); e.target.value = ''; }} />
             </div>
+            <Choice label="Estil del menú" value={String(m.look || 0)} onChange={v => setM({ ...m, look: +v })} items={MENU_LOOKS.map((name, i) => ({ id: String(i), name }))} className="sm:max-w-sm" />
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Damunt del títol" value={m.kicker} onChange={set('kicker')} placeholder="Torna la" />
               <Field label="Títol" value={m.title} onChange={set('title')} placeholder="Calçotada" />
@@ -936,7 +939,7 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
           {(story.on || storyMenu.on) && (
             <div className="flex items-start gap-3">
               {story.on && <figure className="w-28 shrink-0 space-y-1.5"><Art t={byId.get('StoryPoster')!} v={0} photo={made.story.photo} texts={made.story.texts} className="rounded-xl" /><figcaption className="text-xs text-muted">Story de la portada</figcaption></figure>}
-              {storyMenu.on && <figure className="w-28 shrink-0 space-y-1.5"><Art t={byId.get('StoryMenu')!} v={0} photo="" texts={made.storyMenu.texts} className="rounded-xl" /><figcaption className="text-xs text-muted">Story del menú</figcaption></figure>}
+              {storyMenu.on && <figure className="w-28 shrink-0 space-y-1.5"><Art t={byId.get('StoryMenu')!} v={made.storyMenu.v} photo="" texts={made.storyMenu.texts} className="rounded-xl" /><figcaption className="text-xs text-muted">Story del menú</figcaption></figure>}
             </div>
           )}
         </section>

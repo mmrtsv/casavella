@@ -1189,8 +1189,19 @@ private fun menuSlides(m: Menu, dishes: Int): MenuMade {
     val menu: List<String?> = listOf(m.subtitle.trim(), m.name.trim()) + (0 until dishes).map { m.dishes.getOrElse(it) { "" }.trim() } +
         listOf(m.drinks.trim(), if (price.isNotEmpty()) "$price€" else "", "persona", "Reserva a", link)
     val story = listOf(m.kicker.trim(), m.title.trim(), m.subtitle.trim(), whenLine, storyText(m.link)).mapIndexed { i, x -> m.story.getOrNull(i) ?: x }
-    return MenuMade(Slide("PostMenuCover", 0, m.photo, cover), listOf(Slide("PostMenu", 0, "", menu)),
-        Slide("StoryPoster", 0, m.photo, listOf("La Casa Vella, El Bedorc") + story), Slide("StoryMenu", 0, "", menu.dropLast(1) + storyText(m.link)))
+    return MenuMade(Slide("PostMenuCover", 0, m.photo, cover), listOf(Slide("PostMenu", m.look, "", menu)),
+        Slide("StoryPoster", 0, m.photo, listOf("La Casa Vella, El Bedorc") + story), Slide("StoryMenu", m.look, "", menu.dropLast(1) + storyText(m.link)))
+}
+
+/** A new menu (catalog.ts freshMenu): the example with the cover photo and the style used least by the menus already made,
+ *  a random one of those when several are, so two menus in a row don't look the same */
+private fun freshMenu(d: MenuDefaults, made: List<Menu>): Menu {
+    fun <T> least(all: List<T>, used: List<T>): T? {
+        val n = all.associateWith { x -> used.count { it == x } }
+        val min = n.values.minOrNull() ?: return null
+        return all.filter { n[it] == min }.randomOrNull()
+    }
+    return d.example.copy(photo = least(d.photos, made.map { it.photo }) ?: d.example.photo, look = least(d.looks.indices.toList(), made.map { it.look }) ?: 0)
 }
 
 /** A first caption for the menu, to change before it goes out (catalog.ts menuCaption) */
@@ -1210,7 +1221,7 @@ private val menuJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = tru
 /** The values of a menu kept on its post, or null (an older one, made before they were kept) */
 private fun menuValues(p: SocialPost): Menu? = (p.menu as? kotlinx.serialization.json.JsonObject)?.let { runCatching { menuJson.decodeFromJsonElement(Menu.serializer(), it) }.getOrNull() }
 private fun Menu.body() = mapOf("photo" to photo, "kicker" to kicker, "title" to title, "subtitle" to subtitle, "dates" to dates, "from" to from, "until" to until,
-    "name" to name, "dishes" to dishes, "drinks" to drinks, "price" to price, "link" to link, "story" to story, "image" to image, "services" to services, "promo" to promo)
+    "name" to name, "dishes" to dishes, "drinks" to drinks, "price" to price, "link" to link, "story" to story, "image" to image, "services" to services, "promo" to promo, "look" to look)
 private fun SocialPost.isMenu() = menu != null && menu != kotlinx.serialization.json.JsonNull && menu.toString() != "false"
 
 private data class Out(val mode: String, val date: String, val time: String) {
@@ -1327,7 +1338,10 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
     // The draft being continued, if it is one (Esborranys), and whether leaving with changes is being asked about
     var draftId by remember { mutableStateOf("") }
     var asking by remember { mutableStateOf(false) }
-    var m by remember { mutableStateOf(defaults.example) }
+    // A new menu starts from the cover photo and the style the menus already made have used least
+    fun fresh() = freshMenu(defaults, data.posts.filter { it.pack == null }.mapNotNull { menuValues(it) } +
+        data.drafts.mapNotNull { x -> (x.menu as? kotlinx.serialization.json.JsonObject)?.let { runCatching { menuJson.decodeFromJsonElement(Menu.serializer(), it) }.getOrNull() } })
+    var m by remember { mutableStateOf(fresh()) }
     var rows by remember { mutableStateOf(listOf(Service("", "21:00"))) }
     fun setRows(r: List<Service>) { rows = r; m = withRows(m, r) }
     var own by remember { mutableStateOf<Pair<android.net.Uri, String>?>(null) }
@@ -1380,7 +1394,7 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
         Maite.social = d; draftId = d.drafts.firstOrNull()?.id.orEmpty(); mark(); Toasts.done("Esborrany desat"); true
     } catch (e: Exception) { Toasts.error(e); false }
     fun reset() {
-        draftId = ""; editing = null; m = defaults.example; rows = listOf(Service("", "21:00")); own = null; copy = null; step = "menu"; post = newPost; story = newStory; storyMenu = newStoryMenu
+        draftId = ""; editing = null; m = fresh(); rows = listOf(Service("", "21:00")); own = null; copy = null; step = "menu"; post = newPost; story = newStory; storyMenu = newStoryMenu
         withStory = true; withStoryMenu = true
     }
     fun edit(p: SocialPost) {
@@ -1634,12 +1648,13 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                     Btn("Següent", { step = "look" }, Modifier.align(Alignment.End))
                 }
                 "look" -> {
-                    if (!ownPhoto) Choice("Foto de la portada", m.photo, cat.library.map { it.src to it.alt }, { m = m.copy(photo = it) }, Modifier.fillMaxWidth())
+                    if (!ownPhoto) Choice("Foto de la portada", m.photo, cat.library.filter { it.src in defaults.photos || it.src == m.photo }.map { it.src to it.alt }, { m = m.copy(photo = it) }, Modifier.fillMaxWidth())
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (ownPhoto) AsyncImage(own?.first ?: (Api.base + m.photo), "La teva foto", Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
                         Btn(if (ownPhoto) "Una altra foto" else "La teva foto", { pick.launch("image/*") }, look = Look.Secondary, icon = R.drawable.ic_image_up, busy = busy == "photo")
-                        if (ownPhoto) Btn("Treu la foto", { own = null; m = m.copy(photo = defaults.example.photo) }, look = Look.Ghost, icon = R.drawable.ic_x)
+                        if (ownPhoto) Btn("Treu la foto", { own = null; m = m.copy(photo = fresh().photo) }, look = Look.Ghost, icon = R.drawable.ic_x)
                     }
+                    Choice("Estil del menú", m.look.toString(), defaults.looks.mapIndexed { i, name -> i.toString() to name }, { m = m.copy(look = it.toIntOrNull() ?: 0) }, Modifier.fillMaxWidth())
                     Field("Damunt del títol", m.kicker, { m = m.copy(kicker = it) }, placeholder = "Torna la")
                     Field("Títol", m.title, { m = m.copy(title = it) }, placeholder = "Calçotada")
                     Field("Sota les dates", m.subtitle, { m = m.copy(subtitle = it) }, placeholder = "A la terrassa, cada diumenge")
@@ -1718,7 +1733,7 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
             Text("Story de la portada", style = Type.xs, color = T.muted)
         }
         if (withStoryMenu) Column(Modifier.width(110.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Art(byId.getValue("StoryMenu"), 0, "", made.storyMenu.texts, Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)))
+            Art(byId.getValue("StoryMenu"), made.storyMenu.v, "", made.storyMenu.texts, Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)))
             Text("Story del menú", style = Type.xs, color = T.muted)
         }
     }

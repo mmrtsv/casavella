@@ -1341,8 +1341,22 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
     val live = insta?.connected == true
     val postDone = editing?.post?.published != null; val storyDone = editing?.story?.published != null; val storyMenuDone = editing?.storyMenu?.published != null
     val daysOk = rows.isNotEmpty() && rows.all { it.day.isNotEmpty() && HOUR.matches(it.time) }
-    val ready = m.title.isNotBlank() && m.name.isNotBlank() && m.price.isNotBlank() && m.dishes.any { it.isNotBlank() } && daysOk &&
-        !(live && !postDone && post.late) && !(live && withStory && !storyDone && story.late) && !(live && withStoryMenu && !storyMenuDone && storyMenu.late)
+    // While the post hasn't gone out, its two stories go out with it (the menu's five minutes after): they follow the promo start,
+    // whatever times they were saved with
+    val storyW = if (postDone) story else post
+    val storyMenuW = if (postDone) storyMenu else post.copy(time = later(post.time, 5))
+    // What is still missing to save it, and where it is
+    val missing = listOfNotNull(
+        "el nom del menú (Menú i dies)".takeIf { m.name.isBlank() },
+        "almenys un plat (Menú i dies)".takeIf { m.dishes.none { it.isNotBlank() } },
+        "el preu (Menú i dies)".takeIf { m.price.isBlank() },
+        "cada dia amb la seva hora (Menú i dies)".takeIf { !daysOk },
+        "el títol de la portada (Post i stories)".takeIf { m.title.isBlank() },
+        "una data d'inici de la promo que no hagi passat (Publica)".takeIf { live && !postDone && post.late },
+        "una hora de la story de la portada que no hagi passat (Publica)".takeIf { live && postDone && withStory && !storyDone && story.late },
+        "una hora de la story del menú que no hagi passat (Publica)".takeIf { live && postDone && withStoryMenu && !storyMenuDone && storyMenu.late },
+    )
+    val ready = missing.isEmpty()
     fun packOf(p: SocialPost) = Pack(p, data.posts.find { it.pack == p.id && it.tpl != "StoryMenu" }, data.posts.find { it.pack == p.id && it.tpl == "StoryMenu" })
     fun reset() {
         editing = null; m = defaults.example; rows = listOf(Service("", "21:00")); own = null; copy = null; step = "menu"; post = newPost; story = newStory; storyMenu = newStoryMenu
@@ -1415,8 +1429,8 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                 // A published post keeps its menu values: the new ones (the days, the image for the web) go on it anyway
                 if (postDone) { d = Api.put<Social>("social", mapOf("menu" to mapOf("id" to p.id, "menu" to values.body()))); Maite.social = d }
                 for ((on, was, isDone, body, w, name) in listOf(
-                    Six(withStory, e?.story, storyDone, all.story, story, "la story"),
-                    Six(withStoryMenu, e?.storyMenu, storyMenuDone, all.storyMenu, storyMenu, "la story del menú"),
+                    Six(withStory, e?.story, storyDone, all.story, storyW, "la story"),
+                    Six(withStoryMenu, e?.storyMenu, storyMenuDone, all.storyMenu, storyMenuW, "la story del menú"),
                 )) {
                     if (on) piece(was, body, null, mapOf("story" to true, "pack" to p.id), w, name)
                     else if (was != null && !isDone) { d = Api.put<Social>("social", mapOf("remove" to was.id)); Maite.social = d }
@@ -1621,7 +1635,7 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                         Btn("Enrere", { step = "look" }, look = Look.Ghost)
                         Btn(if (editing != null) "Desa els canvis" else "Desa el menú", { save() }, icon = R.drawable.ic_check, busy = busy == "save", enabled = ready && busy.isEmpty())
                     }
-                    if (!ready) Text("Cal el títol, cada dia amb la seva hora, el nom del menú, un plat i el preu, i una hora que no hagi passat.", style = Type.xs, color = T.muted)
+                    if (!ready) Text("Per desar-lo falta:\n" + missing.joinToString("\n"), style = Type.xs, color = T.warningText)
                 }
             }
         }

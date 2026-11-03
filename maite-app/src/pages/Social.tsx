@@ -591,8 +591,22 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
   const late = (x: When2) => live && x.when === 'later' && !(atOf(x).getTime() > Date.now() + 60e3);
   const postDone = !!editing?.post.published, storyDone = !!editing?.story?.published, storyMenuDone = !!editing?.storyMenu?.published;
   const daysOk = rows.length > 0 && rows.every(r => r.day && r.time);
-  const ready = !!(m.title.trim() && m.name.trim() && m.price.trim() && m.dishes.some(d => d.trim())) && daysOk && !(!postDone && late(post))
-    && !(story.on && !storyDone && late(story)) && !(storyMenu.on && !storyMenuDone && late(storyMenu));
+  // While the post hasn't gone out, its two stories go out with it (the menu's five minutes after): they follow the promo start,
+  // whatever times they were saved with
+  const storyW: StoryOut = postDone ? story : { ...story, ...post };
+  const storyMenuW: StoryOut = postDone ? storyMenu : { ...storyMenu, ...post, time: later(post.time, 5) };
+  // What is still missing to save it, and where it is
+  const missing = [
+    !m.name.trim() && 'el nom del menú (Menú i dies)',
+    !m.dishes.some(d => d.trim()) && 'almenys un plat (Menú i dies)',
+    !m.price.trim() && 'el preu (Menú i dies)',
+    !daysOk && 'cada dia amb la seva hora (Menú i dies)',
+    !m.title.trim() && 'el títol de la portada (Post i stories)',
+    !postDone && late(post) && "una data d'inici de la promo que no hagi passat (Publica)",
+    postDone && story.on && !storyDone && late(story) && 'una hora de la story de la portada que no hagi passat (Publica)',
+    postDone && storyMenu.on && !storyMenuDone && late(storyMenu) && 'una hora de la story del menú que no hagi passat (Publica)',
+  ].filter((x): x is string => !!x);
+  const ready = !missing.length;
 
   function reset() {
     setEditing(null); setM(MENU_EXAMPLE); setRowsOnly([{ day: '', time: '21:00' }]); setOwn(null); setCopy(null); setStep('menu'); setPost({ when: 'later', date: tomorrow, time: '19:00' });
@@ -654,7 +668,7 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
       if (editing && !postDone && caption !== (data.copies[madePost.id] || '')) { d = await api<Data>('social', { method: 'PUT', body: { copy: { id: madePost.id, text: caption } } }); setData(d); }
       // A published post keeps its menu values: the new ones (the days, the image for the web) go on it anyway
       if (postDone) { d = await api<Data>('social', { method: 'PUT', body: { menu: { id: madePost.id, menu: values } } }); setData(d); }
-      for (const [on, was, isDone, body, w, name] of [[story.on, editing?.story || null, storyDone, st, story, 'la story'], [storyMenu.on, editing?.storyMenu || null, storyMenuDone, sm, storyMenu, 'la story del menú']] as const) {
+      for (const [on, was, isDone, body, w, name] of [[story.on, editing?.story || null, storyDone, st, storyW, 'la story'], [storyMenu.on, editing?.storyMenu || null, storyMenuDone, sm, storyMenuW, 'la story del menú']] as const) {
         if (on) await piece(was, body, { story: true, pack: madePost.id }, w, name);
         else if (was && !isDone) { d = await api<Data>('social', { method: 'PUT', body: { remove: was.id } }); setData(d); }
       }
@@ -862,7 +876,12 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
               <Button size="sm" variant="ghost" onPress={() => setStep('look')}>Enrere</Button>
               <Button size="sm" isPending={busy} isDisabled={!ready || busy} onPress={save}>{busy ? <Spinner size="sm" color="current" /> : <Check size={15} />}{editing ? 'Desa els canvis' : 'Desa el menú'}</Button>
             </div>
-            {!ready && <p className="text-xs text-muted">Cal el títol, cada dia amb la seva hora, el nom del menú, un plat i el preu, i una hora que no hagi passat.</p>}
+            {!ready && (
+              <div className="text-xs text-warning">
+                <p>Per desar-lo falta:</p>
+                <ul>{missing.map(x => <li key={x}>{x}</li>)}</ul>
+              </div>
+            )}
           </>}
         </section>
         <section className="space-y-3 lg:sticky lg:top-24" aria-label="Com quedarà">

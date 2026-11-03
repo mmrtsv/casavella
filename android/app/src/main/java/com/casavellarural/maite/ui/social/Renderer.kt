@@ -35,8 +35,10 @@ import java.util.concurrent.atomic.AtomicInteger
 @Serializable data class Photo(val src: String, val alt: String)
 /** A menu made in Menús, as maite-app/src/social/catalog.ts Menu */
 @Serializable data class Menu(val photo: String, val kicker: String, val title: String, val subtitle: String, val dates: String, val name: String, val dishes: List<String>, val drinks: String, val price: String, val link: String = "",
-    val from: String = "", val until: String = "", val story: List<String?> = emptyList(), val image: String = "", val services: List<String> = emptyList(), val promo: String = "")
-@Serializable data class MenuDefaults(val example: Menu, val dishes: Int = 4)
+    val from: String = "", val until: String = "", val story: List<String?> = emptyList(), val image: String = "", val services: List<String> = emptyList(), val promo: String = "", val look: Int = 0)
+/** example: the menu Menús starts from. photos: the cover photos a menu can use (the restaurant and the land around, no rooms).
+ *  looks: the menu's styles, the variations of its slide and its story (catalog.ts MENU_PHOTOS, MENU_LOOKS) */
+@Serializable data class MenuDefaults(val example: Menu, val dishes: Int = 4, val photos: List<String> = emptyList(), val looks: List<String> = emptyList())
 /** carousels: the templates that can open a carousel, and the templates of the slides after them. library: the photos to
  *  choose from. menu: the menu Menús starts from */
 @Serializable data class Catalog(val templates: List<Template>, val copies: List<LibCopy>, val styles: List<Style> = emptyList(), val carousels: Map<String, List<String>> = emptyMap(),

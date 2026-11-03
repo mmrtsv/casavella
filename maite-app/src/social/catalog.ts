@@ -41,6 +41,12 @@ export const LIBRARY: { src: string; alt: string }[] = [
 
 export const inLibrary = (photo: string) => LIBRARY.some(p => p.src === photo);
 
+// The photos a menu's cover can use: the restaurant, its dishes, the terrace and the land around. No rooms or apartments
+export const MENU_PHOTOS: string[] = ['restaurant-sala', 'restaurant-barra', 'restaurant-llar', 'restaurant-oli', 'restaurant-plat-2', 'restaurant-postres',
+  'restaurant-xocolata', 'restaurant-guitarra', 'restaurant-targeta', 'terrassa', 'rotul', 'bedorc-capvespre', 'montserrat-vinyes', 'bedorc'].map(p => `${S}${p}.jpg`);
+// The menu's styles (Menu.look): the variation of the menu slide and the menu story, as paint() draws them
+export const MENU_LOOKS = ['Fons cava', 'Fons verd fosc', 'Fons paper', 'Fons verd'];
+
 // The words on a template, in the order they are drawn: one entry per text node that isn't blank. paint() replaces them
 // in the same order, so a post can carry its own words (texts[i] for the i-th)
 export function textSlots(t: Template): string[] {
@@ -51,7 +57,7 @@ export function textSlots(t: Template): string[] {
 // and a line that tells Claude what to write about and which photos go with it. Claude picks within it. General is any template
 const all = (kind: string) => TEMPLATES.filter(t => t.kind === kind).map(t => t.id);
 const TOPICS: { id: string; label: string; about: string; post: string[]; story: string[] }[] = [
-  { id: 'menu', label: 'Menú', about: "a menu or a dinner at the restaurant: the dishes, the date and the price the owner gives",
+  { id: 'menu', label: 'Menú', about: "a menu or a dinner at the restaurant: the dishes, the date and the price the owner gives. Photos of the restaurant, its dishes, the terrace or the land around, never the rooms",
     post: ['PostMenuCover', 'PostAnnounce', 'PostMenu'], story: ['StoryPoster', 'StoryMenu'] },
   { id: 'room', label: 'Habitació', about: 'one of the rooms (habitacions): the bed, the light, waking up slowly. Photos of the rooms and their details',
     post: ['PostRoom', 'PostDetail', 'PostFrame', 'PostDiptych', 'PostTriptych', 'PostArch', 'PostSplit', 'CarouselCover'], story: ['StoryPhoto', 'StoryReel'] },
@@ -77,20 +83,30 @@ export type Slide = { tpl: string; v: number; photo: string; texts?: (string | n
 // the menu. The words go in the templates' text lines, in order (textSlots); an empty one is hidden, null keeps the template's.
 // from, until: the first and last day (YYYY-MM-DD); dates is the line written from them (older menus only have that line).
 // story: the announcement story's own words, one per line after the first (null follows the menu). image: the menu as a JPEG, for the restaurant's booking page on the web while the menu runs.
+// look: the menu's style (MENU_LOOKS), the variation of its slide and its story (older menus have none: Fons cava).
 // link: the web address on the menu and on the stories (Instagram's API can't add a link sticker: see storyLink)
 // services: the moments it is served, each a day and a time ('2026-12-31T21:00'); saving opens the restaurant then, and from and
 // until follow them (older menus have no services). promo: when its promo starts ('2026-11-20T19:00', Barcelona), which the
 // stories after it count from even when the post isn't programmed ('' for later)
 export type Menu = {
   photo: string; kicker: string; title: string; subtitle: string; dates: string; from: string; until: string; name: string; dishes: string[];
-  drinks: string; price: string; link: string; story: (string | null)[]; image: string; services?: string[]; promo?: string;
+  drinks: string; price: string; link: string; story: (string | null)[]; image: string; services?: string[]; promo?: string; look?: number;
 };
 export const MENU_DISHES = 4;
 export const MENU_EXAMPLE: Menu = {
   photo: '/maite/social/restaurant-barra.jpg', kicker: 'Torna la', title: 'Calçotada', subtitle: 'A la terrassa, cada diumenge', dates: 'Del 18 de gener al 29 de març', from: '', until: '',
   name: 'Menú de calçotada', dishes: ['Calçots a la brasa amb salsa romesco', 'Botifarra i xai a la brasa', 'Mongetes del ganxet', 'Crema catalana'], drinks: 'Vi del Penedès, aigua, cafè', price: '38',
-  link: 'www.casavellarural.com', story: [], image: '',
+  link: 'www.casavellarural.com', story: [], image: '', look: 0,
 };
+// A new menu: the example with the cover photo and the style used least by the menus already made, a random one of those
+// when several are, so two menus in a row don't look the same
+export function freshMenu(made: { photo?: string; look?: number }[]): Menu {
+  const least = <T,>(all: T[], used: T[]) => {
+    const n = (x: T) => used.filter(u => u === x).length, min = Math.min(...all.map(n)), ok = all.filter(x => n(x) === min);
+    return ok[Math.floor(Math.random() * ok.length)];
+  };
+  return { ...MENU_EXAMPLE, photo: least(MENU_PHOTOS, made.map(m => m.photo || '')), look: least(MENU_LOOKS.map((_, i) => i), made.map(m => m.look || 0)) };
+}
 // The web address as the menu writes it: without https://, with www.
 export const www = (link: string) => { const l = link.trim().replace(/^https?:\/\//, '').replace(/\/$/, '') || 'casavellarural.com'; return /^www\./.test(l) ? l : 'www.' + l; };
 // The stories write the web's name, and the link to book a table goes in Instagram's link sticker (storyLink), which
@@ -114,12 +130,13 @@ export function menuSlides(m: Menu): { post: Slide & { slides: Slide[] }; story:
   const link = www(m.link);
   const cover = ['La Casa Vella, El Bedorc', m.kicker.trim(), m.title.trim(), dates, m.subtitle.trim()];
   const dishes = Array.from({ length: MENU_DISHES }, (_, i) => (m.dishes[i] || '').trim());
-  const menu = [m.subtitle.trim(), m.name.trim(), ...dishes, m.drinks.trim(), price ? `${price}€` : '', 'persona', 'Reserva a', link];
+  const menu = [m.subtitle.trim(), m.name.trim(), ...dishes, m.drinks.trim(), price ? `${price} €` : '', 'per persona', 'Reserva a', link];
   const story = [m.kicker.trim(), m.title.trim(), m.subtitle.trim(), when, storyText(m.link)].map((x, i) => m.story?.[i] ?? x);
+  const v = m.look || 0;
   return {
-    post: { tpl: 'PostMenuCover', v: 0, photo: m.photo, texts: cover, slides: [{ tpl: 'PostMenu', v: 0, photo: '', texts: menu }] },
+    post: { tpl: 'PostMenuCover', v: 0, photo: m.photo, texts: cover, slides: [{ tpl: 'PostMenu', v, photo: '', texts: menu }] },
     story: { tpl: 'StoryPoster', v: 0, photo: m.photo, texts: ['La Casa Vella, El Bedorc', ...story] },
-    storyMenu: { tpl: 'StoryMenu', v: 0, photo: '', texts: [...menu.slice(0, -1), storyText(m.link)] },
+    storyMenu: { tpl: 'StoryMenu', v, photo: '', texts: [...menu.slice(0, -1), storyText(m.link)] },
   };
 }
 // The lines of the announcement story that can be changed, in order (Menu.story)

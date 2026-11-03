@@ -427,6 +427,7 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .rest-days { display: grid; gap: 10px; }
 .rest-days a { color: inherit; text-decoration-color: var(--line); text-underline-offset: 4px; }
 .rest-days a:hover { color: var(--basil); }
+.rest-days .rd-menu { display: block; color: var(--muted); }
 .rest-gallery { margin-top: clamp(48px, 7vw, 88px); }
 .ev-intro { color: var(--muted); max-width: 60ch; margin: 0 0 28px; }
 .tablepage .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
@@ -2604,7 +2605,12 @@ let full = new Set(), openSeq = 0;
 // ?dia=2026-12-31T21:00: the opening a menu's story links to, picked when the page opens if it still has room
 const WANT_AT = new URLSearchParams(location.search).get('dia') || '';
 const openings = () => TABLES.open.filter(at => at.slice(0, 10) >= iso(new Date()) && !full.has(at));
-const topenPick = makeSelect(TF.open, () => openings().map(at => ({ value: at, text: atLabel(at) })));
+// Each day in the list carries the name of its menu, if it has one, under the date
+const escHtml = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const topenPick = makeSelect(TF.open, () => openings().map(at => {
+  const m = menuAt(at);
+  return { value: at, text: atLabel(at), html: `<span class="o-name">${atLabel(at)}</span>${m && m.name ? `<span class="o-sub">${escHtml(m.name)}</span>` : ''}` };
+}));
 $('topenList').classList.add('long');
 const tpeoplePick = makeSelect(TF.people, () => [...Array.from({ length: TABLES.maxParty }, (_, i) => ({ value: String(i + 1), text: diners(i + 1) })),
   { value: 'more', text: tr(`Més de ${TABLES.maxParty}`, `Más de ${TABLES.maxParty}`, `More than ${TABLES.maxParty}`) }]);
@@ -2635,16 +2641,22 @@ async function loadOpenings() {
 }
 TF.people.addEventListener('change', loadOpenings);
 TF.open.addEventListener('change', () => { TF.open.closest('.field').querySelector('.pick').removeAttribute('aria-invalid'); showMenus(); });
-function applyTables(R) {
-  TABLES = R;
-  const next = R.online ? R.open.filter(at => at.slice(0, 10) >= iso(new Date())).slice(0, 4) : [];
+// The next four openings under the restaurant, each with its menu's name on its own line
+function drawRestDays() {
+  const next = TABLES.online ? TABLES.open.filter(at => at.slice(0, 10) >= iso(new Date())).slice(0, 4) : [];
   $('restDaysList').replaceChildren(...next.map(at => {
-    const li = document.createElement('li'), a = document.createElement('a');
+    const li = document.createElement('li'), a = document.createElement('a'), m = menuAt(at);
     Object.assign(a, { href: '#taula', textContent: atLabel(at) });
     a.addEventListener('click', () => topenPick.set(at, true));
-    li.append(a); return li;
+    const d = document.createElement('div'); d.append(a);
+    if (m && m.name) { const n = document.createElement('span'); n.className = 'rd-menu'; n.textContent = m.name; d.append(n); }
+    li.append(d); return li;
   }));
   $('restDays').hidden = !next.length;
+}
+function applyTables(R) {
+  TABLES = R;
+  drawRestDays();
   if (TF.people.value !== 'more' && +TF.people.value > R.maxParty) tpeoplePick.set(String(R.maxParty), true);
   if (!tb.hidden && !tb.classList.contains('done')) openTable();
 }
@@ -2656,10 +2668,20 @@ const menuDays = (from, until) => {
   return tr((l(from) ? "De l'" : 'Del ') + d(from) + (l(until) ? " a l'" : ' al ') + d(until), `Del ${d(from)} al ${d(until)}`, `From ${d(from)} to ${d(until)}`);
 };
 let MENUS = [];
-function applyMenus(list) { MENUS = list.filter(m => m.image && m.from); showMenus(); }
+// The menu of an opening ('2026-12-31T21:00'): the one with that service, or (older menus, without services) the one whose days take it in
+function menuAt(at) {
+  const day = at.slice(0, 10);
+  return MENUS.find(m => m.services && m.services.length ? m.services.includes(at) : m.from <= day && day <= (m.until || m.from));
+}
+function applyMenus(list) {
+  MENUS = list.filter(m => m.from);
+  drawRestDays();
+  if (TF.open.value) topenPick.set(TF.open.value, true);
+  showMenus();
+}
 function showMenus() {
-  const box = $('tbMenus'), day = tableForm.hidden && !tb.classList.contains('done') ? '' : TF.open.value.slice(0, 10);
-  box.replaceChildren(...MENUS.filter(m => day && m.from <= day && day <= (m.until || m.from)).map(m => {
+  const box = $('tbMenus'), at = tableForm.hidden && !tb.classList.contains('done') ? '' : TF.open.value, m = at && menuAt(at);
+  box.replaceChildren(...(m && m.image ? [m] : []).map(m => {
     const f = document.createElement('figure'), img = document.createElement('img'), c = document.createElement('figcaption');
     Object.assign(img, { src: m.image, alt: m.alt, width: 1080, height: 1350, loading: 'lazy' });
     c.textContent = menuDays(m.from, m.until);

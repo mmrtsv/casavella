@@ -1,7 +1,8 @@
 // GET /api/settings
 // Prices, discounts, booking rules, the cancellation policy and each stay's texts and photos as set in Maite,
 // so the page shows the current ones. menus: the restaurant's menus made in Maite (Xarxes socials › Menú) that haven't
-// ended, soonest first, as the image of the menu and its days, for the table booking page.
+// ended, soonest first: its name, its services (or, older menus, its first and last day) and its image, for the table booking
+// page, which names the menu next to each day and shows its image.
 import { settings, publicSettings, json } from '../../lib/booking.js';
 import { content, ICONS } from '../../lib/stays.js';
 import { load } from '../../lib/social.js';
@@ -10,8 +11,9 @@ import { sendReviewRequests } from '../../lib/review-requests.js';
 async function menus(env) {
   if (!env.MAITE) return [];
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());
-  return (await load(env)).posts.filter(p => !p.pack && p.menu && p.menu.image && p.menu.until >= today)
-    .map(({ menu: m }) => ({ image: m.image, from: m.from, until: m.until, alt: [m.name, ...(m.dishes || [])].filter(Boolean).join('. ') }))
+  return (await load(env)).posts.filter(p => !p.pack && !p.story && p.menu && typeof p.menu === 'object' && p.menu.from && p.menu.until >= today)
+    .map(({ menu: m }) => ({ name: (m.name || m.title || '').trim(), services: m.services || [], image: m.image || '', from: m.from, until: m.until,
+      alt: [m.name, ...(m.dishes || [])].filter(Boolean).join('. ') }))
     .sort((a, b) => a.from.localeCompare(b.from));
 }
 

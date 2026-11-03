@@ -12,6 +12,18 @@
   // Theme before first paint (light unless the viewer chose dark), so nothing flashes or shifts
   try { if (localStorage.getItem('maite-theme') === 'dark') { document.documentElement.className = 'dark'; document.documentElement.dataset.theme = 'dark'; } } catch (e) {}
 </script>
+<script>
+  // A new version deletes the old script files: a page opened before it (or during it) asks for files that are gone. Then the page
+  // reloads once, at most every 30 seconds, to get the new one instead of staying blank.
+  (function () {
+    function again() {
+      try { var t = +sessionStorage.getItem('maite-reload') || 0; if (Date.now() - t < 30000) return; sessionStorage.setItem('maite-reload', String(Date.now())); } catch (e) { return; }
+      location.reload();
+    }
+    window.addEventListener('vite:preloadError', function (e) { e.preventDefault(); again(); });
+    window.addEventListener('error', function (e) { var t = e.target; if (t && (t.tagName === 'SCRIPT' || t.tagName === 'LINK')) again(); }, true);
+  })();
+</script>
   <script type="module" crossorigin src="/maite/assets/index-C953K00a.js"></script>
   <link rel="modulepreload" crossorigin href="/maite/assets/jsx-runtime-JyyJTaK-.js">
   <link rel="modulepreload" crossorigin href="/maite/assets/shim-BEawg1T5.js">

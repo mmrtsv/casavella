@@ -143,7 +143,6 @@ export function loadBrandFonts() {
 .social-art [data-v="basil"] { background: #2e6d2e !important; color: #f3efe4 !important; }
 .social-art [data-v="basil"] p, .social-art [data-v="basil"] span { color: #f3efe4 !important; }
 .social-art [data-v="basil"] div[style*="height: 1px"] { background: #f3efe4 !important; }
-.social-art [data-v="basil"] div[style*="border-radius: 50%"] { background: #1a3f20 !important; }
 .social-art [data-v="paper"] { background: #f3efe4 !important; }
 .social-art [data-v="paper"] p[style*="background: #ffffff"] { background: #c6bfaf !important; }
 .social-art [data-v] p[style*="background: #ffffff"] { color: #1a3f20 !important; }`;

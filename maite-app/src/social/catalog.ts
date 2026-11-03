@@ -130,7 +130,7 @@ export function menuSlides(m: Menu): { post: Slide & { slides: Slide[] }; story:
   const link = www(m.link);
   const cover = ['La Casa Vella, El Bedorc', m.kicker.trim(), m.title.trim(), dates, m.subtitle.trim()];
   const dishes = Array.from({ length: MENU_DISHES }, (_, i) => (m.dishes[i] || '').trim());
-  const menu = [m.subtitle.trim(), m.name.trim(), ...dishes, m.drinks.trim(), price ? `${price}€` : '', 'persona', 'Reserva a', link];
+  const menu = [m.subtitle.trim(), m.name.trim(), ...dishes, m.drinks.trim(), price ? `${price} €` : '', 'per persona', 'Reserva a', link];
   const story = [m.kicker.trim(), m.title.trim(), m.subtitle.trim(), when, storyText(m.link)].map((x, i) => m.story?.[i] ?? x);
   const v = m.look || 0;
   return {

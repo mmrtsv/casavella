@@ -1187,7 +1187,7 @@ private fun menuSlides(m: Menu, dishes: Int): MenuMade {
     val whenLine = listOf(dates, if (price.isNotEmpty()) "$price € per persona" else "").filter { it.isNotEmpty() }.joinToString(", ")
     val cover = listOf("La Casa Vella, El Bedorc", m.kicker.trim(), m.title.trim(), dates, m.subtitle.trim())
     val menu: List<String?> = listOf(m.subtitle.trim(), m.name.trim()) + (0 until dishes).map { m.dishes.getOrElse(it) { "" }.trim() } +
-        listOf(m.drinks.trim(), if (price.isNotEmpty()) "$price€" else "", "persona", "Reserva a", link)
+        listOf(m.drinks.trim(), if (price.isNotEmpty()) "$price €" else "", "per persona", "Reserva a", link)
     val story = listOf(m.kicker.trim(), m.title.trim(), m.subtitle.trim(), whenLine, storyText(m.link)).mapIndexed { i, x -> m.story.getOrNull(i) ?: x }
     return MenuMade(Slide("PostMenuCover", 0, m.photo, cover), listOf(Slide("PostMenu", m.look, "", menu)),
         Slide("StoryPoster", 0, m.photo, listOf("La Casa Vella, El Bedorc") + story), Slide("StoryMenu", m.look, "", menu.dropLast(1) + storyText(m.link)))

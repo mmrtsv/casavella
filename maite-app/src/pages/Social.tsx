@@ -510,18 +510,26 @@ type Out = 'later' | 'now' | 'save';
 type When2 = { when: Out; date: string; time: string };
 type StoryOut = When2 & { on: boolean };
 const OUT: { id: Out; label: string }[] = [{ id: 'later', label: 'Programa' }, { id: 'now', label: 'Ara' }, { id: 'save', label: 'Més endavant' }];
-// The menu as a WhatsApp message, for the owner's broadcast list: the title in bold, the days, the dishes and the link to book
-function whatsappText(m: Menu) {
-  const price = m.price.trim().replace(/\s*€$/, ''), dates = (m.from ? datesText(m.from, m.until) : m.dates).trim();
-  return [`*${[m.kicker, m.title].map(x => x.trim()).filter(Boolean).join(' ')}*`, [dates, m.subtitle.trim()].filter(Boolean).join('. '),
+// The menu as a WhatsApp message, for the owner's broadcast list: the title in bold, the days and the time, the dishes and the
+// link to book. The time always goes: one time for every service follows the days («Del 6 al 27 de desembre, a les 21:00»); when
+// they differ, each service on its own line. Older menus take their services as the form does (rowsOf)
+function whatsappText(m: Menu, open: string[]) {
+  const price = m.price.trim().replace(/\s*€$/, '');
+  return [`*${[m.kicker, m.title].map(x => x.trim()).filter(Boolean).join(' ')}*`, whenText(m, open),
     [m.name.trim(), ...m.dishes.map(d => d.trim()).filter(Boolean).map(d => '- ' + d)].filter(Boolean).join('\n'),
     [m.drinks.trim(), price && `${price} € per persona`].filter(Boolean).join('. '), `Reserva la taula: ${storyLink(true)}`].filter(Boolean).join('\n\n');
+}
+function whenText(m: Menu, open: string[]) {
+  const rows = rowsOf(m, open), days = rows.filter(r => r.day), times = [...new Set(rows.map(r => r.time))];
+  if (times.length > 1) return [m.subtitle.trim(), ...days.map(r => `${cap(longDay(r.day))}, a les ${r.time}`)].filter(Boolean).join('\n');
+  const dates = (days.length ? datesText(days[0].day, days[days.length - 1].day) : m.dates).trim();
+  return [cap([dates, `a les ${times[0] || '21:00'}`].filter(Boolean).join(', ')), m.subtitle.trim()].filter(Boolean).join('. ');
 }
 // Opens WhatsApp with the menu's image and its text (the phone's share sheet: the owner picks the broadcast list and sends).
 // Where the browser can't share files (a computer): the image is downloaded and WhatsApp Web opens with the text.
 // Returns whether it went (false when the owner closed the share sheet)
-async function toWhatsApp(p: Post, m: Menu): Promise<boolean> {
-  const t = byId.get(p.tpl)!, blob = await png(t, p.v, p.photo, p.texts), text = whatsappText(m);
+async function toWhatsApp(p: Post, m: Menu, open: string[]): Promise<boolean> {
+  const t = byId.get(p.tpl)!, blob = await png(t, p.v, p.photo, p.texts), text = whatsappText(m, open);
   const file = new File([blob], fileName(t), { type: 'image/png' });
   if (navigator.canShare?.({ files: [file] })) {
     try { await navigator.share({ files: [file], text }); } catch (e) { if ((e as Error).name === 'AbortError') return false; throw e; }
@@ -802,7 +810,7 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
                     {sm && <div className={`truncate text-xs ${sm.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story del menú, {status(sm)}</div>}
                     {p.whatsapp && <div className="truncate text-xs text-muted">Enviat per WhatsApp el {day(p.whatsapp.at)}</div>}
                   </div>
-                  {!past && menuValues(p) && <WhatsAppButton run={async () => { if (await toWhatsApp(p, menuValues(p)!)) setData((await api<{ social: Data }>('plan', { method: 'PUT', body: { whatsapp: p.id } })).social); }} />}
+                  {!past && menuValues(p) && <WhatsAppButton run={async () => { if (await toWhatsApp(p, menuValues(p)!, open)) setData((await api<{ social: Data }>('plan', { method: 'PUT', body: { whatsapp: p.id } })).social); }} />}
                   {mv && <Button size="sm" variant="secondary" onPress={() => { edit(p); setMaking(true); }}><Pencil size={15} />Edita</Button>}
                   {p.published?.url && <a href={p.published.url} target="_blank" rel="noopener" aria-label="Obre a Instagram" className="grid size-8 shrink-0 place-items-center rounded-full outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={16} /></a>}
                   <DownloadButton label={`Descarrega ${title}`} run={async () => { await downloadPost(p); if (st) await downloadPost(st); if (sm) await downloadPost(sm); }} />

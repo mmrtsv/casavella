@@ -1137,27 +1137,33 @@ private suspend fun toInstagram(context: Context, t: Template, post: SocialPost,
     val insta = android.content.Intent(send).setPackage("com.instagram.android")
     context.startActivity(if (insta.resolveActivity(context.packageManager) != null) insta else android.content.Intent.createChooser(send, "Comparteix la story"))
 }
-/** The menu as a WhatsApp message, for the owner's broadcast list (as whatsappText in Social.tsx) */
-private fun whatsappText(m: Menu): String {
+/** The menu as a WhatsApp message, for the owner's broadcast list (as whatsappText in Social.tsx). The time always goes: one
+ *  time for every service follows the days; when they differ, each service on its own line */
+private fun whatsappText(m: Menu, open: List<String>): String {
     val price = m.price.trim().removeSuffix("€").trim()
-    val dates = (if (m.from.isNotEmpty()) datesText(m.from, m.until) else m.dates).trim()
     return listOf(
         "*" + listOf(m.kicker.trim(), m.title.trim()).filter { it.isNotEmpty() }.joinToString(" ") + "*",
-        listOf(dates, m.subtitle.trim()).filter { it.isNotEmpty() }.joinToString(". "),
+        whenText(m, open),
         (listOf(m.name.trim()) + m.dishes.map { it.trim() }.filter { it.isNotEmpty() }.map { "- $it" }).filter { it.isNotEmpty() }.joinToString("\n"),
         listOf(m.drinks.trim(), if (price.isNotEmpty()) "$price € per persona" else "").filter { it.isNotEmpty() }.joinToString(". "),
         "Reserva la taula: ${storyLink(true)}",
     ).filter { it.isNotEmpty() && it != "**" }.joinToString("\n\n")
 }
+private fun whenText(m: Menu, open: List<String>): String {
+    val rows = rowsOf(m, open); val days = rows.filter { it.day.isNotEmpty() }; val times = rows.map { it.time }.distinct()
+    if (times.size > 1) return (listOf(m.subtitle.trim()) + days.map { "${cap(longDay(it.day))}, a les ${it.time}" }).filter { it.isNotEmpty() }.joinToString("\n")
+    val dates = (if (days.isNotEmpty()) datesText(days.first().day, days.last().day) else m.dates).trim()
+    return listOf(cap(listOf(dates, "a les ${times.firstOrNull() ?: "21:00"}").filter { it.isNotEmpty() }.joinToString(", ")), m.subtitle.trim()).filter { it.isNotEmpty() }.joinToString(". ")
+}
 /** Opens WhatsApp with the menu's cover and its text: the owner picks the broadcast list and sends (the chooser when there are
  *  two WhatsApps, or none) */
-private suspend fun toWhatsApp(context: Context, t: Template, post: SocialPost, m: Menu) {
+private suspend fun toWhatsApp(context: Context, t: Template, post: SocialPost, m: Menu, open: List<String>) {
     val big = Renderer.full(t.id, post.v, post.photo, post.texts)
     val file = java.io.File(context.cacheDir, "social").apply { mkdirs() }.let { java.io.File(it, "menu.jpg") }
     withContext(Dispatchers.IO) { file.writeBytes(jpeg(big, 1440, 92)) }
     val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.files", file)
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("image/jpeg").putExtra(android.content.Intent.EXTRA_STREAM, uri)
-        .putExtra(android.content.Intent.EXTRA_TEXT, whatsappText(m)).addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        .putExtra(android.content.Intent.EXTRA_TEXT, whatsappText(m, open)).addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
     val apps = listOf("com.whatsapp", "com.whatsapp.w4b").filter { android.content.Intent(send).setPackage(it).resolveActivity(context.packageManager) != null }
     context.startActivity(if (apps.size == 1) android.content.Intent(send).setPackage(apps[0]) else android.content.Intent.createChooser(send, "Envia per WhatsApp"))
 }
@@ -1518,7 +1524,7 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                         IconBtn(R.drawable.ic_message_circle, "Envia per WhatsApp", {
                             wa = true
                             scope.launch {
-                                try { toWhatsApp(context, t, p, m); Maite.social = Api.put<PlanResponse>("plan", mapOf("whatsapp" to p.id)).social }
+                                try { toWhatsApp(context, t, p, m, open); Maite.social = Api.put<PlanResponse>("plan", mapOf("whatsapp" to p.id)).social }
                                 catch (e: Exception) { Toasts.error(e) }
                                 wa = false
                             }

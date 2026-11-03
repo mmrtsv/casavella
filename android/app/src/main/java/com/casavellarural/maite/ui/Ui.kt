@@ -36,12 +36,15 @@ object Ui {
     var bookingsFilter by mutableStateOf("")
     var restaurantDay by mutableStateOf("")
     var restaurantTab by mutableStateOf("")
+    var restaurantMenu by mutableStateOf("")
     var opening by mutableStateOf<Opening?>(null)
 
     fun go(p: Page) { page = p; more = false }
     fun openBookings(filter: String) { bookingsFilter = filter; go(Page.Bookings) }
     /** Calendari opens Restaurant on a day, and Inici (or a notification) on Cobrat on a day with tables to note; the page takes them once */
     fun openRestaurant(date: String, tab: String = "tables") { restaurantDay = date; restaurantTab = tab; go(Page.Restaurant) }
+    /** Publicar (or a WhatsApp reminder) opens Restaurant › Menús, where menus are made and changed: on a menu's post, or on the list */
+    fun openRestaurantMenu(id: String = "") { restaurantMenu = id; restaurantTab = "menus"; go(Page.Restaurant) }
     fun openCancel(key: String) { cancel = key; detail = null }
     /** Back: closes the top window, then goes to Inici; false lets Android leave the app */
     fun back(): Boolean = when {

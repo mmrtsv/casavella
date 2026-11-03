@@ -35,10 +35,11 @@ No repite el mismo alojamiento seguido si hay otro libre. Las stories de alojami
 
 ## Menús y eventos
 
-Un menú hecho en *Generador de posts › Menú* (con sus días) tiene recordatorios propios desde que sale el anuncio, rehechos cada día a las 7:00 y a las 15:00 con las mesas reservadas de cada servicio. Cuanto más vacía la sala, más seguido:
+Todo empieza en *Restaurante › Menús*: el menú con sus servicios (cada uno un día y una hora). Al guardarlo, esos días se abren en Restaurante, la web enseña el menú en la reserva de mesa y se pregunta cuándo empieza la promo: el post y sus dos stories salen entonces. Desde ahí el menú tiene recordatorios propios, rehechos cada día a las 7:00 y a las 15:00 con las mesas reservadas de cada servicio. Todas las stories llevan el adhesivo de enlace a la reserva de mesa con ese día ya elegido (`?dia=` en la web). Cuanto más vacía la sala, más seguido:
 
 | Días antes | Ocupación | Qué |
 |---|---|---|
+| Más de 7, desde el día después de empezar la promo | menos del 80 % | Una story cada tres días (cartel y menú, por turnos) a las 21:15, para el próximo servicio |
 | 7, 5 y 3 | menos del 80 % | Story (cartel o el menú) a las 21:15 |
 | 4 | menos del 50 % | Post a las 19:45, que sustituye al post del plan de ese día |
 | 2 y 1 | menos del 90 % | Story a las 21:15 |
@@ -46,7 +47,7 @@ Un menú hecho en *Generador de posts › Menú* (con sus días) tiene recordato
 | El mismo día (cenas) | menos del 90 % | Story a las 12:30 |
 | | lleno | Nada |
 
-Como mucho dos recordatorios al día y un post cada cuatro días. A partir del 70 % el cartel dice «Últimes places». Un menú sin días abiertos en Restaurante se recuerda por su primer y último día, sin saber la ocupación. Cada menú puede quedarse sin recordatorios (Com planifica).
+Como mucho dos recordatorios al día y un post cada cuatro días. A partir del 70 % el cartel dice «Últimes places». Un servicio que se cierra a mano en Restaurante deja de recordarse; los menús antiguos, sin servicios, se recuerdan por sus días abiertos o, si no hay, por su primer y último día, sin saber la ocupación. Cada menú puede quedarse sin recordatorios (Com planifica).
 
 ## El adhesivo de enlace
 

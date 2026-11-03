@@ -6,6 +6,10 @@ import { Button, Calendar, DateField, DatePicker, I18nProvider, Label, ListBox, 
 import { getLocalTimeZone, parseDate, parseTime, today as todayIn, type DateValue, type Time } from '@internationalized/date';
 import { BookOpen, Check, MessageCircle, ChevronLeft, ChevronRight, Clock, Copy as CopyIcon, Download, ExternalLink, GalleryHorizontalEnd, ImageUp, MessageSquareText, Pencil, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
 import { api, uploadPhoto } from '../lib/api';
+import { addDays } from '../lib/dates';
+import { setSettings, useStore } from '../lib/store';
+import { openRestaurantMenu, takeRestaurantMenu } from '../lib/ui';
+import type { Settings } from '../lib/types';
 import { Check as CheckField, Choice, Field } from '../parts/fields';
 import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
@@ -43,19 +47,18 @@ type Option = { caption: string; hashtags: string };
 // A post or story Claude made from a description: the template, its photo and words, and the caption
 type Made = Option & { tpl: string; photo: string; texts: string[]; slides?: Slide[] };
 // Destacats (the highlight covers) is out of the tabs for now; its templates stay
-type Tab = 'plan' | 'new' | 'menus' | 'profile' | 'calendar';
+type Tab = 'plan' | 'new' | 'profile' | 'calendar';
 // A post being made or changed: the variation, the photo (an upload, or one just picked and not yet uploaded) and the words
 type Own = { file: File; url: string };
 type Draft = { v: number; photo: string; own: Own | null; texts: Texts };
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'plan', label: 'Pla' }, { id: 'new', label: 'Generador de posts' }, { id: 'menus', label: 'Menús i esdeveniments' },
+  { id: 'plan', label: 'Pla' }, { id: 'new', label: 'Generador de posts' },
   { id: 'profile', label: 'Publicar' }, { id: 'calendar', label: 'Calendari' },
 ];
 const HELP: Partial<Record<Tab, string>> = {
   plan: "Cada dilluns Maite prepara la setmana següent a partir de les reserves. Tens fins diumenge a les 23:59 per canviar-la; si no, surt tal com és.",
   new: 'Fes-la des d\'una plantilla o genera-la amb IA a partir d\'una descripció. Abans d\'afegir-la al perfil en pots canviar el text i la foto.',
-  menus: "Un menú o un esdeveniment amb els seus dies: Maite en fa el post i les stories, i en publica recordatoris fins que s'omple.",
 
 };
 // Templates that can go in the grid: every post, and the reel cover
@@ -89,8 +92,6 @@ export default function Social() {
   const preparing = usePrepare(data, plan, setData);
   // What Crea'n un post on a template card hands to Nova publicació
   const [start] = useState<{ id: string; v: number; own: Own | null; n: number } | null>(null);
-  // The menu post whose pencil was pressed in Publicar: Nova publicació › Menú opens its pack, as Edita does there
-  const [menu, setMenu] = useState<{ id: string; n: number } | null>(null);
   useEffect(() => { loadBrandFonts(); api<Data>('social').then(setData).catch(toastError); }, []);
   const pick = (t: Tab) => { setTab(t); try { localStorage.setItem('maite-social-tab', t); } catch { /* private window */ } };
 
@@ -104,9 +105,8 @@ export default function Social() {
       {HELP[tab] && <p className="mb-5 max-w-3xl text-sm text-muted">{HELP[tab]}</p>}
       {tab === 'plan' && (data && plan ? <PlanView data={data} setData={setData} plan={plan} setPlan={setPlan} preparing={preparing} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {tab === 'new' && (data ? <NewPost key={start?.n || 0} data={data} setData={setData} start={start} go={pick} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
-      {tab === 'menus' && (data ? <Menus key={menu?.n || 0} data={data} setData={setData} toEdit={menu?.id || ''} onOpened={() => setMenu(m => m && { ...m, id: '' })} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {tab === 'calendar' && (data ? <Planner data={data} onEmpty={() => pick('new')} onPublish={() => pick('profile')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
-      {tab === 'profile' && (data ? <Profile data={data} setData={setData} onEmpty={() => pick('new')} onEditMenu={p => { setMenu({ id: p.id, n: (menu?.n || 0) + 1 }); pick('menus'); }} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
+      {tab === 'profile' && (data ? <Profile data={data} setData={setData} onEmpty={() => pick('new')} onEditMenu={p => openRestaurantMenu(p.id)} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
     </div>
   );
 }
@@ -497,11 +497,12 @@ function Next({ post, then, onPublish }: { post: Post; then: Then; onPublish: ()
   );
 }
 
-// Menú, in Nova publicació: a menu in four steps (the cover, the menu, the stories, when it goes out). It becomes a carousel
-// post in the grid (the menu's cover, then the menu) and two stories, the announcement and the menu; each goes out now, at a
-// programmed time or later. The cover takes the first and last day, so the restaurant's booking page on the web shows the
-// menu while it runs. The menus made here are listed under the form; Edita opens the whole pack again (the menu's words, the
-// stories, the caption, and when each piece goes out), and saving changes all of them
+// Restaurant › Menús, where everything about a menu starts: a menu in four steps (the cover and its services, the menu, the
+// stories, when the promo starts). Saving opens the restaurant at its services (Restaurant, Dies oberts; functions/api/maite/
+// social.js), puts the menu's image on the web's table booking page while it runs, and makes a carousel post (the menu's cover,
+// then the menu) and two stories, the announcement and the menu, which go out together when the promo starts. From then on
+// lib/plan.js posts its stories until each service, each with the link sticker to book that day. The menus made here are listed
+// under the form; Edita opens the whole pack again, and saving changes all of it
 type Out = 'later' | 'now' | 'save';
 type When2 = { when: Out; date: string; time: string };
 type StoryOut = When2 & { on: boolean };
@@ -529,6 +530,28 @@ async function toWhatsApp(p: Post, m: Menu): Promise<boolean> {
 }
 const menuValues = (p: Post): Menu | null => (p.menu && typeof p.menu === 'object' ? { ...MENU_EXAMPLE, ...p.menu } : null);
 // The two stories of a menu's pack: the announcement (StoryPoster, and older packs' only story) and the menu
+// Restaurant › Menús: the menus, with the posts they live on (loaded here, as Xarxes socials does)
+export function RestaurantMenus() {
+  const [data, setData] = useState<Data | null>(null);
+  const [toEdit, setToEdit] = useState(takeRestaurantMenu);
+  useEffect(() => { loadBrandFonts(); api<Data>('social').then(setData).catch(toastError); }, []);
+  return data ? <Menus data={data} setData={setData} toEdit={toEdit} onOpened={() => setToEdit('')} /> : <Skeleton className="h-[640px] rounded-2xl" />;
+}
+// The services of a menu as rows of the form, each a day and a time. Older menus have none: the openings in Restaurant between
+// their first and last day, or those days at 21:00
+type Row = { day: string; time: string };
+function rowsOf(m: Menu, open: string[]): Row[] {
+  const list = m.services?.length ? m.services : m.from ? open.filter(a => a.slice(0, 10) >= m.from && a.slice(0, 10) <= (m.until || m.from)) : [];
+  if (list.length) return list.map(a => ({ day: a.slice(0, 10), time: a.slice(11, 16) }));
+  return m.from ? [...new Set([m.from, m.until || m.from])].map(day => ({ day, time: '21:00' })) : [{ day: '', time: '21:00' }];
+}
+// The menu with its services from the rows: the complete ones, in order, and its first and last day
+function withRows(m: Menu, rows: Row[]): Menu {
+  const services = [...new Set(rows.filter(r => r.day && r.time).map(r => `${r.day}T${r.time}`))].sort();
+  return { ...m, services, from: services[0]?.slice(0, 10) || '', until: services[services.length - 1]?.slice(0, 10) || '' };
+}
+// A time some minutes later ('12:00' + 5 = '12:05'), within the day
+const later = (time: string, min: number) => { const t = Math.min(+time.slice(0, 2) * 60 + +time.slice(3, 5) + min, 1439); return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`; };
 const packOf = (data: Data, p: Post) => ({
   story: data.posts.find(x => x.pack === p.id && x.tpl !== 'StoryMenu') || null,
   storyMenu: data.posts.find(x => x.pack === p.id && x.tpl === 'StoryMenu') || null,
@@ -538,12 +561,15 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
   const tomorrow = ymd(new Date(Date.now() + 864e5));
   const [step, setStep] = useState<'cover' | 'menu' | 'stories' | 'out'>('cover');
   const [m, setM] = useState<Menu>(MENU_EXAMPLE);
+  const open = useStore(s => s.settings)?.restaurant.open || [];
+  const [rows, setRowsOnly] = useState<Row[]>([{ day: '', time: '21:00' }]);
+  const setRows = (r: Row[]) => { setRowsOnly(r); setM(x => withRows(x, r)); };
   const [own, setOwn] = useState<{ file: File; url: string } | null>(null);
   const [copy, setCopy] = useState<string | null>(null);
   const [insta, setInsta] = useState<Insta | null>(null);
   const [post, setPost] = useState<When2>({ when: 'later', date: tomorrow, time: '19:00' });
-  const [story, setStory] = useState<StoryOut>({ on: true, when: 'later', date: tomorrow, time: '12:00' });
-  const [storyMenu, setStoryMenu] = useState<StoryOut>({ on: true, when: 'later', date: tomorrow, time: '12:05' });
+  const [story, setStory] = useState<StoryOut>({ on: true, when: 'later', date: tomorrow, time: '19:00' });
+  const [storyMenu, setStoryMenu] = useState<StoryOut>({ on: true, when: 'later', date: tomorrow, time: '19:05' });
   // The pack being changed: its post and its stories, as they were saved
   const [editing, setEditing] = useState<{ post: Post; story: Post | null; storyMenu: Post | null } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -560,19 +586,20 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
   const atOf = (x: When2) => new Date(`${x.date}T${x.time}`);
   const late = (x: When2) => live && x.when === 'later' && !(atOf(x).getTime() > Date.now() + 60e3);
   const postDone = !!editing?.post.published, storyDone = !!editing?.story?.published, storyMenuDone = !!editing?.storyMenu?.published;
-  const daysOk = !!m.from && !!m.until && m.until >= m.from;
+  const daysOk = rows.length > 0 && rows.every(r => r.day && r.time);
   const ready = !!(m.title.trim() && m.name.trim() && m.price.trim() && m.dishes.some(d => d.trim())) && daysOk && !(!postDone && late(post))
     && !(story.on && !storyDone && late(story)) && !(storyMenu.on && !storyMenuDone && late(storyMenu));
 
   function reset() {
-    setEditing(null); setM(MENU_EXAMPLE); setOwn(null); setCopy(null); setStep('cover'); setPost({ when: 'later', date: tomorrow, time: '19:00' });
-    setStory({ on: true, when: 'later', date: tomorrow, time: '12:00' }); setStoryMenu({ on: true, when: 'later', date: tomorrow, time: '12:05' });
+    setEditing(null); setM(MENU_EXAMPLE); setRowsOnly([{ day: '', time: '21:00' }]); setOwn(null); setCopy(null); setStep('cover'); setPost({ when: 'later', date: tomorrow, time: '19:00' });
+    setStory({ on: true, when: 'later', date: tomorrow, time: '19:00' }); setStoryMenu({ on: true, when: 'later', date: tomorrow, time: '19:05' });
   }
   function edit(p: Post) {
     const values = menuValues(p);
     if (!values) return;
     const { story: st, storyMenu: sm } = packOf(data, p), was = (x: Post | null, d: When2): When2 => (x?.schedule ? { when: 'later', date: ymd(new Date(x.schedule.at)), time: hour(x.schedule.at) } : { ...d, when: 'save' });
-    setEditing({ post: p, story: st, storyMenu: sm }); setM(values); setOwn(null); setCopy(data.copies[p.id] ?? null); setStep('cover');
+    const r = rowsOf(values, open);
+    setEditing({ post: p, story: st, storyMenu: sm }); setM(withRows(values, r)); setRowsOnly(r); setOwn(null); setCopy(data.copies[p.id] ?? null); setStep('cover');
     setPost(was(p, post)); setStory({ on: !!st, ...was(st, story) }); setStoryMenu({ on: !!sm, ...was(sm, storyMenu) });
     top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -619,12 +646,20 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
         if (on) await piece(was, body, { story: true, pack: madePost.id }, w, name);
         else if (was && !isDone) { d = await api<Data>('social', { method: 'PUT', body: { remove: was.id } }); setData(d); }
       }
+      // Its services are open in Restaurant now
+      api<Settings>('settings').then(setSettings).catch(() => {});
       done((editing ? 'Menú desat' : 'Menú fet') + (out.length ? `: ${out.join(', ')}` : ''));
       reset();
     } catch (e) { toastError(e); }
     setBusy(false);
   }
 
+  // The promo starts with the post, and its two stories go out with it (the menu's a few minutes after)
+  const promo = (x: When2) => {
+    setPost(x);
+    if (!storyDone) setStory(s => ({ ...s, ...x }));
+    if (!storyMenuDone) setStoryMenu(s => ({ ...s, ...x, time: later(x.time, 5) }));
+  };
   const whenFields = (label: string, x: When2, change: (x: When2) => void) => (
     <div className="space-y-2">
       <ToggleButtonGroup aria-label={label} selectionMode="single" disallowEmptySelection selectedKeys={new Set([x.when])}
@@ -690,14 +725,17 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
               <Field label="Damunt del títol" value={m.kicker} onChange={set('kicker')} placeholder="Torna la" />
               <Field label="Títol" value={m.title} onChange={set('title')} placeholder="Calçotada" />
             </div>
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-end gap-3">
-                <DayPicker label="Primer dia" past={!!editing} value={m.from} onChange={from => setM({ ...m, from, until: m.until && m.until < from ? from : m.until })} />
-                <DayPicker label="Últim dia" past={!!editing} value={m.until} onChange={until => setM({ ...m, until })} />
-              </div>
-              <p className={`text-xs ${m.from && m.until && m.until < m.from ? 'text-warning' : 'text-muted'}`}>
-                {m.from && m.until && m.until < m.from ? "L'últim dia va abans del primer." : m.from ? `A la portada: ${datesText(m.from, m.until)}. La web el mostra a la reserva de taula fins a l'últim dia.` : 'La portada escriu les dates, i la web mostra el menú a la reserva de taula fins a l\'últim dia.'}
-              </p>
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold">Dies i hores</h3>
+              {rows.map((r, i) => (
+                <div key={i} className="flex flex-wrap items-end gap-3">
+                  <DayPicker label="Dia" past={!!editing} value={r.day} onChange={day => setRows(rows.map((x, j) => j === i ? { ...x, day } : x))} />
+                  <HourField label="Hora" value={r.time} onChange={time => setRows(rows.map((x, j) => j === i ? { ...x, time } : x))} />
+                  {rows.length > 1 && <Button size="sm" variant="ghost" isIconOnly aria-label="Treu aquest dia" onPress={() => setRows(rows.filter((_, j) => j !== i))}><X size={16} /></Button>}
+                </div>
+              ))}
+              <Button size="sm" variant="secondary" onPress={() => { const l = rows[rows.length - 1]; setRows([...rows, { day: l?.day ? addDays(l.day, 7) : '', time: l?.time || '21:00' }]); }}><Plus size={15} />Afegeix un dia</Button>
+              <p className="text-xs text-muted">{m.from ? `A la portada: ${datesText(m.from, m.until)}. ` : ''}En desar-lo, aquests dies s'obren a Dies oberts i la web mostra el menú a la reserva de taula.</p>
             </div>
             <Field label="Sota les dates" value={m.subtitle} onChange={set('subtitle')} placeholder="A la terrassa, cada diumenge" />
             <div className="flex justify-end"><Button size="sm" onPress={() => setStep('menu')}>Següent</Button></div>
@@ -711,7 +749,7 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
               <Field label="Begudes" value={m.drinks} onChange={set('drinks')} placeholder="Vi del Penedès, aigua, cafè" />
               <Field label="Preu per persona (€)" value={m.price} onChange={v => set('price')(v.replace(/[^\d,.]/g, ''))} inputMode="decimal" />
             </div>
-            <Field label="Web per reservar" value={m.link} onChange={set('link')} help="Surt al menú. Les stories porten a reservar taula (www.casavellarural.com/#taula). Instagram no deixa posar-hi l'enllaç des d'aquí." />
+            <Field label="Web per reservar" value={m.link} onChange={set('link')} help="Surt al menú. Les stories porten l'enllaç per reservar taula el dia del menú." />
             <div className="flex justify-between"><Button size="sm" variant="ghost" onPress={() => setStep('cover')}>Enrere</Button><Button size="sm" onPress={() => setStep('stories')}>Següent</Button></div>
           </>}
           {step === 'stories' && <>
@@ -738,19 +776,25 @@ function Menus({ data, setData, toEdit = '', onOpened }: { data: Data; setData: 
               <Label>Copy del post</Label>
               <TextArea rows={6} />
             </TextField>
-            {live && (
+            {live && (postDone ? <>
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold">Post, carrusel amb el menú</h3>
-                {postDone ? <p className="text-sm text-muted">Ja és publicat: no es pot canviar.</p> : whenFields('Quan surt el post', post, setPost)}
+                <p className="text-sm text-muted">Ja és publicat: no es pot canviar.</p>
               </div>
-            )}
-            {live && storyWhen('Story de la portada', story, setStory, storyDone)}
-            {live && storyWhen('Story del menú', storyMenu, setStoryMenu, storyMenuDone)}
+              {storyWhen('Story de la portada', story, setStory, storyDone)}
+              {storyWhen('Story del menú', storyMenu, setStoryMenu, storyMenuDone)}
+            </> : (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold">Quan comença la promo</h3>
+                {whenFields('Quan comença la promo', post, promo)}
+                <p className="text-xs text-muted">El post i les stories surten llavors. Després Maite en penja stories fins a cada dia, més sovint l'última setmana i cap quan és ple. Totes porten l'enllaç per reservar aquell dia.</p>
+              </div>
+            ))}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <Button size="sm" variant="ghost" onPress={() => setStep('stories')}>Enrere</Button>
               <Button size="sm" isPending={busy} isDisabled={!ready || busy} onPress={save}>{busy ? <Spinner size="sm" color="current" /> : <Check size={15} />}{editing ? 'Desa els canvis' : 'Desa el menú'}</Button>
             </div>
-            {!ready && <p className="text-xs text-muted">Cal el títol, el primer i l'últim dia, el nom del menú, un plat i el preu, i una hora que no hagi passat.</p>}
+            {!ready && <p className="text-xs text-muted">Cal el títol, cada dia amb la seva hora, el nom del menú, un plat i el preu, i una hora que no hagi passat.</p>}
           </>}
         </section>
         <section className="space-y-3 lg:sticky lg:top-24" aria-label="Com quedarà">
@@ -1163,7 +1207,7 @@ function Publish({ post, n, caption, onClose, setData, later, first = false }: {
   const tomorrow = ymd(new Date(Date.now() + 864e5));
   // link: a story published by hand from Instagram, to add the link sticker Maite can't add (storyLink)
   const [mode, setMode] = useState<'now' | 'later' | 'link'>(later ?? !!post.schedule ? 'later' : 'now');
-  const link = storyLink(!!post.pack);
+  const link = post.link || storyLink(!!post.pack);
   const [date, setDate] = useState(was ? ymd(was) : post.date && post.date > ymd(new Date()) ? post.date : tomorrow);
   const [time, setTime] = useState(was ? hour(post.schedule!.at) : '19:00');
   const [busy, setBusy] = useState<'' | 'go' | 'cancel'>('');

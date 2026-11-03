@@ -19,14 +19,17 @@
 //                          replace the ones the program publishes.
 //                          Or { menu: { id, menu } }  The values of a menu on its post, published or not (its days and its image
 //                          for the web can change after it went out).
+//                          A menu's new services open the restaurant at those moments (Restaurant, Dies oberts), and the
+//                          stories of a menu that haven't gone out link to its next service (lib/plan.js menuLink).
 //                          Or { template: { id, texts } }  The words changed on a template, for what is made from it next ([] to undo).
 // The posts of Maite's own plan (lib/plan.js, field auto) are ordinary posts here: changing one marks it as the owner's
 // (auto.touched), and a post the owner programs or dates takes its day from the plan's (makeRoom).
 // Opening the grid also publishes programs that are already due (lib/instagram.js), in case the cron hasn't yet.
 // Everything is one KV key, 'social' (lib/social.js).
-import { json } from '../../../lib/booking.js';
+import { json, openRestaurant } from '../../../lib/booking.js';
 import { SEED, follow, load, store, view } from '../../../lib/social.js';
-import { makeRoom } from '../../../lib/plan.js';
+import { makeRoom, menuLink } from '../../../lib/plan.js';
+import { isAt } from '../../../lib/restaurant.js';
 import { imagesOf, runDue } from '../../../lib/instagram.js';
 
 async function body(request) { try { return await request.json(); } catch { return null; } }
@@ -53,7 +56,8 @@ function slidesOf(list) {
 const slim = x => ({ tpl: x.tpl, v: x.v, photo: x.photo, ...(x.texts.length ? { texts: x.texts } : {}) });
 // The values of a menu (catalog.ts Menu): short strings and up to six dishes. null if they don't look like it; false if none
 // from, until: its first and last day; story: the announcement story's own lines (null follows the menu); image: the menu as a
-// JPEG, which the restaurant's booking page shows while it runs (/api/settings)
+// JPEG, which the restaurant's booking page shows while it runs (/api/settings); services: the moments it is served, each a day
+// and a time ('2026-12-31T21:00'), which open the restaurant then (Restaurant, Dies oberts) and set its first and last day
 function menuOf(m) {
   if (m == null || m === false) return false;
   if (m === true) return true;
@@ -63,7 +67,23 @@ function menuOf(m) {
   const dishes = [].concat(m.dishes || []), story = [].concat(m.story || []);
   if (dishes.length > 6 || dishes.some(d => typeof d !== 'string' || d.length > 300)) return null;
   if (story.length > 6 || story.some(d => d !== null && (typeof d !== 'string' || d.length > 300))) return null;
-  return { ...Object.fromEntries(keys.map(k => [k, m[k] || ''])), dishes, ...(story.some(x => x != null) ? { story } : {}) };
+  const services = [...new Set([].concat(m.services || []))].sort();
+  if (services.length > 60 || services.some(a => !isAt(a))) return null;
+  const out = { ...Object.fromEntries(keys.map(k => [k, m[k] || ''])), dishes, ...(story.some(x => x != null) ? { story } : {}) };
+  if (services.length) Object.assign(out, { services, from: services[0].slice(0, 10), until: services[services.length - 1].slice(0, 10) });
+  return out;
+}
+
+// What a menu sets going when it is saved: its new services open the restaurant (ones it already had aren't opened again, so a
+// day closed in Dies oberts stays closed), and the stories of every menu that haven't gone out link to their menu's next service
+// (the story robot puts that link in the sticker)
+async function menuEffects(env, S, user, opened = []) {
+  const today = dayOf(Date.now());
+  for (const p of S.posts) {
+    const m = p.pack && !p.published && S.posts.find(x => x.id === p.pack)?.menu;
+    if (m && typeof m === 'object') p.link = menuLink(m, p.schedule ? dayOf(p.schedule.at) : today);
+  }
+  if (opened.length) await openRestaurant(env, opened, user).catch(() => {});
 }
 
 // The day of a moment in Barcelona, as YYYY-MM-DD
@@ -87,6 +107,7 @@ export async function onRequestPost({ request, env, data }) {
     ...(b.pack ? { pack: String(b.pack) } : {}), at: new Date().toISOString(), by: data.user });
   const copy = String(b.copy || '').trim().slice(0, 4000);
   if (copy) S.copies[id] = copy;
+  await menuEffects(env, S, data.user, menu?.services || []);
   await store(env, S, data.user);
   return view(S, env);
 }
@@ -96,6 +117,9 @@ export async function onRequestPut({ request, env, data }) {
   const b = await body(request);
   if (!b) return json({ error: 'bad_request' }, 400);
   const S = await load(env);
+  // The services a menu gains with this change, to open in Restaurant
+  let opened = [];
+  const gained = (was, menu) => opened = (menu?.services || []).filter(a => !(was?.services || []).includes(a));
   // A post of Maite's own plan the owner changes is theirs from then on: the plan doesn't redo or take it out
   const touch = id => { const p = S.posts.find(x => x.id === id); if (p?.auto) p.auto = { ...p.auto, touched: true }; };
   const keepCopies = () => { const keep = new Set(S.posts.map(p => p.id)); S.copies = Object.fromEntries(Object.entries(S.copies).filter(([id]) => keep.has(id))); };
@@ -142,19 +166,21 @@ export async function onRequestPut({ request, env, data }) {
     Object.assign(post, { v: l.v, photo: l.photo });
     if (l.texts.length) post.texts = l.texts; else delete post.texts;
     if (slides) { if (slides.length) post.slides = slides; else delete post.slides; }
-    if (menu !== undefined) { if (menu) post.menu = menu; else delete post.menu; }
+    if (menu !== undefined) { gained(post.menu, menu); if (menu) post.menu = menu; else delete post.menu; }
     touch(post.id);
     if (post.schedule) { Object.assign(post.schedule, { image: images[0], by: data.user }); delete post.schedule.renderError; if (images.length > 1) post.schedule.images = images; else delete post.schedule.images; }
   } else if (b.menu && S.posts.some(p => p.id === b.menu.id && p.menu)) {
     const menu = menuOf(b.menu.menu);
     if (!menu || menu === true) return json({ error: 'bad_request' }, 400);
-    S.posts.find(p => p.id === b.menu.id).menu = menu;
+    const post = S.posts.find(p => p.id === b.menu.id);
+    gained(post.menu, menu); post.menu = menu;
   } else if (b.template && TPL.test(b.template.id || '')) {
     const texts = words(b.template.texts);
     if (!texts) return json({ error: 'bad_request' }, 400);
     S.templates = { ...S.templates };
     if (texts.length) S.templates[b.template.id] = texts; else delete S.templates[b.template.id];
   } else return json({ error: 'bad_request' }, 400);
+  await menuEffects(env, S, data.user, opened);
   await store(env, S, data.user);
   return view(S, env);
 }

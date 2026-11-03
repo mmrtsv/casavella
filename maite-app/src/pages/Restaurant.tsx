@@ -1,7 +1,8 @@
-// Restaurant: the tables booked for a day (web and phone), a new one, changing or cancelling one, what each table paid by day,
-// and the openings (a day and a time each), seats and limits the web follows
-import { useEffect, useMemo, useState } from 'react';
-import { Button, Spinner, Tabs } from '@heroui/react';
+// Restaurant: the tables booked for a day (web and phone), a new one, changing or cancelling one, the menus (where a menu starts
+// everything: its days open here, its image goes on the web and its Instagram promo runs; Menus in Social.tsx), what each table
+// paid by day, and the openings (a day and a time each), seats and limits the web follows
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { Button, Skeleton, Spinner, Tabs } from '@heroui/react';
 import { ChevronLeft, ChevronRight, Pencil, Phone, Plus, Trash2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { addDays, cap, day, euro, iso, longDay, parse, TODAY } from '../lib/dates';
@@ -15,7 +16,7 @@ import { Check, Choice, Field } from '../parts/fields';
 import { done, toastError } from '../parts/toast';
 import type { RestaurantSettings, Settings, Table } from '../lib/types';
 
-type Tab = 'tables' | 'paid' | 'open';
+type Tab = 'tables' | 'menus' | 'paid' | 'open';
 const SOURCES = [{ id: 'phone', name: 'Telèfon' }, { id: 'whatsapp', name: 'WhatsApp' }, { id: 'email', name: 'Correu' }, { id: 'door', name: 'En persona' }, { id: 'other', name: 'Altres' }];
 const persones = (n: number) => `${n} ${n === 1 ? 'persona' : 'persones'}`;
 // '2026-12-31T21:00' as "Dijous, 31 de desembre, 21:00"
@@ -28,14 +29,20 @@ export default function Restaurant() {
       <Tabs selectedKey={tab} onSelectionChange={k => setTab(k as Tab)} className="mb-5">
         <Tabs.ListContainer><Tabs.List aria-label="Restaurant" className="w-fit">
           <Tabs.Tab id="tables">Taules<Tabs.Indicator /></Tabs.Tab>
+          <Tabs.Tab id="menus">Menús<Tabs.Indicator /></Tabs.Tab>
           <Tabs.Tab id="paid">Cobrat<Tabs.Indicator /></Tabs.Tab>
           <Tabs.Tab id="open">Dies oberts<Tabs.Indicator /></Tabs.Tab>
         </Tabs.List></Tabs.ListContainer>
       </Tabs>
-      {tab === 'tables' ? <Tables /> : tab === 'paid' ? <Paid /> : <Openings />}
+      {tab === 'tables' ? <Tables /> : tab === 'menus' ? <MenusTab /> : tab === 'paid' ? <Paid /> : <Openings />}
     </div>
   );
 }
+
+// ---------- Menus ----------
+// A menu and its services (RestaurantMenus in Social.tsx, loaded when the tab opens, with the Instagram templates)
+const Menus = lazy(() => import('./Social').then(m => ({ default: m.RestaurantMenus })));
+const MenusTab = () => <Suspense fallback={<Skeleton className="h-[640px] rounded-2xl" />}><Menus /></Suspense>;
 
 // ---------- Tables ----------
 function Tables() {

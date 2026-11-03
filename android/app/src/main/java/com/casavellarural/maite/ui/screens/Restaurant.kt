@@ -86,8 +86,14 @@ fun Restaurant() {
     val S = Maite.settings ?: return LoadingPage()
     var tab by remember { mutableStateOf(Ui.restaurantTab.ifEmpty { "tables" }.also { Ui.restaurantTab = "" }) }
     Page {
-        Tabs(listOf("tables" to "Taules", "paid" to "Cobrat", "open" to "Dies oberts"), tab, { tab = it })
-        when (tab) { "tables" -> Tables(S.restaurant); "paid" -> Paid(S.restaurant); else -> Openings(S.restaurant) }
+        Tabs(listOf("tables" to "Taules", "menus" to "Menús", "paid" to "Cobrat", "open" to "Dies oberts"), tab, { tab = it })
+        when (tab) {
+            "tables" -> Tables(S.restaurant)
+            // Where a menu starts everything: its days open here, its image goes on the web and its promo runs (ui/social/Social.kt)
+            "menus" -> com.casavellarural.maite.ui.social.RestaurantMenus()
+            "paid" -> Paid(S.restaurant)
+            else -> Openings(S.restaurant)
+        }
     }
 }
 

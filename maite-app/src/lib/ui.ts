@@ -28,10 +28,13 @@ export function openBookings(filter: string) { bookingsFilter = filter; go('book
 export function takeBookingsFilter() { const f = bookingsFilter; bookingsFilter = ''; return f; }
 
 // Calendari opens Restaurant on a day, and Inici on Cobrat on a day with tables to note; the page takes them once, when it opens
-let restaurantDay = '', restaurantTab = '';
+let restaurantDay = '', restaurantTab = '', restaurantMenu = '';
 export function openRestaurant(date: string, tab: 'tables' | 'paid' = 'tables') { restaurantDay = date; restaurantTab = tab; go('restaurant'); }
 export function takeRestaurantDay() { const d = restaurantDay; restaurantDay = ''; return d; }
 export function takeRestaurantTab() { const t = restaurantTab; restaurantTab = ''; return t; }
+// Publicar opens a menu's post in Restaurant › Menús, where menus are made and changed
+export function openRestaurantMenu(id: string) { restaurantMenu = id; restaurantTab = 'menus'; go('restaurant'); }
+export function takeRestaurantMenu() { const m = restaurantMenu; restaurantMenu = ''; return m; }
 
 // Links from the weekly summary email (lib/weekly.js) open the thing to do: #/restaurant?paid=2026-10-31 (Cobrat on that day),
 // #/bookings?open=<stay|id> (that booking), #/bookings?filter=todo and #/social?tab=plan

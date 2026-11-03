@@ -51,6 +51,7 @@ class MainActivity : ComponentActivity() {
         i.getStringExtra("open")?.let { tab ->
             i.removeExtra("open")
             if (tab.startsWith("cobrat:")) return Ui.openRestaurant(tab.removePrefix("cobrat:"), "paid")
+            if (tab == "menus") return Ui.openRestaurantMenu()
             com.casavellarural.maite.ui.social.openSocialTab = tab
             return Ui.go(com.casavellarural.maite.ui.Page.Social)
         }

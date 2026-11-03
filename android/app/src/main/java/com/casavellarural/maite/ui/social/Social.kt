@@ -77,6 +77,7 @@ import com.casavellarural.maite.data.longDay
 import com.casavellarural.maite.data.cap
 import com.casavellarural.maite.data.Slide
 import com.casavellarural.maite.data.Social
+import com.casavellarural.maite.data.Settings
 import com.casavellarural.maite.data.SocialPost
 import com.casavellarural.maite.data.TODAY
 import com.casavellarural.maite.data.localDayOf
@@ -102,6 +103,7 @@ import com.casavellarural.maite.ui.Tag
 import com.casavellarural.maite.ui.Toasts
 import com.casavellarural.maite.ui.Tone
 import com.casavellarural.maite.ui.Type
+import com.casavellarural.maite.ui.Ui
 import com.casavellarural.maite.ui.pagePadding
 import com.casavellarural.maite.ui.screens.DateField
 import com.casavellarural.maite.ui.screens.LoadingPage
@@ -119,16 +121,13 @@ import kotlinx.coroutines.withContext
 // Xarxes socials, as maite-app/src/pages/Social.tsx: a new post (from a description or from a template), the templates and the
 // words changed on them, the profile grid of the posts made, captions, publishing, a calendar
 
-private val TABS = listOf("plan" to "Pla", "new" to "Generador de posts", "menus" to "Menús i esdeveniments", "profile" to "Publicar", "calendar" to "Calendari")
+private val TABS = listOf("plan" to "Pla", "new" to "Generador de posts", "profile" to "Publicar", "calendar" to "Calendari")
 private val HELP = mapOf(
     "plan" to "Cada dilluns Maite prepara la setmana següent a partir de les reserves. Tens fins diumenge a les 23:59 per canviar-la; si no, surt tal com és.",
     "new" to "Fes-la des d'una plantilla o genera-la amb IA a partir d'una descripció. Abans d'afegir-la al perfil en pots canviar el text i la foto.",
-    "menus" to "Un menú o un esdeveniment amb els seus dies: Maite en fa el post i les stories, i en publica recordatoris fins que s'omple.",
 )
 /** What Crea'n un post on a template card hands to Nova publicació; n tells one hand-over from the next */
 private data class Start(val id: String, val v: Int, val photo: String, val n: Int)
-/** The menu post whose pencil was pressed in Publicar: Nova publicació › Menú opens its pack, as Edita does there */
-private data class OpenMenu(val id: String, val n: Int)
 private fun inGrid(t: Template) = t.kind == "post" || t.id == "StoryReel"
 /** The slides that follow a template in a carousel (the menu after the announcement), as they are before anyone changes them */
 private fun nextSlides(t: Template) = Renderer.catalog?.carousels?.get(t.id).orEmpty().map { Slide(it) }
@@ -177,7 +176,6 @@ fun SocialScreen() {
         preparing = ""
     }
     var start by remember { mutableStateOf<Start?>(null) }
-    var menu by remember { mutableStateOf<OpenMenu?>(null) }
     LaunchedEffect(Unit) { runCatching { Maite.loadSocial() }.onFailure { Toasts.error(it) } }
     val cat = Renderer.catalog ?: return LoadingPage()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(pagePadding()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -188,8 +186,7 @@ fun SocialScreen() {
             data == null -> com.casavellarural.maite.ui.Loading()
             tab == "plan" -> plan?.let { PlanScreen(data, it, { p -> plan = p }, preparing) } ?: com.casavellarural.maite.ui.Loading()
             tab == "new" -> key(start?.n ?: 0) { NewPost(data, start) { tab = it; lastTab = it } }
-            tab == "menus" -> key(menu?.n ?: 0) { Menus(data, menu?.id.orEmpty(), { menu = menu?.copy(id = "") }) }
-            tab == "profile" -> Profile(data, { p -> menu = OpenMenu(p.id, (menu?.n ?: 0) + 1); tab = "menus"; lastTab = tab }) { tab = "new"; lastTab = tab }
+            tab == "profile" -> Profile(data, { p -> Ui.openRestaurantMenu(p.id) }) { tab = "new"; lastTab = tab }
             else -> Planner(data, { tab = "new"; lastTab = tab }) { tab = "profile"; lastTab = tab }
         }
     }
@@ -711,7 +708,7 @@ private fun saveBitmap(context: Context, bmp: Bitmap, name: String) {
 }
 
 // ---------- Perfil ----------
-/** onEditMenu: a menu post's pencil, which opens it in Nova publicació › Menú */
+/** onEditMenu: a menu post's pencil, which opens it in Restaurant › Menús */
 @Composable
 private fun Profile(data: Social, onEditMenu: (SocialPost) -> Unit, onEmpty: () -> Unit) {
     val byId = Renderer.byId
@@ -958,7 +955,7 @@ private fun Publish(post: SocialPost, n: Int, caption: String, later: Boolean? =
     val was = post.schedule
     // link: a story published by hand from Instagram, to add the link sticker (storyLink)
     var mode by remember { mutableStateOf(if (later ?: (was != null)) "later" else "now") }
-    val link = storyLink(post.pack != null)
+    val link = post.link ?: storyLink(post.pack != null)
     val context = LocalContext.current
     var date by remember { mutableStateOf(was?.let { dayOfIso(it.at) } ?: post.date?.takeIf { it > TODAY } ?: addDays(TODAY, 1)) }
     var time by remember { mutableStateOf(was?.let { hourOf(it.at) } ?: "19:00") }
@@ -1110,12 +1107,12 @@ private fun Planner(data: Social, onEmpty: () -> Unit, onPublish: () -> Unit) {
     }
 }
 
-// ---------- Menú, in Nova publicació ----------
-// As Menus in maite-app/src/pages/Social.tsx: a menu in four steps (the cover, the menu, the stories, when it goes out). It
-// becomes a carousel post in the grid (the menu's cover, then the menu) and two stories, the announcement and the menu; each
-// goes out now, at a programmed time or later. The cover takes the first and last day, so the restaurant's booking page on the
-// web shows the menu while it runs. The menus made here are listed under the form; Edita opens the whole pack again (the
-// menu's words, the stories, the caption, and when each piece goes out), and saving changes all of them
+// ---------- Restaurant › Menús ----------
+// As Menus in maite-app/src/pages/Social.tsx: where everything about a menu starts, in four steps (the cover and its services,
+// the menu, the stories, when the promo starts). Saving opens the restaurant at its services (Dies oberts), puts the menu's image
+// on the web's table booking page while it runs, and makes a carousel post (the menu's cover, then the menu) and two stories,
+// which go out together when the promo starts. From then on the server (lib/plan.js) posts its stories until each service, each
+// with the link sticker to book that day. The menus made here are listed under the form; Edita opens the whole pack again
 
 /** The web address as the menu writes it: without https://, with www. (catalog.ts www) */
 private fun www(link: String): String {
@@ -1207,13 +1204,46 @@ private val menuJson = kotlinx.serialization.json.Json { ignoreUnknownKeys = tru
 /** The values of a menu kept on its post, or null (an older one, made before they were kept) */
 private fun menuValues(p: SocialPost): Menu? = (p.menu as? kotlinx.serialization.json.JsonObject)?.let { runCatching { menuJson.decodeFromJsonElement(Menu.serializer(), it) }.getOrNull() }
 private fun Menu.body() = mapOf("photo" to photo, "kicker" to kicker, "title" to title, "subtitle" to subtitle, "dates" to dates, "from" to from, "until" to until,
-    "name" to name, "dishes" to dishes, "drinks" to drinks, "price" to price, "link" to link, "story" to story, "image" to image)
+    "name" to name, "dishes" to dishes, "drinks" to drinks, "price" to price, "link" to link, "story" to story, "image" to image, "services" to services)
 private fun SocialPost.isMenu() = menu != null && menu != kotlinx.serialization.json.JsonNull && menu.toString() != "false"
 
 private data class Out(val mode: String, val date: String, val time: String) {
     val at get() = runCatching { java.time.LocalDateTime.parse("${date}T$time").atZone(BCN).toInstant() }.getOrNull()
     val late get() = mode == "later" && at?.isAfter(java.time.Instant.now().plusSeconds(60)) != true
 }
+/** One service of a menu in the form: a day and a time */
+private data class Service(val day: String, val time: String)
+/** The services of a menu as rows of the form (rowsOf in Social.tsx). Older menus have none: the openings in Restaurant between
+ *  their first and last day, or those days at 21:00 */
+private fun rowsOf(m: Menu, open: List<String>): List<Service> {
+    val list = m.services.ifEmpty { if (m.from.isEmpty()) emptyList() else open.filter { it.take(10) >= m.from && it.take(10) <= m.until.ifEmpty { m.from } } }
+    if (list.isNotEmpty()) return list.map { Service(it.take(10), it.drop(11).take(5)) }
+    return if (m.from.isNotEmpty()) listOf(m.from, m.until.ifEmpty { m.from }).distinct().map { Service(it, "21:00") } else listOf(Service("", "21:00"))
+}
+private val HOUR = Regex("^([01]\\d|2[0-3]):[0-5]\\d$")
+/** The menu with its services from the rows: the complete ones, in order, and its first and last day */
+private fun withRows(m: Menu, rows: List<Service>): Menu {
+    val services = rows.filter { it.day.isNotEmpty() && HOUR.matches(it.time) }.map { "${it.day}T${it.time}" }.distinct().sorted()
+    return m.copy(services = services, from = services.firstOrNull()?.take(10).orEmpty(), until = services.lastOrNull()?.take(10).orEmpty())
+}
+/** A time some minutes later ("12:00" + 5 = "12:05"), within the day */
+private fun later(time: String, min: Int): String {
+    val t = minOf((time.take(2).toIntOrNull() ?: 0) * 60 + (time.drop(3).take(2).toIntOrNull() ?: 0) + min, 1439)
+    return "%02d:%02d".format(t / 60, t % 60)
+}
+
+/** Restaurant › Menús: the menus, with the posts they live on (loaded here, as Xarxes socials does) */
+@Composable
+fun RestaurantMenus() {
+    val context = LocalContext.current
+    Renderer.loadCatalog(context)
+    var toEdit by remember { mutableStateOf(Ui.restaurantMenu.also { Ui.restaurantMenu = "" }) }
+    LaunchedEffect(Unit) { runCatching { Maite.loadSocial() }.onFailure { Toasts.error(it) } }
+    val data = Maite.social
+    if (Renderer.catalog == null || data == null) return com.casavellarural.maite.ui.Loading()
+    Menus(data, toEdit, { toEdit = "" })
+}
+
 /** The pack being changed: its post and its two stories (the announcement, and older packs' only story; the menu), as saved */
 private data class Pack(val post: SocialPost, val story: SocialPost?, val storyMenu: SocialPost?)
 
@@ -1225,9 +1255,12 @@ private fun Menus(data: Social, toEdit: String = "", onOpened: () -> Unit = {}) 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val byId = Renderer.byId
-    val newPost = Out("later", addDays(TODAY, 1), "19:00"); val newStory = Out("later", addDays(TODAY, 1), "12:00"); val newStoryMenu = Out("later", addDays(TODAY, 1), "12:05")
+    val newPost = Out("later", addDays(TODAY, 1), "19:00"); val newStory = Out("later", addDays(TODAY, 1), "19:00"); val newStoryMenu = Out("later", addDays(TODAY, 1), "19:05")
+    val open = Maite.settings?.restaurant?.open.orEmpty()
     var step by remember { mutableStateOf("cover") }
     var m by remember { mutableStateOf(defaults.example) }
+    var rows by remember { mutableStateOf(listOf(Service("", "21:00"))) }
+    fun setRows(r: List<Service>) { rows = r; m = withRows(m, r) }
     var own by remember { mutableStateOf<Pair<android.net.Uri, String>?>(null) }
     var copy by remember { mutableStateOf<String?>(null) }
     var insta by remember { mutableStateOf<Insta?>(null) }
@@ -1247,19 +1280,20 @@ private fun Menus(data: Social, toEdit: String = "", onOpened: () -> Unit = {}) 
     val caption = copy ?: menuCaption(m)
     val live = insta?.connected == true
     val postDone = editing?.post?.published != null; val storyDone = editing?.story?.published != null; val storyMenuDone = editing?.storyMenu?.published != null
-    val daysOk = m.from.isNotEmpty() && m.until.isNotEmpty() && m.until >= m.from
+    val daysOk = rows.isNotEmpty() && rows.all { it.day.isNotEmpty() && HOUR.matches(it.time) }
     val ready = m.title.isNotBlank() && m.name.isNotBlank() && m.price.isNotBlank() && m.dishes.any { it.isNotBlank() } && daysOk &&
         !(live && !postDone && post.late) && !(live && withStory && !storyDone && story.late) && !(live && withStoryMenu && !storyMenuDone && storyMenu.late)
     fun packOf(p: SocialPost) = Pack(p, data.posts.find { it.pack == p.id && it.tpl != "StoryMenu" }, data.posts.find { it.pack == p.id && it.tpl == "StoryMenu" })
     fun reset() {
-        editing = null; m = defaults.example; own = null; copy = null; step = "cover"; post = newPost; story = newStory; storyMenu = newStoryMenu
+        editing = null; m = defaults.example; rows = listOf(Service("", "21:00")); own = null; copy = null; step = "cover"; post = newPost; story = newStory; storyMenu = newStoryMenu
         withStory = true; withStoryMenu = true
     }
     fun edit(p: SocialPost) {
         val values = menuValues(p) ?: return
         val pack = packOf(p)
         fun was(x: SocialPost?, d: Out) = x?.schedule?.let { Out("later", dayOfIso(it.at), hourOf(it.at)) } ?: d.copy(mode = "save")
-        editing = pack; m = values; own = null; copy = data.copies[p.id]; step = "cover"
+        val r = rowsOf(values, open)
+        editing = pack; m = withRows(values, r); rows = r; own = null; copy = data.copies[p.id]; step = "cover"
         post = was(p, newPost); story = was(pack.story, newStory); storyMenu = was(pack.storyMenu, newStoryMenu)
         withStory = pack.story != null; withStoryMenu = pack.storyMenu != null
     }
@@ -1320,6 +1354,8 @@ private fun Menus(data: Social, toEdit: String = "", onOpened: () -> Unit = {}) 
                     if (on) piece(was, body, null, mapOf("story" to true, "pack" to p.id), w, name)
                     else if (was != null && !isDone) { d = Api.put<Social>("social", mapOf("remove" to was.id)); Maite.social = d }
                 }
+                // Its services are open in Restaurant now
+                runCatching { Maite.settings = Api.get<Settings>("settings") }
                 Toasts.done((if (e != null) "Menú desat" else "Menú fet") + if (out.isEmpty()) "" else ": ${out.joinToString(", ")}")
                 reset()
             } catch (e: Exception) { Toasts.error(e) }
@@ -1354,16 +1390,16 @@ private fun Menus(data: Social, toEdit: String = "", onOpened: () -> Unit = {}) 
                     }
                     Field("Damunt del títol", m.kicker, { m = m.copy(kicker = it) }, placeholder = "Torna la")
                     Field("Títol", m.title, { m = m.copy(title = it) }, placeholder = "Calçotada")
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        DateField("Primer dia", m.from, { f -> m = m.copy(from = f, until = if (m.until.isNotEmpty() && m.until < f) f else m.until) }, Modifier.weight(1f), min = if (editing != null) null else TODAY)
-                        DateField("Últim dia", m.until, { m = m.copy(until = it) }, Modifier.weight(1f), min = if (editing != null) null else TODAY)
+                    Text("Dies i hores", style = Type.sm, fontWeight = FontWeight.SemiBold)
+                    rows.forEachIndexed { i, r ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Bottom) {
+                            DateField("Dia", r.day, { d -> setRows(rows.mapIndexed { j, x -> if (j == i) x.copy(day = d) else x }) }, Modifier.weight(1f), min = if (editing != null) null else TODAY)
+                            Field("Hora", r.time, { v -> setRows(rows.mapIndexed { j, x -> if (j == i) x.copy(time = v.filter { it.isDigit() || it == ':' }.take(5)) else x }) }, Modifier.width(96.dp), type = KeyboardType.Number, error = !HOUR.matches(r.time))
+                            if (rows.size > 1) IconBtn(R.drawable.ic_x, "Treu aquest dia", { setRows(rows.filterIndexed { j, _ -> j != i }) })
+                        }
                     }
-                    val backwards = m.from.isNotEmpty() && m.until.isNotEmpty() && m.until < m.from
-                    Text(when {
-                        backwards -> "L'últim dia va abans del primer."
-                        m.from.isNotEmpty() -> "A la portada: ${datesText(m.from, m.until)}. La web el mostra a la reserva de taula fins a l'últim dia."
-                        else -> "La portada escriu les dates, i la web mostra el menú a la reserva de taula fins a l'últim dia."
-                    }, style = Type.xs, color = if (backwards) T.warningText else T.muted)
+                    Btn("Afegeix un dia", { val l = rows.lastOrNull(); setRows(rows + Service(if (l != null && l.day.isNotEmpty()) addDays(l.day, 7) else "", l?.time ?: "21:00")) }, look = Look.Secondary, icon = R.drawable.ic_plus)
+                    Text((if (m.from.isNotEmpty()) "A la portada: ${datesText(m.from, m.until)}. " else "") + "En desar-lo, aquests dies s'obren a Dies oberts i la web mostra el menú a la reserva de taula.", style = Type.xs, color = T.muted)
                     Field("Sota les dates", m.subtitle, { m = m.copy(subtitle = it) }, placeholder = "A la terrassa, cada diumenge")
                     Btn("Següent", { step = "menu" }, Modifier.align(Alignment.End))
                 }
@@ -1372,7 +1408,7 @@ private fun Menus(data: Social, toEdit: String = "", onOpened: () -> Unit = {}) 
                     for (i in 0 until defaults.dishes) Field("Plat ${i + 1}", m.dishes.getOrElse(i) { "" }, { v -> m = m.copy(dishes = List(defaults.dishes) { k -> if (k == i) v else m.dishes.getOrElse(k) { "" } }) })
                     Field("Begudes", m.drinks, { m = m.copy(drinks = it) }, placeholder = "Vi del Penedès, aigua, cafè")
                     Field("Preu per persona (€)", m.price, { v -> m = m.copy(price = v.filter { it.isDigit() || it == ',' || it == '.' }) }, type = KeyboardType.Decimal)
-                    Field("Web per reservar", m.link, { m = m.copy(link = it) }, help = "Surt al menú. Les stories porten a reservar taula (www.casavellarural.com/#taula). Instagram no deixa posar-hi l'enllaç des d'aquí.")
+                    Field("Web per reservar", m.link, { m = m.copy(link = it) }, help = "Surt al menú. Les stories porten l'enllaç per reservar taula el dia del menú.")
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Btn("Enrere", { step = "cover" }, look = Look.Ghost); Btn("Següent", { step = "stories" })
                     }
@@ -1400,17 +1436,23 @@ private fun Menus(data: Social, toEdit: String = "", onOpened: () -> Unit = {}) 
                 else -> {
                     if (insta != null && !live) Muted("Per publicar o programar des d'aquí cal connectar el compte d'Instagram. El menú es desa i el pots descarregar.")
                     if (postDone) Muted("El post ja és publicat: no es pot canviar.") else Field("Copy del post", caption, { copy = it }, area = true)
+                    // The promo starts with the post, and its two stories go out with it (the menu's a few minutes after)
                     if (live && !postDone) Column {
-                        Text("Post, carrusel amb el menú", style = Type.sm, fontWeight = FontWeight.SemiBold)
-                        OutFields(post) { post = it }
+                        Text("Quan comença la promo", style = Type.sm, fontWeight = FontWeight.SemiBold)
+                        OutFields(post) { x ->
+                            post = x
+                            if (!storyDone) story = x
+                            if (!storyMenuDone) storyMenu = x.copy(time = later(x.time, 5))
+                        }
+                        Text("El post i les stories surten llavors. Després Maite en penja stories fins a cada dia, més sovint l'última setmana i cap quan és ple. Totes porten l'enllaç per reservar aquell dia.", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 6.dp))
                     }
-                    if (live) StoryWhen("Story de la portada", withStory, story, { story = it }, storyDone)
-                    if (live) StoryWhen("Story del menú", withStoryMenu, storyMenu, { storyMenu = it }, storyMenuDone)
+                    if (live && postDone) StoryWhen("Story de la portada", withStory, story, { story = it }, storyDone)
+                    if (live && postDone) StoryWhen("Story del menú", withStoryMenu, storyMenu, { storyMenu = it }, storyMenuDone)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Btn("Enrere", { step = "stories" }, look = Look.Ghost)
                         Btn(if (editing != null) "Desa els canvis" else "Desa el menú", { save() }, icon = R.drawable.ic_check, busy = busy == "save", enabled = ready && busy.isEmpty())
                     }
-                    if (!ready) Text("Cal el títol, el primer i l'últim dia, el nom del menú, un plat i el preu, i una hora que no hagi passat.", style = Type.xs, color = T.muted)
+                    if (!ready) Text("Cal el títol, cada dia amb la seva hora, el nom del menú, un plat i el preu, i una hora que no hagi passat.", style = Type.xs, color = T.muted)
                 }
             }
         }

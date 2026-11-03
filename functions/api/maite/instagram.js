@@ -9,10 +9,12 @@ import { load, view } from '../../../lib/social.js';
 import { ig, imagesOf, publish, token } from '../../../lib/instagram.js';
 
 export async function onRequestGet({ request, env }) {
+  if (!env.INSTAGRAM_TOKEN) return json({ connected: false, media: [], detail: 'falta el secret INSTAGRAM_TOKEN a Cloudflare' });
   const t = await token(env).catch(() => null);
-  if (!t) return json({ connected: false, media: [] });
+  if (!t) return json({ connected: false, media: [], detail: "no s'ha pogut llegir el testimoni" });
   try {
-    const me = await ig(env, t, '/me?fields=user_id,username');
+    // One more try when Instagram doesn't answer the first time, so a busy moment doesn't read as disconnected
+    const me = await ig(env, t, '/me?fields=user_id,username').catch(async () => { await new Promise(r => setTimeout(r, 1500)); return ig(env, t, '/me?fields=user_id,username'); });
     if (!new URL(request.url).searchParams.get('media')) return json({ connected: true, username: me.username });
     let cached = JSON.parse((await env.MAITE?.get('instagram-media')) || 'null');
     if (!cached || Date.now() - Date.parse(cached.at) > 30 * 60e3) {

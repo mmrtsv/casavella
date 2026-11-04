@@ -16,13 +16,18 @@ import { json } from '../../../lib/booking.js';
 import { load, store, viewData } from '../../../lib/social.js';
 import { botAlive, botState, imagesOf } from '../../../lib/instagram.js';
 import { canRender } from '../../../lib/render.js';
-import { appState, canApp } from '../../../lib/igapp.js';
+import { appState, canApp, checkApp } from '../../../lib/igapp.js';
 import { loadPlan, lookOf, makeWeek, mondayOf, refreshMenus, settingsOf, storePlan, tick } from '../../../lib/plan.js';
 
 // bot: the story robot (story-bot/), when it is set up: whether it is running (alive), as which account, and its last error
 const botOf = async env => {
   // The stories go out from Cloudflare itself with the Instagram session (lib/igapp.js)
-  if (canApp(env)) { const a = await appState(env).catch(() => null); return { alive: !a?.error, seen: a?.checked || '', user: a?.user || '', error: a?.error || '' }; }
+  if (canApp(env)) {
+    let a = await appState(env).catch(() => null);
+    // A session copied again is checked at once: the error kept in KV belongs to the old one (lib/plan.js only checks twice a day)
+    if (!a || a.from !== env.IG_SESSIONID.slice(-12)) a = await checkApp(env).catch(e => ({ error: e.message }));
+    return { alive: !a?.error, seen: a?.checked || '', user: a?.user || '', error: a?.error || '' };
+  }
   if (!env.STORY_BOT_SECRET) return null;
   const b = await botState(env).catch(() => null);
   return { alive: await botAlive(env), seen: b?.seen || '', user: b?.user || '', error: b?.error || '' };

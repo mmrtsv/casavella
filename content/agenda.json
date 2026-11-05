@@ -1,6 +1,22 @@
 {
-  "updated": "2026-11-02",
+  "updated": "2026-11-05",
   "items": [
+    {
+      "from": "2026-10-03",
+      "to": "2026-11-28",
+      "place": "Piera",
+      "title": {
+        "ca": "Concurs de Teatre Amateur Vila de Piera",
+        "es": "Concurso de Teatro Amateur Vila de Piera",
+        "en": "Vila de Piera Amateur Theatre Competition"
+      },
+      "text": {
+        "ca": "La 50a edició al Teatre Foment: nou companyies de tot Catalunya, els dissabtes a les 19 h.",
+        "es": "La 50.ª edición en el Teatre Foment: nueve compañías de toda Cataluña, los sábados a las 19 h.",
+        "en": "The 50th edition at Teatre Foment: nine companies from across Catalonia, on Saturdays at 7 pm."
+      },
+      "url": "https://surtdecasa.cat/centre/agenda/2026/50e-concurs-de-teatre-amateur/270481"
+    },
     {
       "from": "2026-11-04",
       "to": "2026-11-07",
@@ -66,35 +82,19 @@
       "url": "https://surtdecasa.cat/penedes/agenda/2026/4a-fira-de-la-poma-de-pontons/270447"
     },
     {
-      "from": "2026-11-21",
-      "place": "Igualada",
+      "from": "2026-11-08",
+      "place": "La Torre de Claramunt",
       "title": {
-        "ca": "Festa de la Ratafia de l'Anoia",
-        "es": "Fiesta de la Ratafía de l'Anoia",
-        "en": "Anoia Ratafia Festival"
+        "ca": "Festa de la Cassola de Vinya i Olla de Murri",
+        "es": "Fiesta de la Cassola de Vinya y la Olla de Murri",
+        "en": "Cassola de Vinya and Olla de Murri festival"
       },
       "text": {
-        "ca": "La 21a festa de la ratafia a la plaça Catarineu: tast, concurs de ratafia casolana, concerts i dinar amb tiquet (18 €).",
-        "es": "La 21.ª fiesta de la ratafía en la plaza Catarineu: cata, concurso de ratafía casera, conciertos y comida con tique (18 €).",
-        "en": "The 21st ratafia festival in Plaça Catarineu: tasting, a homemade ratafia contest, concerts and a ticketed lunch (€18)."
+        "ca": "Desena edició, al recinte Torresport, de 10 a 14 h: tastos, parades d'artesania i de productes de l'Anoia, tallers infantils i degustació de vins i caves. Entrada lliure; el tiquet de degustació val 10 €.",
+        "es": "Décima edición, en el recinto Torresport, de 10 a 14 h: catas, puestos de artesanía y de productos del Anoia, talleres infantiles y degustación de vinos y cavas. Entrada libre; el tique de degustación cuesta 10 €.",
+        "en": "The tenth edition, at the Torresport grounds, 10 am to 2 pm: tastings, Anoia crafts and local food stalls, children's workshops and wine and cava tasting. Free entry; the tasting ticket is 10 €."
       },
-      "url": "https://surtdecasa.cat/centre/agenda/2026/xxi-festa-de-la-ratafia-de-lanoia/270479"
-    },
-    {
-      "from": "2026-10-03",
-      "to": "2026-11-28",
-      "place": "Piera",
-      "title": {
-        "ca": "Concurs de Teatre Amateur Vila de Piera",
-        "es": "Concurso de Teatro Amateur Vila de Piera",
-        "en": "Vila de Piera Amateur Theatre Competition"
-      },
-      "text": {
-        "ca": "La 50a edició al Teatre Foment: nou companyies de tot Catalunya, els dissabtes a les 19 h.",
-        "es": "La 50.ª edición en el Teatre Foment: nueve compañías de toda Cataluña, los sábados a las 19 h.",
-        "en": "The 50th edition at Teatre Foment: nine companies from across Catalonia, on Saturdays at 7 pm."
-      },
-      "url": "https://surtdecasa.cat/centre/agenda/2026/50e-concurs-de-teatre-amateur/270481"
+      "url": "https://surtdecasa.cat/centre/agenda/2026/10a-festa-de-la-cassola-de-vinya-i-olla-de-murri/270900"
     },
     {
       "from": "2026-11-13",
@@ -111,6 +111,37 @@
         "en": "A model railway fair with Penedès food, wine and sparkling wine at the town sports hall: Saturday 10 am to 2 pm and 4 to 8 pm, Sunday 10 am to 2 pm; food stalls from Friday at 7 pm."
       },
       "url": "https://www.penedesturisme.cat/ca/activitat/funifira-de-gelida-maquetisme-modelisme-i-lleure-ferroviari-gastronomiam-vins-i-escumosos-del"
+    },
+    {
+      "from": "2026-11-14",
+      "to": "2026-11-15",
+      "place": "Sant Quintí de Mediona",
+      "title": {
+        "ca": "Fira de Mata-degolla",
+        "es": "Feria de Mata-degolla",
+        "en": "Mata-degolla Fair"
+      },
+      "text": {
+        "ca": "Fira històrica ambientada el 1714 al nucli antic: recreacions pels carrers, mercat de productes artesans i del poble, visita guiada i espectacles infantils, sobretot el diumenge al matí. Entrada lliure.",
+        "es": "Feria histórica ambientada en 1714 en el casco antiguo: recreaciones por las calles, mercado de productos artesanos y del pueblo, visita guiada y espectáculos infantiles, sobre todo el domingo por la mañana. Entrada libre.",
+        "en": "A historical fair set in 1714 in the old town: street re-enactments, a market of crafts and local produce, a guided walk and children's shows, mostly on Sunday morning. Free entry."
+      },
+      "url": "https://surtdecasa.cat/penedes/agenda/2026/fira-de-mata-degolla/271156"
+    },
+    {
+      "from": "2026-11-21",
+      "place": "Igualada",
+      "title": {
+        "ca": "Festa de la Ratafia de l'Anoia",
+        "es": "Fiesta de la Ratafía de l'Anoia",
+        "en": "Anoia Ratafia Festival"
+      },
+      "text": {
+        "ca": "La 21a festa de la ratafia a la plaça Catarineu: tast, concurs de ratafia casolana, concerts i dinar amb tiquet (18 €).",
+        "es": "La 21.ª fiesta de la ratafía en la plaza Catarineu: cata, concurso de ratafía casera, conciertos y comida con tique (18 €).",
+        "en": "The 21st ratafia festival in Plaça Catarineu: tasting, a homemade ratafia contest, concerts and a ticketed lunch (€18)."
+      },
+      "url": "https://surtdecasa.cat/centre/agenda/2026/xxi-festa-de-la-ratafia-de-lanoia/270479"
     },
     {
       "from": "2026-11-22",

@@ -90,7 +90,7 @@ export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?:
       i++;
     }
     // The title in script is drawn for a word of about ten letters; a longer one gets smaller to stay on the image
-    if (t.id === 'PostAnnounce' || t.id === 'PostMenuCover' || t.id === 'StoryPoster') {
+    if (['PostAnnounce', 'PostMenuCover', 'StoryPoster', 'PostMenuFull', 'StoryFull'].includes(t.id)) {
       const sc = find(root, 'Pinyon'), n = sc?.textContent?.trim().length || 0;
       if (sc && n > 10) sc.style.fontSize = Math.max(90, Math.round(parseInt(sc.style.fontSize) * 10 / n)) + 'px';
     }

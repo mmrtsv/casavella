@@ -2,7 +2,7 @@
 // templates in the brand (posts, stories, highlight covers) and the words changed on them, the profile grid built from the
 // posts made here, their captions, and PNGs at full size. The posts, captions and template words live in KV (/api/maite/social).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Calendar, DateField, DatePicker, I18nProvider, Label, ListBox, Select, Skeleton, Spinner, Tabs, TextArea, TextField, TimeField, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
+import { Button, Calendar, Dropdown, DateField, DatePicker, I18nProvider, Label, ListBox, Select, Skeleton, Spinner, Tabs, TextArea, TextField, TimeField, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
 import { getLocalTimeZone, parseDate, parseTime, today as todayIn, type DateValue, type Time } from '@internationalized/date';
 import { BookOpen, Check, MessageCircle, ChevronLeft, ChevronRight, Clock, Copy as CopyIcon, Download, ExternalLink, GalleryHorizontalEnd, ImageUp, MessageSquareText, Pencil, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
 import { api, uploadPhoto } from '../lib/api';
@@ -16,7 +16,7 @@ import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
 import { done, toastError } from '../parts/toast';
 import { Art, Wide } from '../social/Art';
-import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, MENU_LOOKS, MENU_PHOTOS, STORY_LINES, STYLES, datesText, freshMenu, inLibrary, menuCaption, menuSlides, menuReminders, capReminders, storyLink, type Menu, type Slide } from '../social/catalog';
+import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, MENU_LOOKS, MENU_PHOTOS, STORY_LINES, STYLES, bookLines, datesText, freshMenu, fullOf, fullSlides, fullText, inLibrary, menuCaption, menuSlides, menuReminders, capReminders, storyLink, type Menu, type MenuService, type Slide } from '../social/catalog';
 import { byId, changed, fields, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants, type Texts } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Template } from '../social/templates';
 
@@ -517,7 +517,7 @@ function whatsappText(m: Menu, open: string[]) {
   const price = m.price.trim().replace(/\s*€$/, '');
   return [`*${[m.kicker, m.title].map(x => x.trim()).filter(Boolean).join(' ')}*`, whenText(m, open),
     [m.name.trim(), ...m.dishes.map(d => d.trim()).filter(Boolean).map(d => '- ' + d)].filter(Boolean).join('\n'),
-    [m.drinks.trim(), price && `${price} € per persona`].filter(Boolean).join('. '), `Reserva la taula: ${storyLink(true)}`].filter(Boolean).join('\n\n');
+    [m.drinks.trim(), price && `${price} € per persona`].filter(Boolean).join('. '), bookLines()].filter(Boolean).join('\n\n');
 }
 function whenText(m: Menu, open: string[]) {
   const rows = rowsOf(m, open), days = rows.filter(r => r.day), times = [...new Set(rows.map(r => r.time))];
@@ -529,7 +529,10 @@ function whenText(m: Menu, open: string[]) {
 // Where the browser can't share files (a computer): the image is downloaded and WhatsApp Web opens with the text.
 // Returns whether it went (false when the owner closed the share sheet)
 async function toWhatsApp(p: Post, m: Menu, open: string[]): Promise<boolean> {
-  const t = byId.get(p.tpl)!, blob = await png(t, p.v, p.photo, p.texts), text = whatsappText(m, open);
+  return share(p, whatsappText(m, open));
+}
+async function share(p: Slide, text: string): Promise<boolean> {
+  const t = byId.get(p.tpl)!, blob = await png(t, p.v, p.photo, p.texts);
   const file = new File([blob], fileName(t), { type: 'image/png' });
   if (navigator.canShare?.({ files: [file] })) {
     try { await navigator.share({ files: [file], text }); } catch (e) { if ((e as Error).name === 'AbortError') return false; throw e; }
@@ -540,6 +543,19 @@ async function toWhatsApp(p: Post, m: Menu, open: string[]): Promise<boolean> {
   return true;
 }
 const menuValues = (p: Post): Menu | null => (p.menu && typeof p.menu === 'object' ? { ...MENU_EXAMPLE, ...p.menu } : null);
+// Complet: the menu's cover with «Complet» across it and the message that the day is full, with the days that still have seats
+// (the menu's other services, or the restaurant's next openings), from the tables booked. The server also posts the Complet
+// story (lib/plan.js fullStories), now if it hasn't yet: the owner may know it is full before the calendar does
+async function fullToWhatsApp(p: Post, m: Menu, R: { open: string[]; seats: number }): Promise<string | false> {
+  const now = new Date(), today = ymd(now), to = ymd(new Date(now.getTime() + 120 * 864e5));
+  const { tables } = await api<{ tables: { date: string; time: string; people: number; cancelled?: boolean }[] }>(`restaurant?from=${today}&to=${to}`);
+  const svc = (at: string): MenuService => ({ at, seats: R.seats, taken: tables.filter(t => !t.cancelled && `${t.date}T${t.time}` === at).reduce((n, t) => n + (t.people || 0), 0) });
+  const own = rowsOf(m, R.open).filter(r => r.day).map(r => svc(`${r.day}T${r.time}`));
+  const { full, next, ownNext, all } = fullOf(own, R.open.map(svc), `${today}T${hour(now.toISOString())}`);
+  if (!full) throw new Error('Aquest menú ja no té cap dia per endavant');
+  if (!await share(fullSlides(m, full, next, p.texts).post, fullText(m, full, next, ownNext, all))) return false;
+  return full.at;
+}
 // The two stories of a menu's pack: the announcement (StoryPoster, and older packs' only story) and the menu
 // Restaurant › Menús: the menus, with the posts they live on (loaded here, as Xarxes socials does)
 // start: a menu to open (its post's id), or a new one on a day and time ('new:2026-12-31T21:00', from Dies oberts › Obre)
@@ -580,7 +596,7 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
   // A new menu starts from the cover photo and the style the menus already made have used least
   const fresh = () => freshMenu([...data.posts.filter(p => !p.pack).map(menuValues), ...(data.drafts || []).map(x => x.menu)].filter((x): x is Menu => !!x));
   const [m, setM] = useState<Menu>(fresh);
-  const open = useStore(s => s.settings)?.restaurant.open || [];
+  const R = useStore(s => s.settings)?.restaurant, open = R?.open || [];
   const [rows, setRowsOnly] = useState<Row[]>([{ day: '', time: '21:00' }]);
   const setRows = (r: Row[]) => { setRowsOnly(r); setM(x => withRows(x, r)); };
   const [own, setOwn] = useState<{ file: File; url: string } | null>(null);
@@ -812,7 +828,9 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
                     {sm && <div className={`truncate text-xs ${sm.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story del menú, {status(sm)}</div>}
                     {p.whatsapp && <div className="truncate text-xs text-muted">Enviat per WhatsApp el {day(p.whatsapp.at)}</div>}
                   </div>
-                  {!past && menuValues(p) && <WhatsAppButton run={async () => { if (await toWhatsApp(p, menuValues(p)!, open)) setData((await api<{ social: Data }>('plan', { method: 'PUT', body: { whatsapp: p.id } })).social); }} />}
+                  {!past && menuValues(p) && <WhatsAppButton
+                    promo={async () => { if (await toWhatsApp(p, menuValues(p)!, open)) setData((await api<{ social: Data }>('plan', { method: 'PUT', body: { whatsapp: p.id } })).social); }}
+                    full={async () => { const at = await fullToWhatsApp(p, menuValues(p)!, { open, seats: R?.seats || 0 }); if (at) setData((await api<{ social: Data }>('plan', { method: 'PUT', body: { full: { id: p.id, at } } })).social); }} />}
                   {mv && <Button size="sm" variant="secondary" onPress={() => { edit(p); setMaking(true); }}><Pencil size={15} />Edita</Button>}
                   {p.published?.url && <a href={p.published.url} target="_blank" rel="noopener" aria-label="Obre a Instagram" className="grid size-8 shrink-0 place-items-center rounded-full outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={16} /></a>}
                   <DownloadButton label={`Descarrega ${title}`} run={async () => { await downloadPost(p); if (st) await downloadPost(st); if (sm) await downloadPost(sm); }} />
@@ -1475,12 +1493,22 @@ function HourField({ label, value, onChange }: { label: string; value: string; o
   );
 }
 
-function WhatsAppButton({ run }: { run: () => Promise<void> }) {
+// Envia per WhatsApp: the promo (the menu and its text) or Complet (the cover with «Complet» and the days still free)
+function WhatsAppButton({ promo, full }: { promo: () => Promise<void>; full: () => Promise<void> }) {
   const [busy, setBusy] = useState(false);
+  const run = async (f: () => Promise<void>) => { setBusy(true); try { await f(); } catch (e) { toastError(e); } setBusy(false); };
   return (
-    <Button size="sm" variant="secondary" isPending={busy} onPress={async () => { setBusy(true); try { await run(); } catch (e) { toastError(e); } setBusy(false); }}>
-      {busy ? <Spinner size="sm" color="current" /> : <MessageCircle size={15} />}Envia per WhatsApp
-    </Button>
+    <Dropdown>
+      <Button size="sm" variant="secondary" isPending={busy}>
+        {busy ? <Spinner size="sm" color="current" /> : <MessageCircle size={15} />}Envia per WhatsApp
+      </Button>
+      <Dropdown.Popover placement="bottom end">
+        <Dropdown.Menu aria-label="Què envies per WhatsApp" onAction={k => run(k === 'full' ? full : promo)}>
+          <Dropdown.Item id="promo" textValue="Promoció">Promoció</Dropdown.Item>
+          <Dropdown.Item id="full" textValue="Complet">Complet</Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
   );
 }
 

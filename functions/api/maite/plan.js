@@ -11,13 +11,15 @@
 //                        Or { remind: { id, on } }  Whether a menu (its post) gets reminders.
 //                        Or { whatsapp: id }  A menu sent to the owner's WhatsApp broadcast list (Envia per WhatsApp): the
 //                        app stops reminding her to send it, until its last days.
+//                        Or { full: { id, at } }  A menu sent as Complet (Envia per WhatsApp › Complet): its Complet story
+//                        for that service goes out now, if it hasn't (lib/plan.js fullStories).
 //                        Every answer is { plan, social }: the plan as GET, and the grid as /api/maite/social.
 import { json } from '../../../lib/booking.js';
 import { load, store, viewData } from '../../../lib/social.js';
 import { botAlive, botState, imagesOf } from '../../../lib/instagram.js';
 import { canRender } from '../../../lib/render.js';
 import { appState, canApp, checkApp } from '../../../lib/igapp.js';
-import { loadPlan, lookOf, makeWeek, mondayOf, refreshMenus, settingsOf, storePlan, tick } from '../../../lib/plan.js';
+import { fullStories, loadPlan, lookOf, makeWeek, mondayOf, refreshMenus, settingsOf, storePlan, tick } from '../../../lib/plan.js';
 
 // bot: the story robot (story-bot/), when it is set up: whether it is running (alive), as which account, and its last error
 const botOf = async env => {
@@ -65,6 +67,15 @@ export async function onRequestPut({ request, env, data }) {
   }
   if (isMonday(b.make)) {
     try { await makeWeek(env, b.make, { by: data.user, replace: true }); }
+    catch (e) { return json({ error: 'plan', detail: e.message }, 502); }
+    return out(env);
+  }
+  if (b.full) {
+    const S = await load(env), p = S.posts.find(p => p.id === String(b.full.id) && p.menu && !p.story);
+    if (!p || typeof b.full.at !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(b.full.at)) return json({ error: 'bad_request' }, 400);
+    p.whatsapp = { at: new Date().toISOString(), by: data.user };
+    await store(env, S, data.user);
+    try { await fullStories(env, await loadPlan(env), { id: p.id, at: b.full.at }); }
     catch (e) { return json({ error: 'plan', detail: e.message }, 502); }
     return out(env);
   }

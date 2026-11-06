@@ -76,6 +76,7 @@ import com.casavellarural.maite.data.PlanResponse
 import com.casavellarural.maite.data.longDay
 import com.casavellarural.maite.data.cap
 import com.casavellarural.maite.data.Slide
+import com.casavellarural.maite.data.TablesResponse
 import com.casavellarural.maite.data.Social
 import com.casavellarural.maite.data.Settings
 import com.casavellarural.maite.data.SocialPost
@@ -1146,7 +1147,7 @@ private fun whatsappText(m: Menu, open: List<String>): String {
         whenText(m, open),
         (listOf(m.name.trim()) + m.dishes.map { it.trim() }.filter { it.isNotEmpty() }.map { "- $it" }).filter { it.isNotEmpty() }.joinToString("\n"),
         listOf(m.drinks.trim(), if (price.isNotEmpty()) "$price € per persona" else "").filter { it.isNotEmpty() }.joinToString(". "),
-        "Reserva la taula: ${storyLink(true)}",
+        bookLines(),
     ).filter { it.isNotEmpty() && it != "**" }.joinToString("\n\n")
 }
 private fun whenText(m: Menu, open: List<String>): String {
@@ -1155,15 +1156,73 @@ private fun whenText(m: Menu, open: List<String>): String {
     val dates = (if (days.isNotEmpty()) datesText(days.first().day, days.last().day) else m.dates).trim()
     return listOf(cap(listOf(dates, "a les ${times.firstOrNull() ?: "21:00"}").filter { it.isNotEmpty() }.joinToString(", ")), m.subtitle.trim()).filter { it.isNotEmpty() }.joinToString(". ")
 }
+/** How to book, at the end of every WhatsApp message about a menu, the promo and Complet (catalog.ts bookLines) */
+private const val WHATSAPP_LINK = "https://wa.me/34667409859"
+private fun bookLines() = listOf("Reserva la taula a la web o per WhatsApp:", storyLink(true), WHATSAPP_LINK).joinToString("\n")
+
+// ---------- A menu that is full (catalog.ts fullOf, nextLine, fullSlides, fullText) ----------
+private data class Seats(val at: String, val seats: Int, val taken: Int) { val full get() = seats > 0 && taken >= seats }
+private class Full(val full: Seats?, val next: List<Seats>, val ownNext: Boolean, val all: Boolean)
+/** A day as the Complet band and message write it: «Diumenge 15 de març» */
+private fun fullDay(d: String) = cap(parse(d).format(java.time.format.DateTimeFormatter.ofPattern("EEEE d MMMM", CA)).replace('’', '\''))
+/** The service that is full (the first full one ahead, or the next one when the owner says so before the calendar does) and
+ *  the days with seats: the menu's other services or, when it has none, the restaurant's next three openings */
+private fun fullOf(services: List<Seats>, rest: List<Seats>, now: String): Full {
+    fun ahead(l: List<Seats>) = l.filter { it.at > now }.sortedBy { it.at }
+    val own = ahead(services); val full = own.firstOrNull { it.full } ?: own.firstOrNull()
+    val mine = own.filter { it != full && !it.full }
+    if (mine.isNotEmpty()) return Full(full, mine.take(3), true, false)
+    val ownAt = own.map { it.at }.toSet()
+    return Full(full, ahead(rest).filter { !it.full && it.at !in ownAt }.take(3), false, own.size > 1)
+}
+/** The days with seats in one line, for the story: «Encara hi ha lloc el 22 i el 29 de març» */
+private fun nextLine(next: List<Seats>): String {
+    if (next.isEmpty()) return ""
+    fun d(x: String) = parse(x).format(java.time.format.DateTimeFormatter.ofPattern("d MMMM", CA)).replace('’', '\'')
+    val days = next.map { it.at.take(10) }.distinct()
+    val parts = days.mapIndexed { i, x ->
+        val n = x.drop(8).take(2).toInt(); val sameMonth = i < days.size - 1 && days[i + 1].take(7) == x.take(7)
+        (if (n == 1 || n == 11) "l'" else "el ") + (if (sameMonth) "$n" else d(x))
+    }
+    return "Encara hi ha lloc " + if (parts.size > 1) parts.dropLast(1).joinToString(", ") + " i " + parts.last() else parts[0]
+}
+/** The Complet cover, with the menu cover's words as the post has them, and «Complet» and the full day on the band */
+private fun fullCover(m: Menu, dishes: Int, full: Seats?, cover: List<String?>?): Slide {
+    val own = (0 until 5).map { cover?.getOrNull(it) ?: menuSlides(m, dishes).post.texts?.getOrNull(it) }
+    return Slide("PostMenuFull", 0, m.photo, own + listOf("Complet", full?.let { fullDay(it.at.take(10)) }.orEmpty()))
+}
+private fun fullText(m: Menu, f: Full): String {
+    val title = listOf(m.kicker.trim(), m.title.trim()).filter { it.isNotEmpty() }.joinToString(" ")
+    val gone = if (f.all) "Ja no queden places per a cap dia." else (f.full?.let { fullDay(it.at.take(10)) + " ja" } ?: "Ja") + " no queden places."
+    val next = if (f.next.isEmpty()) "" else (listOf(if (f.ownNext) "Encara hi ha lloc:" else "Els pròxims dies amb lloc al restaurant:") +
+        f.next.map { "${fullDay(it.at.take(10))}, a les ${it.at.drop(11).take(5)}" }).joinToString("\n")
+    return listOf("*$title: complet*", "$gone Gràcies a tothom que ha reservat.", next, bookLines()).filter { it.isNotEmpty() }.joinToString("\n\n")
+}
+/** Complet: the cover with «Complet» and the message, from the tables booked (as fullToWhatsApp in Social.tsx). Returns the
+ *  service that is full, for the server to post its Complet story now */
+private suspend fun fullToWhatsApp(context: Context, p: SocialPost, m: Menu, dishes: Int): String {
+    val r = Maite.settings?.restaurant ?: throw Exception("No hi ha la configuració del restaurant")
+    val now = java.time.ZonedDateTime.now(BCN); val today = now.toLocalDate().toString()
+    val tables = Api.get<TablesResponse>("restaurant?from=$today&to=${now.toLocalDate().plusDays(120)}").tables
+    fun seats(at: String) = Seats(at, r.seats, tables.filter { !it.cancelled && "${it.date}T${it.time}" == at }.sumOf { it.people ?: 0 })
+    val own = rowsOf(m, r.open).filter { it.day.isNotEmpty() }.map { seats("${it.day}T${it.time}") }
+    val f = fullOf(own, r.open.map(::seats), "${today}T${now.toLocalTime().toString().take(5)}")
+    val full = f.full ?: throw Exception("Aquest menú ja no té cap dia per endavant")
+    share(context, fullCover(m, dishes, full, p.texts), fullText(m, f))
+    return full.at
+}
+
 /** Opens WhatsApp with the menu's cover and its text: the owner picks the broadcast list and sends (the chooser when there are
  *  two WhatsApps, or none) */
-private suspend fun toWhatsApp(context: Context, t: Template, post: SocialPost, m: Menu, open: List<String>) {
-    val big = Renderer.full(t.id, post.v, post.photo, post.texts)
+private suspend fun toWhatsApp(context: Context, t: Template, post: SocialPost, m: Menu, open: List<String>) =
+    share(context, Slide(t.id, post.v, post.photo, post.texts), whatsappText(m, open))
+private suspend fun share(context: Context, post: Slide, text: String) {
+    val big = Renderer.full(post.tpl, post.v, post.photo, post.texts)
     val file = java.io.File(context.cacheDir, "social").apply { mkdirs() }.let { java.io.File(it, "menu.jpg") }
     withContext(Dispatchers.IO) { file.writeBytes(jpeg(big, 1440, 92)) }
     val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.files", file)
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("image/jpeg").putExtra(android.content.Intent.EXTRA_STREAM, uri)
-        .putExtra(android.content.Intent.EXTRA_TEXT, whatsappText(m, open)).addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        .putExtra(android.content.Intent.EXTRA_TEXT, text).addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
     val apps = listOf("com.whatsapp", "com.whatsapp.w4b").filter { android.content.Intent(send).setPackage(it).resolveActivity(context.packageManager) != null }
     context.startActivity(if (apps.size == 1) android.content.Intent(send).setPackage(apps[0]) else android.content.Intent.createChooser(send, "Envia per WhatsApp"))
 }
@@ -1534,15 +1593,20 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                         p.whatsapp?.let { Text("Enviat per WhatsApp el ${dayMonth(localDayOf(it.at))}", style = Type.xs, color = T.muted, maxLines = 1) }
                     }
                     if (!past) mv?.let { m ->
-                        var wa by remember { mutableStateOf(false) }
-                        IconBtn(R.drawable.ic_message_circle, "Envia per WhatsApp", {
-                            wa = true
-                            scope.launch {
-                                try { toWhatsApp(context, t, p, m, open); Maite.social = Api.put<PlanResponse>("plan", mapOf("whatsapp" to p.id)).social }
-                                catch (e: Exception) { Toasts.error(e) }
-                                wa = false
+                        // Envia per WhatsApp: the promo (the menu and its text) or Complet (the cover with «Complet» and the days still free)
+                        var wa by remember { mutableStateOf(false) }; var pick by remember { mutableStateOf(false) }
+                        fun send(f: suspend () -> Unit) { pick = false; wa = true; scope.launch { try { f() } catch (e: Exception) { Toasts.error(e) }; wa = false } }
+                        Box {
+                            IconBtn(R.drawable.ic_message_circle, "Envia per WhatsApp", { pick = true }, busy = wa)
+                            androidx.compose.material3.DropdownMenu(pick, { pick = false }, modifier = Modifier.background(T.overlay)) {
+                                androidx.compose.material3.DropdownMenuItem(text = { Text("Promoció", style = Type.base) }, onClick = {
+                                    send { toWhatsApp(context, t, p, m, open); Maite.social = Api.put<PlanResponse>("plan", mapOf("whatsapp" to p.id)).social }
+                                })
+                                androidx.compose.material3.DropdownMenuItem(text = { Text("Complet", style = Type.base) }, onClick = {
+                                    send { val at = fullToWhatsApp(context, p, m, defaults.dishes); Maite.social = Api.put<PlanResponse>("plan", mapOf("full" to mapOf("id" to p.id, "at" to at))).social }
+                                })
                             }
-                        }, busy = wa)
+                        }
                     }
                     if (mv != null) IconBtn(R.drawable.ic_pencil, "Edita $title", { edit(p); making = true })
                     if (p.published?.url?.isNotEmpty() == true) IconBtn(R.drawable.ic_external_link, "Obre a Instagram", { open(context, p.published.url) })

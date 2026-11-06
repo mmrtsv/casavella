@@ -214,3 +214,57 @@ export function capReminders<T extends MenuReminder>(list: T[]): T[] {
   }
   return keep.sort((a, b) => (a.day + a.time).localeCompare(b.day + b.time));
 }
+
+// ---------- A menu that is full ----------
+// How to book, at the end of every WhatsApp message about a menu (the promo and Complet): the web or a WhatsApp to the house
+export const WHATSAPP_LINK = 'https://wa.me/34667409859';
+export const bookLines = () => ['Reserva la taula a la web o per WhatsApp:', storyLink(true), WHATSAPP_LINK].join('\n');
+const isFull = (s: MenuService) => !!s.seats && (s.taken || 0) >= s.seats;
+// A day as the Complet band and message write it: «Diumenge 15 de març»
+export const fullDay = (d: string) => { const x = new Date(d + 'T12:00').toLocaleDateString('ca-ES', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/’/g, "'").replace(',', ''); return x[0].toUpperCase() + x.slice(1); };
+// The service that is full and the days that still have seats. services: the menu's own, with their seats; rest: the
+// restaurant's openings ahead, for when the menu has none left; now: 'YYYY-MM-DDTHH:MM' in Barcelona. The full one is the
+// first full service ahead (or the next one, when the owner says it is full before the calendar does). next: the menu's other
+// services with seats (ownNext) or, when there are none, the restaurant's next three openings with seats
+// all: every service of the menu ahead is full
+export function fullOf(services: MenuService[], rest: MenuService[], now: string): { full: MenuService | null; next: MenuService[]; ownNext: boolean; all: boolean } {
+  const ahead = (l: MenuService[]) => l.filter(s => s.at > now).sort((a, b) => a.at.localeCompare(b.at));
+  const own = ahead(services), full = own.find(isFull) || own[0] || null;
+  const mine = own.filter(s => s !== full && !isFull(s));
+  if (mine.length) return { full, next: mine.slice(0, 3), ownNext: true, all: false };
+  const ownAt = new Set(own.map(s => s.at));
+  return { full, next: ahead(rest).filter(s => !isFull(s) && !ownAt.has(s.at)).slice(0, 3), ownNext: false, all: own.length > 1 };
+}
+// The days with seats in one line, for the story: «Encara hi ha lloc el 22 i el 29 de març»
+export function nextLine(next: MenuService[]) {
+  if (!next.length) return '';
+  const d = (x: string) => new Date(x + 'T12:00').toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' }).replace(/’/g, "'");
+  const days = [...new Set(next.map(s => s.at.slice(0, 10)))];
+  const parts = days.map((x, i) => {
+    const sameMonth = i < days.length - 1 && days[i + 1].slice(0, 7) === x.slice(0, 7), n = +x.slice(8, 10);
+    return ([1, 11].includes(n) ? "l'" : 'el ') + (sameMonth ? String(n) : d(x));
+  });
+  return 'Encara hi ha lloc ' + (parts.length > 1 ? parts.slice(0, -1).join(', ') + ' i ' + parts[parts.length - 1] : parts[0]);
+}
+// The Complet images: the menu's cover (cover: its words as the post has them) and its announcement story, with the band
+export function fullSlides(m: Menu, full: MenuService | null, next: MenuService[], cover?: (string | null)[]): { post: Slide; story: Slide } {
+  const s = menuSlides(m), day = full ? fullDay(full.at.slice(0, 10)) : '';
+  const own = Array.from({ length: 5 }, (_, i) => cover?.[i] ?? s.post.texts![i]);
+  // The story's button says the first day with seats, where its link sticker goes (lib/plan.js fullStories); the line above
+  // it, the others too, when there are more
+  const first = next[0] ? ([1, 11].includes(+next[0].at.slice(8, 10)) ? "l'" : 'el ') + new Date(next[0].at.slice(0, 10) + 'T12:00').toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' }).replace(/’/g, "'") : '';
+  const line = next.length > 1 ? nextLine(next) : next.length ? s.story.texts![4] : 'Gràcies a tothom que ha reservat';
+  return {
+    post: { tpl: 'PostMenuFull', v: 0, photo: m.photo, texts: [...own, 'Complet', day] },
+    story: { tpl: 'StoryFull', v: 0, photo: m.photo, texts: [...s.story.texts!.slice(0, 4), line, first ? `Encara hi ha places ${first}` : storyText(m.link), 'Complet', day] },
+  };
+}
+// The Complet message for WhatsApp: the menu and the day that is full, the days that still have seats, and how to book
+export function fullText(m: Menu, full: MenuService | null, next: MenuService[], ownNext: boolean, all = false) {
+  const title = [m.kicker, m.title].map(x => x.trim()).filter(Boolean).join(' ');
+  const when = (s: MenuService) => `${fullDay(s.at.slice(0, 10))}, a les ${s.at.slice(11, 16)}`;
+  const gone = all ? 'Ja no queden places per a cap dia.' : `${full ? fullDay(full.at.slice(0, 10)) + ' ja' : 'Ja'} no queden places.`;
+  return [`*${title}: complet*`, `${gone} Gràcies a tothom que ha reservat.`,
+    next.length ? [ownNext ? 'Encara hi ha lloc:' : 'Els pròxims dies amb lloc al restaurant:', ...next.map(when)].join('\n') : '',
+    bookLines()].filter(Boolean).join('\n\n');
+}

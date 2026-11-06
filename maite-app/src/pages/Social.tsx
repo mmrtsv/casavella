@@ -577,7 +577,10 @@ function FullDialog({ x, data, onClose, onSent }: { x: FullReady; data: Data; on
     <Dialog isOpen onClose={onClose} title="Envia Complet per WhatsApp" subtitle={cap(longDay(x.full.at.slice(0, 10)))}
       footer={<><Button size="sm" variant="ghost" onPress={other}><Shuffle size={15} />Una altra opció</Button><Button size="sm" isPending={busy} onPress={send}><MessageCircle size={15} />Envia per WhatsApp</Button></>}>
       <div className="space-y-4">
-        <Art t={byId.get(img.tpl)!} v={img.v} photo={img.photo} texts={img.texts} className="mx-auto w-48 rounded-xl" />
+        {/* Tapping the image shows another words and look, as Una altra opció does */}
+        <button type="button" onClick={other} aria-label="Una altra opció" className="mx-auto block w-48 cursor-pointer rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-focus">
+          <Art t={byId.get(img.tpl)!} v={img.v} photo={img.photo} texts={img.texts} className="w-48 rounded-xl" />
+        </button>
         {has ? <p className="text-sm text-muted">La story de Complet d'aquest dia ja hi és.</p>
           : <CheckField isSelected={story} onChange={setStory}>Penja també una story de Complet</CheckField>}
       </div>

@@ -1232,7 +1232,9 @@ private fun FullSheet(x: FullReady, dishes: Int, data: Social, onClose: () -> Un
     Sheet(onClose) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 28.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Envia Complet per WhatsApp", style = Type.xl); Muted(cap(longDay(x.full.at.take(10))))
-            Renderer.byId[img.tpl]?.let { Art(it, img.v, img.photo, img.texts, Modifier.width(180.dp).clip(RoundedCornerShape(12.dp)).align(Alignment.CenterHorizontally)) }
+            // Tapping the image shows another words and look, as Una altra opció does
+            Renderer.byId[img.tpl]?.let { Art(it, img.v, img.photo, img.texts, Modifier.width(180.dp).clip(RoundedCornerShape(12.dp)).align(Alignment.CenterHorizontally)
+                .clickable(enabled = !busy, onClickLabel = "Una altra opció") { var n = pickFull(); while (n == pick) n = pickFull(); pick = n }) }
             if (has) Muted("La story de Complet d'aquest dia ja hi és.") else CheckRow(story, { story = it }, "Penja també una story de Complet")
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Btn("Una altra opció", { var n = pickFull(); while (n == pick) n = pickFull(); pick = n }, look = Look.Ghost, icon = R.drawable.ic_shuffle, enabled = !busy)

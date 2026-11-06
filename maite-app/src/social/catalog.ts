@@ -17,11 +17,22 @@ export const LIBRARY: { src: string; alt: string }[] = [
   ['vinyes-habitacio-2', 'Habitació Les Vinyes: el llit, la finestra i el llum de vímet amb la llum del matí'],
   ['figarot-sol', 'Habitació Figarot: el sol sobre el llit de forja'],
   ['vinyes-habitacio', 'Habitació Les Vinyes sencera, amb el bany al fons'],
+  ['vinyes-balco', 'Habitació Les Vinyes: el llit verd i el balcó obert sobre les teulades, amb el sol entrant'],
+  ['vinyes-entrada', "Habitació Les Vinyes des de l'entrada: el penjador de ferro, el bany i el llit verd"],
+  ['vinyes-tauleta', 'Habitació Les Vinyes: la tauleta blava amb el llum encès i les tovalloles sobre el llit verd'],
+  ['vinyes-escriptori', "Habitació Les Vinyes: una rosa vermella en un gerro i el llum de bombeta a l'escriptori"],
+  ['vinyes-mirall', 'Habitació Les Vinyes: el mirall rodó del bany, amb el llum reflectit'],
+  ['figarot-capcal', 'Habitació Figarot: el capçal de forja, els coixins verds i els quadres de branques'],
+  ['figarot-tauleta', 'Habitació Figarot: la tauleta de forja amb el llum verd i una ampolla de cava'],
+  ['figarot-placa', 'Habitació Figarot: la placa amb la figuera i el nom, en un marc de fusta'],
   ['figarot-rajola', 'Habitació Figarot: el terra hidràulic amb la llum de la finestra'],
   ['apt-cuina-2', "Cuina de l'apartament amb bigues verdes i terra hidràulic"],
+  ['apt-cuina-4', "Cuina de l'apartament: la pica, la campana i el llum encès sobre el taulell de fusta"],
+  ['apt-rajola', "El terra hidràulic de l'apartament, amb estrelles grises"],
   ['apt-dormitori-2', "Dormitori de l'apartament: el llit amb tovalloles i els llums de les tauletes encesos"],
   ['apt-tovalloles', "Tovalloles enrotllades amb una flor sobre el llit de l'apartament"],
   ['terrassa', 'La terrassa: taula i cadires blanques al costat de la casa'],
+  ['terrassa-taula', 'La terrassa: una taula blanca amb una planta, davant la tanca de fusta'],
   ['mirall', 'Mirall antic al passadís'],
   ['gerro', 'Gerro amb flors seques'],
   ['llibre', 'El llibre de La Casa Vella'],
@@ -30,6 +41,10 @@ export const LIBRARY: { src: string; alt: string }[] = [
   ['escala-entrada', "L'escala d'entrada"],
   ['escala-llibres', "Llibres antics a l'escala, amb el de La Casa Vella"],
   ['escala-barometre', "Baròmetre antic de fusta a l'escala"],
+  ['escala-barometre-2', "El baròmetre antic a la paret, vist des de l'escala"],
+  ['escala-llibres-2', "Els llibres antics de l'escala, il·luminats per sota"],
+  ['escala-diploma', "Un diploma antic emmarcat a l'escala i, a sota, una foto de la casa"],
+  ['escala-fotos', "La paret de l'escala amb fotos antigues del poble, en blanc i negre"],
   ['restaurant-barra', 'La barra del restaurant amb llum càlida'],
   ['restaurant-sala', 'La sala del restaurant: columna de pedra, bigues de fusta i taules per a dos'],
   ['restaurant-vins', 'Ampolles de vi al prestatge del restaurant'],
@@ -43,13 +58,26 @@ export const LIBRARY: { src: string; alt: string }[] = [
   ['rajola-flor', 'Detall de la rajola hidràulica'],
   ['historia-carrer', 'Foto antiga del carrer del Bedorc'],
   ['bedorc', 'El Bedorc entre vinyes'],
+  ['escala-barometre-bn', "El baròmetre de fusta tallada de l'escala, en blanc i negre"],
+  ['escala-finestreta', "La finestreta de l'escala, amb una pedra daurada i un salt d'aigua al fons"],
+  ['rajola-parquet', 'Rajola hidràulica gris i blanca tocant al parquet'],
+  ['restaurant-fulla', 'La planta de ferro verd a la paret del restaurant'],
+  ['restaurant-passadis', 'El passadís que porta a la sala del restaurant'],
+  ['restaurant-barra-bn', 'El frontal de la barra, de rajola en relleu, en blanc i negre'],
+  ['restaurant-sala-3', 'La sala del restaurant amb el ventilador de fusta i els llums de vímet'],
+  ['restaurant-llum', 'Un llum de vímet encès sobre les taules del restaurant'],
+  ['restaurant-sala-barra', 'La sala del restaurant des de la barra, amb els llums de vímet'],
+  ['restaurant-taules', 'Taules de fusta sota els llums negres, amb les ampolles de vi al prestatge'],
+  ['restaurant-test', 'Un test amb La Casa Vella escrit a mà i una planta, sobre una taula'],
+  ['restaurant-tamboret', 'Un tamboret de pell a la barra de rajola en relleu'],
 ].map(([p, alt]) => ({ src: `${S}${p}.jpg`, alt }));
 
 export const inLibrary = (photo: string) => LIBRARY.some(p => p.src === photo);
 
 // The photos a menu's cover can use: the restaurant, its dishes, the terrace and the land around. No rooms or apartments
 export const MENU_PHOTOS: string[] = ['restaurant-sala', 'restaurant-barra', 'restaurant-llar', 'restaurant-oli', 'restaurant-plat-2', 'restaurant-postres',
-  'restaurant-xocolata', 'restaurant-guitarra', 'restaurant-vins', 'restaurant-targeta', 'terrassa', 'rotul', 'bedorc-capvespre', 'montserrat-vinyes', 'bedorc'].map(p => `${S}${p}.jpg`);
+  'restaurant-xocolata', 'restaurant-guitarra', 'restaurant-vins', 'restaurant-targeta',
+  'restaurant-fulla', 'restaurant-passadis', 'restaurant-barra-bn', 'restaurant-sala-3', 'restaurant-llum', 'restaurant-sala-barra', 'restaurant-taules', 'restaurant-test', 'restaurant-tamboret', 'terrassa', 'rotul', 'bedorc-capvespre', 'montserrat-vinyes', 'bedorc'].map(p => `${S}${p}.jpg`);
 // The menu's styles (Menu.look): the variation of the menu slide and the menu story, as paint() draws them
 export const MENU_LOOKS = ['Fons cava', 'Fons verd fosc', 'Fons paper', 'Fons verd'];
 

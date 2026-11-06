@@ -250,8 +250,8 @@ export function nextLine(next: MenuService[]) {
 export const FULL_WORDS: [string, string][] = [
   ['Complet', '{day}'],
   ['Complet!', 'Moltes gràcies a tots!'],
-  ['Tot ple', '{day}'],
-  ['Ple a vessar', 'Gràcies per reservar'],
+  ['Sold out!', '{day}'],
+  ['Places cobertes', 'Gràcies per reservar'],
   ['Complet', '{day}. Moltes gràcies!'],
 ];
 // The band's looks (paint.ts FULL_LOOKS): Cava, dark green, paper and basil green, each at its own angle
@@ -280,7 +280,7 @@ export function fullText(m: Menu, full: MenuService | null, next: MenuService[],
   const title = [m.kicker, m.title].map(x => x.trim()).filter(Boolean).join(' ');
   const when = (s: MenuService) => `${fullDay(s.at.slice(0, 10))}, a les ${s.at.slice(11, 16)}`;
   const gone = all ? 'Ja no queden places per a cap dia.' : `${full ? fullDay(full.at.slice(0, 10)) + ' ja' : 'Ja'} no queden places.`;
-  const open = [`*${title}: complet*`, `*Complet! ${title}*`, `*${title}: tot ple*`][k % 3];
+  const open = [`*${title}: complet*`, `*Complet! ${title}*`, `*${title}: sold out!*`][k % 3];
   const thanks = ['Gràcies a tothom que ha reservat.', 'Moltes gràcies a tots!', 'Gràcies per venir a dinar i sopar amb nosaltres.'][k % 3];
   return [open, `${gone} ${thanks}`,
     next.length ? [ownNext ? 'Encara hi ha lloc:' : 'Els pròxims dies amb lloc al restaurant:', ...next.map(when)].join('\n') : '',

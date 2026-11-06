@@ -843,21 +843,22 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
   const list = data.posts.filter(p => p.menu && !p.pack && byId.has(p.tpl)).sort((a, b) => b.at.localeCompare(a.at));
   // In marxa: the menus whose last day hasn't gone by (and older ones without days); the rest, under Menús passats
   const endOf = (p: Post) => { const v = menuValues(p); return v ? v.until || v.from : ''; };
-  const running = list.filter(p => !endOf(p) || endOf(p) >= today), past = list.filter(p => !running.includes(p)).sort((a, b) => endOf(b).localeCompare(endOf(a)));
+  // In marxa goes by the menu's first day, the soonest on top (the ones without days last)
+  const startOf = (p: Post) => menuValues(p)?.from || '9999';
+  const running = list.filter(p => !endOf(p) || endOf(p) >= today).sort((a, b) => startOf(a).localeCompare(startOf(b))), past = list.filter(p => !running.includes(p)).sort((a, b) => endOf(b).localeCompare(endOf(a)));
   const menuRow = (p: Post, past: boolean) => {
               const t = byId.get(p.tpl)!, { story: st, storyMenu: sm } = packOf(data, p), mv = menuValues(p);
               const title = mv?.title || [p.texts?.[1], p.texts?.[2]].filter(Boolean).join(' ') || t.title;
               return (
-                <li key={p.id} className="flex items-center gap-3 p-3 sm:px-5">
+                <li key={p.id} className="flex flex-wrap items-center gap-3 p-3 sm:px-5">
+                  {mv?.from ? <DateLeaf d={mv.from} past={past} /> : <div className="w-12 shrink-0" />}
                   <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className={`${p.story ? 'aspect-[9/16]' : 'aspect-[3/4]'} w-11 shrink-0 rounded-md`} />
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 basis-40">
                     <div className="truncate text-sm font-semibold">{title}</div>
-                    {mv?.from && <div className="truncate text-xs text-muted">{datesText(mv.from, mv.until)}{mv.services?.length ? `, ${mv.services.length} ${mv.services.length === 1 ? 'dia' : 'dies'}` : ''}</div>}
-                    <div className={`truncate text-xs ${p.schedule?.error ? 'text-danger' : 'text-muted'}`}>{p.story ? 'Story' : 'Post'}, {status(p)}</div>
-                    {st && <div className={`truncate text-xs ${st.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story de la portada, {status(st)}</div>}
-                    {sm && <div className={`truncate text-xs ${sm.schedule?.error ? 'text-danger' : 'text-muted'}`}>Story del menú, {status(sm)}</div>}
-                    {p.whatsapp && <div className="truncate text-xs text-muted">Enviat per WhatsApp el {day(p.whatsapp.at)}</div>}
+                    {mv?.from && <div className="truncate text-xs text-muted">{!mv.until || mv.until === mv.from ? cap(new Date(mv.from + 'T12:00').toLocaleDateString('ca-ES', { weekday: 'long' })) : datesText(mv.from, mv.until)}{mv.services?.length ? `, ${mv.services.length} ${mv.services.length === 1 ? 'dia' : 'dies'}` : ''}</div>}
+                    {outLines(p, st, sm).map(l => <div key={l.text} className={`truncate text-xs ${l.error ? 'text-danger' : 'text-muted'}`}>{l.text}</div>)}
                   </div>
+                  <div className="flex shrink-0 items-center gap-3 max-sm:w-full max-sm:justify-end">
                   {!past && menuValues(p) && <WhatsAppButton
                     promo={async () => { if (await toWhatsApp(p, menuValues(p)!, open)) setData((await api<{ social: Data }>('plan', { method: 'PUT', body: { whatsapp: p.id } })).social); }}
                     full={async () => setFullAsk(await fullReady(p, menuValues(p)!, { open, seats: R?.seats || 0 }))} />}
@@ -865,9 +866,17 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
                   {p.published?.url && <a href={p.published.url} target="_blank" rel="noopener" aria-label="Obre a Instagram" className="grid size-8 shrink-0 place-items-center rounded-full outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={16} /></a>}
                   <DownloadButton label={`Descarrega ${title}`} run={async () => { await downloadPost(p); if (st) await downloadPost(st); if (sm) await downloadPost(sm); }} />
                   {!p.published && <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${title}`} onPress={() => remove(p)}><X size={16} /></Button>}
+                  </div>
                 </li>
               );
   };
+  // What went out for a menu, in the order it happens: the WhatsApp, the post and its stories by their time, what's still to publish last
+  const outLines = (p: Post, st?: Post | null, sm?: Post | null) => [
+    { x: p, name: p.story ? 'Story' : 'Post' }, { x: st, name: 'Story de la portada' }, { x: sm, name: 'Story del menú' },
+  ].filter((l): l is { x: Post; name: string } => !!l.x)
+    .map(({ x, name }) => ({ at: x.published?.at || x.schedule?.at || '~', text: `${name}, ${status(x)}`, error: !x.published && !!x.schedule?.error }))
+    .concat(p.whatsapp ? [{ at: p.whatsapp.at, text: `Enviat per WhatsApp el ${day(p.whatsapp.at)}`, error: false }] : [])
+    .sort((a, b) => a.at.localeCompare(b.at));
   const status = (x: Post) => x.published ? `publicat el ${day(x.published.at)}` : x.schedule ? (x.schedule.error ? "no s'ha pogut publicar" : `programat: ${short(x.schedule.at)}`) : 'per publicar';
   async function remove(p: Post) {
     try {
@@ -1031,6 +1040,18 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
         )}
         </>
       )}
+    </div>
+  );
+}
+
+// The menu's first day as a calendar leaf: the month, the day and the weekday, so the list reads by date at a glance
+function DateLeaf({ d, past }: { d: string; past: boolean }) {
+  const x = new Date(d + 'T12:00'), f = (o: Intl.DateTimeFormatOptions) => x.toLocaleDateString('ca-ES', o).replace(/\.$/, '');
+  return (
+    <div className={`flex w-12 shrink-0 flex-col items-center rounded-lg border border-separator py-1 ${past ? 'text-muted' : ''}`}>
+      <span className="text-xs text-muted">{f({ month: 'short' })}</span>
+      <span className="tnum text-xl font-semibold leading-tight">{x.getDate()}</span>
+      <span className="text-xs text-muted">{f({ weekday: 'short' })}</span>
     </div>
   );
 }

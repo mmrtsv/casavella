@@ -84,6 +84,8 @@ import com.casavellarural.maite.data.TODAY
 import com.casavellarural.maite.data.localDayOf
 import com.casavellarural.maite.data.monthTitle
 import com.casavellarural.maite.data.parse
+import com.casavellarural.maite.data.monthShort
+import com.casavellarural.maite.data.weekdayShort
 import com.casavellarural.maite.ui.Btn
 import com.casavellarural.maite.ui.Card
 import com.casavellarural.maite.ui.Cava
@@ -1268,6 +1270,17 @@ private suspend fun share(context: Context, post: Slide, text: String) {
     context.startActivity(if (apps.size == 1) android.content.Intent(send).setPackage(apps[0]) else android.content.Intent.createChooser(send, "Envia per WhatsApp"))
 }
 /** The days a menu runs, as the cover writes them (catalog.ts datesText): «Del 18 de gener al 29 de març», «De l'1 d'abril a l'11 de maig» */
+/** The menu's first day as a calendar leaf: the month, the day and the weekday, so the list reads by date at a glance */
+@Composable
+private fun DateLeaf(d: String, past: Boolean) {
+    val x = parse(d)
+    Column(Modifier.width(44.dp).border(1.dp, T.separator, RoundedCornerShape(8.dp)).padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(monthShort(x.monthValue), style = Type.xs, color = T.muted)
+        Text(x.dayOfMonth.toString(), style = Type.lg, color = if (past) T.muted else T.foreground)
+        Text(weekdayShort(d), style = Type.xs, color = T.muted)
+    }
+}
+
 private fun datesText(from: String, until: String): String {
     if (from.isEmpty()) return ""
     fun d(x: String) = parse(x).format(java.time.format.DateTimeFormatter.ofPattern("d MMMM", CA)).replace('’', '\'')
@@ -1615,7 +1628,15 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
 
     // In marxa: the menus whose last day hasn't gone by (and older ones without days); the rest, under Menús passats
     fun endOf(p: SocialPost) = menuValues(p)?.let { it.until.ifEmpty { it.from } }.orEmpty()
-    val running = list.filter { endOf(it).isEmpty() || endOf(it) >= TODAY }
+    // In marxa goes by the menu's first day, the soonest on top (the ones without days last)
+    val running = list.filter { endOf(it).isEmpty() || endOf(it) >= TODAY }.sortedBy { menuValues(it)?.from?.ifEmpty { null } ?: "9999" }
+    // What went out for a menu, in the order it happens: the WhatsApp, the post and its stories by their time, what's still to publish last
+    data class Out(val at: String, val text: String, val error: Boolean)
+    fun outLines(p: SocialPost, st: SocialPost?, sm: SocialPost?) =
+        (listOfNotNull(p to (if (p.story) "Story" else "Post"), st?.let { it to "Story de la portada" }, sm?.let { it to "Story del menú" })
+            .map { (x, name) -> Out(x.published?.at ?: x.schedule?.at ?: "~", "$name, ${status(x)}", x.published == null && x.schedule?.error != null) } +
+            listOfNotNull(p.whatsapp?.let { Out(it.at, "Enviat per WhatsApp el ${dayMonth(localDayOf(it.at))}", false) }))
+            .sortedBy { it.at }
     val past = list.filter { it !in running }.sortedByDescending { endOf(it) }
     @Composable
     fun MenuRow(p: SocialPost, past: Boolean) {
@@ -1623,15 +1644,14 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                 val title = mv?.title?.takeIf { it.isNotBlank() } ?: listOfNotNull(p.texts?.getOrNull(1), p.texts?.getOrNull(2)).filter { it.isNotBlank() }.joinToString(" ").ifEmpty { t.title }
                 Divider()
                 Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (mv != null && mv.from.isNotEmpty()) DateLeaf(mv.from, past) else Spacer(Modifier.width(44.dp))
+                    Spacer(Modifier.width(10.dp))
                     Art(t, p.v, p.photo, p.texts, Modifier.width(40.dp).aspectRatio(if (p.story) 9 / 16f else 3 / 4f).clip(RoundedCornerShape(6.dp)), cover = true)
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
                         Text(title, style = Type.sm, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        if (mv != null && mv.from.isNotEmpty()) Text(datesText(mv.from, mv.until) + if (mv.services.isNotEmpty()) ", ${mv.services.size} ${if (mv.services.size == 1) "dia" else "dies"}" else "", style = Type.xs, color = T.muted, maxLines = 1)
-                        Text("${if (p.story) "Story" else "Post"}, ${status(p)}", style = Type.xs, color = if (p.schedule?.error != null) T.danger else T.muted, maxLines = 1)
-                        st?.let { Text("Story de la portada, ${status(it)}", style = Type.xs, color = if (it.schedule?.error != null) T.danger else T.muted, maxLines = 1) }
-                        sm?.let { Text("Story del menú, ${status(it)}", style = Type.xs, color = if (it.schedule?.error != null) T.danger else T.muted, maxLines = 1) }
-                        p.whatsapp?.let { Text("Enviat per WhatsApp el ${dayMonth(localDayOf(it.at))}", style = Type.xs, color = T.muted, maxLines = 1) }
+                        if (mv != null && mv.from.isNotEmpty()) Text((if (mv.until.isEmpty() || mv.until == mv.from) cap(parse(mv.from).format(java.time.format.DateTimeFormatter.ofPattern("EEEE", CA))) else datesText(mv.from, mv.until)) + if (mv.services.isNotEmpty()) ", ${mv.services.size} ${if (mv.services.size == 1) "dia" else "dies"}" else "", style = Type.xs, color = T.muted, maxLines = 1)
+                        outLines(p, st, sm).forEach { Text(it.text, style = Type.xs, color = if (it.error) T.danger else T.muted, maxLines = 1) }
                     }
                     if (!past) mv?.let { m ->
                         // Envia per WhatsApp: the promo (the menu and its text) or Complet (the cover with «Complet» and the days still free)

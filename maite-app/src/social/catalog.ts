@@ -244,9 +244,8 @@ export function capReminders<T extends MenuReminder>(list: T[]): T[] {
 }
 
 // ---------- A menu that is full ----------
-// How to book, at the end of every WhatsApp message about a menu (the promo and Complet): the web or a WhatsApp to the house
-export const WHATSAPP_LINK = 'https://wa.me/34667409859';
-export const bookLines = () => ['Reserva la taula a la web o per WhatsApp:', storyLink(true), WHATSAPP_LINK].join('\n');
+// How to book, at the end of every WhatsApp message about a menu (the promo and Complet): the web, or answering the message
+export const bookLines = () => ['Reserva la taula a la web o per WhatsApp:', storyLink(true)].join('\n');
 const isFull = (s: MenuService) => !!s.seats && (s.taken || 0) >= s.seats;
 // A day as the Complet band and message write it: «Diumenge 15 de març»
 export const fullDay = (d: string) => { const x = new Date(d + 'T12:00').toLocaleDateString('ca-ES', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/’/g, "'").replace(',', ''); return x[0].toUpperCase() + x.slice(1); };

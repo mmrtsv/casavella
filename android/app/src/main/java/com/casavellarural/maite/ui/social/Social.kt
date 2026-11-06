@@ -1159,8 +1159,7 @@ private fun whenText(m: Menu, open: List<String>): String {
     return listOf(cap(listOf(dates, "a les ${times.firstOrNull() ?: "21:00"}").filter { it.isNotEmpty() }.joinToString(", ")), m.subtitle.trim()).filter { it.isNotEmpty() }.joinToString(". ")
 }
 /** How to book, at the end of every WhatsApp message about a menu, the promo and Complet (catalog.ts bookLines) */
-private const val WHATSAPP_LINK = "https://wa.me/34667409859"
-private fun bookLines() = listOf("Reserva la taula a la web o per WhatsApp:", storyLink(true), WHATSAPP_LINK).joinToString("\n")
+private fun bookLines() = listOf("Reserva la taula a la web o per WhatsApp:", storyLink(true)).joinToString("\n")
 
 // ---------- A menu that is full (catalog.ts fullOf, nextLine, fullSlides, fullText) ----------
 private data class Seats(val at: String, val seats: Int, val taken: Int) { val full get() = seats > 0 && taken >= seats }

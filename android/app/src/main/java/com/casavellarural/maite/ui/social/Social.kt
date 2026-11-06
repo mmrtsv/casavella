@@ -1222,6 +1222,7 @@ private suspend fun fullReady(p: SocialPost, m: Menu): FullReady {
 /** Before Complet goes to WhatsApp (FullDialog in Social.tsx): the image, another words and look if the owner wants, and whether
  *  the Complet story goes out too (on by default; when it is already there, it says so and none is made again) */
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun FullSheet(x: FullReady, dishes: Int, data: Social, onClose: () -> Unit) {
     val context = LocalContext.current; val scope = rememberCoroutineScope()
     var pick by remember { mutableStateOf(pickFull()) }; var story by remember { mutableStateOf(true) }; var busy by remember { mutableStateOf(false) }

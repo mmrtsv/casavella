@@ -34,6 +34,9 @@
 @import "@heroui/styles/components/date-picker.css" layer(components);
 @import "@heroui/styles/components/select.css" layer(components);
 @import "@heroui/styles/components/popover.css" layer(components);
+@import "@heroui/styles/components/dropdown.css" layer(components);
+@import "@heroui/styles/components/menu.css" layer(components);
+@import "@heroui/styles/components/menu-item.css" layer(components);
 @import "@heroui/styles/components/modal.css" layer(components);
 @import "@heroui/styles/components/drawer.css" layer(components);
 @import "@heroui/styles/components/kbd.css" layer(components);

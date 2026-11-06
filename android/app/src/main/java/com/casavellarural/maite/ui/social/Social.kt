@@ -1189,7 +1189,7 @@ private fun nextLine(next: List<Seats>): String {
     return "Encara hi ha lloc " + if (parts.size > 1) parts.dropLast(1).joinToString(", ") + " i " + parts.last() else parts[0]
 }
 /** The words on the Complet band (catalog.ts FULL_WORDS) and how many looks it has (FULL_LOOKS), so it isn't always the same */
-private val FULL_WORDS = listOf("Complet" to "{day}", "Complet!" to "Moltes gràcies a tots!", "Sold out!" to "{day}", "Places cobertes" to "Gràcies per reservar", "Complet" to "{day}. Moltes gràcies!")
+private val FULL_WORDS = listOf("Complet!" to "{day}", "Complet!" to "Moltes gràcies a tots!", "Sold out!" to "{day}", "Places cobertes!" to "Gràcies per reservar", "Complet!" to "{day}. Moltes gràcies!")
 private const val FULL_LOOKS = 4
 /** A Complet's words (k) and band look (v), picked at random (catalog.ts pickFull) */
 private data class FullPick(val k: Int, val v: Int)
@@ -1204,7 +1204,7 @@ private fun fullCover(m: Menu, dishes: Int, full: Seats?, cover: List<String?>?,
 private fun fullText(m: Menu, f: Full, k: Int): String {
     val title = listOf(m.kicker.trim(), m.title.trim()).filter { it.isNotEmpty() }.joinToString(" ")
     val gone = if (f.all) "Ja no queden places per a cap dia." else (f.full?.let { fullDay(it.at.take(10)) + " ja" } ?: "Ja") + " no queden places."
-    val open = listOf("*$title: complet*", "*Complet! $title*", "*$title: sold out!*")[k % 3]
+    val open = listOf("*$title: complet!*", "*Complet! $title*", "*$title: sold out!*")[k % 3]
     val thanks = listOf("Gràcies a tothom que ha reservat.", "Moltes gràcies a tots!", "Gràcies per venir a dinar i sopar amb nosaltres.")[k % 3]
     val next = if (f.next.isEmpty()) "" else (listOf(if (f.ownNext) "Encara hi ha lloc:" else "Els pròxims dies amb lloc al restaurant:") +
         f.next.map { "${fullDay(it.at.take(10))}, a les ${it.at.drop(11).take(5)}" }).joinToString("\n")

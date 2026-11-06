@@ -11,8 +11,9 @@
 //                        Or { remind: { id, on } }  Whether a menu (its post) gets reminders.
 //                        Or { whatsapp: id }  A menu sent to the owner's WhatsApp broadcast list (Envia per WhatsApp): the
 //                        app stops reminding her to send it, until its last days.
-//                        Or { full: { id, at } }  A menu sent as Complet (Envia per WhatsApp › Complet): its Complet story
-//                        for that service goes out now, if it hasn't (lib/plan.js fullStories).
+//                        Or { full: { id, at, story, k, v } }  A menu sent as Complet (Envia per WhatsApp › Complet). story:
+//                        its Complet story for that service goes out now, with the words and look of the image sent (k, v),
+//                        unless one already has (lib/plan.js fullStories); false: none goes out for that service.
 //                        Every answer is { plan, social }: the plan as GET, and the grid as /api/maite/social.
 import { json } from '../../../lib/booking.js';
 import { load, store, viewData } from '../../../lib/social.js';
@@ -74,8 +75,11 @@ export async function onRequestPut({ request, env, data }) {
     const S = await load(env), p = S.posts.find(p => p.id === String(b.full.id) && p.menu && !p.story);
     if (!p || typeof b.full.at !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(b.full.at)) return json({ error: 'bad_request' }, 400);
     p.whatsapp = { at: new Date().toISOString(), by: data.user };
+    p.fullSent = { ...p.fullSent, [b.full.at]: b.full.story !== false };
     await store(env, S, data.user);
-    try { await fullStories(env, await loadPlan(env), { id: p.id, at: b.full.at }); }
+    if (b.full.story === false) return out(env);
+    const k = Number(b.full.k), v = Number(b.full.v);
+    try { await fullStories(env, await loadPlan(env), { id: p.id, at: b.full.at, k, v }); }
     catch (e) { return json({ error: 'plan', detail: e.message }, 502); }
     return out(env);
   }

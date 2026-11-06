@@ -246,25 +246,43 @@ export function nextLine(next: MenuService[]) {
   });
   return 'Encara hi ha lloc ' + (parts.length > 1 ? parts.slice(0, -1).join(', ') + ' i ' + parts[parts.length - 1] : parts[0]);
 }
+// The words on the Complet band, so it isn't always the same: the big word and the line under it ({day}: the day that is full)
+export const FULL_WORDS: [string, string][] = [
+  ['Complet', '{day}'],
+  ['Complet!', 'Moltes gràcies a tots!'],
+  ['Tot ple', '{day}'],
+  ['Ple a vessar', 'Gràcies per reservar'],
+  ['Complet', '{day}. Moltes gràcies!'],
+];
+// The band's looks (paint.ts FULL_LOOKS): Cava, dark green, paper and basil green, each at its own angle
+export const FULL_LOOKS = 4;
+// A Complet's words and look: k picks the words (FULL_WORDS), v the band's look (FULL_LOOKS)
+export type FullPick = { k: number; v: number };
+export const pickFull = (): FullPick => ({ k: Math.floor(Math.random() * FULL_WORDS.length), v: Math.floor(Math.random() * FULL_LOOKS) });
 // The Complet images: the menu's cover (cover: its words as the post has them) and its announcement story, with the band
-export function fullSlides(m: Menu, full: MenuService | null, next: MenuService[], cover?: (string | null)[]): { post: Slide; story: Slide } {
+export function fullSlides(m: Menu, full: MenuService | null, next: MenuService[], cover?: (string | null)[], pick: FullPick = { k: 0, v: 0 }): { post: Slide; story: Slide } {
   const s = menuSlides(m), day = full ? fullDay(full.at.slice(0, 10)) : '';
   const own = Array.from({ length: 5 }, (_, i) => cover?.[i] ?? s.post.texts![i]);
+  const [big, small] = FULL_WORDS[pick.k % FULL_WORDS.length], band = [big, day ? small.replace('{day}', day) : 'Moltes gràcies a tots!'];
   // The story's button says the first day with seats, where its link sticker goes (lib/plan.js fullStories); the line above
   // it, the others too, when there are more
   const first = next[0] ? ([1, 11].includes(+next[0].at.slice(8, 10)) ? "l'" : 'el ') + new Date(next[0].at.slice(0, 10) + 'T12:00').toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' }).replace(/’/g, "'") : '';
   const line = next.length > 1 ? nextLine(next) : next.length ? s.story.texts![4] : 'Gràcies a tothom que ha reservat';
+  const v = pick.v % FULL_LOOKS;
   return {
-    post: { tpl: 'PostMenuFull', v: 0, photo: m.photo, texts: [...own, 'Complet', day] },
-    story: { tpl: 'StoryFull', v: 0, photo: m.photo, texts: [...s.story.texts!.slice(0, 4), line, first ? `Encara hi ha places ${first}` : storyText(m.link), 'Complet', day] },
+    post: { tpl: 'PostMenuFull', v, photo: m.photo, texts: [...own, ...band] },
+    story: { tpl: 'StoryFull', v, photo: m.photo, texts: [...s.story.texts!.slice(0, 4), line, first ? `Encara hi ha places ${first}` : storyText(m.link), ...band] },
   };
 }
-// The Complet message for WhatsApp: the menu and the day that is full, the days that still have seats, and how to book
-export function fullText(m: Menu, full: MenuService | null, next: MenuService[], ownNext: boolean, all = false) {
+// The Complet message for WhatsApp: the menu and the day that is full, the days that still have seats, and how to book. k
+// picks how it starts and thanks, as it picks the band's words
+export function fullText(m: Menu, full: MenuService | null, next: MenuService[], ownNext: boolean, all = false, k = 0) {
   const title = [m.kicker, m.title].map(x => x.trim()).filter(Boolean).join(' ');
   const when = (s: MenuService) => `${fullDay(s.at.slice(0, 10))}, a les ${s.at.slice(11, 16)}`;
   const gone = all ? 'Ja no queden places per a cap dia.' : `${full ? fullDay(full.at.slice(0, 10)) + ' ja' : 'Ja'} no queden places.`;
-  return [`*${title}: complet*`, `${gone} Gràcies a tothom que ha reservat.`,
+  const open = [`*${title}: complet*`, `*Complet! ${title}*`, `*${title}: tot ple*`][k % 3];
+  const thanks = ['Gràcies a tothom que ha reservat.', 'Moltes gràcies a tots!', 'Gràcies per venir a dinar i sopar amb nosaltres.'][k % 3];
+  return [open, `${gone} ${thanks}`,
     next.length ? [ownNext ? 'Encara hi ha lloc:' : 'Els pròxims dies amb lloc al restaurant:', ...next.map(when)].join('\n') : '',
     bookLines()].filter(Boolean).join('\n\n');
 }

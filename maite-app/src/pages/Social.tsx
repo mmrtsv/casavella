@@ -16,7 +16,7 @@ import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
 import { done, toastError } from '../parts/toast';
 import { Art, Wide } from '../social/Art';
-import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, MENU_LOOKS, MENU_PHOTOS, STORY_LINES, STYLES, bookLines, datesText, freshMenu, fullOf, fullSlides, fullText, inLibrary, menuCaption, menuSlides, menuReminders, capReminders, storyLink, type Menu, type MenuService, type Slide } from '../social/catalog';
+import { CAROUSELS, LIBRARY, MENU_DISHES, MENU_EXAMPLE, MENU_LOOKS, MENU_PHOTOS, STORY_LINES, STYLES, bookLines, datesText, freshMenu, fullOf, fullSlides, fullText, inLibrary, pickFull, type FullPick, menuCaption, menuSlides, menuReminders, capReminders, storyLink, type Menu, type MenuService, type Slide } from '../social/catalog';
 import { byId, changed, fields, fileName, loadBrandFonts, onImage, photoAlt, png, save, variants, type Texts } from '../social/paint';
 import { COPIES, PROFILE_HEAD, TEMPLATES, type Template } from '../social/templates';
 
@@ -544,17 +544,45 @@ async function share(p: Slide, text: string): Promise<boolean> {
 }
 const menuValues = (p: Post): Menu | null => (p.menu && typeof p.menu === 'object' ? { ...MENU_EXAMPLE, ...p.menu } : null);
 // Complet: the menu's cover with «Complet» across it and the message that the day is full, with the days that still have seats
-// (the menu's other services, or the restaurant's next openings), from the tables booked. The server also posts the Complet
-// story (lib/plan.js fullStories), now if it hasn't yet: the owner may know it is full before the calendar does
-async function fullToWhatsApp(p: Post, m: Menu, R: { open: string[]; seats: number }): Promise<string | false> {
+// (the menu's other services, or the restaurant's next openings), from the tables booked. First fullReady works it out, then
+// FullDialog asks whether the Complet story goes out too, and fullSend opens WhatsApp
+type FullReady = { p: Post; m: Menu; full: MenuService; next: MenuService[]; ownNext: boolean; all: boolean; pick: FullPick };
+async function fullReady(p: Post, m: Menu, R: { open: string[]; seats: number }): Promise<FullReady> {
   const now = new Date(), today = ymd(now), to = ymd(new Date(now.getTime() + 120 * 864e5));
   const { tables } = await api<{ tables: { date: string; time: string; people: number; cancelled?: boolean }[] }>(`restaurant?from=${today}&to=${to}`);
   const svc = (at: string): MenuService => ({ at, seats: R.seats, taken: tables.filter(t => !t.cancelled && `${t.date}T${t.time}` === at).reduce((n, t) => n + (t.people || 0), 0) });
   const own = rowsOf(m, R.open).filter(r => r.day).map(r => svc(`${r.day}T${r.time}`));
   const { full, next, ownNext, all } = fullOf(own, R.open.map(svc), `${today}T${hour(now.toISOString())}`);
   if (!full) throw new Error('Aquest menú ja no té cap dia per endavant');
-  if (!await share(fullSlides(m, full, next, p.texts).post, fullText(m, full, next, ownNext, all))) return false;
-  return full.at;
+  return { p, m, full, next, ownNext, all, pick: pickFull() };
+}
+const fullImage = (x: FullReady) => fullSlides(x.m, x.full, x.next, x.p.texts, x.pick).post;
+const fullSend = (x: FullReady) => share(fullImage(x), fullText(x.m, x.full, x.next, x.ownNext, x.all, x.pick.k));
+// Before Complet goes to WhatsApp: the image, another words and look if the owner wants, and whether the Complet story goes
+// out too (on by default; when it is already there, it says so and none is made again)
+function FullDialog({ x, data, onClose, onSent }: { x: FullReady; data: Data; onClose: () => void; onSent: (d: Data) => void }) {
+  const [pick, setPick] = useState(x.pick), [story, setStory] = useState(true), [busy, setBusy] = useState(false);
+  const has = data.posts.some(q => q.auto?.key === `menu:${x.p.id}:full:${x.full.at}`), img = fullImage({ ...x, pick });
+  const other = () => { let n = pickFull(); while (n.k === pick.k && n.v === pick.v) n = pickFull(); setPick(n); };
+  async function send() {
+    setBusy(true);
+    try {
+      if (!await fullSend({ ...x, pick })) { setBusy(false); return; }
+      onSent((await api<{ social: Data }>('plan', { method: 'PUT', body: { full: { id: x.p.id, at: x.full.at, story: !has && story, ...pick } } })).social);
+      if (!has && story) done('La story de Complet surt en uns minuts');
+      onClose();
+    } catch (e) { toastError(e); setBusy(false); }
+  }
+  return (
+    <Dialog isOpen onClose={onClose} title="Envia Complet per WhatsApp" subtitle={cap(longDay(x.full.at.slice(0, 10)))}
+      footer={<><Button size="sm" variant="ghost" onPress={other}><Shuffle size={15} />Una altra opció</Button><Button size="sm" isPending={busy} onPress={send}><MessageCircle size={15} />Envia per WhatsApp</Button></>}>
+      <div className="space-y-4">
+        <Art t={byId.get(img.tpl)!} v={img.v} photo={img.photo} texts={img.texts} className="mx-auto w-48 rounded-xl" />
+        {has ? <p className="text-sm text-muted">La story de Complet d'aquest dia ja hi és.</p>
+          : <CheckField isSelected={story} onChange={setStory}>Penja també una story de Complet</CheckField>}
+      </div>
+    </Dialog>
+  );
 }
 // The two stories of a menu's pack: the announcement (StoryPoster, and older packs' only story) and the menu
 // Restaurant › Menús: the menus, with the posts they live on (loaded here, as Xarxes socials does)
@@ -597,6 +625,8 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
   const fresh = () => freshMenu([...data.posts.filter(p => !p.pack).map(menuValues), ...(data.drafts || []).map(x => x.menu)].filter((x): x is Menu => !!x));
   const [m, setM] = useState<Menu>(fresh);
   const R = useStore(s => s.settings)?.restaurant, open = R?.open || [];
+  // Complet, worked out and waiting for the owner to send it (FullDialog)
+  const [fullAsk, setFullAsk] = useState<FullReady | null>(null);
   const [rows, setRowsOnly] = useState<Row[]>([{ day: '', time: '21:00' }]);
   const setRows = (r: Row[]) => { setRowsOnly(r); setM(x => withRows(x, r)); };
   const [own, setOwn] = useState<{ file: File; url: string } | null>(null);
@@ -830,7 +860,7 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
                   </div>
                   {!past && menuValues(p) && <WhatsAppButton
                     promo={async () => { if (await toWhatsApp(p, menuValues(p)!, open)) setData((await api<{ social: Data }>('plan', { method: 'PUT', body: { whatsapp: p.id } })).social); }}
-                    full={async () => { const at = await fullToWhatsApp(p, menuValues(p)!, { open, seats: R?.seats || 0 }); if (at) setData((await api<{ social: Data }>('plan', { method: 'PUT', body: { full: { id: p.id, at } } })).social); }} />}
+                    full={async () => setFullAsk(await fullReady(p, menuValues(p)!, { open, seats: R?.seats || 0 }))} />}
                   {mv && <Button size="sm" variant="secondary" onPress={() => { edit(p); setMaking(true); }}><Pencil size={15} />Edita</Button>}
                   {p.published?.url && <a href={p.published.url} target="_blank" rel="noopener" aria-label="Obre a Instagram" className="grid size-8 shrink-0 place-items-center rounded-full outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={16} /></a>}
                   <DownloadButton label={`Descarrega ${title}`} run={async () => { await downloadPost(p); if (st) await downloadPost(st); if (sm) await downloadPost(sm); }} />
@@ -972,6 +1002,7 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
           {!running.length && <p className="p-4 text-sm text-muted sm:px-5">Cap menú en marxa.</p>}
           <ol className="divide-y divide-separator">{running.map(p => menuRow(p, false))}</ol>
         </section>
+        {fullAsk && <FullDialog x={fullAsk} data={data} onClose={() => setFullAsk(null)} onSent={setData} />}
         {!!data.drafts?.length && (
           <section className="card" aria-label="Esborranys">
             <h2 className="border-b border-separator p-4 text-base font-semibold sm:px-5">Esborranys</h2>

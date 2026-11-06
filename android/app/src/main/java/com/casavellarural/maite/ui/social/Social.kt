@@ -1186,30 +1186,70 @@ private fun nextLine(next: List<Seats>): String {
     }
     return "Encara hi ha lloc " + if (parts.size > 1) parts.dropLast(1).joinToString(", ") + " i " + parts.last() else parts[0]
 }
-/** The Complet cover, with the menu cover's words as the post has them, and «Complet» and the full day on the band */
-private fun fullCover(m: Menu, dishes: Int, full: Seats?, cover: List<String?>?): Slide {
+/** The words on the Complet band (catalog.ts FULL_WORDS) and how many looks it has (FULL_LOOKS), so it isn't always the same */
+private val FULL_WORDS = listOf("Complet" to "{day}", "Complet!" to "Moltes gràcies a tots!", "Tot ple" to "{day}", "Ple a vessar" to "Gràcies per reservar", "Complet" to "{day}. Moltes gràcies!")
+private const val FULL_LOOKS = 4
+/** A Complet's words (k) and band look (v), picked at random (catalog.ts pickFull) */
+private data class FullPick(val k: Int, val v: Int)
+private fun pickFull() = FullPick((0 until FULL_WORDS.size).random(), (0 until FULL_LOOKS).random())
+/** The Complet cover, with the menu cover's words as the post has them, and the band's words */
+private fun fullCover(m: Menu, dishes: Int, full: Seats?, cover: List<String?>?, pick: FullPick): Slide {
     val own = (0 until 5).map { cover?.getOrNull(it) ?: menuSlides(m, dishes).post.texts?.getOrNull(it) }
-    return Slide("PostMenuFull", 0, m.photo, own + listOf("Complet", full?.let { fullDay(it.at.take(10)) }.orEmpty()))
+    val (big, small) = FULL_WORDS[pick.k % FULL_WORDS.size]
+    val day = full?.let { fullDay(it.at.take(10)) }.orEmpty()
+    return Slide("PostMenuFull", pick.v % FULL_LOOKS, m.photo, own + listOf(big, if (day.isEmpty()) "Moltes gràcies a tots!" else small.replace("{day}", day)))
 }
-private fun fullText(m: Menu, f: Full): String {
+private fun fullText(m: Menu, f: Full, k: Int): String {
     val title = listOf(m.kicker.trim(), m.title.trim()).filter { it.isNotEmpty() }.joinToString(" ")
     val gone = if (f.all) "Ja no queden places per a cap dia." else (f.full?.let { fullDay(it.at.take(10)) + " ja" } ?: "Ja") + " no queden places."
+    val open = listOf("*$title: complet*", "*Complet! $title*", "*$title: tot ple*")[k % 3]
+    val thanks = listOf("Gràcies a tothom que ha reservat.", "Moltes gràcies a tots!", "Gràcies per venir a dinar i sopar amb nosaltres.")[k % 3]
     val next = if (f.next.isEmpty()) "" else (listOf(if (f.ownNext) "Encara hi ha lloc:" else "Els pròxims dies amb lloc al restaurant:") +
         f.next.map { "${fullDay(it.at.take(10))}, a les ${it.at.drop(11).take(5)}" }).joinToString("\n")
-    return listOf("*$title: complet*", "$gone Gràcies a tothom que ha reservat.", next, bookLines()).filter { it.isNotEmpty() }.joinToString("\n\n")
+    return listOf(open, "$gone $thanks", next, bookLines()).filter { it.isNotEmpty() }.joinToString("\n\n")
 }
-/** Complet: the cover with «Complet» and the message, from the tables booked (as fullToWhatsApp in Social.tsx). Returns the
- *  service that is full, for the server to post its Complet story now */
-private suspend fun fullToWhatsApp(context: Context, p: SocialPost, m: Menu, dishes: Int): String {
+/** Complet worked out from the tables booked (as fullReady in Social.tsx), waiting for the owner to send it */
+private class FullReady(val p: SocialPost, val m: Menu, val f: Full, val full: Seats)
+private suspend fun fullReady(p: SocialPost, m: Menu): FullReady {
     val r = Maite.settings?.restaurant ?: throw Exception("No hi ha la configuració del restaurant")
     val now = java.time.ZonedDateTime.now(BCN); val today = now.toLocalDate().toString()
     val tables = Api.get<TablesResponse>("restaurant?from=$today&to=${now.toLocalDate().plusDays(120)}").tables
     fun seats(at: String) = Seats(at, r.seats, tables.filter { !it.cancelled && "${it.date}T${it.time}" == at }.sumOf { it.people ?: 0 })
     val own = rowsOf(m, r.open).filter { it.day.isNotEmpty() }.map { seats("${it.day}T${it.time}") }
     val f = fullOf(own, r.open.map(::seats), "${today}T${now.toLocalTime().toString().take(5)}")
-    val full = f.full ?: throw Exception("Aquest menú ja no té cap dia per endavant")
-    share(context, fullCover(m, dishes, full, p.texts), fullText(m, f))
-    return full.at
+    return FullReady(p, m, f, f.full ?: throw Exception("Aquest menú ja no té cap dia per endavant"))
+}
+/** Before Complet goes to WhatsApp (FullDialog in Social.tsx): the image, another words and look if the owner wants, and whether
+ *  the Complet story goes out too (on by default; when it is already there, it says so and none is made again) */
+@Composable
+private fun FullSheet(x: FullReady, dishes: Int, data: Social, onClose: () -> Unit) {
+    val context = LocalContext.current; val scope = rememberCoroutineScope()
+    var pick by remember { mutableStateOf(pickFull()) }; var story by remember { mutableStateOf(true) }; var busy by remember { mutableStateOf(false) }
+    val has = data.posts.any { it.auto?.key == "menu:${x.p.id}:full:${x.full.at}" }
+    val img = fullCover(x.m, dishes, x.full, x.p.texts, pick)
+    Sheet(onClose) {
+        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 28.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Envia Complet per WhatsApp", style = Type.xl); Muted(cap(longDay(x.full.at.take(10))))
+            Renderer.byId[img.tpl]?.let { Art(it, img.v, img.photo, img.texts, Modifier.width(180.dp).clip(RoundedCornerShape(12.dp)).align(Alignment.CenterHorizontally)) }
+            if (has) Muted("La story de Complet d'aquest dia ja hi és.") else CheckRow(story, { story = it }, "Penja també una story de Complet")
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Btn("Una altra opció", { var n = pickFull(); while (n == pick) n = pickFull(); pick = n }, look = Look.Ghost, icon = R.drawable.ic_shuffle, enabled = !busy)
+                Btn("Envia per WhatsApp", {
+                    busy = true
+                    scope.launch {
+                        try {
+                            share(context, img, fullText(x.m, x.f, pick.k))
+                            val on = !has && story
+                            Maite.social = Api.put<PlanResponse>("plan", mapOf("full" to mapOf("id" to x.p.id, "at" to x.full.at, "story" to on, "k" to pick.k, "v" to pick.v))).social
+                            if (on) Toasts.done("La story de Complet surt en uns minuts")
+                            onClose()
+                        } catch (e: Exception) { Toasts.error(e) }
+                        busy = false
+                    }
+                }, busy = busy, small = false, icon = R.drawable.ic_message_circle)
+            }
+        }
+    }
 }
 
 /** Opens WhatsApp with the menu's cover and its text: the owner picks the broadcast list and sends (the chooser when there are
@@ -1594,7 +1634,8 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                     }
                     if (!past) mv?.let { m ->
                         // Envia per WhatsApp: the promo (the menu and its text) or Complet (the cover with «Complet» and the days still free)
-                        var wa by remember { mutableStateOf(false) }; var pick by remember { mutableStateOf(false) }
+                        var wa by remember { mutableStateOf(false) }; var pick by remember { mutableStateOf(false) }; var ask by remember { mutableStateOf<FullReady?>(null) }
+                        ask?.let { FullSheet(it, defaults.dishes, data) { ask = null } }
                         fun send(f: suspend () -> Unit) { pick = false; wa = true; scope.launch { try { f() } catch (e: Exception) { Toasts.error(e) }; wa = false } }
                         Box {
                             IconBtn(R.drawable.ic_message_circle, "Envia per WhatsApp", { pick = true }, busy = wa)
@@ -1603,7 +1644,7 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                                     send { toWhatsApp(context, t, p, m, open); Maite.social = Api.put<PlanResponse>("plan", mapOf("whatsapp" to p.id)).social }
                                 })
                                 androidx.compose.material3.DropdownMenuItem(text = { Text("Complet", style = Type.base) }, onClick = {
-                                    send { val at = fullToWhatsApp(context, p, m, defaults.dishes); Maite.social = Api.put<PlanResponse>("plan", mapOf("full" to mapOf("id" to p.id, "at" to at))).social }
+                                    send { ask = fullReady(p, m) }
                                 })
                             }
                         }

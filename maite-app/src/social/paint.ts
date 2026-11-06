@@ -1,8 +1,10 @@
 // Templates at full size: the markup, its variations ("Una altra opció") and a PNG of it at 1080 px wide
-import { LIBRARY, MENU_LOOKS, inLibrary, www } from './catalog';
+import { FULL_LOOKS, LIBRARY, MENU_LOOKS, inLibrary, www } from './catalog';
 import { TEMPLATES, type Template } from './templates';
 
 export const byId = new Map(TEMPLATES.map(t => [t.id, t]));
+// The Complet band's looks: background, words, angle and how far down from where the template draws it
+const FULL_BANDS: [string, string, number, number][] = [['#c6bfaf', '#1a3f20', -9, 0], ['#1a3f20', '#f3efe4', 7, 20], ['#f3efe4', '#1a3f20', -6, 30], ['#2e6d2e', '#f3efe4', 8, 20]];
 
 const S = '/maite/social/';
 const PHOTOS = ['apt-cuina-detall', 'bedorc-capvespre', 'montserrat-vinyes', 'figarot-llit', 'vinyes-llit-finestra', 'restaurant-sala', 'restaurant-oli', 'hab-armari', 'mirall', 'gerro', 'llibre', 'rotul', 'rebedor', 'escala-entrada', 'restaurant-barra', 'terrassa', 'rajola-flor', 'figarot-balco', 'restaurant-plat-2', 'historia-carrer', 'apt-cuina-2', 'bedorc', 'restaurant-targeta', 'restaurant-postres', 'figarot-sol', 'restaurant-llar', 'vinyes-habitacio-2', 'restaurant-guitarra', 'restaurant-xocolata'].map(p => `${S}${p}.jpg`);
@@ -28,6 +30,7 @@ export function variants(t: Template) {
   if (t.id === 'PostQuote') return 6;
   if (t.id === 'PostMenu' || t.id === 'StoryMenu') return MENU_LOOKS.length;
   if (t.id === 'PostWord') return BIG_WORDS.length;
+  if (t.id === 'PostMenuFull' || t.id === 'StoryFull') return FULL_LOOKS;
   return t.photo ? PHOTOS.length : 0;
 }
 
@@ -65,6 +68,12 @@ export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?:
     root.style.color = cava ? '#1a3f20' : '#f3efe4';
     const iso = root.querySelector('img');
     if (iso) iso.src = cava ? '/img/iso-dark.png' : '/img/iso-light.png';
+  }
+  // A Complet's band (catalog.ts FULL_LOOKS): its colour, its angle and how far it moves down
+  const band = t.id === 'PostMenuFull' || t.id === 'StoryFull' ? root.querySelector<HTMLElement>('[data-band]') : null;
+  if (band) {
+    const [bg, fg, angle, down] = FULL_BANDS[v % FULL_BANDS.length];
+    Object.assign(band.style, { background: bg, color: fg, transform: `rotate(${angle}deg)`, top: `${parseInt(band.style.top) + down}px` });
   }
   // The menu's styles (MENU_LOOKS): Cava as drawn, dark green, paper and basil green
   const menuLook = t.id === 'PostMenu' || t.id === 'StoryMenu' ? ['', 'dark', 'paper', 'basil'][v % MENU_LOOKS.length] : '';

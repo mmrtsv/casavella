@@ -340,7 +340,7 @@ export const TEMPLATES: Template[] = [
 
 // A sold-out menu: its cover (for WhatsApp) and its announcement story with a Cava band across them, at an angle: «Complet» and
 // the day that filled. The band goes after the template's own words, so the cover's and the story's lines keep their places
-const band = (top: number) => `<div style="position: absolute; left: -160px; right: -160px; top: ${top}px; transform: rotate(-9deg); background: #c6bfaf; color: #1a3f20; text-align: center; padding: 30px 0 34px;"> <p style="margin: 0; font-family: 'Le Monde Livre', Georgia, serif; font-size: 150px; line-height: 1;">Complet</p> <p style="margin: 14px 0 0; font-size: 34px; font-weight: 400;">Diumenge 15 de març</p> </div>`;
+const band = (top: number) => `<div data-band style="position: absolute; left: -160px; right: -160px; top: ${top}px; transform: rotate(-9deg); background: #c6bfaf; color: #1a3f20; text-align: center; padding: 30px 0 34px;"> <p style="margin: 0; font-family: 'Le Monde Livre', Georgia, serif; font-size: 150px; line-height: 1;">Complet</p> <p style="margin: 14px 0 0; font-size: 34px; font-weight: 400;">Diumenge 15 de març</p> </div>`;
 const full = (from: string, id: string, title: string, desc: string, top: number): Template => {
   const t = TEMPLATES.find(x => x.id === from)!;
   // The story's button takes a longer line (the day with seats): as wide as it needs, up to the text's width

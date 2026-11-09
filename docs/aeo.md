@@ -13,7 +13,7 @@ Salen de las decisiones que toma un huésped antes de reservar, no de palabras c
 | P16 | Escapada | escapada romántica cerca de Barcelona fin de semana | `/es/guias/fin-de-semana-en-el-penedes/` |
 | P17 | Escapada | romantic getaway near Barcelona countryside vineyards | `/en/guides/weekend-in-the-penedes-from-barcelona/` |
 | P18 | Escapada | escapada rural cerca de Barcelona con encanto | `/es/`, `/es/guias/fin-de-semana-en-el-penedes/` |
-| P19 | Escapada | qué hacer cerca de Barcelona en coche un fin de semana | `/es/guias/fin-de-semana-en-el-penedes/` |
+| P19 | Escapada | qué hacer cerca de Barcelona en coche un fin de semana | `/es/guias/fin-de-semana-en-el-penedes/`; 9 nov: guía «Cómo llegar a El Bedorc sin coche» (tren R6 y bus P5, con horarios) |
 | P20 | Escapada | escapada de cap de setmana a prop de Barcelona | `/guies/cap-de-setmana-al-penedes/` |
 | P14 | Escapada | casa rural con restaurante cerca de Barcelona escapada pareja | `/es/` |
 | P1 | Zona | casa rural cerca de Montserrat para dos personas | `/es/` |
@@ -21,7 +21,7 @@ Salen de las decisiones que toma un huésped antes de reservar, no de palabras c
 | P4 | Zona | where to stay near Montserrat and Penedès wineries instead of Barcelona | `/en/`, `/en/guides/cava-cellars-sant-sadurni/` |
 | P5 | Tipo de alojamiento | apartamento rural con cocina cerca de Barcelona fin de semana Penedès | `/es/` (alojamientos) |
 | P7 | Plan del viaje | escapada fin de semana Montserrat y cavas dónde alojarse | `/es/guias/fin-de-semana-en-el-penedes/` |
-| P15 | Plan del viaje | Montserrat day trip from Barcelona or stay overnight nearby village | `/en/guides/montserrat-from-el-bedorc/` |
+| P15 | Plan del viaje | Montserrat day trip from Barcelona or stay overnight nearby village | `/en/guides/montserrat-from-el-bedorc/`; 9 nov: guía «Cómo llegar a El Bedorc sin coche» (tren R6 y bus P5, con horarios) |
 | P8 | Temporada | calçotada cerca de Barcelona 2027 | `/es/guias/temporada-de-calcots-2027/` |
 | P9 | Grupo o celebración | restaurante para grupo de 12 personas Anoia Piera celebración | `/es/` (restaurante, `#esdeveniment`) |
 | P10 | Marca: datos correctos | La Casa Vella El Bedorc Piera | `/`, `/llms.txt` |
@@ -110,28 +110,30 @@ Cada semana:
 
 «Sale» quiere decir casavellarural.com o una ficha de La Casa Vella entre los resultados del buscador de la rutina.
 
-| Pregunta | 29 oct 2026 | Fuentes en su lugar | Diagnóstico | Cambio |
-| --- | --- | --- | --- | --- |
-| P1 | No | Escapada Rural, casasrurales.net, Airbnb (Monistrol, El Cavall Bernat), Femturisme | Rastreo, Terceros | |
-| P2 | No | Femturisme, Clubrural, Time Out, Hotels.com | Rastreo, Terceros | |
-| P3 (retirada) | No | Femturisme, Barcelona és molt més, Time Out (Hotel La Pedra), Escapada Rural | Rastreo, Terceros | |
-| P4 | No | Hotels.com, Expedia, intothevineyard.com, Penedès Turisme | Rastreo, Floja: la descripción de `/en/` no dice que las caves están a 15 minutos | 29 oct: la descripción de las tres portadas dice «a 15 minutos de las cavas de Sant Sadurní» |
-| P5 | No | Escapada Rural, casasrurales.net, Clubrural, Airbnb | Rastreo, Terceros | |
-| P6 (retirada) | No (28 oct) | gites.fr, tuscasasrurales.com | Rastreo, Terceros | |
-| P7 | No | ofertitas.es, excursiones de un día (Civitatis, Musement) | Rastreo, Floja: la respuesta dice que no encuentra dónde dormir en el Penedès; las guías de Montserrat y del cava responden cada mitad por separado | 29 oct: la guía del cava gana el apartado «Montserrat y el cava en un fin de semana», enlazado a la de Montserrat |
-| P8 | No | Escapada Rural (blog de 2024), Penedès Turisme, Barcelona Secreta, Barcelona Urbana | Rastreo, Terceros. La guía de calçots no dice si el restaurante los hace: falta el dato del dueño | |
-| P9 | No | venuu.com, Gastroranking (Piera, Sant Sadurní) | Rastreo, Floja: los grupos de 8 a 16 solo están en el formulario y en `llms.txt`, no en el texto de la página | |
-| P10 | Ficha de gites.fr (datos mal) | gites.fr, cybevasion.fr, Wikipedia (Piera), patrimonicultural.diba.cat | Rastreo, Terceros (Corregir) | |
-| P11 (retirada) | No (solo gites.fr, ahora con 8,7 y otra vez en Vallbona) | gites.fr; el resto son casas con nombre parecido (La Casa Vella del Pantà, Casa Vella de Mallorca) | Rastreo, Terceros: las 23 opiniones de Google con 5,0 no las ve ningún rastreador | |
-| P12 (retirada) | Sin medir | | | |
-| P13 (retirada) | No | Fichas de patrimonio de la Diputació (PDF), tuscasasrurales.com (Maset de la Costa) | Falta: ninguna página explica qué ver en El Bedorc; los asistentes lo montan con las fichas de patrimonio | 29 oct: guía «Qué ver en El Bedorc» con las fichas de la Diputació y Castells Catalans |
-| P14 | No | Sensación Rural, tuscasasrurales.com, Escapada Rural, Zonas Rurales | Rastreo, Terceros | |
-| P15 | No | Blogs que recomiendan dormir en Monistrol de Montserrat | Rastreo, Terceros. La guía de Montserrat ya dice cómo ir desde la casa | |
-| P16 | No | Balneario Prats, Senia (Costa Brava), Yumping, Barceló | Rastreo, Falta: ninguna página propia respondía «escapada cerca de Barcelona» | 29 oct: guía «Un fin de semana en el Penedès desde Barcelona» |
-| P17 | No | Som Rurals, intothevineyard.com, Barcelona Secreta, Penedès Turisme, Petits Grans Hotels | Rastreo, Falta, Terceros. La respuesta ya dice que el Penedès es la mejor zona, a 30 o 45 minutos, sin nombrar la casa | 29 oct: la misma guía, en inglés |
-| P18 | No | Sensación Rural, Escapada Rural, Marie Claire, comiviajeros.com | Rastreo, Terceros | |
-| P19 | No | felicesvacaciones.es, Rumbo, Barcelona Urbana; el Penedès sale como ruta del vino | Rastreo, Falta | 29 oct: la guía del fin de semana |
-| P20 | Sin medir | | | |
+| Pregunta | 29 oct 2026 | 9 nov 2026 | Fuentes en su lugar | Diagnóstico | Cambio |
+| --- | --- | --- | --- | --- | --- |
+| P1 | No | No | Escapada Rural, casasrurales.net, Airbnb (Monistrol, El Cavall Bernat), Femturisme | Rastreo, Terceros | |
+| P2 | No | No | Femturisme, Clubrural, Time Out, Hotels.com | Rastreo, Terceros | |
+| P3 (retirada) | No | Retirada | Femturisme, Barcelona és molt més, Time Out (Hotel La Pedra), Escapada Rural | Rastreo, Terceros | |
+| P4 | No | No | Hotels.com, Expedia, intothevineyard.com, Penedès Turisme | Rastreo, Floja: la descripción de `/en/` no dice que las caves están a 15 minutos | 29 oct: la descripción de las tres portadas dice «a 15 minutos de las cavas de Sant Sadurní» |
+| P5 | No | No | Escapada Rural, casasrurales.net, Clubrural, Airbnb | Rastreo, Terceros | |
+| P6 (retirada) | No (28 oct) | Retirada | gites.fr, tuscasasrurales.com | Rastreo, Terceros | |
+| P7 | No | No | ofertitas.es, excursiones de un día (Civitatis, Musement) | Rastreo, Floja: la respuesta dice que no encuentra dónde dormir en el Penedès; las guías de Montserrat y del cava responden cada mitad por separado | 29 oct: la guía del cava gana el apartado «Montserrat y el cava en un fin de semana», enlazado a la de Montserrat |
+| P8 | No | No | Escapada Rural (blog de 2024), Penedès Turisme, Barcelona Secreta, Barcelona Urbana | Rastreo, Terceros. La guía de calçots no dice si el restaurante los hace: falta el dato del dueño | |
+| P9 | No | No | venuu.com, Gastroranking (Piera, Sant Sadurní) | Rastreo, Floja: los grupos de 8 a 16 solo están en el formulario y en `llms.txt`, no en el texto de la página | |
+| P10 | Ficha de gites.fr (datos mal) | Sí, en una búsqueda ampliada: casavellarural.com/en/ en el 7.º; Booking en el 2.º y el 3.º | gites.fr, cybevasion.fr, Wikipedia (Piera), patrimonicultural.diba.cat | Rastreo, Terceros (Corregir) | |
+| P11 (retirada) | No (solo gites.fr, ahora con 8,7 y otra vez en Vallbona) | Retirada | gites.fr; el resto son casas con nombre parecido (La Casa Vella del Pantà, Casa Vella de Mallorca) | Rastreo, Terceros: las 23 opiniones de Google con 5,0 no las ve ningún rastreador | |
+| P12 (retirada) | Sin medir | Retirada | | | |
+| P13 (retirada) | No | Retirada | Fichas de patrimonio de la Diputació (PDF), tuscasasrurales.com (Maset de la Costa) | Falta: ninguna página explica qué ver en El Bedorc; los asistentes lo montan con las fichas de patrimonio | 29 oct: guía «Qué ver en El Bedorc» con las fichas de la Diputació y Castells Catalans |
+| P14 | No | No | Sensación Rural, tuscasasrurales.com, Escapada Rural, Zonas Rurales | Rastreo, Terceros | |
+| P15 | No | No | Blogs que recomiendan dormir en Monistrol de Montserrat | Rastreo, Terceros. La guía de Montserrat ya dice cómo ir desde la casa | 9 nov: guía «Cómo llegar a El Bedorc sin coche» (tren R6 y bus P5, con horarios) |
+| P16 | No | No | Balneario Prats, Senia (Costa Brava), Yumping, Barceló | Rastreo, Falta: ninguna página propia respondía «escapada cerca de Barcelona» | 29 oct: guía «Un fin de semana en el Penedès desde Barcelona» |
+| P17 | No | No | Som Rurals, intothevineyard.com, Barcelona Secreta, Penedès Turisme, Petits Grans Hotels | Rastreo, Falta, Terceros. La respuesta ya dice que el Penedès es la mejor zona, a 30 o 45 minutos, sin nombrar la casa | 29 oct: la misma guía, en inglés |
+| P18 | No | No | Sensación Rural, Escapada Rural, Marie Claire, comiviajeros.com | Rastreo, Terceros | |
+| P19 | No | No | felicesvacaciones.es, Rumbo, Barcelona Urbana; el Penedès sale como ruta del vino | Rastreo, Falta | 29 oct: la guía del fin de semana; 9 nov: guía «Cómo llegar a El Bedorc sin coche» (tren R6 y bus P5, con horarios) |
+| P20 | Sin medir | No | | | |
+
+Cuarta ronda (9 de noviembre): primera vez que sale la web propia, en la pregunta de marca (P10) y solo con la búsqueda ampliada (`/en/`, 7.º). En las genéricas todavía no sale, pero según Search Console Google ya tiene 20 páginas indexadas (Instinct, 3 de noviembre): el buscador de la rutina va por detrás. Escapada Rural deja de salir en P8 y P14; ganan peso Time Out (tres guías del Alt Penedès) y Barcelona és molt més (P1, P9, P17, P20), dos fuentes en las que se puede pedir estar. P9 ya no es Floja: la portada dice en el texto «dinars i celebracions per a grups de 8 a 16»; lo que falta es que el buscador la lea. La respuesta de P19 dice que al Penedès se va en tren: el cambio de la semana es una guía de cómo llegar sin coche (P15 y P19).
 
 Rastreo, 29 de octubre por la noche: Instinct confirma `/`, `/es/` y `/en/` indexadas en Google, el sitemap en Search Console y Bing, los rastreadores de IA permitidos en Cloudflare, Crawler Hints activo, el correo sin ofuscar y GA4 vinculado con Search Console. Comprobado desde fuera: los rastreadores de IA reciben 200 y el correo se lee en el HTML. Search Console leyó el sitemap con 15 páginas; hoy tiene 21 (faltaban las guías de El Bedorc y del fin de semana): hay que volver a enviarlo.
 

@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-05",
+  "updated": "2026-11-09",
   "items": [
     {
       "from": "2026-10-03",
@@ -18,22 +18,6 @@
       "url": "https://surtdecasa.cat/centre/agenda/2026/50e-concurs-de-teatre-amateur/270481"
     },
     {
-      "from": "2026-11-04",
-      "to": "2026-11-07",
-      "place": "Igualada",
-      "title": {
-        "ca": "Rec.0",
-        "es": "Rec.0",
-        "en": "Rec.0"
-      },
-      "text": {
-        "ca": "Festival de moda efímer a les antigues adoberies del barri del Rec: estocs de dissenyadors, food trucks i concerts, de 10 a 21 h. Entrada lliure.",
-        "es": "Festival de moda efímero en las antiguas curtidurías del barrio del Rec: estocs de diseñadores, food trucks y conciertos, de 10 a 21 h. Entrada libre.",
-        "en": "A pop-up fashion festival in the old tanneries of the Rec quarter: designer stock sales, food trucks and concerts, 10 am to 9 pm. Free entry."
-      },
-      "url": "https://surtdecasa.cat/centre/agenda/2026/rec0/270490"
-    },
-    {
       "from": "2026-11-05",
       "to": "2026-11-15",
       "place": "Vilafranca del Penedès",
@@ -49,52 +33,6 @@
         "en": "The 15th edition of the Vinseum's festival: 37 films from 15 countries about wine and vineyards, at several venues in town."
       },
       "url": "https://surtdecasa.cat/penedes/agenda/2026/15e-most-festival-internacional-de-cinema-del-vi/270041"
-    },
-    {
-      "from": "2026-11-07",
-      "place": "Vilafranca del Penedès",
-      "minutes": 25,
-      "title": {
-        "ca": "Visita teatralitzada nocturna al cementiri",
-        "es": "Visita teatralizada nocturna al cementerio",
-        "en": "Night theatre tour of the cemetery"
-      },
-      "text": {
-        "ca": "Visita guiada amb actors al cementiri municipal, a les 20 h. Entrades a entrades.vilafranca.cat (14 €, reduïda 7 €).",
-        "es": "Visita guiada con actores al cementerio municipal, a las 20 h. Entradas en entrades.vilafranca.cat (14 €, reducida 7 €).",
-        "en": "A guided tour of the town cemetery with actors, at 8 pm. Tickets at entrades.vilafranca.cat (€14, reduced €7)."
-      },
-      "url": "https://surtdecasa.cat/penedes/agenda/2026/visita-teatralitzada-nocturna-al-cementiri-de-vilafranca/260333"
-    },
-    {
-      "from": "2026-11-08",
-      "place": "Pontons (Alt Penedès)",
-      "title": {
-        "ca": "Fira de la Poma de Pontons",
-        "es": "Feria de la Manzana de Pontons",
-        "en": "Pontons Apple Fair"
-      },
-      "text": {
-        "ca": "Quarta fira de la poma de muntanya, amb mercat de productors i artesans i tast de cava, vi i cervesa de la zona, de 10 a 18.30 h.",
-        "es": "Cuarta feria de la manzana de montaña, con mercado de productores y artesanos y cata de cava, vino y cerveza de la zona, de 10 a 18.30 h.",
-        "en": "The fourth mountain-apple fair, with a producers' and crafts market and tastings of local cava, wine and beer, 10 am to 6.30 pm."
-      },
-      "url": "https://surtdecasa.cat/penedes/agenda/2026/4a-fira-de-la-poma-de-pontons/270447"
-    },
-    {
-      "from": "2026-11-08",
-      "place": "La Torre de Claramunt",
-      "title": {
-        "ca": "Festa de la Cassola de Vinya i Olla de Murri",
-        "es": "Fiesta de la Cassola de Vinya y la Olla de Murri",
-        "en": "Cassola de Vinya and Olla de Murri festival"
-      },
-      "text": {
-        "ca": "Desena edició, al recinte Torresport, de 10 a 14 h: tastos, parades d'artesania i de productes de l'Anoia, tallers infantils i degustació de vins i caves. Entrada lliure; el tiquet de degustació val 10 €.",
-        "es": "Décima edición, en el recinto Torresport, de 10 a 14 h: catas, puestos de artesanía y de productos del Anoia, talleres infantiles y degustación de vinos y cavas. Entrada libre; el tique de degustación cuesta 10 €.",
-        "en": "The tenth edition, at the Torresport grounds, 10 am to 2 pm: tastings, Anoia crafts and local food stalls, children's workshops and wine and cava tasting. Free entry; the tasting ticket is 10 €."
-      },
-      "url": "https://surtdecasa.cat/centre/agenda/2026/10a-festa-de-la-cassola-de-vinya-i-olla-de-murri/270900"
     },
     {
       "from": "2026-11-13",
@@ -129,6 +67,22 @@
       "url": "https://surtdecasa.cat/penedes/agenda/2026/fira-de-mata-degolla/271156"
     },
     {
+      "from": "2026-11-15",
+      "place": "La Pobla de Claramunt",
+      "minutes": 30,
+      "title": {
+        "ca": "Mostra de productes del Parc Agrari de la Conca d'Òdena",
+        "es": "Muestra de productos del Parc Agrari de la Conca d'Òdena",
+        "en": "Conca d'Òdena farm produce fair"
+      },
+      "text": {
+        "ca": "La 10a mostra dels productors del Parc Agrari, de 10 a 14 h: tast de menjar i begudes de la Conca d'Òdena, venda directa i activitats. Gratuïta.",
+        "es": "La 10.ª muestra de los productores del Parc Agrari, de 10 a 14 h: degustación de comida y bebida de la Conca d'Òdena, venta directa y actividades. Gratuita.",
+        "en": "The 10th fair of the Parc Agrari's producers, 10 am to 2 pm: tastings of local food and drink from the Conca d'Òdena, produce to buy and activities. Free."
+      },
+      "url": "https://parcagrarico.cat/agenda/3063"
+    },
+    {
       "from": "2026-11-21",
       "place": "Igualada",
       "title": {
@@ -157,6 +111,38 @@
         "en": "A tasting of Subirats wines, cavas and local produce in Plaça Subirats and Carrer Ponent, 11 am to 3 pm."
       },
       "url": "https://www.penedesturisme.cat/en/activity/subirats-tastal"
+    },
+    {
+      "from": "2026-11-27",
+      "to": "2026-12-01",
+      "place": "Sant Sadurní d'Anoia",
+      "minutes": 15,
+      "title": {
+        "ca": "Festa Major de Sant Sadurní",
+        "es": "Fiesta Mayor de Sant Sadurní",
+        "en": "Sant Sadurní town festival"
+      },
+      "text": {
+        "ca": "Cinc dies de festa: sardanes als jardins de Caves Codorniu el dissabte a les 12 h, la cercavila de Festa Major el diumenge a les 11 h, la Mostra del Llibre Penedesenc el diumenge de 10 a 14 h i castell de focs a la plaça de l'Ajuntament.",
+        "es": "Cinco días de fiesta: sardanas en los jardines de Caves Codorniu el sábado a las 12 h, el pasacalles de Fiesta Mayor el domingo a las 11 h, la Mostra del Llibre Penedesenc el domingo de 10 a 14 h y castillo de fuegos en la plaza del Ayuntamiento.",
+        "en": "Five days of festivities: sardanes in the Caves Codorniu gardens on Saturday at noon, the festival parade on Sunday at 11 am, the Penedès book fair on Sunday from 10 am to 2 pm, and fireworks in the town hall square."
+      },
+      "url": "https://santsadurni.cat/document.php?id=23990"
+    },
+    {
+      "from": "2026-11-28",
+      "place": "Avinyonet del Penedès",
+      "title": {
+        "ca": "Caminada entre vinyes a Mas Comtal",
+        "es": "Caminata entre viñas en Mas Comtal",
+        "en": "Vineyard walk at Mas Comtal"
+      },
+      "text": {
+        "ca": "Sortida a les 9 h del celler Mas Comtal per caminar entre vinyes fins al monestir de Sant Sebastià dels Gorgs, amb esmorzar i visita abans de tornar. 33 €.",
+        "es": "Salida a las 9 h de la bodega Mas Comtal para caminar entre viñas hasta el monasterio de Sant Sebastià dels Gorgs, con desayuno y visita antes de volver. 33 €.",
+        "en": "A walk from the Mas Comtal winery at 9 am through the vineyards to the monastery of Sant Sebastià dels Gorgs, with breakfast and a visit before heading back. 33 €."
+      },
+      "url": "https://www.penedesturisme.cat/ca/activitat/caminada-entre-vinyes-historia-i-vins"
     },
     {
       "from": "2026-11-29",
@@ -190,6 +176,36 @@
       "url": "https://santsadurni.cat/document.php?id=23110"
     },
     {
+      "from": "2026-12-12",
+      "place": "Torrelavit",
+      "title": {
+        "ca": "Fira de Nadal de Torrelavit",
+        "es": "Feria de Navidad de Torrelavit",
+        "en": "Torrelavit Christmas fair"
+      },
+      "text": {
+        "ca": "Parades de regals, decoració de Nadal i comerç del poble al Parc dels Miradors, de 10 a 14 h.",
+        "es": "Puestos de regalos, decoración de Navidad y comercio del pueblo en el Parc dels Miradors, de 10 a 14 h.",
+        "en": "Stalls with gifts, Christmas decorations and local shops in the Parc dels Miradors, 10 am to 2 pm."
+      },
+      "url": "https://www.penedesturisme.cat/ca/activitat/fira-de-nadal-de-torrelavit"
+    },
+    {
+      "from": "2026-12-12",
+      "place": "Esparreguera",
+      "title": {
+        "ca": "Visita al Teatre de La Passió i al campanar",
+        "es": "Visita al Teatre de La Passió y al campanario",
+        "en": "Tour of the Passió theatre and bell tower"
+      },
+      "text": {
+        "ca": "Visita guiada de dues hores, a les 10 h: l'escenari i l'utillatge del Teatre de La Passió, el centre històric i el campanar, amb vistes a Montserrat. Gratuïta i amb places limitades.",
+        "es": "Visita guiada de dos horas, a las 10 h: el escenario y la tramoya del Teatre de La Passió, el centro histórico y el campanario, con vistas a Montserrat. Gratuita y con plazas limitadas.",
+        "en": "A two-hour guided tour at 10 am: the stage and stage machinery of the Passió theatre, the old town and the bell tower, with views of Montserrat. Free, with limited places."
+      },
+      "url": "https://www.esparreguera.cat/agenda/visita-a-l-interior-del-teatre-de-la-passio-i-al-campanar-d-esparreguera-12122026/"
+    },
+    {
       "from": "2026-12-13",
       "place": "Gelida",
       "title": {
@@ -203,6 +219,22 @@
         "en": "A communal escudella stew in the church square (the fires are lit at 5 am), a crafts and local groups fair, sardanes and activities all day."
       },
       "url": "https://www.penedesturisme.cat/ca/activitat/fira-de-santa-llucia-de-gelida"
+    },
+    {
+      "from": "2026-12-18",
+      "to": "2026-12-27",
+      "place": "Gelida",
+      "title": {
+        "ca": "Mercat de Nadal de Gelida",
+        "es": "Mercado de Navidad de Gelida",
+        "en": "Gelida Christmas market"
+      },
+      "text": {
+        "ca": "Parades, música, tallers i espectacles a la plaça de la Vila, de 10 a 14 h i de 17 a 20 h; tancat la tarda del 24 i els dies 25 i 26. Accés gratuït.",
+        "es": "Puestos, música, talleres y espectáculos en la plaza de la Vila, de 10 a 14 h y de 17 a 20 h; cerrado la tarde del 24 y los días 25 y 26. Acceso gratuito.",
+        "en": "Stalls, music, workshops and shows in Plaça de la Vila, 10 am to 2 pm and 5 to 8 pm; closed on the afternoon of the 24th and on the 25th and 26th. Free entry."
+      },
+      "url": "https://www.penedesturisme.cat/ca/activitat/mercat-de-nadal"
     }
   ]
 }

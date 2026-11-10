@@ -76,7 +76,9 @@ import com.casavellarural.maite.R
 import com.casavellarural.maite.data.Auth
 import com.casavellarural.maite.data.Maite
 import com.casavellarural.maite.data.Push
+import com.casavellarural.maite.ui.screens.Analytics
 import com.casavellarural.maite.ui.screens.BlockDates
+import com.casavellarural.maite.ui.screens.Chat
 import com.casavellarural.maite.ui.screens.BookingFile
 import com.casavellarural.maite.ui.screens.Bookings
 import com.casavellarural.maite.ui.screens.Restaurant

@@ -43,6 +43,7 @@ import com.casavellarural.maite.ui.Toasts
 import com.casavellarural.maite.ui.Type
 import com.casavellarural.maite.ui.Ui
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.Serializable
 import java.time.format.DateTimeFormatter
 

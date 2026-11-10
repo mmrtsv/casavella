@@ -23,6 +23,9 @@ export const ERRORS: Record<string, string> = {
   restaurant: 'Revisa els horaris del restaurant: cada servei necessita nom, algun dia, les hores i les places',
   calendar: "Google Calendar no deixa llegir el calendari del restaurant: comprova que CAL_RESTAURANT és l'ID bo i que el calendari està compartit amb el compte de servei amb permís per fer canvis",
   restaurant_not_configured: 'Falta connectar el calendari del restaurant (CAL_RESTAURANT)', time: "Revisa l'hora", people: 'Revisa el nombre de persones',
+  sheet_link: "Aquest enllaç no és d'un full de Google", sheet_access: 'Maite no pot llegir el full: comparteix-lo amb el compte de servei (només lectura)',
+  sheet_columns: 'El full no té les columnes Data i Import a la primera pestanya', sheet: "No s'ha pogut llegir el full de despeses",
+  ai_chat: "Claude no ha pogut respondre. Torna-ho a provar.",
   docs_not_configured: 'Falta connectar la carpeta de Google Drive dels documents', drive: 'Google Drive no ha deixat desar el document',
 };
 

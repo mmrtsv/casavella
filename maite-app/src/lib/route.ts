@@ -1,8 +1,8 @@
 // Hash routes, so the single page works on any path and reloads keep the page
 import { useSyncExternalStore } from 'react';
 import { leave } from './guard';
-export type Page = 'home' | 'calendar' | 'bookings' | 'restaurant' | 'prices' | 'rules' | 'stays' | 'emails' | 'social';
-export const PAGES: Page[] = ['home', 'calendar', 'bookings', 'restaurant', 'prices', 'rules', 'stays', 'emails', 'social'];
+export type Page = 'home' | 'calendar' | 'bookings' | 'restaurant' | 'prices' | 'rules' | 'stays' | 'emails' | 'social' | 'analytics' | 'chat';
+export const PAGES: Page[] = ['home', 'calendar', 'bookings', 'restaurant', 'prices', 'rules', 'stays', 'emails', 'social', 'analytics', 'chat'];
 // A link may carry what to open on the page (#/restaurant?paid=2026-10-31): lib/ui.ts reads it once, at start
 const hashParts = () => { const [p, q = ''] = location.hash.replace(/^#\/?/, '').split('?'); return { p: p as Page, q: new URLSearchParams(q) }; };
 const fromHash = (): Page | null => { const { p } = hashParts(); return PAGES.includes(p) ? p : null; };

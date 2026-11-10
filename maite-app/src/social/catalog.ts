@@ -193,32 +193,44 @@ export type MenuService = { at: string; seats?: number; taken?: number };
 export type MenuReminder = { day: string; time: string; kind: 'story' | 'post'; variant: 'poster' | 'menu' | 'announce'; k: number; svc: MenuService };
 const dayPlus = (d: string, n: number) => new Date(Date.parse(d + 'T12:00:00Z') + n * 864e5).toISOString().slice(0, 10);
 const fillOf = (s: MenuService) => s.seats ? (s.taken || 0) / s.seats : 0;
+// Below this share of seats taken the room counts as empty and the reminders come more often
+export const EMPTY = 0.5;
 // The last week before a service, from the share of seats taken: [days before, time, kind, variant]. Not at the weekly
-// plan's own times (20:30, 13:00…), so a day can have both
+// plan's own times (20:30, 13:00…), so a day can have both. Empty: a story every day, two the last three days, a feed post
+// on the fourth and, on the day itself, one more (09:30 for lunches, 17:45 for dinners)
 export function lastWeek(fill: number, serviceTime: string): [number, string, 'story' | 'post', 'poster' | 'menu' | 'announce'][] {
   const out: [number, string, 'story' | 'post', 'poster' | 'menu' | 'announce'][] = [];
   if (fill >= 1) return out;
+  const dinner = serviceTime >= '17:00';
   if (fill < 0.8) out.push([7, '21:15', 'story', 'poster'], [5, '21:15', 'story', 'menu'], [3, '21:15', 'story', 'poster']);
-  if (fill < 0.5) out.push([4, '19:45', 'post', 'announce']);
+  if (fill < EMPTY) out.push([6, '21:15', 'story', 'menu'], [4, '21:15', 'story', 'menu'], [4, '19:45', 'post', 'announce'], [3, '13:45', 'story', 'menu'], [2, '13:45', 'story', 'poster']);
   if (fill < 0.9) out.push([2, '21:15', 'story', 'menu'], [1, '21:15', 'story', 'poster']);
   if (fill < 0.6) out.push([1, '13:45', 'story', 'menu']);
-  if (fill < 0.9 && serviceTime >= '17:00') out.push([0, '12:30', 'story', 'poster']);
+  if (fill < 0.9 && dinner) out.push([0, '12:30', 'story', 'poster']);
+  if (fill < EMPTY) out.push(dinner ? [0, '17:45', 'story', 'menu'] : [0, '09:30', 'story', 'poster']);
   return out;
 }
 // The reminders of one menu on the days [from, to), before the limits (capReminders). start: when its promo starts
 // ('2026-11-20T19:00', Barcelona; '' for none yet, and then there are none). From the day after it until the last week before
-// a service: a story every three days at 21:15, the poster and the menu in turn, for the next service while it is less than
-// 80% full. Then the last week's (lastWeek), from 12 hours after the start.
+// a service: a story at 21:15, the poster and the menu in turn, for the next service while it is less than 80% full: every
+// other day while it is empty, every three days otherwise, and while empty a feed post ten days before. Then the last
+// week's (lastWeek), from 12 hours after the start.
 export function menuReminders(services: MenuService[], start: string, from: string, to: string): MenuReminder[] {
   const out: MenuReminder[] = [];
   if (!start) return out;
   const svcs = [...services].sort((a, b) => a.at.localeCompare(b.at));
-  for (let day = dayPlus(start.slice(0, 10), 1), i = 0; day < to; day = dayPlus(day, 3), i++) {
+  // Counted from the start, so the same days come out whichever day it is redone
+  let last = '', n = 0;
+  for (let day = dayPlus(start.slice(0, 10), 1); day < to; day = dayPlus(day, 1)) {
     const svc = svcs.find(o => o.at.slice(0, 10) >= day);
     if (!svc) break;
-    const k = Math.round((Date.parse(svc.at.slice(0, 10)) - Date.parse(day)) / 864e5);
-    if (day < from || k <= 7 || fillOf(svc) >= 0.8) continue;
-    out.push({ day, time: '21:15', kind: 'story', variant: i % 2 ? 'menu' : 'poster', k, svc });
+    const k = Math.round((Date.parse(svc.at.slice(0, 10)) - Date.parse(day)) / 864e5), fill = fillOf(svc);
+    if (k <= 7 || fill >= 0.8) continue;
+    if (k === 10 && fill < EMPTY && day >= from) out.push({ day, time: '19:45', kind: 'post', variant: 'announce', k, svc });
+    if (last && Math.round((Date.parse(day) - Date.parse(last)) / 864e5) < (fill < EMPTY ? 2 : 3)) continue;
+    last = day;
+    if (day >= from) out.push({ day, time: '21:15', kind: 'story', variant: n % 2 ? 'menu' : 'poster', k, svc });
+    n++;
   }
   const after = Date.parse(start.slice(0, 16) + ':00Z') + 12 * 3600e3;
   for (const svc of svcs) {

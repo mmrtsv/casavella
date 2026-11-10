@@ -47,11 +47,16 @@ Todo empieza en *Restaurante › Menús*: el menú con sus servicios (cada uno u
 | Días antes | Ocupación | Qué |
 |---|---|---|
 | Más de 7, desde el día después de empezar la promo | menos del 80 % | Una story cada tres días (cartel y menú, por turnos) a las 21:15, para el próximo servicio |
+| Más de 7 | menos del 50 % | Una story cada dos días en vez de tres |
+| 10 | menos del 50 % | Post a las 19:45 |
 | 7, 5 y 3 | menos del 80 % | Story (cartel o el menú) a las 21:15 |
+| 6 y 4 | menos del 50 % | Story a las 21:15: una cada día la última semana |
 | 4 | menos del 50 % | Post a las 19:45, que sustituye al post del plan de ese día |
+| 3 y 2 | menos del 50 % | Otra story a las 13:45: dos al día los últimos tres días |
 | 2 y 1 | menos del 90 % | Story a las 21:15 |
 | 1 | menos del 60 % | Otra story a las 13:45 |
 | El mismo día (cenas) | menos del 90 % | Story a las 12:30 |
+| El mismo día | menos del 50 % | Otra story: a las 17:45 las cenas, a las 9:30 las comidas |
 | | lleno | Nada |
 
 Como mucho dos recordatorios al día y un post cada cuatro días. A partir del 70 % el cartel dice «Últimes places». Un servicio que se cierra a mano en Restaurante deja de recordarse; los menús antiguos, sin servicios, se recuerdan por sus días abiertos o, si no hay, por su primer y último día, sin saber la ocupación. Cada menú puede quedarse sin recordatorios (Com planifica).

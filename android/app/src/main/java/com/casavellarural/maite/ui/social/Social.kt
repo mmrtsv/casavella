@@ -1368,17 +1368,22 @@ private fun later(time: String, min: Int): String {
 private data class Reminder(val day: String, val time: String, val kind: String, val k: Int, val svc: String)
 private fun dayPlus(d: String, n: Int) = java.time.LocalDate.parse(d).plusDays(n.toLong()).toString()
 /** The last week before a service with the room empty (catalog.ts lastWeek with fill 0): days before, time, kind */
-private fun lastWeekEmpty(serviceTime: String) = listOf(Triple(7, "21:15", "story"), Triple(5, "21:15", "story"), Triple(3, "21:15", "story"), Triple(4, "19:45", "post"),
-    Triple(2, "21:15", "story"), Triple(1, "21:15", "story"), Triple(1, "13:45", "story")) + if (serviceTime >= "17:00") listOf(Triple(0, "12:30", "story")) else emptyList()
+private fun lastWeekEmpty(serviceTime: String) = listOf(Triple(7, "21:15", "story"), Triple(5, "21:15", "story"), Triple(3, "21:15", "story"),
+    Triple(6, "21:15", "story"), Triple(4, "21:15", "story"), Triple(4, "19:45", "post"), Triple(3, "13:45", "story"), Triple(2, "13:45", "story"),
+    Triple(2, "21:15", "story"), Triple(1, "21:15", "story"), Triple(1, "13:45", "story")) +
+    if (serviceTime >= "17:00") listOf(Triple(0, "12:30", "story"), Triple(0, "17:45", "story")) else listOf(Triple(0, "09:30", "story"))
 private fun menuReminders(services: List<String>, start: String, from: String, to: String): List<Reminder> {
     if (start.length < 16) return emptyList()
     val svcs = services.sorted(); val out = mutableListOf<Reminder>()
+    // Empty: a story every other day until the last week, and a feed post ten days before
     var day = dayPlus(start.take(10), 1)
     while (day < to) {
         val svc = svcs.firstOrNull { it.take(10) >= day } ?: break
         val k = java.time.temporal.ChronoUnit.DAYS.between(java.time.LocalDate.parse(day), java.time.LocalDate.parse(svc.take(10))).toInt()
-        if (day >= from && k > 7) out += Reminder(day, "21:15", "story", k, svc)
-        day = dayPlus(day, 3)
+        if (k <= 7) { day = dayPlus(day, 1); continue }
+        if (day >= from && k == 10) out += Reminder(day, "19:45", "post", k, svc)
+        if (day >= from) out += Reminder(day, "21:15", "story", k, svc)
+        day = dayPlus(day, 2)
     }
     val after = java.time.LocalDateTime.parse(start.take(16)).plusHours(12)
     for (svc in svcs) for ((k, time, kind) in lastWeekEmpty(svc.drop(11).take(5))) {
@@ -1841,7 +1846,7 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                         if (startAt.isNotEmpty() && lastDay.isNotEmpty()) Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text("Recordatoris", style = Type.sm, fontWeight = FontWeight.SemiBold)
                             Muted(if (coming.isEmpty()) "Cap: no queda temps entre l'inici i els dies del menú."
-                                else "$nStories ${if (nStories == 1) "story" else "stories"}${if (nPosts > 0) " i $nPosts ${if (nPosts == 1) "post" else "posts"}" else ""}, ${datesText(coming.first().day, coming.last().day).replaceFirstChar { it.lowercase() }}, si la sala no s'omple: una story cada tres dies fins a la setmana abans de cada dia, i gairebé cada dia l'última setmana. Com més plena, menys; quan és plena, cap. Totes porten l'enllaç per reservar aquell dia.")
+                                else "$nStories ${if (nStories == 1) "story" else "stories"}${if (nPosts > 0) " i $nPosts ${if (nPosts == 1) "post" else "posts"}" else ""}, ${datesText(coming.first().day, coming.last().day).replaceFirstChar { it.lowercase() }}, si la sala no s'omple: mentre és buida, una story cada dos dies fins a la setmana abans de cada dia, una cada dia l'última setmana, dues els últims tres dies, i un post deu dies abans i un altre quatre dies abans. Com més plena, menys; quan és plena, cap. Totes porten l'enllaç per reservar aquell dia.")
                         }
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {

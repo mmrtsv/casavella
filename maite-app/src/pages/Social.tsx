@@ -838,7 +838,7 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
         <div className="space-y-1">
           <h3 className="text-sm font-semibold">Recordatoris</h3>
           <p className="text-sm text-muted">{coming.length
-            ? `${nStories} ${nStories === 1 ? 'story' : 'stories'}${nPosts ? ` i ${nPosts} ${nPosts === 1 ? 'post' : 'posts'}` : ''}, ${datesText(coming[0].day, coming[coming.length - 1].day).replace(/^./, c => c.toLowerCase())}, si la sala no s'omple: mentre és buida, una story cada dia fins a la setmana abans de cada dia, dues al dia l'última setmana, tres els últims tres dies i el mateix dia, i un post deu dies abans i un altre quatre dies abans. Com més plena, menys; quan és plena, cap. Quan en queden una o dues places, una story ho diu. Totes porten l'enllaç per reservar aquell dia.`
+            ? `${nStories} ${nStories === 1 ? 'story' : 'stories'}${nPosts ? ` i ${nPosts} ${nPosts === 1 ? 'post' : 'posts'}` : ''}, ${datesText(coming[0].day, coming[coming.length - 1].day).replace(/^./, c => c.toLowerCase())}, si la sala no s'omple: mentre és buida, una story cada dia fins a la setmana abans de cada dia, dues al dia l'última setmana, tres els últims tres dies i el mateix dia, i un post cada tres dies fins a la setmana abans, i un set, quatre i un dia abans. Com més plena, menys; quan és plena, cap. Quan en queden una o dues places, una story ho diu. Totes porten l'enllaç per reservar aquell dia.`
             : 'Cap: no queda temps entre l\'inici i els dies del menú.'}</p>
         </div>
       )}

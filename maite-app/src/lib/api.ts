@@ -12,6 +12,8 @@ export async function api<T = any>(path: string, opt: { method?: string; body?: 
   const d = await r.json().catch(() => ({ error: 'server' }));
   if (!r.ok) {
     let msg = ERRORS[d.error] || (d.detail ? 'Error: ' + d.detail : `Alguna cosa no ha anat bé (error ${r.status}). Torna-ho a provar.`);
+    // Google's own words when the expenses sheet can't be read, so the reason is on screen
+    if (String(d.error).startsWith('sheet') && d.detail && ERRORS[d.error]) msg += ` (${d.detail})`;
     if (d.with?.length) msg += ': ' + (d.with as Booking[]).map(b => `${stayNameOf(b.stay)}, ${b.kind === 'block' ? 'tancat' : b.name || b.title} (${range(b.first, b.until)})`).join('; ');
     throw new ApiError(msg, d.error);
   }

@@ -81,6 +81,7 @@ import com.casavellarural.maite.ui.screens.BlockDates
 import com.casavellarural.maite.ui.screens.Chat
 import com.casavellarural.maite.ui.screens.BookingFile
 import com.casavellarural.maite.ui.screens.Bookings
+import com.casavellarural.maite.ui.screens.Reserves
 import com.casavellarural.maite.ui.screens.Restaurant
 import com.casavellarural.maite.ui.screens.CalendarActions
 import com.casavellarural.maite.ui.screens.CalendarScreen

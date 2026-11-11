@@ -3,3 +3,4 @@
 # Endpoints only the app calls, one per line: /api/maite/<name>, then why the web doesn't.
 /api/maite/push  The phones register for push notifications (lib/push.js); the web gets no push.
 eb9ae02  Restaurant.tsx only sends its tab changes through Maite web's leave window (guard.ts); the app keeps a new menu as a draft when the Menús tab closes, in ui/social/Social.kt in the same commit.
+f621ed3 Merge main into peaceful-cannon: brings in 3ad3742's Prices tab, already in the app (Ui.pricesTab)

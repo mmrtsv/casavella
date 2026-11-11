@@ -13,6 +13,9 @@ const QUOTES = [
   ['Una casa de poble de 1898, entre vinyes i oliveres.', 'a poc a poc'],
   ['Bigues de fusta, rajola hidràulica i el silenci del poble.', 'restaurada amb cura'],
 ];
+// Which of the quotes a PostQuote variation shows (each one in green and in Cava): the plan keeps two of the same apart
+export const quoteOf = (v: number) => Math.floor(v / 2) % QUOTES.length;
+export const QUOTE_LOOKS = QUOTES.length * 2;
 const TAGLINES = ['Entre vinyes i oliveres', 'Casa de poble de 1898', 'A una hora de Barcelona', 'Restaurada a poc a poc'];
 const WORDS = ['calma', 'silenci', 'pausa', 'llum', 'descans'];
 const DETAIL_LINES = ['Una copa de cava per començar', 'El vi del Penedès, a tocar', 'Petits detalls, temps lent'];
@@ -70,7 +73,7 @@ export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?:
     if (g) g.style.background = g.style.background.replace('0deg', '180deg');
   }
   if (t.id === 'PostQuote') {
-    const cava = v % 2 === 1, q = QUOTES[Math.floor(v / 2) % QUOTES.length];
+    const cava = v % 2 === 1, q = QUOTES[quoteOf(v)];
     text(find(root, 'font-size: 64px'), q[0]);
     const sc = find(root, 'Pinyon');
     if (sc) { sc.textContent = q[1]; sc.style.color = cava ? '#2e6d2e' : '#79a57a'; }

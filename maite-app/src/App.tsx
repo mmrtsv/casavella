@@ -11,9 +11,7 @@ import Home from './pages/Home';
 const Bookings = lazy(() => import('./pages/Bookings'));
 const Restaurant = lazy(() => import('./pages/Restaurant'));
 const Prices = lazy(() => import('./pages/Prices'));
-const Rules = lazy(() => import('./pages/Rules'));
 const Stays = lazy(() => import('./pages/Stays'));
-const Emails = lazy(() => import('./pages/Emails'));
 const Social = lazy(() => import('./pages/Social'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const Chat = lazy(() => import('./pages/Chat'));
@@ -21,7 +19,7 @@ const Windows = lazy(() => import('./windows/Windows'));
 const Palette = lazy(() => import('./shell/Palette'));
 const Toasts = lazy(() => import('./parts/Toasts'));
 
-const TITLES: Record<Page, string> = { home: 'Inici', calendar: 'Calendari', bookings: 'Reserves', restaurant: 'Restaurant', prices: 'Preus', rules: 'Normes', stays: 'Allotjaments', emails: 'Correus', social: 'Xarxes socials', analytics: 'Analítica', chat: 'Pregunta' };
+const TITLES: Record<Page, string> = { home: 'Inici', calendar: 'Calendari', bookings: 'Reserves', restaurant: 'Restaurant', prices: 'Preus', stays: 'Allotjaments', social: 'Xarxes socials', analytics: 'Analítica', chat: 'Pregunta' };
 
 // Placeholder with the page's final footprint, so nothing jumps when data arrives
 function Loading() {
@@ -63,9 +61,7 @@ export function App() {
             {page === 'bookings' && <Bookings />}
             {page === 'restaurant' && <Restaurant />}
             {page === 'prices' && <Prices />}
-            {page === 'rules' && <Rules />}
             {page === 'stays' && <Stays />}
-            {page === 'emails' && <Emails />}
             {page === 'social' && <Social />}
             {page === 'analytics' && <Analytics />}
             {page === 'chat' && <Chat />}

@@ -11,10 +11,10 @@ enum class Page(val title: String, @DrawableRes val icon: Int, val hint: String)
     Calendar("Calendari", R.drawable.ic_calendar_days, "Ocupació de les properes setmanes"),
     Bookings("Reserves", R.drawable.ic_table_2, "Totes les reserves i la seva llista"),
     Prices("Preus", R.drawable.ic_tag, "Preu per nit, dies especials i descomptes"),
-    Stays("Allotjaments", R.drawable.ic_bed_double, "Textos, capacitat i fotos de la web"),
+    Stays("Allotjaments", R.drawable.ic_bed_double, "Textos, capacitat i fotos de la web, i les normes"),
     Rules("Normes", R.drawable.ic_scroll_text, "Estada, antelació, horaris i cancel·lació"),
     Emails("Correus", R.drawable.ic_mail, "Els correus que reben els hostes i la casa"),
-    Social("Xarxes socials", R.drawable.ic_layout_grid, "Plantilles d'Instagram, la graella del perfil i els copies"),
+    Social("Xarxes socials", R.drawable.ic_layout_grid, "Instagram, el pla, la graella i els correus"),
     Restaurant("Restaurant", R.drawable.ic_utensils_crossed, "Taules reservades, dies oberts i places"),
     Analytics("Analítica", R.drawable.ic_chart_column, "Ingressos, despeses i benefici brut"),
     Chat("Pregunta", R.drawable.ic_message_circle, "Pregunta a Claude sobre la casa"),
@@ -40,14 +40,33 @@ object Ui {
     var restaurantTab by mutableStateOf("")
     var restaurantMenu by mutableStateOf("")
     var opening by mutableStateOf<Opening?>(null)
+    /** The tab Preus, Allotjaments or Analítica opens on, taken once */
+    var pageTab by mutableStateOf("")
 
-    fun go(p: Page) { page = p; more = false }
+    fun go(p: Page) {
+        // Normes and Correus are tabs of Allotjaments and Xarxes socials now
+        page = when (p) { Page.Rules -> { pageTab = "rules"; Page.Stays }; Page.Emails -> { com.casavellarural.maite.ui.social.openSocialTab = "emails"; Page.Social }; else -> p }
+        more = false
+    }
     fun openBookings(filter: String) { bookingsFilter = filter; go(Page.Bookings) }
     /** Calendari opens Restaurant on a day, and Inici (or a notification) on Cobrat on a day with tables to note; the page takes them once */
     fun openRestaurant(date: String, tab: String = "tables") { restaurantDay = date; restaurantTab = tab; go(Page.Restaurant) }
     /** Publicar (or a WhatsApp reminder) opens Restaurant › Menús, where menus are made and changed: on a menu's post, or on the list */
     fun openRestaurantMenu(id: String = "") { restaurantMenu = id; restaurantTab = "menus"; go(Page.Restaurant) }
     fun openCancel(key: String) { cancel = key; detail = null }
+    /** A page, the tab on it and what to open there, as Pregunta's proposals give them (lib/chat.js), like openAt in lib/ui.ts.
+     *  Normes and Correus are tabs of Allotjaments and Xarxes socials */
+    fun openAt(name: String, tab: String = "", item: String = "") {
+        when (name) {
+            "social" -> { if (tab.isNotEmpty()) com.casavellarural.maite.ui.social.openSocialTab = tab; go(Page.Social) }
+            "restaurant" -> if (tab == "menus") openRestaurantMenu(item) else openRestaurant(item, tab.ifEmpty { "tables" })
+            "bookings" -> { bookingsFilter = tab; go(Page.Bookings); if (item.isNotEmpty()) detail = item }
+            "prices", "stays", "analytics" -> { pageTab = tab; go(Page.entries.first { it.name.equals(name, ignoreCase = true) }) }
+            "rules" -> go(Page.Rules)
+            "emails" -> go(Page.Emails)
+            else -> Page.entries.find { it.name.equals(name, ignoreCase = true) }?.let { go(it) }
+        }
+    }
     /** Back: closes the top window, then goes to Inici; false lets Android leave the app */
     fun back(): Boolean = when {
         keys -> { keys = false; true }

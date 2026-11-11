@@ -2,6 +2,7 @@ package com.casavellarural.maite.ui.screens
 
 import android.content.Context
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,7 +38,6 @@ import com.casavellarural.maite.ui.Field
 import com.casavellarural.maite.ui.IconBtn
 import com.casavellarural.maite.ui.Look
 import com.casavellarural.maite.ui.Muted
-import com.casavellarural.maite.ui.Page as AppPage
 import com.casavellarural.maite.ui.T
 import com.casavellarural.maite.ui.Toasts
 import com.casavellarural.maite.ui.Type
@@ -48,13 +48,18 @@ import kotlinx.serialization.Serializable
 import java.time.format.DateTimeFormatter
 
 @Serializable private data class Proposal(val kind: String, val label: String, val why: String = "", val stays: List<String> = emptyList(), val dates: List<String> = emptyList(),
-    val price: Double? = null, val min: Int? = null, val page: String? = null, val done: Boolean = false)
+    val price: Double? = null, val min: Int? = null, val page: String? = null, val tab: String? = null, val item: String? = null, val done: Boolean = false)
 @Serializable private data class Msg(val role: String, val text: String, val proposals: List<Proposal> = emptyList())
 @Serializable private data class Answer(val text: String, val proposals: List<Proposal> = emptyList())
 
 private fun prefs(c: Context) = c.getSharedPreferences("maite-chat", Context.MODE_PRIVATE)
 private fun read(c: Context): List<Msg> = runCatching { json.decodeFromString<List<Msg>>(prefs(c).getString("messages", "[]")!!) }.getOrDefault(emptyList())
 private fun keep(c: Context, m: List<Msg>) = prefs(c).edit().putString("messages", json.encodeToString(m.takeLast(60))).apply()
+/** A past conversation: when it started and its messages; its title is the first question. The last 30 stay on the phone */
+@Serializable private data class Past(val at: String, val msgs: List<Msg>)
+private fun readPast(c: Context): List<Past> = runCatching { json.decodeFromString<List<Past>>(prefs(c).getString("past", "[]")!!) }.getOrDefault(emptyList())
+private fun keepPast(c: Context, l: List<Past>) = prefs(c).edit().putString("past", json.encodeToString(l.take(30))).apply()
+private fun readAt(c: Context) = prefs(c).getString("at", null) ?: java.time.Instant.now().toString()
 private fun dm(s: String) = parse(s).format(DateTimeFormatter.ofPattern("d MMMM", CA))
 
 /** Pregunta: a conversation with Claude about the house (/api/maite/chat, lib/chat.js), like the web. Each proposal has its
@@ -63,6 +68,15 @@ private fun dm(s: String) = parse(s).format(DateTimeFormatter.ofPattern("d MMMM"
 fun Chat() {
     val context = LocalContext.current; val scope = rememberCoroutineScope()
     var msgs by remember { mutableStateOf(read(context)) }
+    var past by remember { mutableStateOf(readPast(context)) }
+    var at by remember { mutableStateOf(readAt(context)) }
+    // The conversation on screen goes to the past ones (newest first), and next takes its place: a new one, or a past one reopened
+    fun swap(next: Past?) {
+        val rest = past.filter { it !== next }
+        past = if (msgs.isNotEmpty()) listOf(Past(at, msgs)) + rest else rest; keepPast(context, past)
+        msgs = next?.msgs ?: emptyList(); keep(context, msgs)
+        at = next?.at ?: java.time.Instant.now().toString(); prefs(context).edit().putString("at", at).apply()
+    }
     var text by remember { mutableStateOf("") }; var busy by remember { mutableStateOf(false) }
     fun set(m: List<Msg>) { msgs = m; keep(context, m) }
     fun send() {
@@ -79,7 +93,7 @@ fun Chat() {
     }
     suspend fun act(i: Int, j: Int) {
         val p = msgs[i].proposals[j]
-        if (p.kind == "open") { AppPage.entries.find { it.name.equals(p.page, ignoreCase = true) }?.let { Ui.go(it) }; return }
+        if (p.kind == "open") { Ui.openAt(p.page.orEmpty(), p.tab.orEmpty(), p.item.orEmpty()); return }
         try {
             val r = Api.post<DaysResponse>("days", mapOf("stays" to p.stays, "dates" to p.dates) + (if (p.kind == "price") mapOf("price" to p.price) else mapOf("min" to p.min)))
             Maite.settings?.let { Maite.settings = it.copy(days = r.days) }; Toasts.done("Fet")
@@ -107,7 +121,17 @@ fun Chat() {
                 IconBtn(R.drawable.ic_send, "Envia", { send() }, enabled = text.isNotBlank(), busy = busy)
             }
         }
-        if (msgs.isNotEmpty()) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { Btn("Comença de nou", { set(emptyList()) }, look = Look.Ghost, enabled = !busy) }
+        if (msgs.isNotEmpty()) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { Btn("Conversa nova", { swap(null) }, look = Look.Ghost, enabled = !busy) }
+        if (past.isNotEmpty()) Card(Modifier.fillMaxWidth()) {
+            Text("Converses anteriors", style = Type.base, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(16.dp))
+            past.forEach { c ->
+                com.casavellarural.maite.ui.Divider()
+                Column(Modifier.fillMaxWidth().clickable(enabled = !busy) { swap(c) }.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Text(c.msgs.firstOrNull { it.role == "user" }?.text ?: "Conversa", style = Type.sm, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    Text(runCatching { java.time.ZonedDateTime.ofInstant(java.time.Instant.parse(c.at), java.time.ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("EEE d MMM, HH:mm", CA)) }.getOrDefault(""), style = Type.xs, color = T.muted)
+                }
+            }
+        }
     }
 }
 

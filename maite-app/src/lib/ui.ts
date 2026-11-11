@@ -1,6 +1,6 @@
 // Which window is open (client file, new booking, close dates, cancel, command palette) and the toasts
 import { useSyncExternalStore } from 'react';
-import { go, startParams } from './route';
+import { go, startParams, type Page } from './route';
 
 export interface BookDraft { stay?: string; first?: string; until?: string }
 export interface BlockDraft { stays?: string[]; first?: string; until?: string }
@@ -35,6 +35,25 @@ export function takeRestaurantTab() { const t = restaurantTab; restaurantTab = '
 // Publicar opens a menu's post in Restaurant › Menús, where menus are made and changed
 export function openRestaurantMenu(id: string) { restaurantMenu = id; restaurantTab = 'menus'; go('restaurant'); }
 export function takeRestaurantMenu() { const m = restaurantMenu; restaurantMenu = ''; return m; }
+
+// Preus, Allotjaments and Analítica can open on a tab; the page takes it once, when it opens
+let pricesTab = '', analyticsTab = '', staysTab = '';
+export function takeStaysTab() { const t = staysTab; staysTab = ''; return t; }
+export function takePricesTab() { const t = pricesTab; pricesTab = ''; return t; }
+export function takeAnalyticsTab() { const t = analyticsTab; analyticsTab = ''; return t; }
+
+// A page, the tab on it and the thing to open there, as Pregunta's proposals give them (lib/chat.js). The page opens fresh from
+// Pregunta, so each page takes what it needs when it opens: Xarxes socials its tab; Restaurant its tab, and a day (Taules, Cobrat)
+// or a menu (Menús); Reserves a filter or one booking (stay|id); Preus and Analítica their tab
+export function openAt(page: Page, tab = '', item = '') {
+  if (page === 'social' && tab) try { localStorage.setItem('maite-social-tab', tab); } catch { /* private window */ }
+  if (page === 'restaurant') { if (tab === 'menus') return openRestaurantMenu(item); restaurantTab = tab; restaurantDay = item; }
+  if (page === 'bookings') { if (tab) bookingsFilter = tab; if (item) openDetail(item); }
+  if (page === 'prices') pricesTab = tab;
+  if (page === 'stays') staysTab = tab;
+  if (page === 'analytics') analyticsTab = tab;
+  go(page);
+}
 
 // Links from the weekly summary email (lib/weekly.js) open the thing to do: #/restaurant?paid=2026-10-31 (Cobrat on that day),
 // #/bookings?open=<stay|id> (that booking), #/bookings?filter=todo and #/social?tab=plan

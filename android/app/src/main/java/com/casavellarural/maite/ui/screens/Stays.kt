@@ -1,5 +1,7 @@
 package com.casavellarural.maite.ui.screens
 
+import com.casavellarural.maite.ui.Ui
+
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -93,10 +95,19 @@ suspend fun uploadPhoto(context: Context, uri: Uri): String {
 }
 suspend fun uploadJpeg(bytes: ByteArray): String = json.decodeFromString(PhotoResponse.serializer(), Api.raw("POST", "photos", bytes = bytes, type = "image/jpeg")).src
 
-/** Allotjaments: what the web shows for each stay, with a preview */
-@OptIn(ExperimentalLayoutApi::class)
+/** Allotjaments, in two tabs: the stays (what the web shows for each, with a preview) and Normes */
 @Composable
 fun Stays() {
+    var tab by remember { mutableStateOf(Ui.pageTab.takeIf { it == "rules" } ?: "stays").also { Ui.pageTab = "" } }
+    Page {
+        com.casavellarural.maite.ui.Tabs(listOf("stays" to "Allotjaments", "rules" to "Normes"), tab, { tab = it })
+        androidx.compose.runtime.CompositionLocalProvider(LocalInTab provides true) { if (tab == "rules") Rules() else StayEditor() }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun StayEditor() {
     var content by remember { mutableStateOf(Maite.content) }
     LaunchedEffect(Unit) { runCatching { content = Maite.loadContent() }.onFailure { Toasts.error(it) } }
     val c = content ?: return LoadingPage()

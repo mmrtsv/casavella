@@ -868,7 +868,7 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
                   {mv && <Button size="sm" variant="secondary" onPress={() => { edit(p); setMaking(true); }}><Pencil size={15} />Edita</Button>}
                   {p.published?.url && <a href={p.published.url} target="_blank" rel="noopener" aria-label="Obre a Instagram" className="grid size-8 shrink-0 place-items-center rounded-full outline-none hover:bg-default focus-visible:ring-2 focus-visible:ring-focus"><ExternalLink size={16} /></a>}
                   <DownloadButton label={`Descarrega ${title}`} run={async () => { await downloadPost(p); if (st) await downloadPost(st); if (sm) await downloadPost(sm); }} />
-                  {!p.published && <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${title}`} onPress={() => remove(p)}><X size={16} /></Button>}
+                  {!p.published && <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu ${title}`} onPress={() => setRemoving(p)}><X size={16} /></Button>}
                   </div>
                 </li>
               );
@@ -881,17 +881,41 @@ function Menus({ data, setData, toEdit = '', startAt = '', onOpened }: { data: D
     .concat(p.whatsapp ? [{ at: p.whatsapp.at, text: `Enviat per WhatsApp el ${day(p.whatsapp.at)}`, error: false }] : [])
     .sort((a, b) => a.at.localeCompare(b.at));
   const status = (x: Post) => x.published ? `publicat el ${day(x.published.at)}` : x.schedule ? (x.schedule.error ? "no s'ha pogut publicar" : `programat: ${short(x.schedule.at)}`) : 'per publicar';
+  // The menu whose X was pressed: it asks first, saying what goes and what stays
+  const [removing, setRemoving] = useState<Post | null>(null), [busyRemove, setBusyRemove] = useState(false);
   async function remove(p: Post) {
+    setBusyRemove(true);
     try {
       let d = data;
       const { story: st, storyMenu: sm } = packOf(data, p);
       for (const x of [p, st, sm]) if (x && !x.published) d = await api<Data>('social', { method: 'PUT', body: { remove: x.id } });
-      setData(d); done('Menú tret'); if (editing?.post.id === p.id) { reset(); setMaking(false); }
+      setData(d); done('Menú tret'); setRemoving(null); if (editing?.post.id === p.id) { reset(); setMaking(false); }
     } catch (e) { toastError(e); }
+    setBusyRemove(false);
   }
+  const removeDialog = removing && (() => {
+    const { story: st, storyMenu: sm } = packOf(data, removing), mv = menuValues(removing);
+    const pieces = [removing, st, sm].filter((x): x is Post => !!x && !x.published);
+    const programmed = pieces.filter(x => x.schedule && !x.schedule.error).length, published = [removing, st, sm].filter(x => x?.published).length;
+    return (
+      <Dialog isOpen onClose={() => !busyRemove && setRemoving(null)} size="sm" title="Treure el menú" subtitle={[mv?.title, mv?.from ? datesText(mv.from, mv.until).replace(/^./, c => c.toLowerCase()) : ''].filter(Boolean).join(', ')}
+        footer={<>
+          <Button variant="ghost" onPress={() => setRemoving(null)} isDisabled={busyRemove}>No</Button>
+          <Button variant="danger" isPending={busyRemove} onPress={() => remove(removing)}>{busyRemove && <Spinner size="sm" color="current" />}Treu el menú</Button>
+        </>}>
+        <div className="space-y-3 text-sm">
+          <p>{pieces.length === 1 ? 'El post' : `El post i ${pieces.length === 2 ? 'la story' : 'les dues stories'}`} desapareixen de Maite i no es poden recuperar.{programmed ? ` ${programmed === 1 ? 'El que estava programat ja no sortirà' : `Els ${programmed} que estaven programats ja no sortiran`} a Instagram.` : ''}</p>
+          {published > 0 && <p>{published === 1 ? 'El que ja és publicat es queda' : `Els ${published} que ja són publicats es queden`} a Instagram: es poden esborrar des de l'app.</p>}
+          {mv?.from && <p>El pla deixa de fer stories per recordar aquest menú i treu les que encara no han sortit.</p>}
+          <p className="text-muted">Els dies oberts del restaurant i les taules ja reservades no canvien. Si no hi haurà servei, tanca els dies a Restaurant.</p>
+        </div>
+      </Dialog>
+    );
+  })();
 
   return (
     <div className="space-y-8" ref={top}>
+      {removeDialog}
       {making ? (
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
         <section className="card space-y-4 p-4 sm:p-5" aria-label={editing ? 'Edita el menú' : 'Nou menú'}>
@@ -1158,7 +1182,14 @@ function Profile({ data, setData, onEmpty, onEditMenu }: { data: Data; setData: 
       <Button size="sm" variant="secondary" onPress={onEmpty}>Vés al generador</Button>
     </div>
   );
-  if (!all.length) return nothing('Encara no hi ha cap post confirmat.');
+  // The stories still to go out, listed under the posts with the same actions; they never go in the grid
+  const stories = data.posts.filter(p => byId.has(p.tpl) && p.story && !p.published).sort((a, b) => storyMoment(a).localeCompare(storyMoment(b)));
+  const storyList = stories.length > 0 && <Stories stories={stories} insta={insta} data={data} setData={setData} onEditMenu={onEditMenu} onPublish={(post, later) => setPublishing({ post, later })} onEdit={setEditing} />;
+  const dialogs = <>
+    {editing && <PostEditor post={editing} n={posts.indexOf(editing) + 1} setData={setData} onClose={() => setEditing(null)} />}
+    {publishing && <Publish key={publishing.post.id + publishing.later} post={publishing.post} later={publishing.later} n={posts.indexOf(publishing.post) + 1} caption={data.copies[publishing.post.id] || ''} onClose={() => setPublishing(null)} setData={setData} />}
+  </>;
+  if (!all.length && !stories.length) return nothing('Encara no hi ha cap post confirmat.');
   const filter = published.length > 0 && (
     <ToggleButtonGroup aria-label="Posts" selectionMode="single" disallowEmptySelection selectedKeys={new Set([show])}
       onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) setShow(v as typeof show); }} size="sm" className="mb-5">
@@ -1167,7 +1198,7 @@ function Profile({ data, setData, onEmpty, onEditMenu }: { data: Data; setData: 
     </ToggleButtonGroup>
   );
   if (show === 'published' && published.length) return <>{filter}<Published posts={published} copies={data.copies} /></>;
-  if (!posts.length) return <>{filter}{nothing('No queda cap post per publicar.')}</>;
+  if (!posts.length) return <>{filter}<div className="space-y-5">{nothing('No queda cap post per publicar.')}{storyList}</div>{dialogs}</>;
 
   return (
     <>{filter}
@@ -1209,6 +1240,7 @@ function Profile({ data, setData, onEmpty, onEditMenu }: { data: Data; setData: 
         </div>
       </section>
 
+      <div className="space-y-5">
       <section className="card">
         <div className="flex flex-wrap items-center gap-3 border-b border-separator p-4 sm:px-5">
           <div className="mr-auto">
@@ -1257,12 +1289,60 @@ function Profile({ data, setData, onEmpty, onEditMenu }: { data: Data; setData: 
           })}
         </ol>
       </section>
-      {editing && <PostEditor post={editing} n={posts.indexOf(editing) + 1} setData={setData} onClose={() => setEditing(null)} />}
-      {publishing && <Publish key={publishing.post.id + publishing.later} post={publishing.post} later={publishing.later} n={posts.indexOf(publishing.post) + 1} caption={data.copies[publishing.post.id] || ''} onClose={() => setPublishing(null)} setData={setData} />}
+      {storyList}
+      </div>
+      {dialogs}
     </div>
     </>
   );
 }
+
+// When a story goes out: its program, else its day; the ones without either go last
+const storyMoment = (p: Post) => p.schedule?.at || (p.date ? `${p.date}T23:59` : '9999');
+
+// Publicar's stories: the ones still to go out, by when they go, with the posts' actions (no copy, no order)
+function Stories({ stories, insta, data, setData, onEditMenu, onPublish, onEdit }: { stories: Post[]; insta: Insta | null; data: Data; setData: (d: Data) => void; onEditMenu: (p: Post) => void; onPublish: (p: Post, later: boolean) => void; onEdit: (p: Post) => void }) {
+  const [busy, setBusy] = useState('');
+  async function remove(p: Post) {
+    setBusy(p.id);
+    try { setData(await api<Data>('social', { method: 'PUT', body: { remove: p.id } })); done('Story treta'); } catch (e) { toastError(e); }
+    setBusy('');
+  }
+  return (
+    <section className="card">
+      <div className="border-b border-separator p-4 sm:px-5">
+        <h2 className="text-base font-semibold">Stories</h2>
+        <p className="text-sm text-muted">Per ordre de sortida. No van a la graella.</p>
+      </div>
+      <ol className="divide-y divide-separator">
+        {stories.map(p => {
+          const t = byId.get(p.tpl)!, pack = p.pack ? data.posts.find(x => x.id === p.pack) : undefined, packMenu = pack && menuValues(pack);
+          const what = p.auto?.why || (packMenu ? `Del menú ${packMenu.title}` : '');
+          return (
+            <li key={p.id} className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap sm:px-5">
+              <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className="aspect-[9/16] w-11 shrink-0 rounded-md" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold">{t.title}</div>
+                {what && <div className="truncate text-xs text-muted">{what}</div>}
+                {p.schedule ? <When s={p.schedule} /> : <div className="truncate text-xs text-muted">{p.date ? `Per al ${dayMonthOf(p.date)}, sense programar` : 'Sense programar'}</div>}
+              </div>
+              <div className="flex w-full justify-end sm:w-auto">
+                <Button size="sm" variant="ghost" isIconOnly aria-label={`Edita la story ${t.title}`} onPress={() => (pack && packMenu ? onEditMenu(pack) : onEdit(p))}><Pencil size={16} /></Button>
+                {insta?.connected && <>
+                  <Button size="sm" variant={p.schedule ? 'secondary' : 'ghost'} isIconOnly aria-label={p.schedule ? `Canvia la programació de la story ${t.title}` : `Programa la story ${t.title}`} onPress={() => onPublish(p, true)}><Clock size={16} /></Button>
+                  <Button size="sm" variant="ghost" isIconOnly aria-label={`Publica ara la story ${t.title}`} onPress={() => onPublish(p, false)}><Send size={16} /></Button>
+                </>}
+                <DownloadButton label={`Descarrega la story ${t.title}`} run={async () => save(await png(t, p.v, p.photo, p.texts), fileName(t))} />
+                <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu la story ${t.title}`} isPending={busy === p.id} onPress={() => remove(p)}>{busy === p.id ? <Spinner size="sm" color="current" /> : <X size={16} />}</Button>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+const dayMonthOf = (d: string) => new Date(d + 'T12:00').toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' });
 
 const day = (iso: string) => new Date(iso).toLocaleDateString('ca-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 const hour = (iso: string) => new Date(iso).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' });

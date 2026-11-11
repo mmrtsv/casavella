@@ -76,7 +76,9 @@ import com.casavellarural.maite.R
 import com.casavellarural.maite.data.Auth
 import com.casavellarural.maite.data.Maite
 import com.casavellarural.maite.data.Push
+import com.casavellarural.maite.ui.screens.Analytics
 import com.casavellarural.maite.ui.screens.BlockDates
+import com.casavellarural.maite.ui.screens.Chat
 import com.casavellarural.maite.ui.screens.BookingFile
 import com.casavellarural.maite.ui.screens.Bookings
 import com.casavellarural.maite.ui.screens.Restaurant
@@ -169,7 +171,7 @@ private fun Modifier.widthIn360() = this.then(Modifier.fillMaxWidth()).padding(h
 // ---------- The app ----------
 private val RAIL = listOf(Page.Home, Page.Calendar, Page.Bookings, Page.Prices, Page.Social)
 private val BAR = listOf(Page.Home, Page.Calendar, Page.Bookings, Page.Prices)
-private val MORE = listOf(Page.Social, Page.Restaurant, Page.Stays, Page.Rules, Page.Emails)
+private val MORE = listOf(Page.Social, Page.Restaurant, Page.Stays, Page.Rules, Page.Emails, Page.Analytics, Page.Chat)
 
 @Composable
 fun App() {
@@ -271,6 +273,8 @@ private fun Content() {
         Page.Emails -> Emails()
         Page.Social -> SocialScreen()
         Page.Restaurant -> Restaurant()
+        Page.Analytics -> Analytics()
+        Page.Chat -> Chat()
     }
 }
 

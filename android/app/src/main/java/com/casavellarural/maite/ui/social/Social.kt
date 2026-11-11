@@ -109,6 +109,7 @@ import com.casavellarural.maite.ui.Type
 import com.casavellarural.maite.ui.Ui
 import com.casavellarural.maite.ui.pagePadding
 import com.casavellarural.maite.ui.screens.DateField
+import com.casavellarural.maite.ui.screens.FormSheet
 import com.casavellarural.maite.ui.screens.LoadingPage
 import com.casavellarural.maite.ui.screens.jpeg
 import com.casavellarural.maite.ui.Deep
@@ -739,10 +740,17 @@ private fun Profile(data: Social, onEditMenu: (SocialPost) -> Unit, onEmpty: () 
             catch (e: ApiError) { Maite.social = before; Toasts.error(e) }
         }
     }
-    if (all.isEmpty()) return Nothing("Encara no hi ha cap post confirmat.", onEmpty)
+    // The stories still to go out, listed under the posts with the same actions; they never go in the grid
+    val stories = data.posts.filter { byId.containsKey(it.tpl) && it.story && it.published == null }.sortedBy { it.schedule?.at ?: it.date?.let { d -> "${d}T23:59" } ?: "9999" }
+    @Composable fun Dialogs() {
+        editing?.let { p -> PostEditor(p, posts.indexOf(p) + 1) { editing = null } }
+        publishing?.let { (p, later) -> key(p.id, later) { Publish(p, posts.indexOf(p) + 1, data.copies[p.id].orEmpty(), later = later) { publishing = null } } }
+    }
+    @Composable fun StoryList() { if (stories.isNotEmpty()) Stories(stories, insta, data, onEditMenu, { p, later -> publishing = p to later }, { editing = it }) }
+    if (all.isEmpty() && stories.isEmpty()) return Nothing("Encara no hi ha cap post confirmat.", onEmpty)
     if (published.isNotEmpty()) Segmented(listOf("planned" to "Per publicar", "published" to "Publicats"), show, { show = it })
     if (show == "published" && published.isNotEmpty()) return Published(published, data.copies)
-    if (posts.isEmpty()) return Nothing("No queda cap post per publicar.", onEmpty)
+    if (posts.isEmpty()) { Nothing("No queda cap post per publicar.", onEmpty); StoryList(); Dialogs(); return }
 
     Card(Modifier.fillMaxWidth()) {
         Box(Modifier.fillMaxWidth().background(Color.White)) { head?.let { Image(it, null, Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth) } ?: Spacer(Modifier.height(160.dp)) }
@@ -823,8 +831,55 @@ private fun Profile(data: Social, onEditMenu: (SocialPost) -> Unit, onEmpty: () 
             }
         }
     }
-    editing?.let { p -> PostEditor(p, posts.indexOf(p) + 1) { editing = null } }
-    publishing?.let { (p, later) -> key(p.id, later) { Publish(p, posts.indexOf(p) + 1, data.copies[p.id].orEmpty(), later = later) { publishing = null } } }
+    StoryList()
+    Dialogs()
+}
+
+// Publicar's stories: the ones still to go out, by when they go, with the posts' actions (no copy, no order)
+@Composable
+private fun Stories(stories: List<SocialPost>, insta: Insta?, data: Social, onEditMenu: (SocialPost) -> Unit, onPublish: (SocialPost, Boolean) -> Unit, onEdit: (SocialPost) -> Unit) {
+    val byId = Renderer.byId
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Text("Stories", style = Type.base, fontWeight = FontWeight.SemiBold)
+            Muted("Per ordre de sortida. No van a la graella.")
+        }
+        stories.forEach { p ->
+            val t = byId.getValue(p.tpl); val pack = p.pack?.let { id -> data.posts.find { it.id == id } }; val packMenu = pack?.let { menuValues(it) }
+            val what = p.auto?.why?.takeIf { it.isNotEmpty() } ?: packMenu?.let { "Del menú ${it.title}" }
+            Divider()
+            Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Art(t, p.v, p.photo, p.texts, Modifier.width(40.dp).aspectRatio(9 / 16f).clip(RoundedCornerShape(6.dp)), cover = true)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(t.title, style = Type.sm, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        what?.let { Text(it, style = Type.xs, color = T.muted, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                        p.schedule?.let { When(it) } ?: Text(p.date?.let { "Per al ${parse(it).format(java.time.format.DateTimeFormatter.ofPattern("d MMMM", CA))}, sense programar" } ?: "Sense programar", style = Type.xs, color = T.muted, maxLines = 1)
+                    }
+                }
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.End) {
+                    IconBtn(R.drawable.ic_pencil, "Edita la story ${t.title}", { if (pack != null && packMenu != null) onEditMenu(pack) else onEdit(p) })
+                    if (insta?.connected == true) {
+                        IconBtn(R.drawable.ic_clock, if (p.schedule != null) "Canvia la programació de la story ${t.title}" else "Programa la story ${t.title}", { onPublish(p, true) }, on = p.schedule != null)
+                        IconBtn(R.drawable.ic_send, "Publica ara la story ${t.title}", { onPublish(p, false) })
+                    }
+                    var dl by remember { mutableStateOf(false) }
+                    IconBtn(R.drawable.ic_download, "Descarrega la story ${t.title}", { dl = true; scope.launch { savePost(context, imagesOf(p), null); dl = false } }, busy = dl)
+                    var busy by remember { mutableStateOf(false) }
+                    IconBtn(R.drawable.ic_x, "Treu la story ${t.title}", {
+                        busy = true
+                        scope.launch {
+                            try { Maite.social = Api.put<Social>("social", mapOf("remove" to p.id)); Toasts.done("Story treta") } catch (e: ApiError) { Toasts.error(e) }
+                            busy = false
+                        }
+                    }, busy = busy)
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -1454,6 +1509,7 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
     var step by remember { mutableStateOf("menu") }
     // The list of menus, or one being made or changed (a new menu is the flow, step by step)
     var making by remember { mutableStateOf(toEdit.isNotEmpty() || startAt0.isNotEmpty()) }
+    var removing by remember { mutableStateOf<SocialPost?>(null) }
     // The draft being continued, if it is one (Esborranys), and whether leaving with changes is being asked about
     var draftId by remember { mutableStateOf("") }
     var asking by remember { mutableStateOf(false) }
@@ -1680,16 +1736,38 @@ private fun Menus(data: Social, toEdit: String = "", startAt0: String = "", onOp
                     if (p.published?.url?.isNotEmpty() == true) IconBtn(R.drawable.ic_external_link, "Obre a Instagram", { open(context, p.published.url) })
                     var dl by remember { mutableStateOf(false) }
                     IconBtn(R.drawable.ic_download, "Descarrega $title", { dl = true; scope.launch { savePost(context, imagesOf(p) + listOfNotNull(st, sm).flatMap { imagesOf(it) }, null); dl = false } }, busy = dl)
-                    if (p.published == null) IconBtn(R.drawable.ic_x, "Treu $title", {
-                        scope.launch {
-                            try {
-                                var d = data
-                                for (x in listOfNotNull(p, st, sm)) if (x.published == null) d = Api.put<Social>("social", mapOf("remove" to x.id))
-                                Maite.social = d; Toasts.done("Menú tret")
-                            } catch (e: ApiError) { Toasts.error(e) }
-                        }
-                    })
+                    if (p.published == null) IconBtn(R.drawable.ic_x, "Treu $title", { removing = p })
                 }
+    }
+
+    // The menu whose X was pressed: it asks first, saying what goes and what stays
+    removing?.let { p ->
+        val pack = packOf(p); val mv = menuValues(p); var busy by remember { mutableStateOf(false) }
+        val all3 = listOfNotNull(p, pack.story, pack.storyMenu); val pieces = all3.filter { it.published == null }
+        val programmed = pieces.count { it.schedule != null && it.schedule.error == null }; val published = all3.count { it.published != null }
+        FormSheet("Treure el menú", listOfNotNull(mv?.title?.takeIf { it.isNotBlank() }, mv?.from?.takeIf { it.isNotEmpty() }?.let { datesText(it, mv.until).replaceFirstChar { c -> c.lowercase() } }).joinToString(", ").ifEmpty { null }, { if (!busy) removing = null }, {
+            Btn("No", { removing = null }, look = Look.Ghost)
+            Spacer(Modifier.width(8.dp))
+            Btn("Treu el menú", {
+                busy = true
+                scope.launch {
+                    try {
+                        var d = data
+                        for (x in pieces) d = Api.put<Social>("social", mapOf("remove" to x.id))
+                        Maite.social = d; Toasts.done("Menú tret"); removing = null
+                    } catch (e: ApiError) { Toasts.error(e) }
+                    busy = false
+                }
+            }, look = Look.Danger, busy = busy, small = false)
+        }) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text((if (pieces.size == 1) "El post" else "El post i ${if (pieces.size == 2) "la story" else "les dues stories"}") + " desapareixen de Maite i no es poden recuperar." +
+                    (if (programmed > 0) " ${if (programmed == 1) "El que estava programat ja no sortirà" else "Els $programmed que estaven programats ja no sortiran"} a Instagram." else ""), style = Type.sm)
+                if (published > 0) Text("${if (published == 1) "El que ja és publicat es queda" else "Els $published que ja són publicats es queden"} a Instagram: es poden esborrar des de l'app.", style = Type.sm)
+                if (mv?.from?.isNotEmpty() == true) Text("El pla deixa de fer stories per recordar aquest menú i treu les que encara no han sortit.", style = Type.sm)
+                Text("Els dies oberts del restaurant i les taules ja reservades no canvien. Si no hi haurà servei, tanca els dies a Restaurant.", style = Type.sm, color = T.muted)
+            }
+        }
     }
 
     if (!making) {

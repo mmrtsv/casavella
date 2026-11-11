@@ -25,6 +25,8 @@ val ERRORS = mapOf(
     "restaurant_not_configured" to "Falta connectar el calendari del restaurant (CAL_RESTAURANT)", "calendar" to "Google Calendar no deixa llegir el calendari del restaurant: comprova que CAL_RESTAURANT és l'ID bo i que el calendari està compartit amb el compte de servei amb permís per fer canvis", "time" to "Revisa l'hora", "people" to "Revisa el nombre de persones",
     "doc_size" to "El document és massa gran (màxim 15 MB)", "docs_not_configured" to "Falta connectar la carpeta de Google Drive dels documents",
     "drive" to "Google Drive no ha deixat desar el document", "social_full" to "La graella ja té 150 posts: treu-ne algun abans de confirmar-ne més",
+    "sheet_link" to "Aquest enllaç no és d'un full de Google", "sheet_access" to "Maite no pot llegir el full: comparteix-lo amb el compte de servei (només lectura)",
+    "sheet_columns" to "El full no té les columnes Data i Import a la primera pestanya", "sheet" to "No s'ha pogut llegir el full de despeses", "ai_chat" to "Claude no ha pogut respondre. Torna-ho a provar.",
     "ai_busy" to "Massa peticions seguides. Espera un moment i torna-ho a provar.", "ai_not_configured" to "Falta la clau de Claude (ANTHROPIC_API_KEY)",
     "ai" to "Claude no ha pogut escriure el copy", "ai_make" to "Claude no ha pogut fer el post. Torna-ho a provar.", "ig_not_configured" to "Falta connectar el compte d'Instagram", "ig_published" to "Aquest post ja està publicat",
 )

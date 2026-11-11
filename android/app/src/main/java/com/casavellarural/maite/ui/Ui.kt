@@ -16,6 +16,8 @@ enum class Page(val title: String, @DrawableRes val icon: Int, val hint: String)
     Emails("Correus", R.drawable.ic_mail, "Els correus que reben els hostes i la casa"),
     Social("Xarxes socials", R.drawable.ic_layout_grid, "Plantilles d'Instagram, la graella del perfil i els copies"),
     Restaurant("Restaurant", R.drawable.ic_utensils_crossed, "Taules reservades, dies oberts i places"),
+    Analytics("Analítica", R.drawable.ic_chart_column, "Ingressos, despeses i benefici brut"),
+    Chat("Pregunta", R.drawable.ic_message_circle, "Pregunta a Claude sobre la casa"),
 }
 
 data class BookDraft(val stay: String? = null, val first: String? = null, val until: String? = null)

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Spinner, Tabs, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
 import { ChevronLeft, ChevronRight, Plus, Trash2, X } from 'lucide-react';
+import { takePricesTab } from '../lib/ui';
 import { api } from '../lib/api';
 import { addDays, day, euro, iso, nightsBetween, nitsTxt, parse, TODAY, cap } from '../lib/dates';
 import { ensure, setSettings, stayName, shortName, useStore } from '../lib/store';
@@ -16,7 +17,7 @@ type Sel = { a: string; b?: string; only?: number[] } | null;
 type Tab = 'nights' | 'discounts';
 
 export default function Prices() {
-  const [tab, setTab] = useState<Tab>('nights');
+  const [tab, setTab] = useState<Tab>(() => (takePricesTab() as Tab) || 'nights');
   return (
     <div className="fade-in">
       <Tabs selectedKey={tab} onSelectionChange={k => leave(() => setTab(k as Tab))} className="mb-5">

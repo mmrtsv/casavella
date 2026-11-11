@@ -1,11 +1,20 @@
 // Hash routes, so the single page works on any path and reloads keep the page
 import { useSyncExternalStore } from 'react';
 import { leave } from './guard';
-export type Page = 'home' | 'calendar' | 'bookings' | 'restaurant' | 'prices' | 'rules' | 'stays' | 'emails' | 'social' | 'analytics' | 'chat';
-export const PAGES: Page[] = ['home', 'calendar', 'bookings', 'restaurant', 'prices', 'rules', 'stays', 'emails', 'social', 'analytics', 'chat'];
+export type Page = 'home' | 'calendar' | 'bookings' | 'restaurant' | 'prices' | 'stays' | 'social' | 'analytics' | 'chat';
+export const PAGES: Page[] = ['home', 'calendar', 'bookings', 'restaurant', 'prices', 'stays', 'social', 'analytics', 'chat'];
+// Normes and Correus are tabs now (of Allotjaments and Xarxes socials); their old addresses open those tabs
+const ALIAS: Record<string, [Page, string]> = { rules: ['stays', 'rules'], emails: ['social', 'emails'] };
+let aliasTab = '';
+// Kept until the page changes, so a page that mounts twice while loading still gets it
+export function takeAliasTab() { return aliasTab; }
 // A link may carry what to open on the page (#/restaurant?paid=2026-10-31): lib/ui.ts reads it once, at start
 const hashParts = () => { const [p, q = ''] = location.hash.replace(/^#\/?/, '').split('?'); return { p: p as Page, q: new URLSearchParams(q) }; };
-const fromHash = (): Page | null => { const { p } = hashParts(); return PAGES.includes(p) ? p : null; };
+const fromHash = (): Page | null => {
+  const { p } = hashParts(), a = ALIAS[p];
+  if (a) { aliasTab = a[1]; if (a[0] === 'social') try { localStorage.setItem('maite-social-tab', a[1]); } catch { /* private window */ } return a[0]; }
+  return PAGES.includes(p) ? p : null;
+};
 export const startParams = hashParts().q;
 const initial = (): Page => {
   // Opening Maite starts at Inici; a link or a reload keeps the page in the address
@@ -14,7 +23,7 @@ const initial = (): Page => {
 let current = initial();
 const subs = new Set<() => void>();
 function show(p: Page) {
-  current = p;
+  current = p; aliasTab = '';
   if (location.hash !== '#/' + p) history.replaceState(null, '', '#/' + p);
   subs.forEach(f => f());
 }

@@ -1,1 +1,0 @@
-import{i as e,n as t}from"./jsx-runtime-JyyJTaK-.js";import{A as n,T as r,x as i}from"./shim-BuPa5hVU.js";var a=e(t(),1),o=(0,a.createContext)({}),s=i(function(e,t){[e,t]=r(e,t,o);let{elementType:i=`span`,...s}=e,c=n[i];return a.createElement(c,{className:`react-aria-Text`,...s,ref:t})});export{o as n,s as t};

@@ -44,6 +44,7 @@ import com.casavellarural.maite.ui.Field
 import com.casavellarural.maite.ui.Look
 import com.casavellarural.maite.ui.Muted
 import com.casavellarural.maite.ui.Segmented
+import com.casavellarural.maite.ui.Tabs
 import com.casavellarural.maite.ui.T
 import com.casavellarural.maite.ui.Toasts
 import com.casavellarural.maite.ui.Type
@@ -53,10 +54,12 @@ import java.time.format.DateTimeFormatter
 
 /** A line of the statement; lines opens it into the ones under it (an accommodation into its bookings, a category into its rows) */
 @Serializable private data class PLine(val label: String, val cents: Long, val sub: String? = null, val auto: Boolean = false, val lines: List<PLine> = emptyList())
-@Serializable private data class PMonth(val month: String, val label: String, val income: Long, val expenses: Long, val profit: Long)
+@Serializable private data class PMonth(val month: String, val label: String, val income: Long, val direct: Long = 0, val gross: Long = 0, val ads: Long = 0, val profit: Long)
+@Serializable private data class PAds(val total: Long = 0, val channels: List<PLine> = emptyList(), val webBookings: Int = 0, val webCents: Long = 0, val perBooking: Long? = null, val roas: Double? = null)
 @Serializable private data class PItem(val date: String, val concept: String = "", val category: String = "", val cents: Long)
 @Serializable private data class PSheet(val connected: Boolean = false, val url: String = "", val error: String? = null, val share: String = "")
-@Serializable private data class Pnl(val from: String, val to: String, val income: List<PLine>, val incomeTotal: Long, val expenses: List<PLine>, val expensesTotal: Long,
+@Serializable private data class Pnl(val from: String, val to: String, val income: List<PLine>, val incomeTotal: Long, val direct: List<PLine> = emptyList(), val directTotal: Long = 0,
+    val gross: Long = 0, val grossMargin: Int? = null, val other: List<PLine> = emptyList(), val otherTotal: Long = 0, val result: Long = 0, val ads: PAds = PAds(),
     val profit: Long, val margin: Int? = null, val months: List<PMonth>? = null, val items: List<PItem> = emptyList(), val unpaidTables: Int = 0, val sheet: PSheet = PSheet())
 
 private val SPANS = listOf("week" to "Setmana passada", "month" to "Aquest mes", "last" to "Mes passat", "year" to "Aquest any", "custom" to "Dates")
@@ -83,12 +86,14 @@ fun Analytics() {
     var span by remember { mutableStateOf("month") }
     var data by remember { mutableStateOf<Pnl?>(null) }
     var n by remember { mutableIntStateOf(0) }
+    var tab by remember { mutableStateOf("pnl") }
     // Dates: from and the last day, both included; the API takes the day after
     var ownFrom by remember { mutableStateOf(TODAY.take(8) + "01") }; var ownLast by remember { mutableStateOf(TODAY) }
     val (from, to) = if (span == "custom") ownFrom to (if (ownLast.isNotEmpty()) addDays(ownLast, 1) else "") else rangeOf(span)
     val ok = from.isNotEmpty() && to.isNotEmpty() && from < to
     LaunchedEffect(from, to, n) { if (!ok) return@LaunchedEffect; data = null; runCatching { Api.get<Pnl>("analytics?from=$from&to=$to") }.onSuccess { data = it }.onFailure { Toasts.error(it) } }
     Page {
+        Tabs(listOf("pnl" to "Pèrdues i guanys", "ads" to "Anuncis"), tab, { tab = it })
         Row(Modifier.horizontalScroll(rememberScrollState())) { Segmented(SPANS, span, { span = it }) }
         if (span == "custom") {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -98,8 +103,8 @@ fun Analytics() {
             if (!ok) Text("El primer dia ha de ser abans de l'últim.", style = Type.sm, color = T.warning)
         }
         val p = data ?: return@Page Muted("Carregant…")
-        Statement(p)
-        p.months?.let { Months(it) }
+        if (tab == "pnl") { Statement(p); p.months?.let { Months(it) } }
+        else { AdsView(p); p.months?.let { AdMonths(it) } }
         Sheet(p) { n++ }
     }
 }
@@ -138,8 +143,8 @@ private fun Months(list: List<PMonth>) {
             Text("Mes a mes", style = Type.base, fontWeight = FontWeight.SemiBold)
             list.forEach { m ->
                 Column(Modifier.padding(vertical = 9.dp)) {
-                    Row { Text(m.label, style = Type.sm, modifier = Modifier.weight(1f)); Text(euro(m.profit).ifEmpty { "0 €" }, style = Type.sm, fontWeight = FontWeight.SemiBold, color = if (m.profit < 0) T.danger else T.foreground) }
-                    Text("${euro(m.income).ifEmpty { "0 €" }} d'ingressos, ${euro(m.expenses).ifEmpty { "0 €" }} de despeses", style = Type.xs, color = T.muted)
+                    Row { Text(m.label, style = Type.sm, modifier = Modifier.weight(1f)); Text(euro(m.gross).ifEmpty { "0 €" }, style = Type.sm, fontWeight = FontWeight.SemiBold, color = if (m.gross < 0) T.danger else T.foreground) }
+                    Text("${euro(m.income).ifEmpty { "0 €" }} d'ingressos, ${euro(m.direct).ifEmpty { "0 €" }} de directes, ${euro(m.profit).ifEmpty { "0 €" }} de resultat", style = Type.xs, color = T.muted)
                 }
                 Divider()
             }
@@ -148,23 +153,81 @@ private fun Months(list: List<PMonth>) {
 }
 
 @Composable
+private fun Big(label: String, cents: Long, note: String? = null) {
+    Column(Modifier.padding(vertical = 14.dp)) {
+        Text(label, style = Type.sm, color = T.muted)
+        Text(euro(cents).ifEmpty { "0 €" }, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, color = if (cents < 0) T.danger else T.foreground)
+        note?.let { Muted(it) }
+    }
+}
+private fun rangeText(p: Pnl) = "${dm(p.from).replaceFirstChar { it.uppercase() }} a ${dm(addDays(p.to, -1), true)}"
+
+/** Income (from the bookings and Cobrat, never the sheet), direct costs and the gross profit; then the other costs and the result */
+@Composable
 private fun Statement(p: Pnl) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Text("Pèrdues i guanys", style = Type.base, fontWeight = FontWeight.SemiBold)
-            Muted("${dm(p.from).replaceFirstChar { it.uppercase() }} a ${dm(addDays(p.to, -1), true)}")
+            Muted(rangeText(p))
             Spacer(Modifier.height(8.dp))
             p.income.forEach { StatementLine(it) }
             Total("Ingressos", p.incomeTotal)
-            if (p.unpaidTables > 0) Text(if (p.unpaidTables == 1) "1 taula del període no té l'import apuntat a Cobrat." else "${p.unpaidTables} taules del període no tenen l'import apuntat a Cobrat.", style = Type.sm, color = T.warning, modifier = Modifier.padding(vertical = 8.dp))
+            Text("Dels calendaris de reserves i de Cobrat, no del full.", style = Type.xs, color = T.muted, modifier = Modifier.padding(vertical = 6.dp))
+            if (p.unpaidTables > 0) Text(if (p.unpaidTables == 1) "1 taula del període no té l'import apuntat a Cobrat." else "${p.unpaidTables} taules del període no tenen l'import apuntat a Cobrat.", style = Type.sm, color = T.warning, modifier = Modifier.padding(bottom = 6.dp))
+            p.direct.forEach { StatementLine(it) }
+            if (p.direct.isEmpty()) { Muted("Cap despesa directa en aquest període.", Modifier.padding(vertical = 9.dp)); Divider() }
+            Total("Despeses directes", p.directTotal)
+            Big("Benefici brut", p.gross, p.grossMargin?.let { "$it % dels ingressos" })
+            if (p.other.isNotEmpty()) {
+                p.other.forEach { StatementLine(it) }
+                Total("Altres despeses", p.otherTotal)
+                Big("Resultat", p.result)
+            }
+            if (!p.sheet.connected) Text("Sense el full de despeses, aquí només hi ha els anuncis de Meta.", style = Type.sm, color = T.warning)
+        }
+    }
+}
+
+@Composable
+private fun Fact(label: String, value: String, sub: String? = null) {
+    Row(Modifier.fillMaxWidth().padding(start = 23.dp, top = 9.dp, bottom = 9.dp)) {
+        Column(Modifier.weight(1f)) { Text(label, style = Type.sm); sub?.let { Text(it, style = Type.xs, color = T.muted) } }
+        Text(value, style = Type.sm)
+    }
+    Divider()
+}
+
+/** Anuncis: what went into ads by channel (each opens into its rows), and what the web brought in the same period */
+@Composable
+private fun AdsView(p: Pnl) {
+    val a = p.ads
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Text("Inversió en anuncis", style = Type.base, fontWeight = FontWeight.SemiBold)
+            Muted(rangeText(p))
+            Spacer(Modifier.height(8.dp))
+            a.channels.forEach { StatementLine(it) }
+            if (a.channels.isEmpty()) { Muted("Cap anunci en aquest període.", Modifier.padding(vertical = 9.dp)); Divider() }
+            Total("Inversió", a.total)
             Spacer(Modifier.height(10.dp))
-            p.expenses.forEach { StatementLine(it) }
-            if (p.expenses.isEmpty()) { Muted("Cap despesa en aquest període.", Modifier.padding(vertical = 9.dp)); Divider() }
-            Total("Despeses", p.expensesTotal)
-            Text("Benefici brut", style = Type.sm, color = T.muted, modifier = Modifier.padding(top = 16.dp))
-            Text(euro(p.profit).ifEmpty { "0 €" }, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, color = if (p.profit < 0) T.danger else T.foreground)
-            p.margin?.let { Muted("$it % dels ingressos") }
-            if (!p.sheet.connected) Text("Sense el full de despeses, aquí només hi ha els anuncis.", style = Type.sm, color = T.warning, modifier = Modifier.padding(top = 6.dp))
+            Fact("Reserves pagades a la web", "${a.webBookings}", "Estades que comencen en aquest període")
+            Fact("Ingressos d'aquestes reserves", euro(a.webCents).ifEmpty { "0 €" })
+            a.perBooking?.let { Fact("Inversió per reserva", euro(it)) }
+            if (a.roas != null && a.total > 0) Fact("Ingressos per cada euro invertit", "${a.roas.toString().replace('.', ',')} €")
+            Text("No totes les reserves de la web vénen dels anuncis: és una referència, no una atribució.", style = Type.xs, color = T.muted, modifier = Modifier.padding(top = 8.dp))
+        }
+    }
+}
+
+@Composable
+private fun AdMonths(list: List<PMonth>) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Text("Mes a mes", style = Type.base, fontWeight = FontWeight.SemiBold)
+            list.forEach { m ->
+                Row(Modifier.padding(vertical = 9.dp)) { Text(m.label, style = Type.sm, modifier = Modifier.weight(1f)); Text(euro(m.ads).ifEmpty { "0 €" }, style = Type.sm) }
+                Divider()
+            }
         }
     }
 }

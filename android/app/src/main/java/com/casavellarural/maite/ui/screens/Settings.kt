@@ -97,7 +97,7 @@ private data class PSel(val a: String, val b: String? = null, val weekends: Bool
 @Composable
 fun Prices() {
     val S = Maite.settings ?: return LoadingPage()
-    var tab by remember { mutableStateOf(Ui.pageTab.takeIf { it == "discounts" } ?: "nights").also { Ui.pageTab = "" } }
+    var tab by remember { mutableStateOf(Ui.pricesTab.takeIf { it == "discounts" } ?: "nights").also { Ui.pricesTab = "" } }
     Page {
         Tabs(listOf("nights" to "Per nit", "discounts" to "Descomptes"), tab, { tab = it })
         if (tab == "nights") Nights(S) else Discounts(S)

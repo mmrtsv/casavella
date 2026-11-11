@@ -7,7 +7,7 @@ import { addDays, cap, day, euro, nightsBetween, parse, range, TODAY } from '../
 import { go } from '../lib/route';
 import { keyOf, shortName, useStore } from '../lib/store';
 import { atOf, seated, useTables } from '../lib/tables';
-import { openBookings, openDetail, openRestaurant } from '../lib/ui';
+import { openAt, openBookings, openDetail, openRestaurant } from '../lib/ui';
 import { atHome, dueList, isBooking, missing, who } from '../lib/words';
 import { Status } from '../parts/Status';
 import { bar, tone } from './Calendar';
@@ -122,8 +122,8 @@ function Section({ title, action, children }: { title: string; action?: ReactNod
     </section>
   );
 }
-const Open = ({ to, children }: { to: Parameters<typeof go>[0]; children: ReactNode }) => (
-  <button type="button" onClick={() => go(to)} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-accent outline-none hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-focus">{children}</button>
+const Open = ({ to, tab = '', children }: { to: Parameters<typeof openAt>[0]; tab?: string; children: ReactNode }) => (
+  <button type="button" onClick={() => openAt(to, tab)} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-accent outline-none hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-focus">{children}</button>
 );
 
 // What is still to do for stays from now to 30 days out, grouped by kind; the groups cover everything the count does.
@@ -178,7 +178,7 @@ function Todo({ all }: { all: Booking[] }) {
   const tableRows = owed.map(([d, n]) => row('t' + d, 'bg-danger', n, n === 1 ? 'Taula per cobrar' : 'Taules per cobrar',
     cap(day(d, { weekday: 'long', day: 'numeric', month: 'long' })), () => openRestaurant(d, 'paid')));
   return (
-    <Section title="Per fer" action={<Open to="bookings">Reserves</Open>}>
+    <Section title="Per fer" action={<Open to="bookings" tab="todo">Reserves</Open>}>
       {!pending ? (
         <div className="flex items-center gap-5 card p-6">{ring}{allDone}</div>
       ) : (
@@ -304,7 +304,7 @@ function Restaurant() {
 function Upcoming({ all }: { all: Booking[] }) {
   const rows = all.filter(b => b.until >= TODAY).slice(0, 6);
   return (
-    <Section title="Ara i properes" action={<Open to="bookings">Totes</Open>}>
+    <Section title="Ara i properes" action={<Open to="bookings" tab="next">Totes</Open>}>
       {rows.length ? (
         <ul className="divide-y divide-separator overflow-hidden card">
           {rows.map(b => {

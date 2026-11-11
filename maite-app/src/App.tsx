@@ -5,12 +5,11 @@ import { Shell } from './shell/Shell';
 import { usePage, type Page } from './lib/route';
 import { reload, useStore } from './lib/store';
 import { setPalette, useUI, getPalette } from './lib/ui';
-import { Calendar, CalendarActions } from './pages/Calendar';
+import { CalendarActions } from './pages/Calendar';
 import Home from './pages/Home';
 
 const Bookings = lazy(() => import('./pages/Bookings'));
 const Restaurant = lazy(() => import('./pages/Restaurant'));
-const Prices = lazy(() => import('./pages/Prices'));
 const Stays = lazy(() => import('./pages/Stays'));
 const Social = lazy(() => import('./pages/Social'));
 const Analytics = lazy(() => import('./pages/Analytics'));
@@ -19,7 +18,7 @@ const Windows = lazy(() => import('./windows/Windows'));
 const Palette = lazy(() => import('./shell/Palette'));
 const Toasts = lazy(() => import('./parts/Toasts'));
 
-const TITLES: Record<Page, string> = { home: 'Inici', calendar: 'Calendari', bookings: 'Reserves', restaurant: 'Restaurant', prices: 'Preus', stays: 'Allotjaments', social: 'Xarxes socials', analytics: 'Analítica', chat: 'Pregunta' };
+const TITLES: Record<Page, string> = { home: 'Inici', bookings: 'Reserves', restaurant: 'Restaurant', stays: 'Allotjaments', social: 'Xarxes socials', analytics: 'Analítica', chat: 'Pregunta' };
 
 // Placeholder with the page's final footprint, so nothing jumps when data arrives
 function Loading() {
@@ -48,7 +47,7 @@ export function App() {
   useEffect(() => { document.title = `${TITLES[page]} (Maite)`; }, [page]);
   return (
     <>
-      <Shell title={TITLES[page]} actions={page === 'calendar' ? <CalendarActions /> : undefined} onSearch={() => setPalette(true)}>
+      <Shell title={TITLES[page]} actions={page === 'bookings' ? <CalendarActions /> : undefined} onSearch={() => setPalette(true)}>
         {(error || notice) && (
           <div role="alert" className={`mb-4 flex items-start gap-3 rounded-2xl px-4 py-3 text-sm ring-1 ${error ? 'bg-danger/10 text-danger ring-danger/30' : 'bg-warning/10 ring-warning/30'}`}>
             <TriangleAlert size={18} className="mt-px shrink-0" aria-hidden="true" /><span>{error || notice}</span>
@@ -57,10 +56,8 @@ export function App() {
         {!ready ? <Loading /> : (
           <Suspense fallback={<Loading />}>
             {page === 'home' && <Home />}
-            {page === 'calendar' && <Calendar />}
             {page === 'bookings' && <Bookings />}
             {page === 'restaurant' && <Restaurant />}
-            {page === 'prices' && <Prices />}
             {page === 'stays' && <Stays />}
             {page === 'social' && <Social />}
             {page === 'analytics' && <Analytics />}

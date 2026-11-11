@@ -254,7 +254,7 @@ private fun Todo(all: List<Booking>) {
     fun BookingRow(g: Group, list: List<Booking>) = TodoRow(g.color(), list.size, "${if (list.size == 1) "Reserva" else "Reserves"} ${g.title}",
         "${if (list.size == 1) "" else "La més propera: "}${who(list.first())}, ${day(list.first().first)}") { Ui.detail = list.first().key }
     Column {
-        SectionTitle("Per fer") { Btn("Reserves", { Ui.go(Page.Bookings) }, look = Look.Ghost) }
+        SectionTitle("Per fer") { Btn("Reserves", { Ui.openBookings("todo") }, look = Look.Ghost) }
         Card(Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth().clickable(enabled = pending > 0) { if (open > 0) Ui.openBookings("todo") else Ui.openRestaurant(owed.first().first, "paid") }
                 .background(if (pending > 0) T.accent.copy(alpha = 0.07f) else Color.Transparent).padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -386,7 +386,7 @@ fun BookingBar(b: Booking, modifier: Modifier, compact: Boolean = false) {
 private fun Upcoming(all: List<Booking>) {
     val rows = all.filter { it.until >= TODAY }.take(6)
     Column {
-        SectionTitle("Ara i properes") { Btn("Totes", { Ui.go(Page.Bookings) }, look = Look.Ghost) }
+        SectionTitle("Ara i properes") { Btn("Totes", { Ui.openBookings("next") }, look = Look.Ghost) }
         Card(Modifier.fillMaxWidth()) {
             if (rows.isEmpty()) Text("No hi ha cap reserva a la vista.", style = Type.sm, color = T.muted, modifier = Modifier.padding(28.dp).fillMaxWidth())
             rows.forEachIndexed { i, b ->

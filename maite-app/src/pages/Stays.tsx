@@ -12,24 +12,27 @@ import { leave, useGuard } from '../lib/guard';
 import { takeAliasTab } from '../lib/route';
 import { takeStaysTab } from '../lib/ui';
 import Rules from './Rules';
+import Prices from './Prices';
 
 const photoUrl = (src: string) => (src.startsWith('/') ? src : '/' + src);
 const Icon = ({ svg }: { svg: string }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: svg }} />
 );
 
-// Allotjaments, in two tabs: the stays (texts, capacity, photos) and Normes (stay, notice, hours and cancellation)
+// Allotjaments, in three tabs: the stays (texts, capacity, photos), Preus (per night and discounts) and Normes (stay, notice,
+// hours and cancellation)
 export default function Stays() {
-  const [tab, setTab] = useState<'stays' | 'rules'>(() => (takeStaysTab() || takeAliasTab()) === 'rules' ? 'rules' : 'stays');
+  const [tab, setTab] = useState<'stays' | 'prices' | 'rules'>(() => { const t = takeStaysTab() || takeAliasTab(); return t === 'prices' || t === 'rules' ? t : 'stays'; });
   return (
     <div className="fade-in">
       <Tabs selectedKey={tab} onSelectionChange={k => leave(() => setTab(k as typeof tab))} className="mb-5">
         <Tabs.ListContainer><Tabs.List aria-label="Allotjaments" className="w-fit">
           <Tabs.Tab id="stays">Allotjaments<Tabs.Indicator /></Tabs.Tab>
+          <Tabs.Tab id="prices">Preus<Tabs.Indicator /></Tabs.Tab>
           <Tabs.Tab id="rules">Normes<Tabs.Indicator /></Tabs.Tab>
         </Tabs.List></Tabs.ListContainer>
       </Tabs>
-      {tab === 'stays' ? <StayEditor /> : <Rules />}
+      {tab === 'stays' ? <StayEditor /> : tab === 'prices' ? <Prices /> : <Rules />}
     </div>
   );
 }

@@ -95,13 +95,13 @@ suspend fun uploadPhoto(context: Context, uri: Uri): String {
 }
 suspend fun uploadJpeg(bytes: ByteArray): String = json.decodeFromString(PhotoResponse.serializer(), Api.raw("POST", "photos", bytes = bytes, type = "image/jpeg")).src
 
-/** Allotjaments, in two tabs: the stays (what the web shows for each, with a preview) and Normes */
+/** Allotjaments, in three tabs: the stays (what the web shows for each, with a preview), Preus and Normes */
 @Composable
 fun Stays() {
-    var tab by remember { mutableStateOf(Ui.pageTab.takeIf { it == "rules" } ?: "stays").also { Ui.pageTab = "" } }
+    var tab by remember { mutableStateOf(Ui.pageTab.takeIf { it == "rules" || it == "prices" } ?: "stays").also { Ui.pageTab = "" } }
     Page {
-        com.casavellarural.maite.ui.Tabs(listOf("stays" to "Allotjaments", "rules" to "Normes"), tab, { tab = it })
-        androidx.compose.runtime.CompositionLocalProvider(LocalInTab provides true) { if (tab == "rules") Rules() else StayEditor() }
+        com.casavellarural.maite.ui.Tabs(listOf("stays" to "Allotjaments", "prices" to "Preus", "rules" to "Normes"), tab, { tab = it })
+        androidx.compose.runtime.CompositionLocalProvider(LocalInTab provides true) { when (tab) { "rules" -> Rules(); "prices" -> Prices(); else -> StayEditor() } }
     }
 }
 

@@ -1,10 +1,10 @@
 // Hash routes, so the single page works on any path and reloads keep the page
 import { useSyncExternalStore } from 'react';
 import { leave } from './guard';
-export type Page = 'home' | 'calendar' | 'bookings' | 'restaurant' | 'prices' | 'stays' | 'social' | 'analytics' | 'chat';
-export const PAGES: Page[] = ['home', 'calendar', 'bookings', 'restaurant', 'prices', 'stays', 'social', 'analytics', 'chat'];
-// Normes and Correus are tabs now (of Allotjaments and Xarxes socials); their old addresses open those tabs
-const ALIAS: Record<string, [Page, string]> = { rules: ['stays', 'rules'], emails: ['social', 'emails'] };
+export type Page = 'home' | 'bookings' | 'restaurant' | 'stays' | 'social' | 'analytics' | 'chat';
+export const PAGES: Page[] = ['home', 'bookings', 'restaurant', 'stays', 'social', 'analytics', 'chat'];
+// Calendari is a tab of Reserves, Preus and Normes of Allotjaments, Correus of Xarxes socials; their old addresses open those tabs
+const ALIAS: Record<string, [Page, string]> = { calendar: ['bookings', 'calendar'], prices: ['stays', 'prices'], rules: ['stays', 'rules'], emails: ['social', 'emails'] };
 let aliasTab = '';
 // Kept until the page changes, so a page that mounts twice while loading still gets it
 export function takeAliasTab() { return aliasTab; }

@@ -2,8 +2,8 @@
 // templates in the brand (posts, stories, highlight covers) and the words changed on them, the profile grid built from the
 // posts made here, their captions, and PNGs at full size. The posts, captions and template words live in KV (/api/maite/social).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Calendar, Dropdown, DateField, DatePicker, I18nProvider, Label, ListBox, Select, Skeleton, Spinner, Tabs, TextArea, TextField, TimeField, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
-import { getLocalTimeZone, parseDate, parseTime, today as todayIn, type DateValue, type Time } from '@internationalized/date';
+import { Button, Dropdown, I18nProvider, Label, ListBox, Select, Skeleton, Spinner, Tabs, TextArea, TextField, TimeField, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
+import { parseTime, type Time } from '@internationalized/date';
 import { BookOpen, Check, MessageCircle, ChevronLeft, ChevronRight, Clock, Copy as CopyIcon, Download, ExternalLink, GalleryHorizontalEnd, ImageUp, MessageSquareText, Pencil, Plus, Send, Shuffle, Sparkles, X } from 'lucide-react';
 import { api, uploadPhoto } from '../lib/api';
 import { addDays, cap, longDay } from '../lib/dates';
@@ -12,6 +12,7 @@ import { openRestaurantMenu, takeRestaurantMenu } from '../lib/ui';
 import { leave, useGuard } from '../lib/guard';
 import type { Settings } from '../lib/types';
 import { Check as CheckField, Choice, Field } from '../parts/fields';
+import { DayPicker } from '../parts/DayPicker';
 import { Dialog } from '../parts/Sheet';
 import { Tag } from '../parts/Status';
 import { done, toastError } from '../parts/toast';
@@ -1184,7 +1185,12 @@ function Profile({ data, setData, onEmpty, onEditMenu }: { data: Data; setData: 
   );
   // The stories still to go out, listed under the posts with the same actions; they never go in the grid
   const stories = data.posts.filter(p => byId.has(p.tpl) && p.story && !p.published).sort((a, b) => storyMoment(a).localeCompare(storyMoment(b)));
-  const storyList = stories.length > 0 && <Stories stories={stories} insta={insta} data={data} setData={setData} onEditMenu={onEditMenu} onPublish={(post, later) => setPublishing({ post, later })} onEdit={setEditing} />;
+  const storyRow = (p: Post) => <StoryRow key={p.id} p={p} insta={insta} data={data} setData={setData} onEditMenu={onEditMenu} onPublish={(post, later) => setPublishing({ post, later })} onEdit={setEditing} />;
+  // One list: the posts in their order, and each story just before the first post that goes out after it (the ones without a
+  // day, last). Stories don't change the posts' numbers
+  const seq: { post?: Post; story?: Post }[] = [];
+  { let k = 0; for (const p of posts) { const at = p.schedule?.at || (p.date ? `${p.date}T12:00` : '9999'); while (k < stories.length && storyMoment(stories[k]) <= at) seq.push({ story: stories[k++] }); seq.push({ post: p }); } while (k < stories.length) seq.push({ story: stories[k++] }); }
+  const storyList = stories.length > 0 && <section className="card" aria-label="Stories per publicar"><ol className="divide-y divide-separator">{stories.map(storyRow)}</ol></section>;
   const dialogs = <>
     {editing && <PostEditor post={editing} n={posts.indexOf(editing) + 1} setData={setData} onClose={() => setEditing(null)} />}
     {publishing && <Publish key={publishing.post.id + publishing.later} post={publishing.post} later={publishing.later} n={posts.indexOf(publishing.post) + 1} caption={data.copies[publishing.post.id] || ''} onClose={() => setPublishing(null)} setData={setData} />}
@@ -1245,7 +1251,7 @@ function Profile({ data, setData, onEmpty, onEditMenu }: { data: Data; setData: 
         <div className="flex flex-wrap items-center gap-3 border-b border-separator p-4 sm:px-5">
           <div className="mr-auto">
             <h2 className="text-base font-semibold">Ordre de publicació</h2>
-            <p className="text-sm text-muted">El post 1 és el primer que publicaràs; a la graella queda just a sobre dels ja publicats, que porten una marca. Arrossega'ls a la graella per canviar-ne l'ordre.</p>
+            <p className="text-sm text-muted">El post 1 és el primer que publicaràs; a la graella queda just a sobre dels ja publicats, que porten una marca. Arrossega'ls a la graella per canviar-ne l'ordre. Les stories surten entre els posts a la seva hora i no van a la graella.</p>
             {insta && <p className="text-sm text-muted">{insta.connected ? `Es publica a @${insta.username}.` : "Per publicar des d'aquí cal connectar el compte d'Instagram."}</p>}
           </div>
           <Button size="sm" variant="secondary" isPending={!!progress} onPress={downloadAll}>
@@ -1253,7 +1259,9 @@ function Profile({ data, setData, onEmpty, onEditMenu }: { data: Data; setData: 
           </Button>
         </div>
         <ol className="divide-y divide-separator">
-          {posts.map((p, i) => {
+          {seq.map(({ post, story }) => {
+            if (story) return storyRow(story);
+            const p = post!, i = posts.indexOf(p);
             const t = byId.get(p.tpl)!, copy = data.copies[p.id];
             return (
               <li key={p.id} className="p-3 sm:px-5">
@@ -1289,7 +1297,6 @@ function Profile({ data, setData, onEmpty, onEditMenu }: { data: Data; setData: 
           })}
         </ol>
       </section>
-      {storyList}
       </div>
       {dialogs}
     </div>
@@ -1300,46 +1307,35 @@ function Profile({ data, setData, onEmpty, onEditMenu }: { data: Data; setData: 
 // When a story goes out: its program, else its day; the ones without either go last
 const storyMoment = (p: Post) => p.schedule?.at || (p.date ? `${p.date}T23:59` : '9999');
 
-// Publicar's stories: the ones still to go out, by when they go, with the posts' actions (no copy, no order)
-function Stories({ stories, insta, data, setData, onEditMenu, onPublish, onEdit }: { stories: Post[]; insta: Insta | null; data: Data; setData: (d: Data) => void; onEditMenu: (p: Post) => void; onPublish: (p: Post, later: boolean) => void; onEdit: (p: Post) => void }) {
-  const [busy, setBusy] = useState('');
-  async function remove(p: Post) {
-    setBusy(p.id);
+// A story in Publicar's list, between the posts: no number (the space is kept so the images line up) and no copy
+function StoryRow({ p, insta, data, setData, onEditMenu, onPublish, onEdit }: { p: Post; insta: Insta | null; data: Data; setData: (d: Data) => void; onEditMenu: (p: Post) => void; onPublish: (p: Post, later: boolean) => void; onEdit: (p: Post) => void }) {
+  const [busy, setBusy] = useState(false);
+  async function remove() {
+    setBusy(true);
     try { setData(await api<Data>('social', { method: 'PUT', body: { remove: p.id } })); done('Story treta'); } catch (e) { toastError(e); }
-    setBusy('');
+    setBusy(false);
   }
+  const t = byId.get(p.tpl)!, pack = p.pack ? data.posts.find(x => x.id === p.pack) : undefined, packMenu = pack && menuValues(pack);
+  const what = p.auto?.why || (packMenu ? `Del menú ${packMenu.title}` : '');
   return (
-    <section className="card">
-      <div className="border-b border-separator p-4 sm:px-5">
-        <h2 className="text-base font-semibold">Stories</h2>
-        <p className="text-sm text-muted">Per ordre de sortida. No van a la graella.</p>
+    <li className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap sm:px-5">
+      <span className="hidden w-20 shrink-0 sm:block" />
+      <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className="aspect-[9/16] w-11 shrink-0 rounded-md" />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-semibold">Story</div>
+        <div className="truncate text-xs text-muted">{what || t.title}</div>
+        {p.schedule ? <When s={p.schedule} /> : <div className="truncate text-xs text-muted">{p.date ? `Per al ${dayMonthOf(p.date)}, sense programar` : 'Sense programar'}</div>}
       </div>
-      <ol className="divide-y divide-separator">
-        {stories.map(p => {
-          const t = byId.get(p.tpl)!, pack = p.pack ? data.posts.find(x => x.id === p.pack) : undefined, packMenu = pack && menuValues(pack);
-          const what = p.auto?.why || (packMenu ? `Del menú ${packMenu.title}` : '');
-          return (
-            <li key={p.id} className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap sm:px-5">
-              <Art t={t} v={p.v} photo={p.photo} texts={p.texts} fit="cover" className="aspect-[9/16] w-11 shrink-0 rounded-md" />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-semibold">{t.title}</div>
-                {what && <div className="truncate text-xs text-muted">{what}</div>}
-                {p.schedule ? <When s={p.schedule} /> : <div className="truncate text-xs text-muted">{p.date ? `Per al ${dayMonthOf(p.date)}, sense programar` : 'Sense programar'}</div>}
-              </div>
-              <div className="flex w-full justify-end sm:w-auto">
-                <Button size="sm" variant="ghost" isIconOnly aria-label={`Edita la story ${t.title}`} onPress={() => (pack && packMenu ? onEditMenu(pack) : onEdit(p))}><Pencil size={16} /></Button>
-                {insta?.connected && <>
-                  <Button size="sm" variant={p.schedule ? 'secondary' : 'ghost'} isIconOnly aria-label={p.schedule ? `Canvia la programació de la story ${t.title}` : `Programa la story ${t.title}`} onPress={() => onPublish(p, true)}><Clock size={16} /></Button>
-                  <Button size="sm" variant="ghost" isIconOnly aria-label={`Publica ara la story ${t.title}`} onPress={() => onPublish(p, false)}><Send size={16} /></Button>
-                </>}
-                <DownloadButton label={`Descarrega la story ${t.title}`} run={async () => save(await png(t, p.v, p.photo, p.texts), fileName(t))} />
-                <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu la story ${t.title}`} isPending={busy === p.id} onPress={() => remove(p)}>{busy === p.id ? <Spinner size="sm" color="current" /> : <X size={16} />}</Button>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
+      <div className="flex w-full justify-end sm:w-auto">
+        <Button size="sm" variant="ghost" isIconOnly aria-label={`Edita la story ${t.title}`} onPress={() => (pack && packMenu ? onEditMenu(pack) : onEdit(p))}><Pencil size={16} /></Button>
+        {insta?.connected && <>
+          <Button size="sm" variant={p.schedule ? 'secondary' : 'ghost'} isIconOnly aria-label={p.schedule ? `Canvia la programació de la story ${t.title}` : `Programa la story ${t.title}`} onPress={() => onPublish(p, true)}><Clock size={16} /></Button>
+          <Button size="sm" variant="ghost" isIconOnly aria-label={`Publica ara la story ${t.title}`} onPress={() => onPublish(p, false)}><Send size={16} /></Button>
+        </>}
+        <DownloadButton label={`Descarrega la story ${t.title}`} run={async () => save(await png(t, p.v, p.photo, p.texts), fileName(t))} />
+        <Button size="sm" variant="ghost" isIconOnly aria-label={`Treu la story ${t.title}`} isPending={busy} onPress={remove}>{busy ? <Spinner size="sm" color="current" /> : <X size={16} />}</Button>
+      </div>
+    </li>
   );
 }
 const dayMonthOf = (d: string) => new Date(d + 'T12:00').toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' });
@@ -1579,38 +1575,6 @@ function Publish({ post, n, caption, onClose, setData, later, first = false }: {
         </div>
       </div>
     </Dialog>
-  );
-}
-
-// A day, picked on a calendar instead of the browser's own; '' is no day. clearable adds «Sense dia» under the calendar
-// past lets it take days already gone (the first day of a menu that has started)
-function DayPicker({ label, value, onChange, clearable, hideLabel, past }: { label: string; value: string; onChange: (v: string) => void; clearable?: boolean; hideLabel?: boolean; past?: boolean }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <I18nProvider locale="ca-ES">
-      <DatePicker aria-label={hideLabel ? label : undefined} value={value ? parseDate(value) : null} minValue={past ? undefined : todayIn(getLocalTimeZone())}
-        onChange={(d: DateValue | null) => onChange(d ? d.toString().slice(0, 10) : '')} isOpen={open} onOpenChange={setOpen} className="w-40 shrink-0">
-        {!hideLabel && <Label>{label}</Label>}
-        <DateField.Group fullWidth>
-          <DateField.Input>{segment => <DateField.Segment segment={segment} />}</DateField.Input>
-          <DateField.Suffix><DatePicker.Trigger><DatePicker.TriggerIndicator /></DatePicker.Trigger></DateField.Suffix>
-        </DateField.Group>
-        <DatePicker.Popover>
-          <Calendar aria-label={label}>
-            <Calendar.Header>
-              <Calendar.Heading />
-              <Calendar.NavButton slot="previous" />
-              <Calendar.NavButton slot="next" />
-            </Calendar.Header>
-            <Calendar.Grid>
-              <Calendar.GridHeader>{d => <Calendar.HeaderCell>{d}</Calendar.HeaderCell>}</Calendar.GridHeader>
-              <Calendar.GridBody>{d => <Calendar.Cell date={d} />}</Calendar.GridBody>
-            </Calendar.Grid>
-          </Calendar>
-          {clearable && value && <Button size="sm" variant="ghost" className="mt-2 w-full" onPress={() => { onChange(''); setOpen(false); }}>Sense dia</Button>}
-        </DatePicker.Popover>
-      </DatePicker>
-    </I18nProvider>
   );
 }
 

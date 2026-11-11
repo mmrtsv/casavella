@@ -3,20 +3,22 @@
 // go in the Monday email. The expenses sheet is linked here.
 import { useEffect, useState } from 'react';
 import { Button, Skeleton, Spinner, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
-import { ExternalLink } from 'lucide-react';
+import { ChevronRight, ExternalLink } from 'lucide-react';
 import { api } from '../lib/api';
 import { TODAY, addDays, cap, day, euro, iso, parse } from '../lib/dates';
+import { DayPicker } from '../parts/DayPicker';
 import { Field } from '../parts/fields';
 import { done, toastError } from '../parts/toast';
 
-type Line = { label: string; cents: number; auto?: boolean };
-type Item = { date: string; concept: string; category: string; cents: number };
+// A line of the statement; lines opens it into the ones under it (an accommodation into its bookings, a category into its rows)
+type Line = { label: string; sub?: string; cents: number; auto?: boolean; lines?: Line[] };
+type Month = { month: string; label: string; income: number; expenses: number; profit: number };
 type Pnl = { from: string; to: string; income: Line[]; incomeTotal: number; expenses: Line[]; expensesTotal: number; profit: number; margin: number | null;
-  items: Item[]; unpaidTables: number; sheet: { connected: boolean; url: string; error: string | null; share: string } };
+  months: Month[] | null; unpaidTables: number; sheet: { connected: boolean; url: string; error: string | null; share: string } };
 
-type Span = 'week' | 'month' | 'last' | 'year';
-const SPANS: { id: Span; label: string }[] = [{ id: 'week', label: 'Setmana passada' }, { id: 'month', label: 'Aquest mes' }, { id: 'last', label: 'Mes passat' }, { id: 'year', label: 'Aquest any' }];
-function rangeOf(s: Span): [string, string] {
+type Span = 'week' | 'month' | 'last' | 'year' | 'custom';
+const SPANS: { id: Span; label: string }[] = [{ id: 'week', label: 'Setmana passada' }, { id: 'month', label: 'Aquest mes' }, { id: 'last', label: 'Mes passat' }, { id: 'year', label: 'Aquest any' }, { id: 'custom', label: 'Dates' }];
+function rangeOf(s: Span | 'custom'): [string, string] {
   const t = parse(TODAY);
   if (s === 'week') { const mon = addDays(TODAY, -((t.getDay() + 6) % 7)); return [addDays(mon, -7), mon]; }
   if (s === 'month') return [TODAY.slice(0, 8) + '01', addDays(TODAY, 1)];
@@ -34,8 +36,11 @@ export default function Analytics() {
   const [span, setSpan] = useState<Span>(() => { try { const v = localStorage.getItem('maite-analytics-span'); return SPANS.some(s => s.id === v) ? v as Span : 'month'; } catch { return 'month'; } });
   const [data, setData] = useState<Pnl | null>(null);
   const [n, setN] = useState(0);
-  const [from, to] = rangeOf(span);
-  useEffect(() => { setData(null); api<Pnl>(`analytics?from=${from}&to=${to}`).then(setData).catch(toastError); }, [from, to, n]);
+  // Dates: from and the last day, both included; the API takes the day after
+  const [own, setOwn] = useState<{ from: string; last: string }>(() => ({ from: TODAY.slice(0, 8) + '01', last: TODAY }));
+  const [from, to] = span === 'custom' ? [own.from, own.last ? addDays(own.last, 1) : ''] : rangeOf(span);
+  const ok = !!from && !!to && from < to;
+  useEffect(() => { if (!ok) return; setData(null); api<Pnl>(`analytics?from=${from}&to=${to}`).then(setData).catch(toastError); }, [from, to, n]);
   const pick = (s: Span) => { setSpan(s); try { localStorage.setItem('maite-analytics-span', s); } catch { /* private window */ } };
 
   return (
@@ -44,9 +49,19 @@ export default function Analytics() {
         onSelectionChange={(k: Set<Key>) => { const [v] = k; if (v) pick(v as Span); }} size="sm">
         {SPANS.map(s => <ToggleButton key={s.id} id={s.id}>{s.label}</ToggleButton>)}
       </ToggleButtonGroup>
+      {span === 'custom' && (
+        <div className="flex flex-wrap items-end gap-3">
+          <DayPicker label="Des de" value={own.from} past onChange={v => setOwn({ ...own, from: v })} />
+          <DayPicker label="Fins a" value={own.last} past onChange={v => setOwn({ ...own, last: v })} />
+          {!ok && <p className="text-sm text-warning">El primer dia ha de ser abans de l'últim.</p>}
+        </div>
+      )}
       {!data ? <Skeleton className="h-[480px] rounded-2xl" /> : (
         <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">
-          <Statement p={data} />
+          <div className="space-y-5">
+            <Statement p={data} />
+            {data.months && <Months list={data.months} />}
+          </div>
           <Sheet p={data} onChange={() => setN(n + 1)} />
         </div>
       )}
@@ -54,11 +69,27 @@ export default function Analytics() {
   );
 }
 
-const Row = ({ label, cents, strong, note }: { label: string; cents: number; strong?: boolean; note?: string }) => (
-  <div className={`flex items-baseline gap-3 border-b border-separator py-2.5 text-sm ${strong ? 'font-semibold' : ''}`}>
-    <span className="min-w-0 flex-1">{label}{note && <span className="block text-xs font-normal text-muted">{note}</span>}</span>
-    <span className="tnum">{euro(cents) || '0 €'}</span>
-  </div>
+// A line of the statement; with lines under it, it opens and closes. depth indents the ones under
+function Row({ line, depth = 0 }: { line: Line; depth?: number }) {
+  const [open, setOpen] = useState(false), can = !!line.lines?.length;
+  const body = (
+    <>
+      {can ? <ChevronRight size={15} aria-hidden className={`mt-0.5 shrink-0 text-muted transition-transform ${open ? 'rotate-90' : ''}`} /> : <span className="w-[15px] shrink-0" />}
+      <span className="min-w-0 flex-1">{line.label}{line.sub && <span className="block text-xs text-muted">{line.sub}</span>}</span>
+      <span className="tnum">{euro(line.cents) || '0 €'}</span>
+    </>
+  );
+  return (
+    <>
+      {can ? <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} style={{ paddingLeft: depth * 20 }}
+        className="flex w-full items-start gap-2 border-b border-separator py-2.5 text-left text-sm outline-none hover:bg-default/40 focus-visible:ring-2 focus-visible:ring-focus">{body}</button>
+        : <div style={{ paddingLeft: depth * 20 }} className="flex items-start gap-2 border-b border-separator py-2.5 text-sm">{body}</div>}
+      {open && line.lines!.map((l, k) => <Row key={k} line={l} depth={depth + 1} />)}
+    </>
+  );
+}
+const Total = ({ label, cents }: { label: string; cents: number }) => (
+  <div className="flex items-baseline gap-2 border-b border-separator py-2.5 text-sm font-semibold"><span className="w-[15px] shrink-0" /><span className="flex-1">{label}</span><span className="tnum">{euro(cents) || '0 €'}</span></div>
 );
 
 // Income, expenses and the gross profit of the period
@@ -69,13 +100,13 @@ function Statement({ p }: { p: Pnl }) {
       <h2 className="text-base font-semibold">Pèrdues i guanys</h2>
       <p className="text-sm text-muted">{cap(day(p.from, { day: 'numeric', month: 'long' }))} a {day(last, { day: 'numeric', month: 'long', year: 'numeric' })}</p>
       <div className="mt-4">
-        {p.income.map(x => <Row key={x.label} label={x.label} cents={x.cents} />)}
-        <Row label="Ingressos" cents={p.incomeTotal} strong />
+        {p.income.map(x => <Row key={x.label} line={x} />)}
+        <Total label="Ingressos" cents={p.incomeTotal} />
         {p.unpaidTables > 0 && <p className="py-2 text-sm text-warning">{p.unpaidTables === 1 ? "1 taula del període no té l'import apuntat a Cobrat." : `${p.unpaidTables} taules del període no tenen l'import apuntat a Cobrat.`}</p>}
         <div className="mt-4">
-          {p.expenses.map(x => <Row key={x.label} label={x.label} cents={x.cents} note={x.auto ? 'Del compte de Meta, no cal apuntar-ho al full' : undefined} />)}
+          {p.expenses.map(x => <Row key={x.label} line={x} />)}
           {!p.expenses.length && <p className="border-b border-separator py-2.5 text-sm text-muted">Cap despesa en aquest període.</p>}
-          <Row label="Despeses" cents={p.expensesTotal} strong />
+          <Total label="Despeses" cents={p.expensesTotal} />
         </div>
       </div>
       <div className="mt-5">
@@ -88,7 +119,28 @@ function Statement({ p }: { p: Pnl }) {
   );
 }
 
-// The expenses sheet: linked, with the period's lines; or how to link it
+// Month by month, when the period has more than one
+function Months({ list }: { list: Month[] }) {
+  return (
+    <section className="card p-4 sm:p-6" aria-label="Mes a mes">
+      <h2 className="text-base font-semibold">Mes a mes</h2>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead><tr className="text-left text-xs text-muted"><th className="py-2 font-normal">Mes</th><th className="py-2 text-right font-normal">Ingressos</th><th className="py-2 text-right font-normal">Despeses</th><th className="py-2 text-right font-normal">Benefici brut</th></tr></thead>
+          <tbody>{list.map(m => (
+            <tr key={m.month} className="border-t border-separator">
+              <td className="py-2.5 pr-3">{m.label}</td>
+              <td className="py-2.5 text-right tnum">{euro(m.income) || '0 €'}</td>
+              <td className="py-2.5 text-right tnum">{euro(m.expenses) || '0 €'}</td>
+              <td className={`py-2.5 text-right font-semibold tnum ${m.profit < 0 ? 'text-danger' : ''}`}>{euro(m.profit) || '0 €'}</td>
+            </tr>))}</tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+// The expenses sheet: linked, or how to link it; its rows open under each category of the statement
 function Sheet({ p, onChange }: { p: Pnl; onChange: () => void }) {
   const [link, setLink] = useState(''), [busy, setBusy] = useState(false), [edit, setEdit] = useState(false);
   async function save(sheet: string) {
@@ -115,13 +167,7 @@ function Sheet({ p, onChange }: { p: Pnl; onChange: () => void }) {
       </div>
       {p.sheet.error && <p className={`mt-1 text-sm ${p.sheet.error === 'no_sheet' ? 'text-muted' : 'text-warning'}`}>{SHEET_ERRORS[p.sheet.error] || SHEET_ERRORS.sheet}</p>}
       {!p.sheet.url || edit ? form : <>
-        {p.sheet.connected && (p.items.length
-          ? <ul className="mt-2 max-h-[60dvh] overflow-y-auto">{p.items.map((x, i) => (
-              <li key={i} className="flex items-baseline gap-3 border-b border-separator py-2.5 text-sm">
-                <div className="min-w-0 flex-1"><div className="truncate">{x.concept || x.category}</div><div className="text-xs text-muted">{cap(day(x.date, { day: 'numeric', month: 'short' }))}, {x.category}</div></div>
-                <span className="tnum">{euro(x.cents)}</span>
-              </li>))}</ul>
-          : <p className="mt-2 text-sm text-muted">El full no té despeses en aquest període.</p>)}
+        {p.sheet.connected && <p className="mt-1 text-sm text-muted">Cada categoria de despeses s'obre amb els seus apunts.</p>}
         <div className="mt-3 flex justify-end gap-2">
           <Button size="sm" variant="ghost" isPending={busy} onPress={() => save('')}>Desconnecta</Button>
           <Button size="sm" variant="secondary" onPress={() => setEdit(true)}>Canvia el full</Button>

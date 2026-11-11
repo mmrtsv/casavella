@@ -3,6 +3,7 @@ package com.casavellarural.maite.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -52,6 +53,17 @@ import com.casavellarural.maite.ui.pagePadding
 private val FILTERS = listOf("today" to "Avui", "todo" to "Per fer", "next" to "Properes", "past" to "Passades", "cancelled" to "Cancel·lades", "block" to "Tancaments")
 
 /** Reserves: the next 30 days at a glance, then every booking (tap one for its file) */
+/** Reserves, in two tabs: Calendari (the weeks ahead, where it opens) and Llista (every booking, with its filters). Each keeps
+ *  its own scrolling, so the tabs sit above them instead of in a scrolling page */
+@Composable
+fun Reserves() {
+    var tab by remember { mutableStateOf(Ui.pageTab.takeIf { it == "list" } ?: "calendar").also { Ui.pageTab = "" } }
+    Column(Modifier.fillMaxSize()) {
+        com.casavellarural.maite.ui.Tabs(listOf("calendar" to "Calendari", "list" to "Llista"), tab, { tab = it }, Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp))
+        Box(Modifier.weight(1f)) { if (tab == "calendar") CalendarScreen() else Bookings() }
+    }
+}
+
 @Composable
 fun Bookings() {
     if (!Maite.ready) return LoadingPage()

@@ -9,9 +9,9 @@ import com.casavellarural.maite.R
 enum class Page(val title: String, @DrawableRes val icon: Int, val hint: String) {
     Home("Inici", R.drawable.ic_house, "El que passa avui i el que falta per fer"),
     Calendar("Calendari", R.drawable.ic_calendar_days, "Ocupació de les properes setmanes"),
-    Bookings("Reserves", R.drawable.ic_table_2, "Totes les reserves i la seva llista"),
+    Bookings("Reserves", R.drawable.ic_calendar_days, "El calendari de les properes setmanes i la llista de reserves"),
     Prices("Preus", R.drawable.ic_tag, "Preu per nit, dies especials i descomptes"),
-    Stays("Allotjaments", R.drawable.ic_bed_double, "Textos, capacitat i fotos de la web, i les normes"),
+    Stays("Allotjaments", R.drawable.ic_bed_double, "Textos, fotos, preus i normes de cada allotjament"),
     Rules("Normes", R.drawable.ic_scroll_text, "Estada, antelació, horaris i cancel·lació"),
     Emails("Correus", R.drawable.ic_mail, "Els correus que reben els hostes i la casa"),
     Social("Xarxes socials", R.drawable.ic_layout_grid, "Instagram, el pla, la graella i els correus"),
@@ -40,15 +40,22 @@ object Ui {
     var restaurantTab by mutableStateOf("")
     var restaurantMenu by mutableStateOf("")
     var opening by mutableStateOf<Opening?>(null)
-    /** The tab Preus, Allotjaments or Analítica opens on, taken once */
+    /** The tab Allotjaments, Reserves or Analítica opens on, and Preus's own tab inside Allotjaments, taken once */
     var pageTab by mutableStateOf("")
+    var pricesTab by mutableStateOf("")
 
     fun go(p: Page) {
-        // Normes and Correus are tabs of Allotjaments and Xarxes socials now
-        page = when (p) { Page.Rules -> { pageTab = "rules"; Page.Stays }; Page.Emails -> { com.casavellarural.maite.ui.social.openSocialTab = "emails"; Page.Social }; else -> p }
+        // Calendari is a tab of Reserves; Preus and Normes of Allotjaments; Correus of Xarxes socials
+        page = when (p) {
+            Page.Calendar -> { pageTab = "calendar"; Page.Bookings }
+            Page.Prices -> { pageTab = "prices"; Page.Stays }
+            Page.Rules -> { pageTab = "rules"; Page.Stays }
+            Page.Emails -> { com.casavellarural.maite.ui.social.openSocialTab = "emails"; Page.Social }
+            else -> p
+        }
         more = false
     }
-    fun openBookings(filter: String) { bookingsFilter = filter; go(Page.Bookings) }
+    fun openBookings(filter: String) { bookingsFilter = filter; pageTab = "list"; go(Page.Bookings) }
     /** Calendari opens Restaurant on a day, and Inici (or a notification) on Cobrat on a day with tables to note; the page takes them once */
     fun openRestaurant(date: String, tab: String = "tables") { restaurantDay = date; restaurantTab = tab; go(Page.Restaurant) }
     /** Publicar (or a WhatsApp reminder) opens Restaurant › Menús, where menus are made and changed: on a menu's post, or on the list */
@@ -60,8 +67,11 @@ object Ui {
         when (name) {
             "social" -> { if (tab.isNotEmpty()) com.casavellarural.maite.ui.social.openSocialTab = tab; go(Page.Social) }
             "restaurant" -> if (tab == "menus") openRestaurantMenu(item) else openRestaurant(item, tab.ifEmpty { "tables" })
-            "bookings" -> { bookingsFilter = tab; go(Page.Bookings); if (item.isNotEmpty()) detail = item }
-            "prices", "stays", "analytics" -> { pageTab = tab; go(Page.entries.first { it.name.equals(name, ignoreCase = true) }) }
+            "bookings" -> { if (tab == "calendar" || tab.isEmpty()) go(Page.Calendar) else openBookings(tab); if (item.isNotEmpty()) detail = item }
+            "calendar" -> go(Page.Calendar)
+            "prices" -> { pricesTab = tab; go(Page.Prices) }
+            "stays" -> { pageTab = tab; if (tab == "prices") pricesTab = item; go(Page.Stays) }
+            "analytics" -> { pageTab = tab; go(Page.Analytics) }
             "rules" -> go(Page.Rules)
             "emails" -> go(Page.Emails)
             else -> Page.entries.find { it.name.equals(name, ignoreCase = true) }?.let { go(it) }

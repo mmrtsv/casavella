@@ -1,10 +1,12 @@
 // Reserves: the next 30 days at a glance, then every booking in a sortable table (tap a row for the client file)
 import { useMemo, useState, type ReactNode } from 'react';
-import { SearchField, Table, ToggleButton, ToggleButtonGroup, type Key, type SortDescriptor } from '@heroui/react';
+import { SearchField, Table, Tabs, ToggleButton, ToggleButtonGroup, type Key, type SortDescriptor } from '@heroui/react';
 import { Glass } from '../lib/glass';
 import { addDays, day, euro, nightsBetween, TODAY } from '../lib/dates';
 import { keyOf, shortName, stayName, useStore } from '../lib/store';
-import { openDetail, takeBookingsFilter } from '../lib/ui';
+import { openDetail, takeBookingsFilter, takeBookingsTab } from '../lib/ui';
+import { takeAliasTab } from '../lib/route';
+import { Calendar } from './Calendar';
 import { atHome, dueList, isBooking, KIND, missing, SOURCE, who } from '../lib/words';
 import { Status } from '../parts/Status';
 import type { Booking } from '../lib/types';
@@ -21,7 +23,23 @@ const SORT: Record<string, (b: Booking) => string | number> = {
   amount: b => b.amount ?? -1, state: b => KIND[b.kind] + (b.settled ? 1 : 0), done: b => isBooking(b) ? dueList(b).filter(c => c.ok).length : -1,
 };
 
+// Reserves, in two tabs: Calendari (the weeks ahead, where it opens) and Llista (every booking, with its filters)
 export default function Bookings() {
+  const [tab, setTab] = useState<'calendar' | 'list'>(() => { const t = takeBookingsTab() || takeAliasTab(); return t === 'list' ? 'list' : 'calendar'; });
+  return (
+    <div className="fade-in">
+      <Tabs selectedKey={tab} onSelectionChange={k => setTab(k as typeof tab)} className="mb-5">
+        <Tabs.ListContainer><Tabs.List aria-label="Reserves" className="w-fit">
+          <Tabs.Tab id="calendar">Calendari<Tabs.Indicator /></Tabs.Tab>
+          <Tabs.Tab id="list">Llista<Tabs.Indicator /></Tabs.Tab>
+        </Tabs.List></Tabs.ListContainer>
+      </Tabs>
+      {tab === 'calendar' ? <Calendar /> : <BookingList />}
+    </div>
+  );
+}
+
+function BookingList() {
   const map = useStore(s => s.bookings);
   const stays = useStore(s => s.stays);
   const [filter, setFilter] = useState<Filter>(() => (takeBookingsFilter() as Filter) || 'next');

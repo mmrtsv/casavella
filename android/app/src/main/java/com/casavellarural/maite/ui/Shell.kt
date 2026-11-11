@@ -169,9 +169,9 @@ fun Connect() {
 private fun Modifier.widthIn360() = this.then(Modifier.fillMaxWidth()).padding(horizontal = 0.dp)
 
 // ---------- The app ----------
-private val RAIL = listOf(Page.Home, Page.Calendar, Page.Bookings, Page.Prices, Page.Social)
-private val BAR = listOf(Page.Home, Page.Calendar, Page.Bookings, Page.Prices)
-private val MORE = listOf(Page.Social, Page.Restaurant, Page.Stays, Page.Analytics, Page.Chat)
+private val RAIL = listOf(Page.Home, Page.Bookings, Page.Restaurant, Page.Social)
+private val BAR = listOf(Page.Home, Page.Bookings, Page.Restaurant)
+private val MORE = listOf(Page.Social, Page.Stays, Page.Analytics, Page.Chat)
 
 @Composable
 fun App() {
@@ -265,8 +265,8 @@ private fun shortcut(k: Key, shift: Boolean): Boolean {
 private fun Content() {
     when (Ui.page) {
         Page.Home -> Home()
-        Page.Calendar -> CalendarScreen()
-        Page.Bookings -> Bookings()
+        Page.Calendar -> CalendarScreen()  // go() sends Calendari to Reserves and Preus to Allotjaments; kept so the page list stays whole
+        Page.Bookings -> Reserves()
         Page.Prices -> Prices()
         Page.Stays -> Stays()
         Page.Rules -> Stays()  // go() sends Normes to Allotjaments; kept so the page list stays whole
@@ -286,7 +286,7 @@ private fun TopBar(rail: Boolean) {
     ) {
         if (!rail) { Iso(26.dp); Spacer(Modifier.width(10.dp)) }
         Text(Ui.page.title, style = Type.xl, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        if (Ui.page == Page.Calendar) CalendarActions()
+        if (Ui.page == Page.Bookings) CalendarActions()
         IconBtn(R.drawable.ic_search, "Cerca", { Ui.search = true })
     }
 }

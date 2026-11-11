@@ -24,7 +24,10 @@ export const getPalette = () => ui.palette;
 
 // Inici can open Reserves on a filter ("Per fer"); the page takes it once, when it opens
 let bookingsFilter = '';
-export function openBookings(filter: string) { bookingsFilter = filter; go('bookings'); }
+export function openBookings(filter: string) { bookingsFilter = filter; bookingsTab = 'list'; go('bookings'); }
+// Reserves opens on Calendari unless something asks for the list (a filter, or openAt)
+let bookingsTab = '';
+export function takeBookingsTab() { const t = bookingsTab; bookingsTab = ''; return t; }
 export function takeBookingsFilter() { const f = bookingsFilter; bookingsFilter = ''; return f; }
 
 // Calendari opens Restaurant on a day, and Inici on Cobrat on a day with tables to note; the page takes them once, when it opens
@@ -36,7 +39,7 @@ export function takeRestaurantTab() { const t = restaurantTab; restaurantTab = '
 export function openRestaurantMenu(id: string) { restaurantMenu = id; restaurantTab = 'menus'; go('restaurant'); }
 export function takeRestaurantMenu() { const m = restaurantMenu; restaurantMenu = ''; return m; }
 
-// Preus, Allotjaments and Analítica can open on a tab; the page takes it once, when it opens
+// Allotjaments (and Preus inside it) and Analítica can open on a tab; the page takes it once, when it opens
 let pricesTab = '', analyticsTab = '', staysTab = '';
 export function takeStaysTab() { const t = staysTab; staysTab = ''; return t; }
 export function takePricesTab() { const t = pricesTab; pricesTab = ''; return t; }
@@ -45,12 +48,14 @@ export function takeAnalyticsTab() { const t = analyticsTab; analyticsTab = ''; 
 // A page, the tab on it and the thing to open there, as Pregunta's proposals give them (lib/chat.js). The page opens fresh from
 // Pregunta, so each page takes what it needs when it opens: Xarxes socials its tab; Restaurant its tab, and a day (Taules, Cobrat)
 // or a menu (Menús); Reserves a filter or one booking (stay|id); Preus and Analítica their tab
-export function openAt(page: Page, tab = '', item = '') {
+export function openAt(page: Page | 'prices' | 'calendar', tab = '', item = '') {
+  // Preus is a tab of Allotjaments, Calendari one of Reserves
+  if (page === 'prices') { staysTab = 'prices'; pricesTab = tab; return go('stays'); }
+  if (page === 'calendar') { bookingsTab = 'calendar'; return go('bookings'); }
   if (page === 'social' && tab) try { localStorage.setItem('maite-social-tab', tab); } catch { /* private window */ }
   if (page === 'restaurant') { if (tab === 'menus') return openRestaurantMenu(item); restaurantTab = tab; restaurantDay = item; }
-  if (page === 'bookings') { if (tab) bookingsFilter = tab; if (item) openDetail(item); }
-  if (page === 'prices') pricesTab = tab;
-  if (page === 'stays') staysTab = tab;
+  if (page === 'bookings') { if (tab === 'calendar') bookingsTab = 'calendar'; else if (tab) { bookingsFilter = tab; bookingsTab = 'list'; } if (item) openDetail(item); }
+  if (page === 'stays') { staysTab = tab; if (tab === 'prices') pricesTab = item; }
   if (page === 'analytics') analyticsTab = tab;
   go(page);
 }

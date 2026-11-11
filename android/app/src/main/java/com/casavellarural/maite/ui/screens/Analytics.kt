@@ -144,7 +144,7 @@ private fun Months(list: List<PMonth>) {
             list.forEach { m ->
                 Column(Modifier.padding(vertical = 9.dp)) {
                     Row { Text(m.label, style = Type.sm, modifier = Modifier.weight(1f)); Text(euro(m.gross).ifEmpty { "0 €" }, style = Type.sm, fontWeight = FontWeight.SemiBold, color = if (m.gross < 0) T.danger else T.foreground) }
-                    Text("${euro(m.income).ifEmpty { "0 €" }} d'ingressos, ${euro(m.direct).ifEmpty { "0 €" }} de directes, ${euro(m.profit).ifEmpty { "0 €" }} de resultat", style = Type.xs, color = T.muted)
+                    Text("${euro(m.income).ifEmpty { "0 €" }} d'ingressos, ${euro(m.direct).ifEmpty { "0 €" }} de despeses directes", style = Type.xs, color = T.muted)
                 }
                 Divider()
             }
@@ -178,10 +178,21 @@ private fun Statement(p: Pnl) {
             if (p.direct.isEmpty()) { Muted("Cap despesa directa en aquest període.", Modifier.padding(vertical = 9.dp)); Divider() }
             Total("Despeses directes", p.directTotal)
             Big("Benefici brut", p.gross, p.grossMargin?.let { "$it % dels ingressos" })
+            // The other costs and the result, closed until asked for
             if (p.other.isNotEmpty()) {
-                p.other.forEach { StatementLine(it) }
-                Total("Altres despeses", p.otherTotal)
-                Big("Resultat", p.result)
+                var open by remember { mutableStateOf(false) }
+                Divider()
+                Row(Modifier.fillMaxWidth().clickable { open = !open }.padding(vertical = 9.dp), verticalAlignment = Alignment.Top) {
+                    Ico(R.drawable.ic_chevron_right, tint = T.muted, size = 15.dp, modifier = Modifier.padding(top = 2.dp).rotate(if (open) 90f else 0f))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Altres despeses i resultat", style = Type.sm, modifier = Modifier.weight(1f))
+                }
+                Divider()
+                if (open) {
+                    p.other.forEach { StatementLine(it) }
+                    Total("Altres despeses", p.otherTotal)
+                    Big("Resultat", p.result)
+                }
             }
             if (!p.sheet.connected) Text("Sense el full de despeses, aquí només hi ha els anuncis de Meta.", style = Type.sm, color = T.warning)
         }

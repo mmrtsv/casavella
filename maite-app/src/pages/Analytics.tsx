@@ -131,13 +131,28 @@ function Statement({ p }: { p: Pnl }) {
         </div>
       </div>
       <Big label="Benefici brut" cents={p.gross} note={p.grossMargin != null ? `${p.grossMargin} % dels ingressos` : undefined} />
-      {(p.other.length > 0) && <>
+      {p.other.length > 0 && <After p={p} />}
+      {!p.sheet.connected && <p className="text-sm text-warning">Sense el full de despeses, aquí només hi ha els anuncis de Meta.</p>}
+    </section>
+  );
+}
+
+// The other costs and the result, closed until asked for
+function After({ p }: { p: Pnl }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-t border-separator">
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}
+        className="flex w-full items-start gap-2 border-b border-separator py-2.5 text-left text-sm outline-none hover:bg-default/40 focus-visible:ring-2 focus-visible:ring-focus">
+        <ChevronRight size={15} aria-hidden className={`mt-0.5 shrink-0 text-muted transition-transform ${open ? 'rotate-90' : ''}`} />
+        <span className="flex-1">Altres despeses i resultat</span>
+      </button>
+      {open && <>
         {p.other.map(x => <Row key={x.label} line={x} />)}
         <Total label="Altres despeses" cents={p.otherTotal} />
         <Big label="Resultat" cents={p.result} />
       </>}
-      {!p.sheet.connected && <p className="text-sm text-warning">Sense el full de despeses, aquí només hi ha els anuncis de Meta.</p>}
-    </section>
+    </div>
   );
 }
 
@@ -148,14 +163,13 @@ function Months({ list }: { list: Month[] }) {
       <h2 className="text-base font-semibold">Mes a mes</h2>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead><tr className="text-left text-xs text-muted"><th className="py-2 font-normal">Mes</th><th className="py-2 text-right font-normal">Ingressos</th><th className="py-2 text-right font-normal">Directes</th><th className="py-2 text-right font-normal">Benefici brut</th><th className="py-2 text-right font-normal">Resultat</th></tr></thead>
+          <thead><tr className="text-left text-xs text-muted"><th className="py-2 font-normal">Mes</th><th className="py-2 text-right font-normal">Ingressos</th><th className="py-2 text-right font-normal">Directes</th><th className="py-2 text-right font-normal">Benefici brut</th></tr></thead>
           <tbody>{list.map(m => (
             <tr key={m.month} className="border-t border-separator">
               <td className="py-2.5 pr-3">{m.label}</td>
               <td className="py-2.5 text-right tnum">{euro(m.income) || '0 €'}</td>
               <td className="py-2.5 text-right tnum">{euro(m.direct) || '0 €'}</td>
               <td className={`py-2.5 text-right font-semibold tnum ${m.gross < 0 ? 'text-danger' : ''}`}>{euro(m.gross) || '0 €'}</td>
-              <td className={`py-2.5 text-right tnum ${m.profit < 0 ? 'text-danger' : ''}`}>{euro(m.profit) || '0 €'}</td>
             </tr>))}</tbody>
         </table>
       </div>

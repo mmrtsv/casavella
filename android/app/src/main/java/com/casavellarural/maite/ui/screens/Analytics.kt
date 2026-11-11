@@ -3,8 +3,6 @@ package com.casavellarural.maite.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import com.casavellarural.maite.ui.Ico
 import androidx.compose.ui.draw.rotate
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -95,7 +93,8 @@ fun Analytics() {
     LaunchedEffect(from, to, n) { if (!ok) return@LaunchedEffect; data = null; runCatching { Api.get<Pnl>("analytics?from=$from&to=$to") }.onSuccess { data = it }.onFailure { Toasts.error(it) } }
     Page {
         Tabs(listOf("pnl" to "Pèrdues i guanys", "ads" to "Anuncis"), tab, { tab = it })
-        Row(Modifier.horizontalScroll(rememberScrollState())) { Segmented(SPANS, span, { span = it }) }
+        // Segmented scrolls on its own: inside another horizontal scroll it gets an infinite width and the app closes
+        Segmented(SPANS, span, { span = it })
         if (span == "custom") {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 DateField("Des de", ownFrom, { ownFrom = it }, Modifier.weight(1f))

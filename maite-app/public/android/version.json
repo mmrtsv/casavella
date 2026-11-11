@@ -1,5 +1,5 @@
 {
-  "versionCode": 55,
-  "version": "2.53",
-  "notes": "Stories a Publicar, confirmació en treure un menú, Analítica (pèrdues i guanys) i Pregunta (xat amb Claude)"
+  "versionCode": 56,
+  "version": "2.54",
+  "notes": "Publicar amb posts i stories en una sola llista. Analítica amb dates, línies que s'obren i mes a mes"
 }

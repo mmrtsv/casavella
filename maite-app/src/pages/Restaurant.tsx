@@ -10,7 +10,8 @@ import { setSettings, useStore } from '../lib/store';
 import { atOf, putTable, seated, useTables } from '../lib/tables';
 import { leave, useGuard } from '../lib/guard';
 import { ERRORS, SOURCE } from '../lib/words';
-import { openRestaurantMenu, takeRestaurantDay, takeRestaurantTab } from '../lib/ui';
+import { openRestaurantMenu, takeRestaurantDay } from '../lib/ui';
+import { useTab } from '../lib/route';
 import { Dialog } from '../parts/Sheet';
 import { Check, Choice, Field } from '../parts/fields';
 import { done, toastError } from '../parts/toast';
@@ -23,7 +24,7 @@ const persones = (n: number) => `${n} ${n === 1 ? 'persona' : 'persones'}`;
 const atLabel = (at: string) => `${cap(longDay(at.slice(0, 10)))}, ${at.slice(11)}`;
 
 export default function Restaurant() {
-  const [tab, setTab] = useState<Tab>(() => (takeRestaurantTab() as Tab) || 'tables');
+  const [tab, setTab] = useTab<Tab>(['tables', 'menus', 'paid', 'open'], 'tables');
   return (
     <div className="fade-in">
       <Tabs selectedKey={tab} onSelectionChange={k => leave(() => setTab(k as Tab))} className="mb-5">

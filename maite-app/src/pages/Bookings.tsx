@@ -4,8 +4,8 @@ import { SearchField, Table, Tabs, ToggleButton, ToggleButtonGroup, type Key, ty
 import { Glass } from '../lib/glass';
 import { addDays, day, euro, nightsBetween, TODAY } from '../lib/dates';
 import { keyOf, shortName, stayName, useStore } from '../lib/store';
-import { openDetail, takeBookingsFilter, takeBookingsTab } from '../lib/ui';
-import { takeAliasTab } from '../lib/route';
+import { openDetail, takeBookingsFilter } from '../lib/ui';
+import { useTab } from '../lib/route';
 import { Calendar } from './Calendar';
 import { atHome, dueList, isBooking, KIND, missing, SOURCE, who } from '../lib/words';
 import { Status } from '../parts/Status';
@@ -25,7 +25,7 @@ const SORT: Record<string, (b: Booking) => string | number> = {
 
 // Reserves, in two tabs: Calendari (the weeks ahead, where it opens) and Llista (every booking, with its filters)
 export default function Bookings() {
-  const [tab, setTab] = useState<'calendar' | 'list'>(() => { const t = takeBookingsTab() || takeAliasTab(); return t === 'list' ? 'list' : 'calendar'; });
+  const [tab, setTab] = useTab(['calendar', 'list'] as const, 'calendar');
   return (
     <div className="fade-in">
       <Tabs selectedKey={tab} onSelectionChange={k => setTab(k as typeof tab)} className="mb-5">

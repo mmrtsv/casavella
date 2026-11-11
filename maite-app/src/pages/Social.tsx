@@ -10,6 +10,7 @@ import { addDays, cap, longDay } from '../lib/dates';
 import { setSettings, useStore } from '../lib/store';
 import { openRestaurantMenu, takeRestaurantMenu } from '../lib/ui';
 import { leave, useGuard } from '../lib/guard';
+import { useTab } from '../lib/route';
 import type { Settings } from '../lib/types';
 import { Check as CheckField, Choice, Field } from '../parts/fields';
 import { DayPicker } from '../parts/DayPicker';
@@ -87,9 +88,8 @@ async function downloadPost(p: Slide & { slides?: Slide[] }, n?: number) {
 const nextSlides = (t: Template): Slide[] => (CAROUSELS[t.id] || []).map(tpl => ({ tpl, v: 0, photo: '' }));
 
 export default function Social() {
-  const [tab, setTab] = useState<Tab>(() => {
-    try { const t = localStorage.getItem('maite-social-tab'); return TABS.some(x => x.id === t) ? t as Tab : 'plan'; } catch { return 'plan'; }
-  });
+  // The tab in the address (#/social/calendar), else the last one used here
+  const [tab, setTab] = useTab<Tab>(TABS.map(x => x.id), (() => { try { const t = localStorage.getItem('maite-social-tab'); return TABS.some(x => x.id === t) ? t as Tab : 'plan'; } catch { return 'plan'; } })());
   const [data, setData] = useState<Data | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
   useEffect(() => { api<{ plan: Plan }>('plan').then(r => setPlan(r.plan)).catch(toastError); }, []);

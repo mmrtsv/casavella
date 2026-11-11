@@ -48,6 +48,7 @@ import com.casavellarural.maite.ui.Tabs
 import com.casavellarural.maite.ui.T
 import com.casavellarural.maite.ui.Toasts
 import com.casavellarural.maite.ui.Type
+import com.casavellarural.maite.ui.Ui
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.time.format.DateTimeFormatter
@@ -86,7 +87,7 @@ fun Analytics() {
     var span by remember { mutableStateOf("month") }
     var data by remember { mutableStateOf<Pnl?>(null) }
     var n by remember { mutableIntStateOf(0) }
-    var tab by remember { mutableStateOf("pnl") }
+    var tab by remember { mutableStateOf(Ui.pageTab.takeIf { it == "ads" } ?: "pnl").also { Ui.pageTab = "" } }
     // Dates: from and the last day, both included; the API takes the day after
     var ownFrom by remember { mutableStateOf(TODAY.take(8) + "01") }; var ownLast by remember { mutableStateOf(TODAY) }
     val (from, to) = if (span == "custom") ownFrom to (if (ownLast.isNotEmpty()) addDays(ownLast, 1) else "") else rangeOf(span)

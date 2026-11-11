@@ -171,7 +171,7 @@ private fun Modifier.widthIn360() = this.then(Modifier.fillMaxWidth()).padding(h
 // ---------- The app ----------
 private val RAIL = listOf(Page.Home, Page.Calendar, Page.Bookings, Page.Prices, Page.Social)
 private val BAR = listOf(Page.Home, Page.Calendar, Page.Bookings, Page.Prices)
-private val MORE = listOf(Page.Social, Page.Restaurant, Page.Stays, Page.Rules, Page.Emails, Page.Analytics, Page.Chat)
+private val MORE = listOf(Page.Social, Page.Restaurant, Page.Stays, Page.Analytics, Page.Chat)
 
 @Composable
 fun App() {
@@ -269,8 +269,8 @@ private fun Content() {
         Page.Bookings -> Bookings()
         Page.Prices -> Prices()
         Page.Stays -> Stays()
-        Page.Rules -> Rules()
-        Page.Emails -> Emails()
+        Page.Rules -> Stays()  // go() sends Normes to Allotjaments; kept so the page list stays whole
+        Page.Emails -> SocialScreen()
         Page.Social -> SocialScreen()
         Page.Restaurant -> Restaurant()
         Page.Analytics -> Analytics()

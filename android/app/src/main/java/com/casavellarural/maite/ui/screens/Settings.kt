@@ -1,5 +1,7 @@
 package com.casavellarural.maite.ui.screens
 
+import com.casavellarural.maite.ui.Ui
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -77,8 +79,11 @@ import java.time.LocalDate
 
 @Composable
 fun Page(content: @Composable () -> Unit) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(pagePadding()), verticalArrangement = Arrangement.spacedBy(16.dp)) { content() }
+    if (LocalInTab.current) Column(verticalArrangement = Arrangement.spacedBy(16.dp)) { content() }
+    else Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(pagePadding()), verticalArrangement = Arrangement.spacedBy(16.dp)) { content() }
 }
+/** True inside another page's tab (Normes in Allotjaments, Correus in Xarxes socials): the page doesn't scroll on its own */
+val LocalInTab = androidx.compose.runtime.staticCompositionLocalOf { false }
 
 private fun nightOf(S: Settings, stay: String, d: String): Pair<Double, Boolean> {
     S.days[stay]?.get(d)?.price?.let { return it to true }
@@ -92,7 +97,7 @@ private data class PSel(val a: String, val b: String? = null, val weekends: Bool
 @Composable
 fun Prices() {
     val S = Maite.settings ?: return LoadingPage()
-    var tab by remember { mutableStateOf("nights") }
+    var tab by remember { mutableStateOf(Ui.pageTab.takeIf { it == "discounts" } ?: "nights").also { Ui.pageTab = "" } }
     Page {
         Tabs(listOf("nights" to "Per nit", "discounts" to "Descomptes"), tab, { tab = it })
         if (tab == "nights") Nights(S) else Discounts(S)

@@ -1,6 +1,6 @@
 // Allotjaments: what the web shows for each stay (type, name, description, capacity, features, photos), with a live preview
 import { useEffect, useRef, useState } from 'react';
-import { Button, Skeleton, Spinner, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
+import { Button, Skeleton, Spinner, Tabs, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
 import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, ExternalLink, Images, Plus, Star, Trash2, Upload, X } from 'lucide-react';
 import { api, uploadPhoto } from '../lib/api';
 import { loadContent, setContent, setStays, getState, useStore } from '../lib/store';
@@ -9,13 +9,32 @@ import { Dialog } from '../parts/Sheet';
 import { done, toastError } from '../parts/toast';
 import type { StayContent } from '../lib/types';
 import { leave, useGuard } from '../lib/guard';
+import { takeAliasTab } from '../lib/route';
+import { takeStaysTab } from '../lib/ui';
+import Rules from './Rules';
 
 const photoUrl = (src: string) => (src.startsWith('/') ? src : '/' + src);
 const Icon = ({ svg }: { svg: string }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: svg }} />
 );
 
+// Allotjaments, in two tabs: the stays (texts, capacity, photos) and Normes (stay, notice, hours and cancellation)
 export default function Stays() {
+  const [tab, setTab] = useState<'stays' | 'rules'>(() => (takeStaysTab() || takeAliasTab()) === 'rules' ? 'rules' : 'stays');
+  return (
+    <div className="fade-in">
+      <Tabs selectedKey={tab} onSelectionChange={k => leave(() => setTab(k as typeof tab))} className="mb-5">
+        <Tabs.ListContainer><Tabs.List aria-label="Allotjaments" className="w-fit">
+          <Tabs.Tab id="stays">Allotjaments<Tabs.Indicator /></Tabs.Tab>
+          <Tabs.Tab id="rules">Normes<Tabs.Indicator /></Tabs.Tab>
+        </Tabs.List></Tabs.ListContainer>
+      </Tabs>
+      {tab === 'stays' ? <StayEditor /> : <Rules />}
+    </div>
+  );
+}
+
+function StayEditor() {
   const content = useStore(s => s.content);
   const stays = useStore(s => s.stays);
   const [stay, setStay] = useState(stays[0]?.id || '');

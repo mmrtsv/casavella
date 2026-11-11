@@ -14,6 +14,7 @@ import type { Settings } from '../lib/types';
 import { Check as CheckField, Choice, Field } from '../parts/fields';
 import { DayPicker } from '../parts/DayPicker';
 import { Dialog } from '../parts/Sheet';
+import Emails from './Emails';
 import { Tag } from '../parts/Status';
 import { done, toastError } from '../parts/toast';
 import { Art, Wide } from '../social/Art';
@@ -51,14 +52,14 @@ type Option = { caption: string; hashtags: string };
 // A post or story Claude made from a description: the template, its photo and words, and the caption
 type Made = Option & { tpl: string; photo: string; texts: string[]; slides?: Slide[] };
 // Destacats (the highlight covers) is out of the tabs for now; its templates stay
-type Tab = 'plan' | 'new' | 'profile' | 'calendar';
+type Tab = 'plan' | 'new' | 'profile' | 'calendar' | 'emails';
 // A post being made or changed: the variation, the photo (an upload, or one just picked and not yet uploaded) and the words
 type Own = { file: File; url: string };
 type Draft = { v: number; photo: string; own: Own | null; texts: Texts };
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'plan', label: 'Pla' }, { id: 'new', label: 'Generador de posts' },
-  { id: 'profile', label: 'Publicar' }, { id: 'calendar', label: 'Calendari' },
+  { id: 'profile', label: 'Publicar' }, { id: 'calendar', label: 'Calendari' }, { id: 'emails', label: 'Correus' },
 ];
 const HELP: Partial<Record<Tab, string>> = {
   plan: "Cada dilluns Maite prepara la setmana següent a partir de les reserves. Tens fins diumenge a les 23:59 per canviar-la; si no, surt tal com és.",
@@ -110,6 +111,7 @@ export default function Social() {
       {tab === 'plan' && (data && plan ? <PlanView data={data} setData={setData} plan={plan} setPlan={setPlan} preparing={preparing} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {tab === 'new' && (data ? <NewPost key={start?.n || 0} data={data} setData={setData} start={start} go={pick} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
       {tab === 'calendar' && (data ? <Planner data={data} onEmpty={() => pick('new')} onPublish={() => pick('profile')} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
+      {tab === 'emails' && <Emails />}
       {tab === 'profile' && (data ? <Profile data={data} setData={setData} onEmpty={() => pick('new')} onEditMenu={p => openRestaurantMenu(p.id)} /> : <Skeleton className="h-[640px] rounded-2xl" />)}
     </div>
   );

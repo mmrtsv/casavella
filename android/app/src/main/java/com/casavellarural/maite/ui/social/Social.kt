@@ -125,7 +125,7 @@ import kotlinx.coroutines.withContext
 // Xarxes socials, as maite-app/src/pages/Social.tsx: a new post (from a description or from a template), the templates and the
 // words changed on them, the profile grid of the posts made, captions, publishing, a calendar
 
-private val TABS = listOf("plan" to "Pla", "new" to "Generador de posts", "profile" to "Publicar", "calendar" to "Calendari")
+private val TABS = listOf("plan" to "Pla", "new" to "Generador de posts", "profile" to "Publicar", "calendar" to "Calendari", "emails" to "Correus")
 private val HELP = mapOf(
     "plan" to "Cada dilluns Maite prepara la setmana següent a partir de les reserves. Tens fins diumenge a les 23:59 per canviar-la; si no, surt tal com és.",
     "new" to "Fes-la des d'una plantilla o genera-la amb IA a partir d'una descripció. Abans d'afegir-la al perfil en pots canviar el text i la foto.",
@@ -191,6 +191,7 @@ fun SocialScreen() {
             tab == "plan" -> plan?.let { PlanScreen(data, it, { p -> plan = p }, preparing) } ?: com.casavellarural.maite.ui.Loading()
             tab == "new" -> key(start?.n ?: 0) { NewPost(data, start) { tab = it; lastTab = it } }
             tab == "profile" -> Profile(data, { p -> Ui.openRestaurantMenu(p.id) }) { tab = "new"; lastTab = tab }
+            tab == "emails" -> androidx.compose.runtime.CompositionLocalProvider(com.casavellarural.maite.ui.screens.LocalInTab provides true) { com.casavellarural.maite.ui.screens.Emails() }
             else -> Planner(data, { tab = "new"; lastTab = tab }) { tab = "profile"; lastTab = tab }
         }
     }

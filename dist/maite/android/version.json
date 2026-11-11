@@ -1,5 +1,5 @@
 {
-  "versionCode": 60,
-  "version": "2.58",
-  "notes": "Reserves amb Calendari i Llista, i Preus dins d'Allotjaments"
+  "versionCode": 61,
+  "version": "2.59",
+  "notes": "Els menús tenen més posts de recordatori: cada tres dies mentre la sala és buida."
 }

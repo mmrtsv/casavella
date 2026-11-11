@@ -850,7 +850,7 @@ footer { padding-bottom: 32px !important; }
       </div>
       <aside class="bp-sum" aria-label="Resum de la reserva">
         <div class="bp-top">
-          <button type="button" class="bp-thumb" id="bpThumb" aria-label="Veure les fotos i els detalls"><span class="photo"><img id="bpImg" src="img/apt-sala-2.jpg" alt=""></span></button>
+          <button type="button" class="bp-thumb" id="bpThumb" aria-label="Veure les fotos i els detalls"><span class="photo"><img id="bpImg" src="img/apt-sala-2.jpg" alt="La sala de l'apartament Montserrat"></span></button>
           <div class="bp-id"><span class="label" id="bpKind"></span><h3 id="bpName"></h3><button type="button" class="cmp-more" id="bpDetails">Veure fotos i detalls</button></div>
         </div>
         <dl class="bp-lines">
@@ -980,7 +980,7 @@ footer { padding-bottom: 32px !important; }
     <div class="stays">
       <article class="stay" id="montserrat">
         <button class="stay-cover" type="button" data-stay="montserrat" aria-label="Veure les fotos de Montserrat">
-          <span class="photo"><img src="img/apt-sala-2.jpg" alt="" loading="lazy"></span>
+          <span class="photo"><img src="img/apt-sala-2.jpg" alt="La sala de l'apartament Montserrat" loading="lazy"></span>
           <img class="plaque" src="img/nom-montserrat.png" alt="Apartament Montserrat" loading="lazy">
           <span class="count">Veure fotos</span>
         </button>
@@ -995,7 +995,7 @@ footer { padding-bottom: 32px !important; }
       </article>
       <article class="stay" id="la-pineda">
         <button class="stay-cover" type="button" data-stay="la-pineda" aria-label="Veure les fotos de La Pineda">
-          <span class="photo"><img src="img/apt-dormitori-3.jpg" alt="" loading="lazy"></span>
+          <span class="photo"><img src="img/apt-dormitori-3.jpg" alt="El dormitori de l'apartament La Pineda" loading="lazy"></span>
           <img class="plaque" src="img/nom-la-pineda.png" alt="Apartament La Pineda" loading="lazy">
           <span class="count">Veure fotos</span>
         </button>
@@ -1010,7 +1010,7 @@ footer { padding-bottom: 32px !important; }
       </article>
       <article class="stay" id="les-vinyes">
         <button class="stay-cover" type="button" data-stay="les-vinyes" aria-label="Veure les fotos de Les Vinyes">
-          <span class="photo"><img src="img/vinyes-balco.jpg" alt="" loading="lazy"></span>
+          <span class="photo"><img src="img/vinyes-balco.jpg" alt="L'habitació Les Vinyes, amb el balcó" loading="lazy"></span>
           <img class="plaque" src="img/nom-les-vinyes.png" alt="Habitació Les Vinyes" loading="lazy">
           <span class="count">Veure fotos</span>
         </button>
@@ -1025,7 +1025,7 @@ footer { padding-bottom: 32px !important; }
       </article>
       <article class="stay" id="figarot">
         <button class="stay-cover" type="button" data-stay="figarot" aria-label="Veure les fotos de Figarot">
-          <span class="photo"><img src="img/figarot-llit.jpg" alt="" loading="lazy"></span>
+          <span class="photo"><img src="img/figarot-llit.jpg" alt="El llit de l'habitació Figarot" loading="lazy"></span>
           <img class="plaque" src="img/nom-figarot.png" alt="Habitació Figarot" loading="lazy">
           <span class="count">Veure fotos</span>
         </button>
@@ -1468,6 +1468,10 @@ const I18N = { es: {
 "Terrassa per als dies de bon temps": "Terraza para los días de buen tiempo",
 "Vins i caves del Penedès": "Vinos y cavas del Penedès",
 "Dinars i celebracions per a grups de 8 a 16": "Comidas y celebraciones para grupos de 8 a 16",
+"La sala de l'apartament Montserrat": "La sala del apartamento Montserrat",
+"El dormitori de l'apartament La Pineda": "El dormitorio del apartamento La Pineda",
+"L'habitació Les Vinyes, amb el balcó": "La habitación Les Vinyes, con el balcón",
+"El llit de l'habitació Figarot": "La cama de la habitación Figarot",
 "Pròxims dies oberts": "Próximos días abiertos",
 "Restaurant de La Casa Vella": "Restaurante de La Casa Vella",
 "Sala del restaurant amb una columna de pedra, bigues de fusta i taules per a dos": "Sala del restaurante con una columna de piedra, vigas de madera y mesas para dos",
@@ -1720,6 +1724,10 @@ const I18N = { es: {
 "Terrassa per als dies de bon temps": "A terrace for the good-weather days",
 "Vins i caves del Penedès": "Wines and cavas from the Penedès",
 "Dinars i celebracions per a grups de 8 a 16": "Lunches and celebrations for groups of 8 to 16",
+"La sala de l'apartament Montserrat": "The living room of the Montserrat apartment",
+"El dormitori de l'apartament La Pineda": "The bedroom of the La Pineda apartment",
+"L'habitació Les Vinyes, amb el balcó": "The Les Vinyes room and its balcony",
+"El llit de l'habitació Figarot": "The bed in the Figarot room",
 "Pròxims dies oberts": "Next open days",
 "Restaurant de La Casa Vella": "La Casa Vella restaurant",
 "Sala del restaurant amb una columna de pedra, bigues de fusta i taules per a dos": "The dining room with a stone column, wooden beams and tables for two",
@@ -2408,6 +2416,7 @@ function renderSummary() {
   const q = price(), art = $(fstay.value);
   if (!q || !art) return;
   $('bpImg').src = art.querySelector('.stay-cover .photo img').getAttribute('src');
+  $('bpImg').alt = art.querySelector('.stay-cover .photo img').alt;
   $('bpKind').textContent = q.s.kind; $('bpName').textContent = q.s.name;
   $('bpIn').textContent = dayLabel(fin.value, true); $('bpOut').textContent = dayLabel(fout.value, true);
   $('bpGuests').textContent = people(fguests.value);

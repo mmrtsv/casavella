@@ -7,6 +7,7 @@ const SHARED = /^\/(fonts|img|photos)\//;
 // with the language last seen or chosen; without it, / goes to the first of ca, es or en in the browser's languages
 // (English if none). Crawlers send neither and read each page where it is.
 const PAGES = { ca: '/', es: '/es/', en: '/en/' };
+const MOVED = { '/es/el-entorno': '/es/#entorn' };
 const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|lighthouse|headless/i;
 
 function language(request) {
@@ -26,6 +27,9 @@ function publicWeb(request, env, next, url) {
   // The language pages load img/… and fonts/… relative to themselves (the photos from Maite too): they are the root's
   const shared = path.match(/^\/(?:es|en)(\/(?:img|fonts)\/.*)$/);
   if (shared) return env.ASSETS.fetch(new Request(new URL(shared[1], url), request));
+  // Addresses of the old site that search engines still have
+  const moved = MOVED[path.replace(/\/$/, '')];
+  if (moved) return Response.redirect(url.origin + moved, 301);
   if (!Object.values(PAGES).includes(path) || request.method !== 'GET') return next();
   // ?lang=es (older links): the page of that language, with the rest of the query
   const asked = url.searchParams.get('lang');

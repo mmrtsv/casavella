@@ -37,12 +37,12 @@ TITLE = {
     'en': 'La Casa Vella, rural guesthouse in El Bedorc near Montserrat',
 }
 DESCRIPTION = {
-    'ca': ("Casa de poble de 1898 al Bedorc (Anoia), entre vinyes i amb Montserrat a l'horitzó. "
-           "Dos apartaments, dues habitacions amb bany privat i restaurant, a 15 minuts de les caves de Sant Sadurní."),
-    'es': ("Casa de pueblo de 1898 en El Bedorc (Anoia), entre viñas y con Montserrat en el horizonte. "
-           "Dos apartamentos, dos habitaciones con baño privado y restaurante, a 15 minutos de las cavas de Sant Sadurní."),
-    'en': ("An 1898 village house in El Bedorc (Anoia, Barcelona), among vineyards with Montserrat on the horizon. "
-           "Two apartments, two rooms with private bathroom and a restaurant, 15 minutes from the cava cellars of Sant Sadurní."),
+    'ca': ("Casa de poble de 1898 al Bedorc, entre vinyes i davant de Montserrat. "
+           "Apartaments, habitacions i restaurant, a 15 minuts de les caves de Sant Sadurní."),
+    'es': ("Casa de pueblo de 1898 en El Bedorc, entre viñas y frente a Montserrat. "
+           "Apartamentos, habitaciones y restaurante, a 15 minutos de las cavas de Sant Sadurní."),
+    'en': ("An 1898 village house in El Bedorc, among vineyards facing Montserrat. "
+           "Apartments, rooms and a restaurant, 15 minutes from the Sant Sadurní cava cellars."),
 }
 OG_IMAGE = 'img/hero-vinyes-cel.jpg'
 

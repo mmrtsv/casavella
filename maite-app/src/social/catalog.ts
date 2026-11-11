@@ -196,24 +196,28 @@ const fillOf = (s: MenuService) => s.seats ? (s.taken || 0) / s.seats : 0;
 // Below this share of seats taken the room counts as empty and the reminders come more often
 export const EMPTY = 0.5;
 // The last week before a service, from the share of seats taken: [days before, time, kind, variant]. Not at the weekly
-// plan's own times (20:30, 13:00…), so a day can have both. Empty: a story every day, two the last three days, a feed post
-// on the fourth and, on the day itself, one more (09:30 for lunches, 17:45 for dinners)
+// plan's own times (20:30, 13:00…), so a day can have both. Empty: two stories a day, three the last three days and on the
+// day itself, and a feed post on the fourth. Fuller, fewer; full, none
 export function lastWeek(fill: number, serviceTime: string): [number, string, 'story' | 'post', 'poster' | 'menu' | 'announce'][] {
   const out: [number, string, 'story' | 'post', 'poster' | 'menu' | 'announce'][] = [];
   if (fill >= 1) return out;
   const dinner = serviceTime >= '17:00';
-  if (fill < 0.8) out.push([7, '21:15', 'story', 'poster'], [5, '21:15', 'story', 'menu'], [3, '21:15', 'story', 'poster']);
-  if (fill < EMPTY) out.push([6, '21:15', 'story', 'menu'], [4, '21:15', 'story', 'menu'], [4, '19:45', 'post', 'announce'], [3, '13:45', 'story', 'menu'], [2, '13:45', 'story', 'poster']);
-  if (fill < 0.9) out.push([2, '21:15', 'story', 'menu'], [1, '21:15', 'story', 'poster']);
-  if (fill < 0.6) out.push([1, '13:45', 'story', 'menu']);
-  if (fill < 0.9 && dinner) out.push([0, '12:30', 'story', 'poster']);
-  if (fill < EMPTY) out.push(dinner ? [0, '17:45', 'story', 'menu'] : [0, '09:30', 'story', 'poster']);
+  // Every evening, the poster and the menu in turn
+  if (fill < 0.9) for (let k = 7; k >= 1; k--) out.push([k, '21:15', 'story', k % 2 ? 'poster' : 'menu']);
+  // At lunchtime too: the last four days, the whole week while it is empty
+  if (fill < 0.8) for (let k = fill < EMPTY ? 7 : 4; k >= 1; k--) out.push([k, '13:45', 'story', k % 2 ? 'menu' : 'poster']);
+  // While empty, a third in the afternoon the last three days, and a feed post on the fourth
+  if (fill < EMPTY) { for (let k = 3; k >= 1; k--) out.push([k, '17:45', 'story', k % 2 ? 'poster' : 'menu']); out.push([4, '19:45', 'post', 'announce']); }
+  // The day itself (09:30 and 10:45 for lunches; 12:30, 15:45 and 17:45 for dinners)
+  if (fill < 0.9) out.push(dinner ? [0, '12:30', 'story', 'poster'] : [0, '09:30', 'story', 'poster']);
+  if (fill < 0.8) out.push(dinner ? [0, '17:45', 'story', 'menu'] : [0, '10:45', 'story', 'menu']);
+  if (fill < EMPTY && dinner) out.push([0, '15:45', 'story', 'poster']);
   return out;
 }
 // The reminders of one menu on the days [from, to), before the limits (capReminders). start: when its promo starts
 // ('2026-11-20T19:00', Barcelona; '' for none yet, and then there are none). From the day after it until the last week before
 // a service: a story at 21:15, the poster and the menu in turn, for the next service while it is less than 80% full: every
-// other day while it is empty, every three days otherwise, and while empty a feed post ten days before. Then the last
+// day while it is empty, every other day otherwise, and while empty a feed post ten days before. Then the last
 // week's (lastWeek), from 12 hours after the start.
 export function menuReminders(services: MenuService[], start: string, from: string, to: string): MenuReminder[] {
   const out: MenuReminder[] = [];
@@ -227,7 +231,7 @@ export function menuReminders(services: MenuService[], start: string, from: stri
     const k = Math.round((Date.parse(svc.at.slice(0, 10)) - Date.parse(day)) / 864e5), fill = fillOf(svc);
     if (k <= 7 || fill >= 0.8) continue;
     if (k === 10 && fill < EMPTY && day >= from) out.push({ day, time: '19:45', kind: 'post', variant: 'announce', k, svc });
-    if (last && Math.round((Date.parse(day) - Date.parse(last)) / 864e5) < (fill < EMPTY ? 2 : 3)) continue;
+    if (last && Math.round((Date.parse(day) - Date.parse(last)) / 864e5) < (fill < EMPTY ? 1 : 2)) continue;
     last = day;
     if (day >= from) out.push({ day, time: '21:15', kind: 'story', variant: n % 2 ? 'menu' : 'poster', k, svc });
     n++;
@@ -242,14 +246,15 @@ export function menuReminders(services: MenuService[], start: string, from: stri
   }
   return out;
 }
-// At most two stories a day, one feed post every four days and one reminder at a time, the nearest service first
+// At most three stories a day, one feed post every four days and one reminder at a time, the nearest service first
+export const STORIES_A_DAY = 3;
 export function capReminders<T extends MenuReminder>(list: T[]): T[] {
   const sorted = [...list].sort((a, b) => a.k - b.k || a.svc.at.localeCompare(b.svc.at));
   const perDay: Record<string, number> = {}, posts: string[] = [], keep: T[] = [];
   for (const w of sorted) {
     if (keep.some(x => x.day === w.day && x.time === w.time)) continue;
     if (w.kind === 'post') { if (posts.some(d => Math.abs(Date.parse(d) - Date.parse(w.day)) < 4 * 864e5)) continue; posts.push(w.day); }
-    else if ((perDay[w.day] = (perDay[w.day] || 0) + 1) > 2) continue;
+    else if ((perDay[w.day] = (perDay[w.day] || 0) + 1) > STORIES_A_DAY) continue;
     keep.push(w);
   }
   return keep.sort((a, b) => (a.day + a.time).localeCompare(b.day + b.time));

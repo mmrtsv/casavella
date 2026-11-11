@@ -9,8 +9,7 @@ import { Dialog } from '../parts/Sheet';
 import { done, toastError } from '../parts/toast';
 import type { StayContent } from '../lib/types';
 import { leave, useGuard } from '../lib/guard';
-import { takeAliasTab } from '../lib/route';
-import { takeStaysTab } from '../lib/ui';
+import { useTab } from '../lib/route';
 import Rules from './Rules';
 import Prices from './Prices';
 
@@ -22,7 +21,7 @@ const Icon = ({ svg }: { svg: string }) => (
 // Allotjaments, in three tabs: the stays (texts, capacity, photos), Preus (per night and discounts) and Normes (stay, notice,
 // hours and cancellation)
 export default function Stays() {
-  const [tab, setTab] = useState<'stays' | 'prices' | 'rules'>(() => { const t = takeStaysTab() || takeAliasTab(); return t === 'prices' || t === 'rules' ? t : 'stays'; });
+  const [tab, setTab] = useTab(['stays', 'prices', 'rules'] as const, 'stays');
   return (
     <div className="fade-in">
       <Tabs selectedKey={tab} onSelectionChange={k => leave(() => setTab(k as typeof tab))} className="mb-5">

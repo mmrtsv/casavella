@@ -42,8 +42,9 @@
 </div></div>
 <script>
   (function () {
-    var t = { home: 'Inici', calendar: 'Calendari', bookings: 'Reserves', prices: 'Preus', discounts: 'Descomptes', rules: 'Normes', stays: 'Allotjaments', emails: 'Correus' };
-    var h = location.hash.replace(/^#\/?/, '');
+    var t = { home: 'Inici', bookings: 'Reserves', restaurant: 'Restaurant', stays: 'Allotjaments', social: 'Xarxes socials', analytics: 'Analítica', chat: 'Pregunta', calendar: 'Reserves', prices: 'Allotjaments', rules: 'Allotjaments', emails: 'Xarxes socials' };
+    // The page is the address's first part (#/social/calendar), as in src/lib/route.ts
+    var h = location.hash.replace(/^#\/?/, '').split(/[/?]/)[0];
     document.getElementById('boot-title').textContent = t[h] || 'Inici';
     if (document.documentElement.classList.contains('dark')) document.getElementById('boot-iso').src = '/img/iso-light.png';
   })();

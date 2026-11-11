@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Button, Skeleton, Spinner, Tabs, ToggleButton, ToggleButtonGroup, type Key } from '@heroui/react';
 import { ChevronRight, ExternalLink } from 'lucide-react';
 import { api } from '../lib/api';
-import { takeAnalyticsTab } from '../lib/ui';
+import { useTab } from '../lib/route';
 import { TODAY, addDays, cap, day, euro, iso, parse } from '../lib/dates';
 import { DayPicker } from '../parts/DayPicker';
 import { Field } from '../parts/fields';
@@ -39,7 +39,7 @@ export default function Analytics() {
   const [span, setSpan] = useState<Span>(() => { try { const v = localStorage.getItem('maite-analytics-span'); return SPANS.some(s => s.id === v) ? v as Span : 'month'; } catch { return 'month'; } });
   const [data, setData] = useState<Pnl | null>(null);
   const [n, setN] = useState(0);
-  const [tab, setTab] = useState<'pnl' | 'ads'>(() => takeAnalyticsTab() === 'ads' ? 'ads' : 'pnl');
+  const [tab, setTab] = useTab(['pnl', 'ads'] as const, 'pnl');
   // Dates: from and the last day, both included; the API takes the day after
   const [own, setOwn] = useState<{ from: string; last: string }>(() => ({ from: TODAY.slice(0, 8) + '01', last: TODAY }));
   const [from, to] = span === 'custom' ? [own.from, own.last ? addDays(own.last, 1) : ''] : rangeOf(span);

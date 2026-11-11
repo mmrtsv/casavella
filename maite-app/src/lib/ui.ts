@@ -24,48 +24,42 @@ export const getPalette = () => ui.palette;
 
 // Inici can open Reserves on a filter ("Per fer"); the page takes it once, when it opens
 let bookingsFilter = '';
-export function openBookings(filter: string) { bookingsFilter = filter; bookingsTab = 'list'; go('bookings'); }
-// Reserves opens on Calendari unless something asks for the list (a filter, or openAt)
-let bookingsTab = '';
-export function takeBookingsTab() { const t = bookingsTab; bookingsTab = ''; return t; }
+export function openBookings(filter: string) { bookingsFilter = filter; go('bookings', 'list'); }
 export function takeBookingsFilter() { const f = bookingsFilter; bookingsFilter = ''; return f; }
 
 // Calendari opens Restaurant on a day, and Inici on Cobrat on a day with tables to note; the page takes them once, when it opens
-let restaurantDay = '', restaurantTab = '', restaurantMenu = '';
-export function openRestaurant(date: string, tab: 'tables' | 'paid' = 'tables') { restaurantDay = date; restaurantTab = tab; go('restaurant'); }
+let restaurantDay = '', restaurantMenu = '';
+export function openRestaurant(date: string, tab: 'tables' | 'paid' = 'tables') { restaurantDay = date; go('restaurant', tab); }
 export function takeRestaurantDay() { const d = restaurantDay; restaurantDay = ''; return d; }
-export function takeRestaurantTab() { const t = restaurantTab; restaurantTab = ''; return t; }
 // Publicar opens a menu's post in Restaurant › Menús, where menus are made and changed
-export function openRestaurantMenu(id: string) { restaurantMenu = id; restaurantTab = 'menus'; go('restaurant'); }
+export function openRestaurantMenu(id: string) { restaurantMenu = id; go('restaurant', 'menus'); }
 export function takeRestaurantMenu() { const m = restaurantMenu; restaurantMenu = ''; return m; }
 
-// Allotjaments (and Preus inside it) and Analítica can open on a tab; the page takes it once, when it opens
-let pricesTab = '', analyticsTab = '', staysTab = '';
-export function takeStaysTab() { const t = staysTab; staysTab = ''; return t; }
+// Preus (inside Allotjaments) can open on its own tab; it takes it once, when it opens
+let pricesTab = '';
 export function takePricesTab() { const t = pricesTab; pricesTab = ''; return t; }
-export function takeAnalyticsTab() { const t = analyticsTab; analyticsTab = ''; return t; }
 
-// A page, the tab on it and the thing to open there, as Pregunta's proposals give them (lib/chat.js). The page opens fresh from
-// Pregunta, so each page takes what it needs when it opens: Xarxes socials its tab; Restaurant its tab, and a day (Taules, Cobrat)
-// or a menu (Menús); Reserves a filter or one booking (stay|id); Preus and Analítica their tab
+// A page, the tab on it and the thing to open there, as Pregunta's proposals give them (lib/chat.js). The tab goes in the
+// address (lib/route.ts); what to open there each page takes when it opens: Restaurant a day (Taules, Cobrat) or a menu
+// (Menús); Reserves a filter or one booking (stay|id); Preus its own tab
 export function openAt(page: Page | 'prices' | 'calendar', tab = '', item = '') {
   // Preus is a tab of Allotjaments, Calendari one of Reserves
-  if (page === 'prices') { staysTab = 'prices'; pricesTab = tab; return go('stays'); }
-  if (page === 'calendar') { bookingsTab = 'calendar'; return go('bookings'); }
-  if (page === 'social' && tab) try { localStorage.setItem('maite-social-tab', tab); } catch { /* private window */ }
-  if (page === 'restaurant') { if (tab === 'menus') return openRestaurantMenu(item); restaurantTab = tab; restaurantDay = item; }
-  if (page === 'bookings') { if (tab === 'calendar') bookingsTab = 'calendar'; else if (tab) { bookingsFilter = tab; bookingsTab = 'list'; } if (item) openDetail(item); }
-  if (page === 'stays') { staysTab = tab; if (tab === 'prices') pricesTab = item; }
-  if (page === 'analytics') analyticsTab = tab;
-  go(page);
+  if (page === 'prices') { pricesTab = tab; return go('stays', 'prices'); }
+  if (page === 'calendar') return go('bookings', 'calendar');
+  if (page === 'restaurant') { if (tab === 'menus') return openRestaurantMenu(item); restaurantDay = item; }
+  if (page === 'bookings') {
+    if (item) openDetail(item);
+    if (tab && tab !== 'calendar' && tab !== 'list') { bookingsFilter = tab; return go('bookings', 'list'); }
+  }
+  if (page === 'stays' && tab === 'prices') pricesTab = item;
+  go(page, tab);
 }
 
 // Links from the weekly summary email (lib/weekly.js) open the thing to do: #/restaurant?paid=2026-10-31 (Cobrat on that day),
-// #/bookings?open=<stay|id> (that booking), #/bookings?filter=todo and #/social?tab=plan
+// #/bookings?open=<stay|id> (that booking), #/bookings/list?filter=todo and #/social/plan (the tab is lib/route.ts's)
 {
-  const q = startParams, paid = q.get('paid'), open = q.get('open'), filter = q.get('filter'), tab = q.get('tab');
+  const q = startParams, paid = q.get('paid'), open = q.get('open'), filter = q.get('filter');
   if (paid) openRestaurant(paid, 'paid');
   if (open) openDetail(open);
   if (filter) openBookings(filter);
-  if (tab) try { localStorage.setItem('maite-social-tab', tab); } catch { /* private window */ }
 }

@@ -38,7 +38,7 @@ export function variants(t: Template) {
   if (t.id === 'PostQuote') return 6;
   if (t.id === 'PostMenu' || t.id === 'StoryMenu') return MENU_LOOKS.length;
   if (t.id === 'PostWord') return BIG_WORDS.length;
-  if (t.id === 'PostMenuFull' || t.id === 'StoryFull') return FULL_LOOKS;
+  if (t.id === 'PostMenuFull' || t.id === 'StoryFull' || t.id === 'StoryLast') return FULL_LOOKS;
   return t.photo ? PHOTOS.length : 0;
 }
 
@@ -79,8 +79,8 @@ export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?:
     const iso = root.querySelector('img');
     if (iso) iso.src = cava ? '/img/iso-dark.png' : '/img/iso-light.png';
   }
-  // A Complet's band (catalog.ts FULL_LOOKS): its colour, its angle and how far it moves down
-  const band = t.id === 'PostMenuFull' || t.id === 'StoryFull' ? root.querySelector<HTMLElement>('[data-band]') : null;
+  // A Complet's (or last seats') band (catalog.ts FULL_LOOKS): its colour, its angle and how far it moves down
+  const band = t.id === 'PostMenuFull' || t.id === 'StoryFull' || t.id === 'StoryLast' ? root.querySelector<HTMLElement>('[data-band]') : null;
   if (band) {
     const [bg, fg, angle, down] = FULL_BANDS[v % FULL_BANDS.length];
     Object.assign(band.style, { background: bg, color: fg, transform: `rotate(${angle}deg)`, top: `${parseInt(band.style.top) + down}px` });
@@ -109,7 +109,7 @@ export function paint(host: HTMLElement, t: Template, v = 0, photo = '', texts?:
       i++;
     }
     // The title in script is drawn for a word of about ten letters; a longer one gets smaller to stay on the image
-    if (['PostAnnounce', 'PostMenuCover', 'StoryPoster', 'PostMenuFull', 'StoryFull'].includes(t.id)) {
+    if (['PostAnnounce', 'PostMenuCover', 'StoryPoster', 'PostMenuFull', 'StoryFull', 'StoryLast'].includes(t.id)) {
       const sc = find(root, 'Pinyon'), n = sc?.textContent?.trim().length || 0;
       if (sc && n > 10) sc.style.fontSize = Math.max(90, Math.round(parseInt(sc.style.fontSize) * 10 / n)) + 'px';
     }

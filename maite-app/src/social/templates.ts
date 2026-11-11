@@ -1,6 +1,6 @@
 // Generated from the Instagram templates (canvas artboards): one entry per template, its markup at full size.
 // Photos are in public/social/, the logo and isotype in /img/, the fonts in /fonts/ and public/social/.
-// full: the menu's cover and story with «Complet» across them, made only by Restaurant › Menús and the plan (never in the gallery)
+// full: the menu's cover and story with «Complet» (or «Només 2 places») across them, made only by Restaurant › Menús and the plan (never in the gallery)
 export type Kind = 'post' | 'story' | 'highlight' | 'full';
 export interface Template { id: string; title: string; desc: string; w: number; h: number; kind: Kind; photo: string; html: string }
 export interface Copy { label: string; caption: string; note: string; hashtags: string }
@@ -340,15 +340,17 @@ export const TEMPLATES: Template[] = [
 
 // A sold-out menu: its cover (for WhatsApp) and its announcement story with a Cava band across them, at an angle: «Complet» and
 // the day that filled. The band goes after the template's own words, so the cover's and the story's lines keep their places
-const band = (top: number) => `<div data-band style="position: absolute; left: -160px; right: -160px; top: ${top}px; transform: rotate(-9deg); background: #c6bfaf; color: #1a3f20; text-align: center; padding: 30px 0 34px;"> <p style="margin: 0; font-family: 'Le Monde Livre', Georgia, serif; font-size: 150px; line-height: 1;">Complet</p> <p style="margin: 14px 0 0; font-size: 34px; font-weight: 400;">Diumenge 15 de març</p> </div>`;
-const full = (from: string, id: string, title: string, desc: string, top: number): Template => {
+const band = (top: number, big = 'Complet', size = 150) => `<div data-band style="position: absolute; left: -160px; right: -160px; top: ${top}px; transform: rotate(-9deg); background: #c6bfaf; color: #1a3f20; text-align: center; padding: 30px 0 34px;"> <p style="margin: 0; font-family: 'Le Monde Livre', Georgia, serif; font-size: ${size}px; line-height: 1;">${big}</p> <p style="margin: 14px 0 0; font-size: 34px; font-weight: 400;">Diumenge 15 de març</p> </div>`;
+const full = (from: string, id: string, title: string, desc: string, top: number, big?: string, size?: number): Template => {
   const t = TEMPLATES.find(x => x.id === from)!;
   // The story's button takes a longer line (the day with seats): as wide as it needs, up to the text's width
-  return { ...t, id, title, desc, kind: 'full', html: t.html.replace('width: 540px;', 'max-width: 904px;').replace(/<\/div>\s*$/, band(top) + ' </div>') };
+  return { ...t, id, title, desc, kind: 'full', html: t.html.replace('width: 540px;', 'max-width: 904px;').replace(/<\/div>\s*$/, band(top, big, size) + ' </div>') };
 };
 TEMPLATES.push(
   full('PostMenuCover', 'PostMenuFull', 'Portada de menú complet', 'La portada del menú amb «Complet» en diagonal, per enviar per WhatsApp.', 300),
   full('StoryPoster', 'StoryFull', 'Story de menú complet', 'La story del menú amb «Complet» en diagonal i els dies que encara tenen lloc.', 560),
+  // When a service has two seats left (lib/plan.js lastStories): the same band, with «Només 2 places» and the day
+  full('StoryPoster', 'StoryLast', 'Story de les últimes places', 'La story del menú amb «Només 2 places» en diagonal i el dia.', 560, 'Només 2 places', 124),
 );
 
 // The top of the Instagram profile (picture, name, bio, highlights); the grid under it is built from the confirmed posts

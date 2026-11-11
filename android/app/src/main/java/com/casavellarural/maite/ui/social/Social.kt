@@ -741,12 +741,20 @@ private fun Profile(data: Social, onEditMenu: (SocialPost) -> Unit, onEmpty: () 
         }
     }
     // The stories still to go out, listed under the posts with the same actions; they never go in the grid
-    val stories = data.posts.filter { byId.containsKey(it.tpl) && it.story && it.published == null }.sortedBy { it.schedule?.at ?: it.date?.let { d -> "${d}T23:59" } ?: "9999" }
+    val stories = data.posts.filter { byId.containsKey(it.tpl) && it.story && it.published == null }.sortedBy { storyMoment(it) }
     @Composable fun Dialogs() {
         editing?.let { p -> PostEditor(p, posts.indexOf(p) + 1) { editing = null } }
         publishing?.let { (p, later) -> key(p.id, later) { Publish(p, posts.indexOf(p) + 1, data.copies[p.id].orEmpty(), later = later) { publishing = null } } }
     }
-    @Composable fun StoryList() { if (stories.isNotEmpty()) Stories(stories, insta, data, onEditMenu, { p, later -> publishing = p to later }, { editing = it }) }
+    @Composable fun Story(p: SocialPost, first: Boolean = false) = key(p.id) { StoryRow(p, insta, data, onEditMenu, { x, later -> publishing = x to later }, { editing = it }, number = posts.isNotEmpty(), divider = !first) }
+    @Composable fun StoryList() { if (stories.isNotEmpty()) Card(Modifier.fillMaxWidth()) { stories.forEachIndexed { i, p -> Story(p, i == 0) } } }
+    // One list: the posts in their order, and each story just before the first post that goes out after it (the ones without a
+    // day, last). Stories don't change the posts' numbers
+    val seq = buildList<SocialPost> {
+        var k = 0
+        for (p in posts) { val at = p.schedule?.at ?: p.date?.let { "${it}T12:00" } ?: "9999"; while (k < stories.size && storyMoment(stories[k]) <= at) add(stories[k++]); add(p) }
+        while (k < stories.size) add(stories[k++])
+    }
     if (all.isEmpty() && stories.isEmpty()) return Nothing("Encara no hi ha cap post confirmat.", onEmpty)
     if (published.isNotEmpty()) Segmented(listOf("planned" to "Per publicar", "published" to "Publicats"), show, { show = it })
     if (show == "published" && published.isNotEmpty()) return Published(published, data.copies)
@@ -786,7 +794,7 @@ private fun Profile(data: Social, onEditMenu: (SocialPost) -> Unit, onEmpty: () 
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Text("Ordre de publicació", style = Type.base, fontWeight = FontWeight.SemiBold)
-            Muted("El post 1 és el primer que publicaràs; a la graella queda a baix de tot.")
+            Muted("El post 1 és el primer que publicaràs; a la graella queda a baix de tot. Les stories surten entre els posts a la seva hora i no van a la graella.")
             insta?.let { Muted(if (it.connected) "Es publica a @${it.username}." else "Per publicar des d'aquí cal connectar el compte d'Instagram.") }
             Btn(if (progress.isNotEmpty()) "Descarregant $progress" else "Descarrega la graella", {
                 scope.launch {
@@ -797,7 +805,9 @@ private fun Profile(data: Social, onEditMenu: (SocialPost) -> Unit, onEmpty: () 
                 }
             }, Modifier.padding(top = 10.dp), look = Look.Secondary, icon = R.drawable.ic_download, busy = progress.isNotEmpty())
         }
-        posts.forEachIndexed { i, p ->
+        seq.forEach { p ->
+            if (p.story) { Story(p); return@forEach }
+            val i = posts.indexOf(p)
             val t = byId.getValue(p.tpl); val copy = data.copies[p.id]
             Divider()
             Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
@@ -831,53 +841,48 @@ private fun Profile(data: Social, onEditMenu: (SocialPost) -> Unit, onEmpty: () 
             }
         }
     }
-    StoryList()
     Dialogs()
 }
 
-// Publicar's stories: the ones still to go out, by when they go, with the posts' actions (no copy, no order)
+// When a story goes out: its program, else its day; the ones without either go last
+private fun storyMoment(p: SocialPost) = p.schedule?.at ?: p.date?.let { "${it}T23:59" } ?: "9999"
+
+// A story in Publicar's list, between the posts: no number (the space is kept so the images line up) and no copy
 @Composable
-private fun Stories(stories: List<SocialPost>, insta: Insta?, data: Social, onEditMenu: (SocialPost) -> Unit, onPublish: (SocialPost, Boolean) -> Unit, onEdit: (SocialPost) -> Unit) {
+private fun StoryRow(p: SocialPost, insta: Insta?, data: Social, onEditMenu: (SocialPost) -> Unit, onPublish: (SocialPost, Boolean) -> Unit, onEdit: (SocialPost) -> Unit, number: Boolean, divider: Boolean) {
     val byId = Renderer.byId
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
-            Text("Stories", style = Type.base, fontWeight = FontWeight.SemiBold)
-            Muted("Per ordre de sortida. No van a la graella.")
-        }
-        stories.forEach { p ->
-            val t = byId.getValue(p.tpl); val pack = p.pack?.let { id -> data.posts.find { it.id == id } }; val packMenu = pack?.let { menuValues(it) }
-            val what = p.auto?.why?.takeIf { it.isNotEmpty() } ?: packMenu?.let { "Del menú ${it.title}" }
-            Divider()
-            Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Art(t, p.v, p.photo, p.texts, Modifier.width(40.dp).aspectRatio(9 / 16f).clip(RoundedCornerShape(6.dp)), cover = true)
-                    Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(t.title, style = Type.sm, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        what?.let { Text(it, style = Type.xs, color = T.muted, maxLines = 1, overflow = TextOverflow.Ellipsis) }
-                        p.schedule?.let { When(it) } ?: Text(p.date?.let { "Per al ${parse(it).format(java.time.format.DateTimeFormatter.ofPattern("d MMMM", CA))}, sense programar" } ?: "Sense programar", style = Type.xs, color = T.muted, maxLines = 1)
-                    }
-                }
-                Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.End) {
-                    IconBtn(R.drawable.ic_pencil, "Edita la story ${t.title}", { if (pack != null && packMenu != null) onEditMenu(pack) else onEdit(p) })
-                    if (insta?.connected == true) {
-                        IconBtn(R.drawable.ic_clock, if (p.schedule != null) "Canvia la programació de la story ${t.title}" else "Programa la story ${t.title}", { onPublish(p, true) }, on = p.schedule != null)
-                        IconBtn(R.drawable.ic_send, "Publica ara la story ${t.title}", { onPublish(p, false) })
-                    }
-                    var dl by remember { mutableStateOf(false) }
-                    IconBtn(R.drawable.ic_download, "Descarrega la story ${t.title}", { dl = true; scope.launch { savePost(context, imagesOf(p), null); dl = false } }, busy = dl)
-                    var busy by remember { mutableStateOf(false) }
-                    IconBtn(R.drawable.ic_x, "Treu la story ${t.title}", {
-                        busy = true
-                        scope.launch {
-                            try { Maite.social = Api.put<Social>("social", mapOf("remove" to p.id)); Toasts.done("Story treta") } catch (e: ApiError) { Toasts.error(e) }
-                            busy = false
-                        }
-                    }, busy = busy)
-                }
+    val t = byId.getValue(p.tpl); val pack = p.pack?.let { id -> data.posts.find { it.id == id } }; val packMenu = pack?.let { menuValues(it) }
+    val what = p.auto?.why?.takeIf { it.isNotEmpty() } ?: packMenu?.let { "Del menú ${it.title}" } ?: t.title
+    if (divider) Divider()
+    Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (number) Spacer(Modifier.width(86.dp))
+            Art(t, p.v, p.photo, p.texts, Modifier.width(40.dp).aspectRatio(9 / 16f).clip(RoundedCornerShape(6.dp)), cover = true)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Story", style = Type.sm, fontWeight = FontWeight.SemiBold)
+                Text(what, style = Type.xs, color = T.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                p.schedule?.let { When(it) } ?: Text(p.date?.let { "Per al ${parse(it).format(java.time.format.DateTimeFormatter.ofPattern("d MMMM", CA))}, sense programar" } ?: "Sense programar", style = Type.xs, color = T.muted, maxLines = 1)
             }
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.End) {
+            IconBtn(R.drawable.ic_pencil, "Edita la story ${t.title}", { if (pack != null && packMenu != null) onEditMenu(pack) else onEdit(p) })
+            if (insta?.connected == true) {
+                IconBtn(R.drawable.ic_clock, if (p.schedule != null) "Canvia la programació de la story ${t.title}" else "Programa la story ${t.title}", { onPublish(p, true) }, on = p.schedule != null)
+                IconBtn(R.drawable.ic_send, "Publica ara la story ${t.title}", { onPublish(p, false) })
+            }
+            var dl by remember { mutableStateOf(false) }
+            IconBtn(R.drawable.ic_download, "Descarrega la story ${t.title}", { dl = true; scope.launch { savePost(context, imagesOf(p), null); dl = false } }, busy = dl)
+            var busy by remember { mutableStateOf(false) }
+            IconBtn(R.drawable.ic_x, "Treu la story ${t.title}", {
+                busy = true
+                scope.launch {
+                    try { Maite.social = Api.put<Social>("social", mapOf("remove" to p.id)); Toasts.done("Story treta") } catch (e: ApiError) { Toasts.error(e) }
+                    busy = false
+                }
+            }, busy = busy)
         }
     }
 }

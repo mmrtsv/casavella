@@ -18,7 +18,7 @@ export async function onRequestPut({ request, env, data }) {
   if (b.sheet === '') { await env.MAITE.delete('expenses'); return json({ ok: true }); }
   const id = sheetId(b.sheet);
   if (!id) return json({ error: 'sheet_link' }, 400);
-  try { await readExpenses(env, id); } catch (e) { return json({ error: e.code || 'sheet', share: env.GOOGLE_DRIVE_AS || env.GOOGLE_SA_EMAIL || '' }, 400); }
+  try { await readExpenses(env, id); } catch (e) { console.log('expenses sheet', e.message); return json({ error: e.code || 'sheet', detail: e.detail, share: env.GOOGLE_DRIVE_AS || env.GOOGLE_SA_EMAIL || '' }, 400); }
   await env.MAITE.put('expenses', JSON.stringify({ sheet: id, by: data.user, at: new Date().toISOString() }));
   return json({ ok: true });
 }

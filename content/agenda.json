@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-09",
+  "updated": "2026-11-12",
   "items": [
     {
       "from": "2026-10-03",
@@ -113,6 +113,21 @@
       "url": "https://www.penedesturisme.cat/en/activity/subirats-tastal"
     },
     {
+      "from": "2026-11-22",
+      "place": "Igualada",
+      "title": {
+        "ca": "Concert Americanes Simfòniques",
+        "es": "Concierto Americanes Simfòniques",
+        "en": "Americanes Simfòniques concert"
+      },
+      "text": {
+        "ca": "Havaneres, rumba i boleros amb quartet de corda al Teatre Municipal l'Ateneu, a les 18 h. Entrades a 16 €.",
+        "es": "Habaneras, rumba y boleros con cuarteto de cuerda en el Teatre Municipal l'Ateneu, a las 18 h. Entradas a 16 €.",
+        "en": "Habaneras, rumba and boleros with a string quartet at the Teatre Municipal l'Ateneu, at 6 pm. Tickets 16 €."
+      },
+      "url": "https://surtdecasa.cat/centre/agenda/2026/concert-americanes-simfoniques/271461"
+    },
+    {
       "from": "2026-11-27",
       "to": "2026-12-01",
       "place": "Sant Sadurní d'Anoia",
@@ -143,6 +158,21 @@
         "en": "A walk from the Mas Comtal winery at 9 am through the vineyards to the monastery of Sant Sebastià dels Gorgs, with breakfast and a visit before heading back. 33 €."
       },
       "url": "https://www.penedesturisme.cat/ca/activitat/caminada-entre-vinyes-historia-i-vins"
+    },
+    {
+      "from": "2026-11-28",
+      "place": "Gelida",
+      "title": {
+        "ca": "Strafalari, del Mag Lari",
+        "es": "Strafalari, del Mag Lari",
+        "en": "Strafalari, by Mag Lari"
+      },
+      "text": {
+        "ca": "L'espectacle de màgia i humor del Mag Lari al Saló d'Espectacles UCG, a les 18 h. Entrades a 12 € anticipades i 15 € a taquilla.",
+        "es": "El espectáculo de magia y humor del Mag Lari en el Saló d'Espectacles UCG, a las 18 h. Entradas a 12 € anticipadas y 15 € en taquilla.",
+        "en": "Mag Lari's magic and comedy show at the Saló d'Espectacles UCG, at 6 pm. Tickets 12 € in advance, 15 € at the door."
+      },
+      "url": "https://surtdecasa.cat/penedes/agenda/2026/espectacle-strafalari/270642"
     },
     {
       "from": "2026-11-29",

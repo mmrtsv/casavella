@@ -1,4 +1,5 @@
-// GET  /api/table?people=4  The openings ahead (a day and a time each) and whether each has room for that many people
+// GET  /api/table?people=4  The openings ahead (a day and a time each), whether each has room for that many people,
+//      the seats it has left and whether it is too late to book it online
 // POST /api/table  { at, people, name, email, phone, notes, website, lang }   at: '2026-12-31T21:00', one of the openings
 //      Books a table: written to the restaurant's calendar (CAL_RESTAURANT), confirmed to the guest and announced to the house.
 // Openings, seats and limits come from Maite (lib/booking.js settings().restaurant). Errors the page explains:
@@ -30,7 +31,10 @@ export async function onRequestGet({ request, env }) {
   let list;
   try { list = await (await tables(env)).list(R.open[0].slice(0, 10), addDays(R.open.at(-1).slice(0, 10), 1)); }
   catch (e) { return calendarError(e); }
-  return json({ people, open: R.open.map(at => ({ at, free: taken(list, at) + people <= R.seats && inTime(R, at, now) })) });
+  return json({ people, open: R.open.map(at => {
+    const left = Math.max(0, R.seats - taken(list, at)), late = !inTime(R, at, now);
+    return { at, free: people <= left && !late, left, late };
+  }) });
 }
 
 export async function onRequestPost({ request, env, waitUntil }) {

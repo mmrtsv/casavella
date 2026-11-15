@@ -88,7 +88,7 @@ Variables a Cloudflare Pages (Settings → Variables and secrets): `STRIPE_SECRE
 
 El botó «Reservar taula» del restaurant obre `#taula`: l'hoste tria un dels dies oberts (cada un és un dia i una hora) i les persones, i deixa el nom, el correu, el telèfon i el que calgui tenir en compte. No hi ha pagament. Ho fa `functions/api/table.js`, amb la lògica a `lib/restaurant.js`:
 
-- `GET /api/table?people=…`: els dies oberts que vénen i si n'hi ha lloc per a aquell grup.
+- `GET /api/table?people=…`: els dies oberts que vénen, si n'hi ha lloc per a aquell grup i les places que queden. A la pàgina, els dies sense lloc surten a la llista com a «Places esgotades» (o «Queden 3 places», si n'hi ha però no prou), sense poder-los triar; si no en queda cap, el camp ho diu.
 - `POST /api/table`: torna a comprovar les places, escriu la taula al calendari del restaurant i envia la confirmació a l'hoste i un avís a la casa.
 
 A la portada, sota el restaurant, surten els quatre pròxims dies oberts; tocant-ne un s'obre la reserva de taula amb aquell dia triat. El restaurant és tancat si no s'obre. A Maite (Restaurant, Dies oberts) s'hi afegeixen els dies que obre, cada un amb la seva hora (per exemple, el 31 de desembre a les 21:00). També hi ha les places de cada dia obert (per defecte, 15), el grup més gran que es pot reservar a la web (els més grans truquen) i les hores d'antelació. Es desa a KV amb la resta de normes. Sense cap dia obert, la pàgina ho diu i dona el telèfon.

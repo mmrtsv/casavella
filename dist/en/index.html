@@ -217,6 +217,8 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .pop.list { min-width: min(300px, 100%); padding: 8px; }
 .opt { position: relative; display: grid; gap: 2px; padding: 11px 44px 11px 14px; cursor: pointer; line-height: 1.35; }
 .opt.act { background: var(--ground); }
+.opt.off { cursor: default; }
+.opt.off .o-name { color: var(--muted); }
 .opt .o-name { font-family: var(--display); font-size: 19px; color: var(--ink); }
 .opt .o-sub { font-size: 12.5px; color: var(--muted); }
 .opt.sel::after { content: ""; position: absolute; right: 16px; top: 50%; width: 12px; height: 6px; border-left: 2px solid var(--basil); border-bottom: 2px solid var(--basil); transform: translateY(-75%) rotate(-45deg); }
@@ -2103,18 +2105,19 @@ function makeSelect(input, getOptions) {
   btn.setAttribute('aria-controls', pop.id);
   let opts = [], active = 0;
   const draw = () => {
-    pop.innerHTML = opts.map((o, i) => `<div class="opt${o.value === input.value ? ' sel' : ''}${i === active ? ' act' : ''}" role="option" id="${pop.id}-${i}" data-i="${i}" aria-selected="${o.value === input.value}">${o.html || `<span class="o-name">${o.text}</span>`}</div>`).join('');
+    pop.innerHTML = opts.map((o, i) => `<div class="opt${o.value === input.value ? ' sel' : ''}${i === active ? ' act' : ''}${o.off ? ' off' : ''}" role="option" id="${pop.id}-${i}" data-i="${i}" aria-selected="${o.value === input.value}"${o.off ? ' aria-disabled="true"' : ''}>${o.html || `<span class="o-name">${o.text}</span>`}</div>`).join('');
     btn.setAttribute('aria-activedescendant', `${pop.id}-${active}`);
   };
   function set(v, silent) {
-    const o = getOptions().find(o => o.value === String(v));
+    const o = getOptions().find(o => o.value === String(v) && !o.off);
     input.value = o ? o.value : '';
     text.textContent = o ? o.text : btn.dataset.placeholder;
     text.classList.toggle('ph', !o);
     if (!silent) input.dispatchEvent(new Event('change'));
   }
   function open() {
-    opts = getOptions(); active = Math.max(0, opts.findIndex(o => o.value === input.value));
+    opts = getOptions(); active = opts.findIndex(o => o.value === input.value && !o.off);
+    if (active < 0) active = opts.findIndex(o => !o.off);
     draw(); openPopover(pop, field);
   }
   const isOpen = () => openPop && openPop.pop === pop;
@@ -2123,15 +2126,18 @@ function makeSelect(input, getOptions) {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       if (!isOpen()) return open();
-      active = (active + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length; draw();
+      const step = e.key === 'ArrowDown' ? 1 : -1;
+      if (!opts.some(o => !o.off)) return;
+      do active = (active + step + opts.length) % opts.length; while (opts[active].off);
+      draw();
     } else if ((e.key === 'Enter' || e.key === ' ') && isOpen()) {
-      e.preventDefault(); set(opts[active].value); closePop();
+      e.preventDefault(); if (!opts[active] || opts[active].off) return; set(opts[active].value); closePop();
     }
   });
-  pop.addEventListener('click', e => { const o = e.target.closest('.opt'); if (o) { set(opts[o.dataset.i].value); closePop(); btn.focus(); } });
+  pop.addEventListener('click', e => { const o = e.target.closest('.opt'); if (o && !opts[o.dataset.i].off) { set(opts[o.dataset.i].value); closePop(); btn.focus(); } });
   pop.addEventListener('mousemove', e => {
     const o = e.target.closest('.opt');
-    if (o && +o.dataset.i !== active) { active = +o.dataset.i; pop.querySelectorAll('.opt').forEach(x => x.classList.toggle('act', x === o)); }
+    if (o && !o.classList.contains('off') && +o.dataset.i !== active) { active = +o.dataset.i; pop.querySelectorAll('.opt').forEach(x => x.classList.toggle('act', x === o)); }
   });
   return { set, open, btn };
 }
@@ -2640,12 +2646,18 @@ const diners = n => `${n} ${+n === 1 ? tr('persona', 'persona', 'person') : tr('
 const capFirst = t => t.charAt(0).toUpperCase() + t.slice(1);
 // '2026-12-31T21:00' as "Dijous, 31 de desembre, 21 h"
 const atLabel = at => `${capFirst(dayLabel(at.slice(0, 10), true))}, ${clock(at.slice(11, 16))}`;
-// Which openings have room for the party, from the server; until it answers (or in the review preview), all of them
-let full = new Set(), openSeq = 0;
+// Which openings have no room for the party, with the seats they have left, from the server; until it answers (or in the review preview), none.
+// They stay in the list as «Places esgotades» (or the seats left, when there are some but not enough), and can't be picked.
+let full = new Map(), late = new Set(), openSeq = 0;
 // ?dia=2026-12-31T21:00: the opening a menu's story links to, picked when the page opens if it still has room
 const WANT_AT = new URLSearchParams(location.search).get('dia') || '';
-const openings = () => TABLES.open.filter(at => at.slice(0, 10) >= iso(new Date()) && !full.has(at));
-const topenPick = makeSelect(TF.open, () => openings().map(at => ({ value: at, text: atLabel(at) })));
+const ahead = () => TABLES.open.filter(at => at.slice(0, 10) >= iso(new Date()) && !late.has(at));
+const openings = () => ahead().filter(at => !full.has(at));
+const soldOut = () => tr('Places esgotades', 'Plazas agotadas', 'Fully booked');
+const seatsLeft = n => +n === 1 ? tr('Queda 1 plaça', 'Queda 1 plaza', '1 place left') : tr(`Queden ${n} places`, `Quedan ${n} plazas`, `${n} places left`);
+const topenPick = makeSelect(TF.open, () => ahead().map(at => full.has(at)
+  ? { value: at, text: atLabel(at), off: true, html: `<span class="o-name">${atLabel(at)}</span><span class="o-sub">${full.get(at) ? seatsLeft(full.get(at)) : soldOut()}</span>` }
+  : { value: at, text: atLabel(at) }));
 $('topenList').classList.add('long');
 const tpeoplePick = makeSelect(TF.people, () => [...Array.from({ length: TABLES.maxParty }, (_, i) => ({ value: String(i + 1), text: diners(i + 1) })),
   { value: 'more', text: tr(`Més de ${TABLES.maxParty}`, `Más de ${TABLES.maxParty}`, `More than ${TABLES.maxParty}`) }]);
@@ -2654,7 +2666,8 @@ function tableError(d) {
   const e = d && d.error;
   if (e === 'party') return tr(`En línia es reserva fins a ${diners(d.max)}.`, `En línea se reserva hasta ${diners(d.max)}.`, `Online bookings are for up to ${diners(d.max)}.`) + ' ' + TABLE_CONTACT;
   if (e === 'too_soon') return tr('Per a aquest dia ja no es pot reservar en línia.', 'Para este día ya no se puede reservar en línea.', "It's too late to book that day online.") + ' ' + TABLE_CONTACT;
-  if (e === 'full' || e === 'closed') return tr('Aquest dia ja és ple. Tria un altre dia.', 'Este día ya está lleno. Elige otro día.', 'That day is full. Choose another day.');
+  if (e === 'full') return soldOut() + '. ' + tr('Tria un altre dia.', 'Elige otro día.', 'Choose another day.');
+  if (e === 'closed') return tr('Aquest dia ja és ple. Tria un altre dia.', 'Este día ya está lleno. Elige otro día.', 'That day is full. Choose another day.');
   if (e === 'name') return tr('Ens falta el teu nom.', 'Nos falta tu nombre.', 'We still need your name.');
   if (e === 'email') return tr('Revisa el correu.', 'Revisa el correo.', 'Please check your email.');
   if (e === 'phone') return tr('Ens falta un telèfon de contacte.', 'Nos falta un teléfono de contacto.', 'We still need a contact phone.');
@@ -2668,11 +2681,14 @@ async function loadOpenings() {
   try { res = await (await fetch(`/api/table?people=${n}`)).json(); } catch (e) {}
   if (seq !== openSeq) return;
   if (res && res.error && res.error !== 'not_configured' && res.error !== 'calendar') { tnote.textContent = tableError(res); return; }
-  full = new Set(res && Array.isArray(res.open) ? res.open.filter(x => !x.free).map(x => x.at) : []);
+  const list = res && Array.isArray(res.open) ? res.open : [];
+  late = new Set(list.filter(x => x.late).map(x => x.at));
+  full = new Map(list.filter(x => !x.free && !x.late).map(x => [x.at, x.left || 0]));
   const left = openings();
   topenPick.set(left.includes(keep) ? keep : left[0] || '', true);
+  if (!left.length && full.size) { $('topenVal').textContent = soldOut(); $('topenVal').classList.remove('ph'); }
   showMenus();
-  if (!left.length) tnote.textContent = tr(`Ja no queden places per a ${diners(n)}.`, `Ya no quedan plazas para ${diners(n)}.`, `There are no places left for ${diners(n)}.`) + ' ' + TABLE_CONTACT;
+  if (!left.length) tnote.textContent = (full.size && [...full.values()].every(v => !v) ? soldOut() + '.' : tr(`Ja no queden places per a ${diners(n)}.`, `Ya no quedan plazas para ${diners(n)}.`, `There are no places left for ${diners(n)}.`)) + ' ' + TABLE_CONTACT;
 }
 TF.people.addEventListener('change', loadOpenings);
 TF.open.addEventListener('change', () => { TF.open.closest('.field').querySelector('.pick').removeAttribute('aria-invalid'); showMenus(); });
@@ -2725,6 +2741,7 @@ tableForm.addEventListener('submit', async e => {
   e.preventDefault();
   const d = { at: TF.open.value, people: TF.people.value, name: TF.name.value.trim(), email: TF.email.value.trim(), phone: TF.phone.value.trim(), notes: TF.notes.value.trim(), website: $('tweb').value, lang: LANG };
   if (d.people === 'more') { tnote.textContent = tableError({ error: 'party', max: TABLES.maxParty }); return; }
+  if (!d.at && full.size && !openings().length) { loadOpenings(); return; }
   const bad = [];
   if (!d.at) bad.push([TF.open.closest('.field').querySelector('.pick'), tr('el dia', 'el día', 'the day')]);
   if (d.name.length < 2) bad.push([TF.name, tr('el teu nom', 'tu nombre', 'your name')]);

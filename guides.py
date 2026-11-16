@@ -110,6 +110,7 @@ header.top .btn { color: #f3efe4; border-color: rgba(243, 239, 228, .7); padding
 .stay-cta { margin-top: 56px; padding: 32px; background: var(--paper); border: 1px solid var(--line); display: grid; gap: 14px; justify-items: start; }
 .stay-cta h2 { margin: 0 !important; }
 .stay-cta p { margin: 0; color: var(--muted); }
+.cta-btns { display: flex; flex-wrap: wrap; gap: 12px; }
 .list { display: grid; margin-top: 32px; border-top: 1px solid var(--line); }
 .list article { padding-block: 24px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
 .list h2 { font-size: 28px; margin: 0; }

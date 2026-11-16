@@ -1,0 +1,69 @@
+{
+  "path": {
+    "ca": "/restaurant/",
+    "es": "/es/restaurante/",
+    "en": "/en/restaurant/"
+  },
+  "nav": {
+    "ca": "Restaurant",
+    "es": "Restaurante",
+    "en": "Restaurant"
+  },
+  "label": {
+    "ca": "Restaurant",
+    "es": "Restaurante",
+    "en": "Restaurant"
+  },
+  "anchor": "restaurant",
+  "updated": "2026-11-16",
+  "image": "restaurant-sala.jpg",
+  "restaurant": true,
+  "image_alt": {
+    "ca": "Sala del restaurant amb una columna de pedra, bigues de fusta i taules per a dos",
+    "es": "Sala del restaurante con una columna de piedra, vigas de madera y mesas para dos",
+    "en": "The dining room, with a stone column, wooden beams and tables for two"
+  },
+  "title": {
+    "ca": "Restaurant al Bedorc (Piera): dies oberts i grups de 8 a 16",
+    "es": "Restaurante en El Bedorc (Piera): días abiertos y grupos de 8 a 16",
+    "en": "Restaurant in El Bedorc (Piera): open days and groups of 8 to 16"
+  },
+  "description": {
+    "ca": "El restaurant de La Casa Vella, a la planta baixa d'una casa de 1898, obre dies concrets, cada un amb el seu menú. La taula es reserva a la web per a fins a 12 persones, i els grups de 8 a 16 poden demanar un dinar o una celebració un altre dia.",
+    "es": "El restaurante de La Casa Vella, en la planta baja de una casa de 1898, abre días concretos, cada uno con su menú. La mesa se reserva en la web para hasta 12 personas, y los grupos de 8 a 16 pueden pedir una comida o una celebración otro día.",
+    "en": "La Casa Vella's restaurant, on the ground floor of an 1898 house, opens on set days, each with its own menu. Tables for up to 12 are booked online, and groups of 8 to 16 can ask for a lunch or celebration on another day."
+  },
+  "body": {
+    "ca": "Una sala de pedra, bigues de fusta i llar de foc, i una terrassa per als dies de bon temps. Del cafè del matí a la copa de vi del Penedès, i quan arriba la temporada, calçots a la brasa a la terrassa.\n\n## Com reservar\n\n- **Taula**: als dies oberts, a la web, per a grups de fins a 12. Per a més, truqueu al +34 667 40 98 59.\n- **Grups de 8 a 16 un altre dia**: un aniversari, un dinar de colla o una celebració. Expliqueu-nos què teniu al cap amb el formulari d'esdeveniments i us proposarem el dia, l'hora i el menú.\n\nSi us quedeu a dormir a la casa, el restaurant és a la mateixa planta baixa.",
+    "es": "Una sala de piedra, vigas de madera y chimenea, y una terraza para los días de buen tiempo. Del café de la mañana a la copa de vino del Penedès, y cuando llega la temporada, calçots a la brasa en la terraza.\n\n## Cómo reservar\n\n- **Mesa**: los días abiertos, en la web, para grupos de hasta 12. Para más, llamad al +34 667 40 98 59.\n- **Grupos de 8 a 16 otro día**: un cumpleaños, una comida de grupo o una celebración. Contadnos qué tenéis en mente con el formulario de eventos y os propondremos el día, la hora y el menú.\n\nSi os quedáis a dormir en la casa, el restaurante está en la misma planta baja.",
+    "en": "A dining room of stone, wooden beams and an open fire, and a terrace for fine days. From morning coffee to a glass of Penedès wine, and in season, calçots grilled on the terrace.\n\n## How to book\n\n- **A table**: on open days, online, for groups of up to 12. For more, call +34 667 40 98 59.\n- **Groups of 8 to 16 on another day**: a birthday, a lunch with friends or a celebration. Tell us what you have in mind with the events form and we will suggest the day, time and menu.\n\nIf you are staying at the house, the restaurant is on the same ground floor."
+  },
+  "photos": [
+    {
+      "src": "restaurant-llar.jpg",
+      "alt": {
+        "ca": "La llar de foc de pedra de la sala",
+        "es": "La chimenea de piedra de la sala",
+        "en": "The stone fireplace in the dining room"
+      }
+    },
+    {
+      "src": "restaurant-plat.jpg",
+      "alt": {
+        "ca": "Peix blau amb olives, cogombrets i oli d'herbes",
+        "es": "Pescado azul con aceitunas, pepinillos y aceite de hierbas",
+        "en": "Oily fish with olives, gherkins and herb oil"
+      }
+    }
+  ],
+  "cta": {
+    "ca": "Reservar",
+    "es": "Reservar",
+    "en": "Book"
+  },
+  "cta_text": {
+    "ca": "Taula per als dies oberts o un esdeveniment per a grups de 8 a 16.",
+    "es": "Mesa para los días abiertos o un evento para grupos de 8 a 16.",
+    "en": "A table on an open day, or an event for a group of 8 to 16."
+  }
+}

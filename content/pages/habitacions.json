@@ -1,0 +1,143 @@
+{
+  "path": {
+    "ca": "/habitacions/",
+    "es": "/es/habitaciones/",
+    "en": "/en/rooms/"
+  },
+  "nav": {
+    "ca": "Habitacions",
+    "es": "Habitaciones",
+    "en": "Rooms"
+  },
+  "label": {
+    "ca": "Allotjaments",
+    "es": "Alojamientos",
+    "en": "Stays"
+  },
+  "anchor": "apartaments",
+  "updated": "2026-11-16",
+  "image": "vinyes-habitacio.jpg",
+  "image_alt": {
+    "ca": "Habitació Les Vinyes, amb llum de vímet i el bany al fons",
+    "es": "Habitación Les Vinyes, con lámpara de mimbre y el baño al fondo",
+    "en": "The Les Vinyes room, with a wicker lamp and the bathroom behind"
+  },
+  "ld_type": "HotelRoom",
+  "title": {
+    "ca": "Habitacions dobles amb bany privat al Bedorc, entre vinyes",
+    "es": "Habitaciones dobles con baño privado en El Bedorc, entre viñas",
+    "en": "Double rooms with private bathroom in El Bedorc, among vineyards"
+  },
+  "description": {
+    "ca": "Dues habitacions per a dues persones a La Casa Vella, al Bedorc (Piera): Les Vinyes i Figarot, amb llit doble i bany privat, en una casa de poble de 1898 amb restaurant a la planta baixa.",
+    "es": "Dos habitaciones para dos personas en La Casa Vella, en El Bedorc (Piera): Les Vinyes y Figarot, con cama doble y baño privado, en una casa de pueblo de 1898 con restaurante en la planta baja.",
+    "en": "Two rooms for two at La Casa Vella in El Bedorc (Piera): Les Vinyes and Figarot, each with a double bed and private bathroom, in an 1898 village house with a restaurant on the ground floor."
+  },
+  "body": {
+    "ca": "Les dues habitacions són per a parelles o per a una escapada curta. Conserven les bigues de fusta de la casa, pintades de verd, amb mobles antics i detalls fets a mà, i cada una té el seu bany privat.\n\nTenen aire condicionat i calefacció, wifi gratuït, Smart TV i nevera, tovalloles i roba de llit, i aparcament gratuït. A la planta baixa hi ha el restaurant de la casa, que obre dies concrets.",
+    "es": "Las dos habitaciones son para parejas o para una escapada corta. Conservan las vigas de madera de la casa, pintadas de verde, con muebles antiguos y detalles hechos a mano, y cada una tiene su baño privado.\n\nTienen aire acondicionado y calefacción, wifi gratuito, Smart TV y nevera, toallas y ropa de cama, y aparcamiento gratuito. En la planta baja está el restaurante de la casa, que abre días concretos.",
+    "en": "The two rooms are for couples or a short break. They keep the house's wooden beams, painted green, with antique furniture and handmade details, and each has its own private bathroom.\n\nThey have air conditioning and heating, free wifi, a smart TV and fridge, towels and bed linen, and free parking. On the ground floor is the house's restaurant, which opens on set days."
+  },
+  "stays": [
+    {
+      "key": "les-vinyes",
+      "name": "Les Vinyes",
+      "guests": 2,
+      "image": "vinyes-balco.jpg",
+      "alt": {
+        "ca": "L'habitació Les Vinyes, amb el balcó",
+        "es": "La habitación Les Vinyes, con el balcón",
+        "en": "The Les Vinyes room and its balcony"
+      },
+      "text": {
+        "ca": "Per la tradició vitivinícola que ha modelat el paisatge. Terra de fusta, un llum de vímet i un bany amb dutxa.",
+        "es": "Por la tradición vitivinícola que ha modelado el paisaje. Suelo de madera, una lámpara de mimbre y un baño con ducha.",
+        "en": "Named for the wine-making tradition that shaped the landscape. Wooden floor, a wicker lamp and a bathroom with a shower."
+      },
+      "feats": {
+        "ca": [
+          "2 persones",
+          "Llit doble",
+          "Bany privat",
+          "Wifi gratuït",
+          "Aire condicionat",
+          "Smart TV",
+          "Aparcament"
+        ],
+        "es": [
+          "2 personas",
+          "Cama doble",
+          "Baño privado",
+          "Wifi gratuito",
+          "Aire acondicionado",
+          "Smart TV",
+          "Aparcamiento"
+        ],
+        "en": [
+          "2 guests",
+          "Double bed",
+          "Private bathroom",
+          "Free wifi",
+          "Air conditioning",
+          "Smart TV",
+          "Parking"
+        ]
+      }
+    },
+    {
+      "key": "figarot",
+      "name": "Figarot",
+      "guests": 2,
+      "image": "figarot-llit.jpg",
+      "alt": {
+        "ca": "El llit de l'habitació Figarot",
+        "es": "La cama de la habitación Figarot",
+        "en": "The bed in the Figarot room"
+      },
+      "text": {
+        "ca": "Amb el nom de la figuera, l'arbre de les cases de pagès. Llit de forja, bigues verdes i un balcó.",
+        "es": "Con el nombre de la higuera, el árbol de las casas de campo. Cama de forja, vigas verdes y un balcón.",
+        "en": "Named after the fig tree, the tree of Catalan farmhouses. A wrought-iron bed, green beams and a balcony."
+      },
+      "feats": {
+        "ca": [
+          "2 persones",
+          "Llit doble",
+          "Bany privat",
+          "Wifi gratuït",
+          "Aire condicionat",
+          "Smart TV",
+          "Aparcament"
+        ],
+        "es": [
+          "2 personas",
+          "Cama doble",
+          "Baño privado",
+          "Wifi gratuito",
+          "Aire acondicionado",
+          "Smart TV",
+          "Aparcamiento"
+        ],
+        "en": [
+          "2 guests",
+          "Double bed",
+          "Private bathroom",
+          "Free wifi",
+          "Air conditioning",
+          "Smart TV",
+          "Parking"
+        ]
+      }
+    }
+  ],
+  "cta": {
+    "ca": "Disponibilitat i reserva",
+    "es": "Disponibilidad y reserva",
+    "en": "Availability and booking"
+  },
+  "cta_text": {
+    "ca": "Trieu les dates i l'habitació a la pàgina de reserva; el pagament és en línia.",
+    "es": "Elegid las fechas y la habitación en la página de reserva; el pago es en línea.",
+    "en": "Choose your dates and room on the booking page; payment is online."
+  }
+}

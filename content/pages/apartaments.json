@@ -1,0 +1,146 @@
+{
+  "path": {
+    "ca": "/apartaments/",
+    "es": "/es/apartamentos/",
+    "en": "/en/apartments/"
+  },
+  "nav": {
+    "ca": "Apartaments",
+    "es": "Apartamentos",
+    "en": "Apartments"
+  },
+  "label": {
+    "ca": "Allotjaments",
+    "es": "Alojamientos",
+    "en": "Stays"
+  },
+  "anchor": "apartaments",
+  "updated": "2026-11-16",
+  "image": "apt-cuina-2.jpg",
+  "image_alt": {
+    "ca": "Cuina de l'apartament, amb bigues verdes i terra hidràulic",
+    "es": "Cocina del apartamento, con vigas verdes y suelo hidráulico",
+    "en": "The apartment kitchen, with green beams and encaustic tiles"
+  },
+  "ld_type": "Apartment",
+  "title": {
+    "ca": "Apartaments rurals amb cuina al Bedorc, a prop de Montserrat",
+    "es": "Apartamentos rurales con cocina en El Bedorc, cerca de Montserrat",
+    "en": "Rural apartments with a kitchen in El Bedorc, near Montserrat"
+  },
+  "description": {
+    "ca": "Dos apartaments complets a La Casa Vella, una casa de poble de 1898 al Bedorc (Piera): Montserrat i La Pineda, fins a 3 persones, amb cuina equipada i bany privat, a 15 minuts de les caves de Sant Sadurní.",
+    "es": "Dos apartamentos completos en La Casa Vella, una casa de pueblo de 1898 en El Bedorc (Piera): Montserrat y La Pineda, hasta 3 personas, con cocina equipada y baño privado, a 15 minutos de las cavas de Sant Sadurní.",
+    "en": "Two self-contained apartments at La Casa Vella, an 1898 village house in El Bedorc (Piera): Montserrat and La Pineda, for up to 3 guests, with a fitted kitchen and private bathroom, 15 minutes from the Sant Sadurní cava cellars."
+  },
+  "body": {
+    "ca": "La Casa Vella té dos apartaments, cadascun amb la seva cuina, per a qui vol quedar-se uns dies i fer vida pròpia. Conserven les bigues de fusta de la casa, pintades de verd, amb mobles antics i detalls fets a mà.\n\nTots dos tenen aire condicionat i calefacció, wifi gratuït, Smart TV i nevera, tovalloles i roba de llit, i aparcament gratuït. La casa és al Bedorc, un nucli de Piera entre vinyes: Sant Sadurní d'Anoia és a 15 minuts en cotxe i Montserrat a 45.",
+    "es": "La Casa Vella tiene dos apartamentos, cada uno con su cocina, para quien quiere quedarse unos días y hacer vida propia. Conservan las vigas de madera de la casa, pintadas de verde, con muebles antiguos y detalles hechos a mano.\n\nLos dos tienen aire acondicionado y calefacción, wifi gratuito, Smart TV y nevera, toallas y ropa de cama, y aparcamiento gratuito. La casa está en El Bedorc, un núcleo de Piera entre viñas: Sant Sadurní d'Anoia está a 15 minutos en coche y Montserrat a 45.",
+    "en": "La Casa Vella has two apartments, each with its own kitchen, for guests who want to stay a few days and keep their own rhythm. They keep the house's wooden beams, painted green, with antique furniture and handmade details.\n\nBoth have air conditioning and heating, free wifi, a smart TV and fridge, towels and bed linen, and free parking. The house is in El Bedorc, a hamlet of Piera among vineyards: Sant Sadurní d'Anoia is a 15-minute drive and Montserrat 45."
+  },
+  "stays": [
+    {
+      "key": "montserrat",
+      "name": "Montserrat",
+      "guests": 3,
+      "image": "apt-sala-2.jpg",
+      "alt": {
+        "ca": "La sala de l'apartament Montserrat",
+        "es": "La sala del apartamento Montserrat",
+        "en": "The living room of the Montserrat apartment"
+      },
+      "text": {
+        "ca": "La muntanya que es veu des del Bedorc, i el seu nom. Un apartament complet per a estades més llargues, amb un dormitori i un sofà llit, fins a 3 persones.",
+        "es": "La montaña que se ve desde El Bedorc, y su nombre. Un apartamento completo para estancias más largas, con un dormitorio y un sofá cama, hasta 3 personas.",
+        "en": "Named after the mountain you can see from El Bedorc. A self-contained apartment for longer stays, with one bedroom and a sofa bed, for up to 3 guests."
+      },
+      "feats": {
+        "ca": [
+          "1 dormitori",
+          "Sofà llit extra",
+          "Cuina equipada",
+          "Bany privat",
+          "Wifi gratuït",
+          "Aire condicionat",
+          "Smart TV",
+          "Aparcament"
+        ],
+        "es": [
+          "1 dormitorio",
+          "Sofá cama extra",
+          "Cocina equipada",
+          "Baño privado",
+          "Wifi gratuito",
+          "Aire acondicionado",
+          "Smart TV",
+          "Aparcamiento"
+        ],
+        "en": [
+          "1 bedroom",
+          "Extra sofa bed",
+          "Fitted kitchen",
+          "Private bathroom",
+          "Free wifi",
+          "Air conditioning",
+          "Smart TV",
+          "Parking"
+        ]
+      }
+    },
+    {
+      "key": "la-pineda",
+      "name": "La Pineda",
+      "guests": 3,
+      "image": "apt-dormitori-3.jpg",
+      "alt": {
+        "ca": "El dormitori de l'apartament La Pineda",
+        "es": "El dormitorio del apartamento La Pineda",
+        "en": "The bedroom of the La Pineda apartment"
+      },
+      "text": {
+        "ca": "Amb el nom dels pins que envolten el poble. Espai, cuina pròpia i calma per quedar-s'hi uns dies, amb un dormitori doble, fins a 3 persones.",
+        "es": "Con el nombre de los pinos que rodean el pueblo. Espacio, cocina propia y calma para quedarse unos días, con un dormitorio doble, hasta 3 personas.",
+        "en": "Named after the pines around the village. Space, its own kitchen and quiet for a stay of a few days, with a double bedroom, for up to 3 guests."
+      },
+      "feats": {
+        "ca": [
+          "Dormitori doble",
+          "Cuina equipada",
+          "Bany privat",
+          "Wifi gratuït",
+          "Aire condicionat",
+          "Smart TV",
+          "Aparcament"
+        ],
+        "es": [
+          "Dormitorio doble",
+          "Cocina equipada",
+          "Baño privado",
+          "Wifi gratuito",
+          "Aire acondicionado",
+          "Smart TV",
+          "Aparcamiento"
+        ],
+        "en": [
+          "Double bedroom",
+          "Fitted kitchen",
+          "Private bathroom",
+          "Free wifi",
+          "Air conditioning",
+          "Smart TV",
+          "Parking"
+        ]
+      }
+    }
+  ],
+  "cta": {
+    "ca": "Disponibilitat i reserva",
+    "es": "Disponibilidad y reserva",
+    "en": "Availability and booking"
+  },
+  "cta_text": {
+    "ca": "Trieu les dates i l'apartament a la pàgina de reserva; el pagament és en línia.",
+    "es": "Elegid las fechas y el apartamento en la página de reserva; el pago es en línea.",
+    "en": "Choose your dates and apartment on the booking page; payment is online."
+  }
+}

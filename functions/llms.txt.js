@@ -58,6 +58,7 @@ Built between 1898 and 1900 as a farmhouse (Casa Parellada). For decades its own
 
 ## Nearby
 
+Pages: apartments ${SITE}/en/apartments/, rooms ${SITE}/en/rooms/, restaurant ${SITE}/en/restaurant/ (Catalan: ${SITE}/apartaments/, ${SITE}/habitacions/, ${SITE}/restaurant/; Spanish: ${SITE}/es/apartamentos/, ${SITE}/es/habitaciones/, ${SITE}/es/restaurante/).
 Guides to the area, with sources: ${SITE}/en/guides/ (Catalan: ${SITE}/guies/, Spanish: ${SITE}/es/guias/).
 
 

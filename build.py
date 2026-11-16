@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 import guides
+import services
 import seo_report
 
 ROOT = Path(__file__).resolve().parent
@@ -241,6 +242,10 @@ def page(lang):
     body = body.replace(AGENDA_MARK, agenda(lang, datetime.date.today().isoformat())).replace(GUIDES_MARK, GUIDE_BLOCKS.get(lang, ''))
     if lang != 'ca':
         body = translate(body, WORDS[lang])
+    # The footer's Explora list links to the pages of each stay type and the restaurant, in this language
+    if SERVICE_LINKS.get(lang):
+        items = ''.join(f'<li><a href="{u}">{html.escape(t)}</a></li>' for u, t in SERVICE_LINKS[lang])
+        body = re.sub(r'<li><a href="#apartaments">[^<]*</a></li>\s*<li><a href="#restaurant">[^<]*</a></li>', items, body, count=1)
     doc = head + src[:split] + '\n</head>\n<body>\n' + body + '\n</body>\n</html>\n'
     # /es/ and /en/ are one folder down: the page's own files are at the root
     return re.sub(r'(src="|href="|url\()(img|fonts)/', r'\1/\2/', doc)
@@ -254,6 +259,8 @@ for item in DIST.iterdir():
     if item.name not in KEEP:
         shutil.rmtree(item) if item.is_dir() else item.unlink()
 GUIDE_PAGES, GUIDE_BLOCKS = guides.build(ROOT, DIST, SITE_URL)
+# The apartments, rooms and restaurant pages (content/pages/), linked from the home page's footer
+SERVICE_PAGES, SERVICE_LINKS = services.build(ROOT, DIST, SITE_URL)
 for lang in LANGS:
     folder = DIST / PATHS[lang].strip('/')
     folder.mkdir(exist_ok=True)
@@ -296,7 +303,7 @@ links += f'    <xhtml:link rel="alternate" hreflang="x-default" href="{SITE_URL}
     + ''.join(f'  <url>\n    <loc>{SITE_URL}{alt[l]}</loc>\n    <lastmod>{lastmod}</lastmod>\n'
               + ''.join(f'    <xhtml:link rel="alternate" hreflang="{k}" href="{SITE_URL}{alt[k]}"/>\n' for k in LANGS)
               + f'    <xhtml:link rel="alternate" hreflang="x-default" href="{SITE_URL}{alt["ca"]}"/>\n  </url>\n'
-              for alt, lastmod in GUIDE_PAGES for l in LANGS)
+              for alt, lastmod in GUIDE_PAGES + SERVICE_PAGES for l in LANGS)
     + '</urlset>\n', encoding='utf-8')
 # Cloudflare Pages headers: the Stripe payment form (another origin) loads our brand font
 # Maite (the back office on maite.casavellarural.com) is built by Vite into dist/maite/ afterwards (npm run build).

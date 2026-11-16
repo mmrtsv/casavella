@@ -240,4 +240,76 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/guides/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/guies/"/>
   </url>
+  <url>
+    <loc>https://casavellarural.com/apartaments/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/apartaments/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/apartamentos/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/apartments/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/apartaments/"/>
+  </url>
+  <url>
+    <loc>https://casavellarural.com/es/apartamentos/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/apartaments/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/apartamentos/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/apartments/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/apartaments/"/>
+  </url>
+  <url>
+    <loc>https://casavellarural.com/en/apartments/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/apartaments/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/apartamentos/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/apartments/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/apartaments/"/>
+  </url>
+  <url>
+    <loc>https://casavellarural.com/habitacions/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/habitacions/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/habitaciones/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/rooms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/habitacions/"/>
+  </url>
+  <url>
+    <loc>https://casavellarural.com/es/habitaciones/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/habitacions/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/habitaciones/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/rooms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/habitacions/"/>
+  </url>
+  <url>
+    <loc>https://casavellarural.com/en/rooms/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/habitacions/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/habitaciones/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/rooms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/habitacions/"/>
+  </url>
+  <url>
+    <loc>https://casavellarural.com/restaurant/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/restaurant/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/restaurante/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/restaurant/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/restaurant/"/>
+  </url>
+  <url>
+    <loc>https://casavellarural.com/es/restaurante/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/restaurant/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/restaurante/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/restaurant/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/restaurant/"/>
+  </url>
+  <url>
+    <loc>https://casavellarural.com/en/restaurant/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/restaurant/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/restaurante/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/restaurant/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/restaurant/"/>
+  </url>
 </urlset>

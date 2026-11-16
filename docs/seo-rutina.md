@@ -26,6 +26,8 @@ Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne da
      `minutes`: en coche desde la casa (los de la web: Sant Sadurní 15, Capellades 20, Vilafranca 25, Claramunt 30, Montserrat 45). `text`: una frase literal, qué es y qué se hace. Sin exclamaciones, sin «increíble», sin rayas largas, sin punto medio como separador (el `·` de `l·l` sí).
    - Cambia `updated` a la fecha de hoy.
 
+2a. **Páginas de servicio** (`content/pages/*.json`: apartamentos, habitaciones y restaurante, ver «Qué funciona de verdad» en `docs/seo.md`): pesan más que las guías. Cada lunes, mira que su texto siga siendo verdad (equipamiento, fotos, grupos del restaurante); precios, condiciones y días los toman solos de Maite. Si cambia algo, `updated` a hoy.
+
 2b. **Guías** (`content/guides/*.json`, formato en `guides.py`): una guía nueva cada lunes, siempre que haya datos comprobables para escribirla (si no, se dice en el informe y no se rellena).
    - Revisa las existentes: fechas, horarios y precios que hayan cambiado según sus fuentes; si un dato ya no se puede confirmar, quítalo. Si cambias algo, pon `updated` a hoy.
    - Tema nuevo: lo que la gente pregunta y aún nadie ha respondido bien, sobre todo lo de la **próxima temporada antes que nadie** (la calçotada del año que viene, Navidad y Cap d'Any en la zona, la vendimia, la fira del cava del año siguiente, la Setmana Santa en Montserrat). Solo se escribe si hay fuente con fecha de este año o del siguiente; si la fecha aún no se ha anunciado, se explica la regla («el primer fin de semana de octubre») con las ediciones anteriores como fuente.

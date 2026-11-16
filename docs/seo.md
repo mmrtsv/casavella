@@ -123,6 +123,16 @@ No hay casos publicados de un hotel concreto que haya automatizado su SEO con Cl
 - **Lo que no se hace**: generar páginas en serie («casa rural en [pueblo]» × 50) con IA. Google lo trata como «scaled content abuse» y lo hunde ([Innsight](https://www.innsight.com/blog/google-ai-search-spam-rules-for-hoteliers)).
 - **Reseñas de Google en la web**: la API da como mucho cinco reseñas, obliga a mostrar el autor junto a cada una y no deja guardarlas ([política de Places API](https://developers.google.com/maps/documentation/places/web-service/policies)).
 
+## Qué funciona de verdad para una casa rural (investigación, 16 de noviembre de 2026)
+
+Lo que más pesa, de más a menos, según el estudio anual de factores locales de [Whitespark](https://whitespark.ca/local-search-ranking-factors/) (2026, 47 expertos, 187 factores) y las guías de SEO para hoteles pequeños ([North9](https://north9.agency/guide-seo-for-hotels/), [webbmarketing](https://webbmarketing.info/hotel-seo-guide-google-business-profile/)):
+
+1. **La ficha de Google.** La categoría principal es el primer factor del mapa; luego la distancia, el nombre, la dirección y estar abierto. Las reseñas también pesan: la nota, el número y, sobre todo desde 2026, que sean recientes (pasa del puesto 93 al 11). Se mueve en semanas. Ya hecho: datos de NAP, publicación semanal automática, correo que pide reseña. Pendiente: revisar categoría principal y secundarias, atributos y fotos (Instinct, con aprobación del dueño).
+2. **Una página propia para cada servicio.** En los resultados orgánicos locales es el primer factor de la web. Antes todo estaba en una sola página con anclas. Desde el 16 de noviembre hay una página para los apartamentos, otra para las habitaciones y otra para el restaurante, en los tres idiomas, con sus datos estructurados (`content/pages/`, `services.py`). Precios, condiciones y días del restaurante salen de Maite.
+3. **Los enlaces de reserva gratuitos de Google Hoteles.** Llevan del buscador a la reserva directa sin comisión, pero hace falta un socio de integración de Google que envíe precios y disponibilidad; el motor de reservas propio no lo es. Queda como decisión del dueño (un gestor de canales o un motor conectado, con su coste).
+4. **Guías y artículos.** Ayudan, pero tardan meses y pesan menos que lo anterior. Se siguen haciendo, una por semana como mucho y solo si responden una pregunta real con datos comprobados. Nunca páginas en serie («casa rural en [pueblo]»), que Google trata como contenido masivo.
+5. **Asistentes de IA.** Google dice en su guía de mayo de 2026 que AI Overviews y AI Mode usan el mismo índice y la misma clasificación que la búsqueda normal: no hay trucos aparte, y llms.txt no hace falta para Google (se mantiene por los demás asistentes). Lo que sí cuenta es estar en las listas que citan (Time Out, Barcelona és molt més, Escapada Rural).
+
 ## 5. Cómo medir
 
 | Qué | Dónde | Frecuencia |

@@ -33,8 +33,7 @@ Sigue el patrón que usan las agencias que trabajan con Claude: Claude reúne da
    - Nunca páginas en serie del tipo «casa rural en [pueblo]»: cada guía responde una pregunta distinta.
    - Temas pendientes, de más a menos útil (quita el que escribas y añade los que salgan de las búsquedas):
      - El castell de la Ventosa y paseos desde el Bedorc (Anoia Turisme lo documenta: castell-del-bedorc; falta una fuente oficial de rutas a pie).
-     - Navidad y Cap d'Any 2026 en el Penedès y el Anoia (ferias con fecha publicada).
-     - El castell de Claramunt.
+     - El castell de Claramunt (cerrado «hasta nuevo aviso» por el incendio de julio de 2026, según patrimoni.gencat.cat: esperar a que reabra).
      - Vilafranca del Penedès: el Vinseum y el mercado.
      - Sant Jeroni a pie desde el monasterio, paso a paso.
      - La vendimia 2027 en el Penedès (cuando haya fechas).

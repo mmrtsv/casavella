@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-12",
+  "updated": "2026-11-16",
   "items": [
     {
       "from": "2026-10-03",
@@ -16,71 +16,6 @@
         "en": "The 50th edition at Teatre Foment: nine companies from across Catalonia, on Saturdays at 7 pm."
       },
       "url": "https://surtdecasa.cat/centre/agenda/2026/50e-concurs-de-teatre-amateur/270481"
-    },
-    {
-      "from": "2026-11-05",
-      "to": "2026-11-15",
-      "place": "Vilafranca del Penedès",
-      "minutes": 25,
-      "title": {
-        "ca": "Most, Festival Internacional de Cinema del Vi",
-        "es": "Most, Festival Internacional de Cine del Vino",
-        "en": "Most, International Wine Film Festival"
-      },
-      "text": {
-        "ca": "La 15a edició del festival del Vinseum: 37 pel·lícules de 15 països sobre el vi i la vinya, en diversos espais de la vila.",
-        "es": "La 15.ª edición del festival del Vinseum: 37 películas de 15 países sobre el vino y la viña, en varios espacios de la villa.",
-        "en": "The 15th edition of the Vinseum's festival: 37 films from 15 countries about wine and vineyards, at several venues in town."
-      },
-      "url": "https://surtdecasa.cat/penedes/agenda/2026/15e-most-festival-internacional-de-cinema-del-vi/270041"
-    },
-    {
-      "from": "2026-11-13",
-      "to": "2026-11-15",
-      "place": "Gelida",
-      "title": {
-        "ca": "Funifira de Gelida",
-        "es": "Funifira de Gelida",
-        "en": "Funifira, Gelida"
-      },
-      "text": {
-        "ca": "Fira de maquetes de tren i de gastronomia, vins i escumosos del Penedès al Pavelló Municipal: dissabte de 10 a 14 h i de 16 a 20 h, diumenge de 10 a 14 h; parades de menjar des del divendres a les 19 h.",
-        "es": "Feria de maquetas de tren y de gastronomía, vinos y espumosos del Penedès en el Pabellón Municipal: sábado de 10 a 14 h y de 16 a 20 h, domingo de 10 a 14 h; puestos de comida desde el viernes a las 19 h.",
-        "en": "A model railway fair with Penedès food, wine and sparkling wine at the town sports hall: Saturday 10 am to 2 pm and 4 to 8 pm, Sunday 10 am to 2 pm; food stalls from Friday at 7 pm."
-      },
-      "url": "https://www.penedesturisme.cat/ca/activitat/funifira-de-gelida-maquetisme-modelisme-i-lleure-ferroviari-gastronomiam-vins-i-escumosos-del"
-    },
-    {
-      "from": "2026-11-14",
-      "to": "2026-11-15",
-      "place": "Sant Quintí de Mediona",
-      "title": {
-        "ca": "Fira de Mata-degolla",
-        "es": "Feria de Mata-degolla",
-        "en": "Mata-degolla Fair"
-      },
-      "text": {
-        "ca": "Fira històrica ambientada el 1714 al nucli antic: recreacions pels carrers, mercat de productes artesans i del poble, visita guiada i espectacles infantils, sobretot el diumenge al matí. Entrada lliure.",
-        "es": "Feria histórica ambientada en 1714 en el casco antiguo: recreaciones por las calles, mercado de productos artesanos y del pueblo, visita guiada y espectáculos infantiles, sobre todo el domingo por la mañana. Entrada libre.",
-        "en": "A historical fair set in 1714 in the old town: street re-enactments, a market of crafts and local produce, a guided walk and children's shows, mostly on Sunday morning. Free entry."
-      },
-      "url": "https://surtdecasa.cat/penedes/agenda/2026/fira-de-mata-degolla/271156"
-    },
-    {
-      "from": "2026-11-15",
-      "place": "La Pobla de Claramunt",
-      "minutes": 30,
-      "title": {
-        "ca": "Mostra de productes del Parc Agrari de la Conca d'Òdena",
-        "es": "Muestra de productos del Parc Agrari de la Conca d'Òdena",
-        "en": "Conca d'Òdena farm produce fair"
-      },
-      "text": {
-        "ca": "La 10a mostra dels productors del Parc Agrari, de 10 a 14 h: tast de menjar i begudes de la Conca d'Òdena, venda directa i activitats. Gratuïta.",
-        "es": "La 10.ª muestra de los productores del Parc Agrari, de 10 a 14 h: degustación de comida y bebida de la Conca d'Òdena, venta directa y actividades. Gratuita.",
-        "en": "The 10th fair of the Parc Agrari's producers, 10 am to 2 pm: tastings of local food and drink from the Conca d'Òdena, produce to buy and activities. Free."
-      },
-      "url": "https://parcagrarico.cat/agenda/3063"
     },
     {
       "from": "2026-11-21",
@@ -145,6 +80,22 @@
       "url": "https://santsadurni.cat/document.php?id=23990"
     },
     {
+      "from": "2026-11-27",
+      "to": "2026-11-29",
+      "place": "Santa Margarida i els Monjos",
+      "title": {
+        "ca": "Mercat de Nadal dels Monjos",
+        "es": "Mercado de Navidad de Els Monjos",
+        "en": "Els Monjos Christmas market"
+      },
+      "text": {
+        "ca": "Casetes de fusta a l'entrada del poble, amb zona gastronòmica els tres dies, jocs, espectacles i un trenet. Accés gratuït.",
+        "es": "Casetas de madera a la entrada del pueblo, con zona gastronómica los tres días, juegos, espectáculos y un trenecito. Acceso gratuito.",
+        "en": "Wooden stalls at the entrance to the village, with food all three days, games, shows and a little train. Free entry."
+      },
+      "url": "https://www.penedesturisme.cat/ca/activitat/mercat-de-nadal-santa-margarida-i-els-monjos"
+    },
+    {
       "from": "2026-11-28",
       "place": "Avinyonet del Penedès",
       "title": {
@@ -188,6 +139,38 @@
         "en": "A guided walk past nine Modernist houses in the old town, 12.30 to 2 pm from Plaça de l'Església. €3 (reduced €2.50, free under 9), booking required. It can be combined with the 10.30 am castle visit."
       },
       "url": "https://www.penedesturisme.cat/ca/activitat/ruta-modernista-de-gelida"
+    },
+    {
+      "from": "2026-12-03",
+      "to": "2027-01-05",
+      "place": "Sant Sadurní d'Anoia",
+      "minutes": 15,
+      "title": {
+        "ca": "Espectacle de llum de l'arbre de Nadal",
+        "es": "Espectáculo de luz del árbol de Navidad",
+        "en": "Christmas tree light show"
+      },
+      "text": {
+        "ca": "Música i llum a l'arbre de Nadal de la plaça de l'Ajuntament, cada dia a les 18 h fins al 5 de gener. Gratuït.",
+        "es": "Música y luz en el árbol de Navidad de la plaza del Ayuntamiento, cada día a las 18 h hasta el 5 de enero. Gratuito.",
+        "en": "Music and light on the Christmas tree in the town hall square, every day at 6 pm until 5 January. Free."
+      },
+      "url": "https://santsadurni.cat/document.php?id=24049"
+    },
+    {
+      "from": "2026-12-06",
+      "place": "La Llacuna",
+      "title": {
+        "ca": "Fira de Sant Andreu de la Llacuna",
+        "es": "Feria de Sant Andreu de La Llacuna",
+        "en": "Sant Andreu fair, La Llacuna"
+      },
+      "text": {
+        "ca": "Fira rural al matí pels carrers del poble: parades d'artesania i de productors locals, demostracions d'oficis, la matança del porc i visites al castell de Vilademàger.",
+        "es": "Feria rural por la mañana en las calles del pueblo: puestos de artesanía y de productores locales, demostraciones de oficios, la matanza del cerdo y visitas al castillo de Vilademàger.",
+        "en": "A morning country fair in the village streets: crafts and local producers' stalls, trade demonstrations, the traditional pig slaughter and visits to Vilademàger castle."
+      },
+      "url": "https://www.penedesturisme.cat/ca/activitat/fira-de-sant-andreu-de-la-llacuna"
     },
     {
       "from": "2026-12-12",
@@ -251,6 +234,22 @@
       "url": "https://www.penedesturisme.cat/ca/activitat/fira-de-santa-llucia-de-gelida"
     },
     {
+      "from": "2026-12-13",
+      "place": "Capellades",
+      "minutes": 20,
+      "title": {
+        "ca": "El Trencanous a La Lliga",
+        "es": "El Cascanueces en La Lliga",
+        "en": "The Nutcracker at La Lliga"
+      },
+      "text": {
+        "ca": "La Companyia Centre de Dansa de Catalunya balla El Trencanous al Teatre La Lliga a les 18 h, i en acabar s'encén la il·luminació de Nadal. Entrades a 16 € (socis 12 €).",
+        "es": "La Companyia Centre de Dansa de Catalunya baila El Cascanueces en el Teatre La Lliga a las 18 h, y al terminar se enciende la iluminación navideña. Entradas a 16 € (socios 12 €).",
+        "en": "The Companyia Centre de Dansa de Catalunya dances The Nutcracker at the Teatre La Lliga at 6 pm, followed by the switching on of the Christmas lights. Tickets 16 € (members 12 €)."
+      },
+      "url": "https://www.societatlalliga.com/producte/el-trencanous/"
+    },
+    {
       "from": "2026-12-18",
       "to": "2026-12-27",
       "place": "Gelida",
@@ -265,6 +264,56 @@
         "en": "Stalls, music, workshops and shows in Plaça de la Vila, 10 am to 2 pm and 5 to 8 pm; closed on the afternoon of the 24th and on the 25th and 26th. Free entry."
       },
       "url": "https://www.penedesturisme.cat/ca/activitat/mercat-de-nadal"
+    },
+    {
+      "from": "2026-12-19",
+      "to": "2026-12-20",
+      "place": "Vilafranca del Penedès",
+      "minutes": 25,
+      "title": {
+        "ca": "Fira del Gall",
+        "es": "Feria del Gallo",
+        "en": "Fira del Gall, the rooster fair"
+      },
+      "text": {
+        "ca": "El mercat d'aviram que Vilafranca fa des de l'edat mitjana, amb el gall del Penedès, mostra gastronòmica, plaça del vi de la DO Penedès i mercat d'artesans: dissabte de 8 a 15 h i de 17 a 21 h, diumenge de 9 a 15 h.",
+        "es": "El mercado de aves que Vilafranca celebra desde la Edad Media, con el gallo del Penedès, muestra gastronómica, plaza del vino de la DO Penedès y mercado de artesanos: sábado de 8 a 15 h y de 17 a 21 h, domingo de 9 a 15 h.",
+        "en": "The poultry market Vilafranca has held since the Middle Ages, with the Penedès rooster, a food fair, a DO Penedès wine square and a crafts market: Saturday 8 am to 3 pm and 5 to 9 pm, Sunday 9 am to 3 pm."
+      },
+      "url": "https://www.penedesturisme.cat/ca/activitat/fira-del-gall"
+    },
+    {
+      "from": "2026-12-20",
+      "to": "2027-01-10",
+      "place": "Igualada",
+      "title": {
+        "ca": "Els Pastorets d'Igualada",
+        "es": "Els Pastorets de Igualada",
+        "en": "Els Pastorets, Igualada"
+      },
+      "text": {
+        "ca": "El Grup de Teatre Esbart Igualadí fa Els Pastorets de Folch i Torres al Teatre Municipal l'Ateneu: el 20 i el 26 de desembre a les 18 h i els diumenges 27 de desembre, 3 i 10 de gener a les 11.45 h. Entrades a 10 i 7 €.",
+        "es": "El Grup de Teatre Esbart Igualadí representa Els Pastorets de Folch i Torres en el Teatre Municipal l'Ateneu: el 20 y el 26 de diciembre a las 18 h y los domingos 27 de diciembre, 3 y 10 de enero a las 11.45 h. Entradas a 10 y 7 €.",
+        "en": "The Esbart Igualadí theatre group stages Folch i Torres's Els Pastorets, the Catalan Christmas play, at the Teatre Municipal l'Ateneu: 20 and 26 December at 6 pm and Sundays 27 December, 3 and 10 January at 11.45 am. Tickets 10 and 7 €."
+      },
+      "url": "https://surtdecasa.cat/centre/agenda/2026/els-pastorets-digualada/271473"
+    },
+    {
+      "from": "2026-12-25",
+      "to": "2027-01-03",
+      "place": "Capellades",
+      "minutes": 20,
+      "title": {
+        "ca": "Els Pastorets de Capellades",
+        "es": "Els Pastorets de Capellades",
+        "en": "Els Pastorets, Capellades"
+      },
+      "text": {
+        "ca": "Més de 160 voluntaris fan Els Pastorets (L'Estel de Natzaret) al Teatre La Lliga: el 25 de desembre a les 19 h i el 27 de desembre i el 3 de gener a les 18 h. Entrades de 8 a 14 €, a la venda des de l'1 de desembre.",
+        "es": "Más de 160 voluntarios representan Els Pastorets (L'Estel de Natzaret) en el Teatre La Lliga: el 25 de diciembre a las 19 h y el 27 de diciembre y el 3 de enero a las 18 h. Entradas de 8 a 14 €, a la venta desde el 1 de diciembre.",
+        "en": "Over 160 volunteers stage Els Pastorets (L'Estel de Natzaret) at the Teatre La Lliga: 25 December at 7 pm, and 27 December and 3 January at 6 pm. Tickets 8 to 14 €, on sale from 1 December."
+      },
+      "url": "https://www.societatlalliga.com/producte/els-pastorets-lestel-de-natzaret-nadal-2026/"
     }
   ]
 }

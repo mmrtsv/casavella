@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://casavellarural.com/</loc>
-    <lastmod>2026-11-15</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/"/>
@@ -10,7 +10,7 @@
   </url>
   <url>
     <loc>https://casavellarural.com/es/</loc>
-    <lastmod>2026-11-15</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/"/>
@@ -18,15 +18,39 @@
   </url>
   <url>
     <loc>https://casavellarural.com/en/</loc>
-    <lastmod>2026-11-15</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/"/>
   </url>
   <url>
+    <loc>https://casavellarural.com/guies/nadal-2026-al-penedes-i-l-anoia/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/guies/nadal-2026-al-penedes-i-l-anoia/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/guias/navidad-2026-en-el-penedes-y-el-anoia/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/guides/christmas-2026-in-the-penedes-and-anoia/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/guies/nadal-2026-al-penedes-i-l-anoia/"/>
+  </url>
+  <url>
+    <loc>https://casavellarural.com/es/guias/navidad-2026-en-el-penedes-y-el-anoia/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/guies/nadal-2026-al-penedes-i-l-anoia/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/guias/navidad-2026-en-el-penedes-y-el-anoia/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/guides/christmas-2026-in-the-penedes-and-anoia/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/guies/nadal-2026-al-penedes-i-l-anoia/"/>
+  </url>
+  <url>
+    <loc>https://casavellarural.com/en/guides/christmas-2026-in-the-penedes-and-anoia/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/guies/nadal-2026-al-penedes-i-l-anoia/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/guias/navidad-2026-en-el-penedes-y-el-anoia/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/guides/christmas-2026-in-the-penedes-and-anoia/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://casavellarural.com/guies/nadal-2026-al-penedes-i-l-anoia/"/>
+  </url>
+  <url>
     <loc>https://casavellarural.com/guies/com-arribar-al-bedorc-sense-cotxe/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/guies/com-arribar-al-bedorc-sense-cotxe/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/guias/como-llegar-a-el-bedorc-sin-coche/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/guides/el-bedorc-from-barcelona-without-a-car/"/>
@@ -34,7 +58,7 @@
   </url>
   <url>
     <loc>https://casavellarural.com/es/guias/como-llegar-a-el-bedorc-sin-coche/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/guies/com-arribar-al-bedorc-sense-cotxe/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/guias/como-llegar-a-el-bedorc-sin-coche/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/guides/el-bedorc-from-barcelona-without-a-car/"/>
@@ -42,7 +66,7 @@
   </url>
   <url>
     <loc>https://casavellarural.com/en/guides/el-bedorc-from-barcelona-without-a-car/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/guies/com-arribar-al-bedorc-sense-cotxe/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/guias/como-llegar-a-el-bedorc-sin-coche/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/guides/el-bedorc-from-barcelona-without-a-car/"/>
@@ -194,7 +218,7 @@
   </url>
   <url>
     <loc>https://casavellarural.com/guies/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/guies/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/guias/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/guides/"/>
@@ -202,7 +226,7 @@
   </url>
   <url>
     <loc>https://casavellarural.com/es/guias/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/guies/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/guias/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/guides/"/>
@@ -210,7 +234,7 @@
   </url>
   <url>
     <loc>https://casavellarural.com/en/guides/</loc>
-    <lastmod>2026-11-09</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <xhtml:link rel="alternate" hreflang="ca" href="https://casavellarural.com/guies/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://casavellarural.com/es/guias/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casavellarural.com/en/guides/"/>

@@ -154,7 +154,7 @@ export function loadBrandFonts() {
 @font-face { font-family: "Le Monde Livre"; src: url(/fonts/LeMondeLivreClassic-Normal.otf) format("opentype"); font-display: swap; }
 @font-face { font-family: "Halyard Display"; src: url(/fonts/HalyardDisplay.ttf) format("truetype"); font-weight: 300 700; font-display: swap; }
 @font-face { font-family: "Pinyon Script"; src: url(${S}PinyonScript.ttf) format("truetype"); font-display: swap; }
-.social-art { font-family: "Halyard Display", "Helvetica Neue", Arial, sans-serif; font-size: 15px; line-height: 1.55; letter-spacing: normal; color: #1a3f20; }
+.social-art { font-family: "Halyard Display", "Helvetica Neue", Arial, sans-serif; font-size: 15px; line-height: 1.55; letter-spacing: normal; color: #1a3f20; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .social-art img { display: revert; max-width: none; height: revert; }
 .social-art [data-v="dark"] { background: #1a3f20 !important; color: #f3efe4 !important; }
 .social-art [data-v="dark"] p, .social-art [data-v="dark"] span { color: #f3efe4 !important; }

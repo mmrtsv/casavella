@@ -76,6 +76,8 @@ object Renderer {
         val w = web ?: WebView(a.applicationContext).also { v ->
             v.settings.javaScriptEnabled = true
             v.settings.useWideViewPort = true; v.settings.loadWithOverviewMode = true
+            // The phone's font size setting must not reach the image: a web view scales its text with it by default
+            v.settings.textZoom = 100
             v.settings.allowFileAccess = false
             v.setBackgroundColor(0)
             v.isVerticalScrollBarEnabled = false; v.isHorizontalScrollBarEnabled = false

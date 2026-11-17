@@ -7,7 +7,14 @@ const SHARED = /^\/(fonts|img|photos)\//;
 // with the language last seen or chosen; without it, / goes to the first of ca, es or en in the browser's languages
 // (English if none). Crawlers send neither and read each page where it is.
 const PAGES = { ca: '/', es: '/es/', en: '/en/' };
-const MOVED = { '/es/el-entorno': '/es/#entorn' };
+const MOVED = {
+  '/es/el-entorno': '/es/#entorn',
+  '/ca/historia': '/#historia',
+  '/ca/lentorn': '/#entorn',
+  '/ca/la-casa': '/',
+  '/ca/totes-les-propietats': '/apartaments/',
+  '/ca/la-casa-vella---habitacion-doble-1': '/habitacions/',
+};
 const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|lighthouse|headless/i;
 
 function language(request) {

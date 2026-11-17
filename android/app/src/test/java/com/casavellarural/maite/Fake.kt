@@ -59,6 +59,13 @@ object Fake {
             "la-pineda":{"kind":"Apartament","name":"La Pineda","desc":"","feats":[],"max":5,"photos":["img/apt-cuina.jpg"]},"les-vinyes":{"kind":"Habitació","name":"Les Vinyes","desc":"","feats":[],"max":3,"photos":["img/hab-llit.jpg"]},
             "figarot":{"kind":"Habitació","name":"Figarot","desc":"","feats":[],"max":2,"photos":["img/hab-balco.jpg"]}},"icons":{"wifi":"<path d='M5 12.55a11 11 0 0 1 14.08 0'/>","bed":"<path d='M2 4v16'/>","star":"<path d='M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z'/>"},"iconNames":{"wifi":"Wifi","bed":"Llit","star":"Estrella"},"library":[],"uploads":true}"""
         path == "emails" -> """{"emails":[{"id":"confirmed","name":"Reserva confirmada","for":"guest","when":"Quan l'hoste paga una reserva a la web.","subject":"La teva reserva a La Casa Vella","html":"<p>Hola Anna</p>","text":"Hola Anna"}]}"""
+        path.startsWith("analytics?") -> """{"from":"2026-11-01","to":"2026-11-18","income":[{"label":"Allotjaments","sub":"21 nits, 31 % d'ocupació","cents":241500,"lines":[
+            {"label":"Montserrat","sub":"9 nits de 17","cents":125100,"lines":[{"label":"Núria Casals","sub":"6 de nov. a 9 de nov., 3 nits","cents":41700}]}]},
+            {"label":"Restaurant","sub":"14 taules, 52 comensals","cents":187200,"lines":[]}],"incomeTotal":428700,
+            "direct":[{"label":"Restaurant","sub":"2 apunts","cents":61240,"lines":[{"label":"Peix i verdura","sub":"14 de nov.","cents":38240},{"label":"Celler","sub":"7 de nov.","cents":23000}]}],"directTotal":61240,
+            "gross":367460,"grossMargin":86,"other":[{"label":"Subministraments","sub":"1 apunt","cents":18650,"lines":[]}],"otherTotal":18650,"result":348810,
+            "ads":{"total":0,"channels":[],"webBookings":2,"webCents":83400,"perBooking":0,"roas":null},"profit":348810,"margin":81,"months":null,"items":[],"unpaidTables":1,
+            "sheet":{"connected":true,"url":"https://docs.google.com/spreadsheets/d/1","error":null,"share":""}}"""
         else -> null
     }
 }

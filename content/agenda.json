@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-16",
+  "updated": "2026-11-19",
   "items": [
     {
       "from": "2026-10-03",
@@ -126,6 +126,22 @@
       "url": "https://surtdecasa.cat/penedes/agenda/2026/espectacle-strafalari/270642"
     },
     {
+      "from": "2026-11-28",
+      "place": "Vilafranca del Penedès",
+      "minutes": 25,
+      "title": {
+        "ca": "Concert d'Els Amics de les Arts",
+        "es": "Concierto de Els Amics de les Arts",
+        "en": "Els Amics de les Arts in concert"
+      },
+      "text": {
+        "ca": "El grup català a l'Auditori Maria Rosa Juncosa, a les 22 h. Entrades a 30 €.",
+        "es": "El grupo catalán en el Auditori Maria Rosa Juncosa, a las 22 h. Entradas a 30 €.",
+        "en": "The Catalan band at the Auditori Maria Rosa Juncosa, at 10 pm. Tickets 30 €."
+      },
+      "url": "https://surtdecasa.cat/penedes/agenda/2026/concert-dels-amics-de-les-arts/271811"
+    },
+    {
       "from": "2026-11-29",
       "place": "Gelida",
       "title": {
@@ -139,6 +155,21 @@
         "en": "A guided walk past nine Modernist houses in the old town, 12.30 to 2 pm from Plaça de l'Església. €3 (reduced €2.50, free under 9), booking required. It can be combined with the 10.30 am castle visit."
       },
       "url": "https://www.penedesturisme.cat/ca/activitat/ruta-modernista-de-gelida"
+    },
+    {
+      "from": "2026-11-29",
+      "place": "Igualada",
+      "title": {
+        "ca": "Rau-rau, espectacle familiar",
+        "es": "Rau-rau, espectáculo familiar",
+        "en": "Rau-rau, a family show"
+      },
+      "text": {
+        "ca": "Un àlbum de sorolls per als més petits al Teatre Municipal l'Ateneu, a les 12.15 h. Entrades a 8 i 6 €.",
+        "es": "Un álbum de sonidos para los más pequeños en el Teatre Municipal l'Ateneu, a las 12.15 h. Entradas a 8 y 6 €.",
+        "en": "An album of sounds for little children at the Teatre Municipal l'Ateneu, at 12.15 pm. Tickets 8 and 6 €."
+      },
+      "url": "https://surtdecasa.cat/centre/agenda/2026/espectacle-rau-rau/271468"
     },
     {
       "from": "2026-12-03",

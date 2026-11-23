@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-19",
+  "updated": "2026-11-23",
   "items": [
     {
       "from": "2026-10-03",
@@ -16,51 +16,6 @@
         "en": "The 50th edition at Teatre Foment: nine companies from across Catalonia, on Saturdays at 7 pm."
       },
       "url": "https://surtdecasa.cat/centre/agenda/2026/50e-concurs-de-teatre-amateur/270481"
-    },
-    {
-      "from": "2026-11-21",
-      "place": "Igualada",
-      "title": {
-        "ca": "Festa de la Ratafia de l'Anoia",
-        "es": "Fiesta de la Ratafía de l'Anoia",
-        "en": "Anoia Ratafia Festival"
-      },
-      "text": {
-        "ca": "La 21a festa de la ratafia a la plaça Catarineu: tast, concurs de ratafia casolana, concerts i dinar amb tiquet (18 €).",
-        "es": "La 21.ª fiesta de la ratafía en la plaza Catarineu: cata, concurso de ratafía casera, conciertos y comida con tique (18 €).",
-        "en": "The 21st ratafia festival in Plaça Catarineu: tasting, a homemade ratafia contest, concerts and a ticketed lunch (€18)."
-      },
-      "url": "https://surtdecasa.cat/centre/agenda/2026/xxi-festa-de-la-ratafia-de-lanoia/270479"
-    },
-    {
-      "from": "2026-11-22",
-      "place": "Sant Pau d'Ordal (Subirats)",
-      "title": {
-        "ca": "Subirats Tasta'l",
-        "es": "Subirats Tasta'l",
-        "en": "Subirats Tasta'l"
-      },
-      "text": {
-        "ca": "Tast de vins, caves i productes de Subirats a la plaça Subirats i el carrer Ponent, d'11 a 15 h.",
-        "es": "Cata de vinos, cavas y productos de Subirats en la plaza Subirats y la calle Ponent, de 11 a 15 h.",
-        "en": "A tasting of Subirats wines, cavas and local produce in Plaça Subirats and Carrer Ponent, 11 am to 3 pm."
-      },
-      "url": "https://www.penedesturisme.cat/en/activity/subirats-tastal"
-    },
-    {
-      "from": "2026-11-22",
-      "place": "Igualada",
-      "title": {
-        "ca": "Concert Americanes Simfòniques",
-        "es": "Concierto Americanes Simfòniques",
-        "en": "Americanes Simfòniques concert"
-      },
-      "text": {
-        "ca": "Havaneres, rumba i boleros amb quartet de corda al Teatre Municipal l'Ateneu, a les 18 h. Entrades a 16 €.",
-        "es": "Habaneras, rumba y boleros con cuarteto de cuerda en el Teatre Municipal l'Ateneu, a las 18 h. Entradas a 16 €.",
-        "en": "Habaneras, rumba and boleros with a string quartet at the Teatre Municipal l'Ateneu, at 6 pm. Tickets 16 €."
-      },
-      "url": "https://surtdecasa.cat/centre/agenda/2026/concert-americanes-simfoniques/271461"
     },
     {
       "from": "2026-11-27",
@@ -94,6 +49,21 @@
         "en": "Wooden stalls at the entrance to the village, with food all three days, games, shows and a little train. Free entry."
       },
       "url": "https://www.penedesturisme.cat/ca/activitat/mercat-de-nadal-santa-margarida-i-els-monjos"
+    },
+    {
+      "from": "2026-11-27",
+      "place": "Igualada",
+      "title": {
+        "ca": "Batecs de Nadal, l'encesa de llums",
+        "es": "Batecs de Nadal, el encendido de luces",
+        "en": "Batecs de Nadal, the Christmas lights switch-on"
+      },
+      "text": {
+        "ca": "Espectacle a la façana de l'Ajuntament a les 20 h en què el públic participa amb un element lluminós, i en acabar, concert nadalenc.",
+        "es": "Espectáculo en la fachada del Ayuntamiento a las 20 h en el que el público participa con un elemento luminoso, y al terminar, concierto navideño.",
+        "en": "A show on the town hall façade at 8 pm in which the audience joins in with a small light, followed by a Christmas concert."
+      },
+      "url": "https://www.igualada.cat/ca/noticies/201cbatecs-de-nadal201d-encendra-les-llums-de-nadal-des-de-la-placa-de-l2019ajuntament"
     },
     {
       "from": "2026-11-28",
@@ -189,6 +159,22 @@
       "url": "https://santsadurni.cat/document.php?id=24049"
     },
     {
+      "from": "2026-12-04",
+      "to": "2026-12-20",
+      "place": "Igualada",
+      "title": {
+        "ca": "Fira de Santa Llúcia d'Igualada",
+        "es": "Feria de Santa Llúcia de Igualada",
+        "en": "Santa Llúcia Christmas fair, Igualada"
+      },
+      "text": {
+        "ca": "La fira de Nadal dels veïns de la Font Vella a la plaça Pius XII, oberta tres caps de setmana, del 4 al 20 de desembre.",
+        "es": "La feria de Navidad de los vecinos de la Font Vella en la plaza Pius XII, abierta tres fines de semana, del 4 al 20 de diciembre.",
+        "en": "The Font Vella neighbourhood's Christmas fair in Plaça Pius XII, open over three weekends, 4 to 20 December."
+      },
+      "url": "https://www.igualada.cat/ca/noticies/igualada-viura-un-nadal-amb-mes-carrers-il-luminats-suport-al-comerc-local-i-un-espectacle-interactiu-d2019encesa-de-llums-des-de-la-placa-de-l2019ajuntament"
+    },
+    {
       "from": "2026-12-06",
       "place": "La Llacuna",
       "title": {
@@ -248,6 +234,22 @@
         "en": "A two-hour guided tour at 10 am: the stage and stage machinery of the Passió theatre, the old town and the bell tower, with views of Montserrat. Free, with limited places."
       },
       "url": "https://www.esparreguera.cat/agenda/visita-a-l-interior-del-teatre-de-la-passio-i-al-campanar-d-esparreguera-12122026/"
+    },
+    {
+      "from": "2026-12-12",
+      "to": "2026-12-19",
+      "place": "Martorell",
+      "title": {
+        "ca": "Fira de Nadal de Martorell",
+        "es": "Feria de Navidad de Martorell",
+        "en": "Martorell Christmas fair"
+      },
+      "text": {
+        "ca": "Comerç de proximitat, artesania i productes nadalencs de 10 a 20 h: el 12 de desembre a la Rambla de les Bòbiles i el 19 a la plaça de la Vila i el carrer de Francesc Santacana.",
+        "es": "Comercio de proximidad, artesanía y productos navideños de 10 a 20 h: el 12 de diciembre en la Rambla de les Bòbiles y el 19 en la plaza de la Vila y la calle de Francesc Santacana.",
+        "en": "Local shops, crafts and Christmas produce from 10 am to 8 pm: on 12 December on the Rambla de les Bòbiles and on the 19th in Plaça de la Vila and Carrer de Francesc Santacana."
+      },
+      "url": "https://www.martorell.cat/nadal"
     },
     {
       "from": "2026-12-13",
@@ -330,6 +332,54 @@
       "url": "https://surtdecasa.cat/centre/agenda/2026/els-pastorets-digualada/271473"
     },
     {
+      "from": "2026-12-20",
+      "place": "Montserrat",
+      "minutes": 45,
+      "title": {
+        "ca": "Concert de l'Escolania a Montserrat",
+        "es": "Concierto de la Escolania en Montserrat",
+        "en": "Escolania concert at Montserrat"
+      },
+      "text": {
+        "ca": "L'Escolania de Montserrat fa un concert al monestir de 16 a 17 h.",
+        "es": "La Escolania de Montserrat ofrece un concierto en el monasterio de 16 a 17 h.",
+        "en": "The Montserrat boys' choir gives a concert at the monastery from 4 to 5 pm."
+      },
+      "url": "https://abadiamontserrat.cat/agenda?veure=1927-2026-12-20"
+    },
+    {
+      "from": "2026-12-20",
+      "to": "2027-01-03",
+      "place": "Les Gunyoles (Avinyonet del Penedès)",
+      "title": {
+        "ca": "Pessebre vivent parlat de Les Gunyoles",
+        "es": "Belén viviente hablado de Les Gunyoles",
+        "en": "Les Gunyoles speaking living nativity"
+      },
+      "text": {
+        "ca": "La 49a edició, en un escenari natural, els dies 20, 25, 26 i 27 de desembre i 1, 2 i 3 de gener, amb sessions a les 18, 18.45 i 19.30 h. 10 €.",
+        "es": "La 49.ª edición, en un escenario natural, los días 20, 25, 26 y 27 de diciembre y 1, 2 y 3 de enero, con sesiones a las 18, 18.45 y 19.30 h. 10 €.",
+        "en": "The 49th edition, staged outdoors on 20, 25, 26 and 27 December and 1, 2 and 3 January, with sessions at 6, 6.45 and 7.30 pm. 10 €."
+      },
+      "url": "https://www.penedesturisme.cat/ca/activitat/pessebre-vivent-parlat-de-les-gunyoles"
+    },
+    {
+      "from": "2026-12-24",
+      "place": "Montserrat",
+      "minutes": 45,
+      "title": {
+        "ca": "Missa del Gall amb l'Escolania",
+        "es": "Misa del Gallo con la Escolania",
+        "en": "Midnight Mass with the Escolania"
+      },
+      "text": {
+        "ca": "L'Escolania de Montserrat canta a la Missa del Gall de la basílica, a les 22.30 h.",
+        "es": "La Escolania de Montserrat canta en la Misa del Gallo de la basílica, a las 22.30 h.",
+        "en": "The Montserrat boys' choir sings at Midnight Mass in the basilica, at 10.30 pm."
+      },
+      "url": "https://abadiamontserrat.cat/agenda?veure=1769-2026-12-24"
+    },
+    {
       "from": "2026-12-25",
       "to": "2027-01-03",
       "place": "Capellades",
@@ -345,6 +395,37 @@
         "en": "Over 160 volunteers stage Els Pastorets (L'Estel de Natzaret) at the Teatre La Lliga: 25 December at 7 pm, and 27 December and 3 January at 6 pm. Tickets 8 to 14 €, on sale from 1 December."
       },
       "url": "https://www.societatlalliga.com/producte/els-pastorets-lestel-de-natzaret-nadal-2026/"
+    },
+    {
+      "from": "2026-12-31",
+      "place": "Sant Sadurní d'Anoia",
+      "minutes": 15,
+      "title": {
+        "ca": "Campanades de Cap d'Any",
+        "es": "Campanadas de Fin de Año",
+        "en": "New Year's Eve chimes"
+      },
+      "text": {
+        "ca": "Els dotze grans de raïm a la plaça de l'Ajuntament a les 23.55 h, i després festa. Gratuït.",
+        "es": "Las doce uvas en la plaza del Ayuntamiento a las 23.55 h, y después fiesta. Gratuito.",
+        "en": "The twelve grapes in the town hall square at 11.55 pm, followed by a party. Free."
+      },
+      "url": "https://santsadurni.cat/document.php?id=24118"
+    },
+    {
+      "from": "2027-01-05",
+      "place": "Martorell",
+      "title": {
+        "ca": "Cavalcada de Reis de Martorell",
+        "es": "Cabalgata de Reyes de Martorell",
+        "en": "Three Kings parade, Martorell"
+      },
+      "text": {
+        "ca": "Els Reis arriben al Pont del Diable, l'alcalde els rep a la plaça de la Vila i la cavalcada surt a les 19.15 h; a les 21 h recullen les cartes a la Rambla de les Bòbiles.",
+        "es": "Los Reyes llegan al Pont del Diable, el alcalde los recibe en la plaza de la Vila y la cabalgata sale a las 19.15 h; a las 21 h recogen las cartas en la Rambla de les Bòbiles.",
+        "en": "The Three Kings arrive at the Pont del Diable, the mayor welcomes them in Plaça de la Vila and the parade sets off at 7.15 pm; at 9 pm they collect children's letters on the Rambla de les Bòbiles."
+      },
+      "url": "https://www.martorell.cat/pag841/pl302/la-magia-del-nadal/id932/encesa-de-llums.htm"
     }
   ]
 }

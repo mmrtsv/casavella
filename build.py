@@ -33,9 +33,9 @@ LANGS = ('ca', 'es', 'en')
 PATHS = {'ca': '/', 'es': '/es/', 'en': '/en/'}
 OG_LOCALE = {'ca': 'ca_ES', 'es': 'es_ES', 'en': 'en_GB'}
 TITLE = {
-    'ca': 'La Casa Vella, casa rural al Bedorc, a prop de Montserrat',
-    'es': 'La Casa Vella, casa rural en El Bedorc, cerca de Montserrat',
-    'en': 'La Casa Vella, rural guesthouse in El Bedorc near Montserrat',
+    'ca': 'La Casa Vella, casa rural al Bedorc (Piera), a prop de Montserrat',
+    'es': 'La Casa Vella, casa rural en El Bedorc (Piera), cerca de Montserrat',
+    'en': 'La Casa Vella, rural guesthouse in El Bedorc (Piera) near Montserrat',
 }
 DESCRIPTION = {
     'ca': ("Casa de poble de 1898 al Bedorc, entre vinyes i davant de Montserrat. "
